@@ -1,4 +1,4 @@
-#    Copyright 2017,2021 IBM Corp.
+#    Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -562,7 +562,7 @@ class FCPManager(object):
                 # Case 3: not all the FCPs are continuous.
                 else:
                     start_fcp = int(local_fcp_list.pop(0), 16)
-                    for idx, fcp in enumerate(list(local_fcp_list)):
+                    for idx, fcp in enumerate(local_fcp_list.copy()):
                         next_fcp = int(fcp, 16)
                         # pop the fcp if it is continuous with the last
                         # e.g.
@@ -911,21 +911,31 @@ class FCPManager(object):
                 LOG.warn("FCP {} path changed from {} to {}.".format(
                     fcp, old_path, new_path))
         # Delete FCP from DB if connections=0 and reserve=0
+        del_fcp_set_for_logging = set()
+        ignore_del_fcp_set_for_logging = set()
         for fcp in del_fcp_set:
             reserve = fcp_dict_in_db[fcp][3]
             connections = fcp_dict_in_db[fcp][2]
             if connections == 0 and reserve == 0:
                 self.db.delete(fcp)
-                LOG.info("FCP {} removed.".format(fcp))
+                del_fcp_set_for_logging.add(fcp)
             else:
-                LOG.warn("Ignore the request of "
-                         "deleting in-use FCP {}.".format(fcp))
+                ignore_del_fcp_set_for_logging.add(fcp)
         # Add new FCP into DB
+        add_fcp_set_for_logging = set()
         for fcp in add_fcp_set:
             path = fcp_dict_in_fcp_list[fcp]
             self.db.new(fcp, path)
-            LOG.info("FCP {} added.".format(fcp))
-
+            add_fcp_set_for_logging.add(fcp)
+        # LOG
+        if del_fcp_set_for_logging:
+            LOG.info("FCPs removed: {}".format(del_fcp_set_for_logging))
+        if ignore_del_fcp_set_for_logging:
+            LOG.warn("Ignore the request of "
+                     "deleting in-use FCPs: {}."
+                     "".format(ignore_del_fcp_set_for_logging))
+        if add_fcp_set_for_logging:
+            LOG.info("FCPs added: {}".format(add_fcp_set_for_logging))
         LOG.info("Exit: Sync FCP DB with FCP list.")
 
     def _sync_db_with_zvm(self):
@@ -945,6 +955,8 @@ class FCPManager(object):
         # Get a dict of all FCPs in ZVM
         fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
 
+        offline_fcp_set_for_logging = set()
+        notfound_fcp_set_for_logging = set()
         # Update DB column of comment based on the info queried from zVM
         for fcp in fcp_dict_in_db:
             comment_dict = dict()
@@ -954,7 +966,7 @@ class FCPManager(object):
                 fcp_state = fcp_dict_in_zvm[fcp].get_dev_status()
                 comment_dict['state'] = fcp_state
                 if fcp_state == 'offline':
-                    LOG.warn("FCP {} offline.".format(fcp))
+                    offline_fcp_set_for_logging.add(fcp)
                 # Possbile FCP owner returned by ZVM:
                 # VM userid: if the FCP is attached to a VM
                 # A String "NONE": if the FCP is not attached
@@ -971,10 +983,16 @@ class FCPManager(object):
                     wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
                     self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
             else:
-                LOG.warn("FCP {} not found in z/VM.".format(fcp))
+                notfound_fcp_set_for_logging.add(fcp)
                 comment_dict['state'] = 'notfound'
             self.db.update_comment_of_fcp(fcp, comment_dict)
         # LOG
+        if offline_fcp_set_for_logging:
+            LOG.warn("FCPs offline: {}".format(
+                offline_fcp_set_for_logging))
+        if notfound_fcp_set_for_logging:
+            LOG.warn("FCPs not found in z/VM: {}".format(
+                notfound_fcp_set_for_logging))
         fcp_dict_in_db = self.get_fcp_dict_in_db()
         LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
@@ -1060,7 +1078,7 @@ class FCPVolumeManager(object):
                             target_lun, multipath, os_version,
                             mount_point)
         except exception.SDKBaseException as err:
-            errmsg = ("Dedicate FCP devices failed with "
+            errmsg = ("Attach volume failed with "
                       "error:" + err.format_message())
             LOG.error(errmsg)
             self._rollback_dedicated_fcp(fcp_list, assigner_id,
@@ -1384,6 +1402,11 @@ class FCPVolumeManager(object):
 
     def _update_statistics_usage(self, statistics_usage, item):
         """Tranform raw usage in FCP database into statistic data.
+
+        :param statistics_usage: (dict) to store statistics info
+        :param item: (tuple) to represent a FCP DB record
+
+        Note: the FCP id in the returned dict is in uppercase.
         """
         # get statistic data about:
         #   available, allocated, notfound,
@@ -1399,12 +1422,17 @@ class FCPVolumeManager(object):
             state = ""
             owner = ""
         if not statistics_usage.get(path_id, None):
-            statistics_usage[path_id] = {"available": [],
+            statistics_usage[path_id] = {"total": [],
+                                         "available": [],
                                          "allocated": [],
+                                         "reserve_only": [],
+                                         "connection_only": [],
                                          "unallocated_but_active": [],
                                          "allocated_but_free": [],
                                          "notfound": [],
                                          "offline": []}
+        # Store each FCP in section "total"
+        statistics_usage[path_id]["total"].append(fcp_id)
         # case G: (state = notfound)
         # this FCP in database but not found in z/VM
         if state == "notfound":
@@ -1437,16 +1465,17 @@ class FCPVolumeManager(object):
                                 "active, it may be occupied by a userid "
                                 "outside of this ZCC." % str(item))
             else:
-                # reserver == 1
                 # case C: (reserve=1 and conn=0)
                 # the fcp should be in task or a bug happen
+                statistics_usage[path_id]["reserve_only"].append(fcp_id)
                 LOG.warning("When getting statistics, found a FCP record %s "
-                            "may be in tasking." % str(item))
+                            "reserve_only." % str(item))
         else:
             # connections != 0
             if reserved == 0:
                 # case D: (reserve = 0 and conn != 0)
                 # must have a bug result in this
+                statistics_usage[path_id]["connection_only"].append(fcp_id)
                 LOG.warning("When getting statistics, found a FCP record %s "
                             "unreserved in database but its connections "
                             "is not 0." % str(item))
@@ -1504,17 +1533,17 @@ class FCPVolumeManager(object):
                   # (fcp_id, userid, connections, reserved, path,
                   #  comment, wwpn_npiv, wwpn_phy),
                   0 : (
-                    (u'283c',  u'user1', 2, 1, 0,
+                    ('283c',  'user1', 2, 1, 0,
                      {'state': 'active','owner: 'ABCD0001'},
                      'c05076ddf7003bf4','c05076ddf7001181'),
-                    (u'183c',  u'', 0, 0, 0, {'state': 'notfound'},
+                    ('183c',  '', 0, 0, 0, {'state': 'notfound'},
                      'c05076ddf7004321', 'c05076ddf7001181'),
                   ),
                   1 : (
-                    (u'383c',  u'user3', 0, 0, 1,
+                    ('383c',  'user3', 0, 0, 1,
                      {'state': 'active', 'owner': 'ABCD0001'}),
                      'c05076ddf7001234', 'c05076ddf7001182'
-                    (u'483c',  u'user2', 0, 0, 1,
+                    ('483c',  'user2', 0, 0, 1,
                      {'state': 'free', 'owner': 'NONE'}),
                      'c05076ddf7004322', 'c05076ddf7001182'
                   )
@@ -1524,37 +1553,37 @@ class FCPVolumeManager(object):
                 0: {
                     # case A: (reserve = 0 and conn = 0 and state = free)
                     # FCP is available and in free status
-                    "available": ('1a00','1a05',...)
+                    "available": ('1A00','1A05',...)
 
                     # case B: (reserve = 1 and conn != 0)
                     # nomral in-use FCP
-                    "allocated": ('1a00','1a05',...)
+                    "allocated": ('1B00','1B05',...)
 
                     # case C: (reserve = 1, conn = 0)
                     # the fcp should be in task or a bug cause this situation
-                    # only log about this
+                    "reserve_only": ('1C00', '1C05', ...)
 
                     # case D: (reserve = 0 and conn != 0)
                     # should be a bug result in this situation
-                    # only log about this
+                    "connection_only": ('1C00', '1C05', ...)
 
                     # case E: (reserve = 0, conn = 0, state = active)
                     # FCP occupied out-of-band
-                    'unallocated_but_active': [('1b04','owner1'),
-                                               ('1b05','owner2')]
+                    'unallocated_but_active': [('1B04','owner1'),
+                                               ('1B05','owner2')]
 
                     # case F: (conn != 0, state = free)
                     # we allocated it in db but the FCP status is free
                     # this is an situation not expected
-                    "allocated_but_free": ('1a00','1a05',...)
+                    "allocated_but_free": ('1D00','1D05',...)
 
                     # case G: (state = notfound)
                     # not found in smcli
-                    "notfound": ('1a00','1a05',...)
+                    "notfound": ('1E00','1E05',...)
 
                     # case H: (state = offline)
                     # offline in smcli
-                    "offline": ('1a00','1a05',...)
+                    "offline": ('1F00','1F05',...)
 
                     # case I: ((conn != 0) & assigner_id != owner)
                     # assigner_id-in-DB differ from smcli-returned-owner

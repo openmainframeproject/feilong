@@ -1,4 +1,4 @@
-# Copyright 2017, 2021 IBM Corp.
+# Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -394,7 +394,7 @@ class TestFCPManager(base.SDKTestCase):
         self.assertEqual(expected, fcp_info)
 
     @mock.patch("zvmsdk.volumeop.FCPManager."
-                "_verify_fcp_list_in_hex_format", Mock(return_value=True))
+                "_verify_fcp_list_in_hex_format", Mock())
     def test_shrink_fcp_list(self):
         """Test _shrink_fcp_list"""
 
@@ -416,7 +416,7 @@ class TestFCPManager(base.SDKTestCase):
         for idx, efs in enumerate(expected_fcp_str):
             fcp_list = list(
                 self.fcpops._expand_fcp_list(efs)[0])
-            result = self.fcpops._shrink_fcp_list(list(fcp_list))
+            result = self.fcpops._shrink_fcp_list(fcp_list.copy())
             self.assertEqual(efs, result)
             self.assertEqual(expected_fcp_count[idx], len(fcp_list))
 
@@ -435,7 +435,7 @@ class TestFCPManager(base.SDKTestCase):
         for idx, efs in enumerate(expected_fcp_str):
             fcp_list = list(
                 self.fcpops._expand_fcp_list(efs)[0])
-            result = self.fcpops._shrink_fcp_list(list(fcp_list))
+            result = self.fcpops._shrink_fcp_list(fcp_list.copy())
             self.assertEqual(efs, result)
             self.assertEqual(expected_fcp_count[idx], len(fcp_list))
 
@@ -449,19 +449,22 @@ class TestFCPManager(base.SDKTestCase):
         """Test _verify_fcp_list_in_hex_format(fcp_list)"""
         # case1: not a list object
         fcp_list = '1A00 - 1A03'
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.fcpops._verify_fcp_list_in_hex_format,
-                          fcp_list)
+        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
+                               "not a list object",
+                               self.fcpops._verify_fcp_list_in_hex_format,
+                               fcp_list)
         # case2: FCP(1A0) length != 4
         fcp_list = ['1A00', '1A0']
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.fcpops._verify_fcp_list_in_hex_format,
-                          fcp_list)
+        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
+                               "non-hex value",
+                               self.fcpops._verify_fcp_list_in_hex_format,
+                               fcp_list)
         # case3: FCP(1A0G) not a 4-digit hex
         fcp_list = ['1A00', '1a0G']
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.fcpops._verify_fcp_list_in_hex_format,
-                          fcp_list)
+        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
+                               "non-hex value",
+                               self.fcpops._verify_fcp_list_in_hex_format,
+                               fcp_list)
         # case4: FCP(1A0R) not a 4-digit hex
         fcp_list = ['1a00', '1A0F']
         self.fcpops._verify_fcp_list_in_hex_format(fcp_list)
@@ -1404,6 +1407,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('283c')
 
+    def test_update_statistics_usage(self):
+        """ Test for _update_statistics_usage()
+            is included in test_get_all_fcp_usage_xxx()
+        """
+        pass
+
+    def test_update_raw_fcp_usage(self):
+        """ Test for _update_raw_fcp_usage()
+            is included in test_get_all_fcp_usage_xxx()
+        """
+        pass
+
     def test_get_all_fcp_usage_empty(self):
         empty_usage0 = {}
         empty_usage1 = {'raw': {}}
@@ -1443,14 +1458,20 @@ class TestFCPVolumeManager(base.SDKTestCase):
                             '383c' in raw_usage[0][1])
             # path 1 status verify
             self.assertTrue('483c' in raw_usage[1][0])
-            expected_statistics = {0: {'available': '',
+            expected_statistics = {0: {'total': '283C, 383C',
+                                       'available': '',
                                        'allocated': '283C',
+                                       'connection_only': '',
+                                       'reserve_only': '',
                                        'unallocated_but_active': [],
                                        'allocated_but_free': '',
                                        'notfound': '',
                                        'offline': ''},
-                                   1: {'available': '',
+                                   1: {'total': '483C',
+                                       'available': '',
                                        'allocated': '',
+                                       'connection_only': '',
+                                       'reserve_only': '',
                                        'unallocated_but_active': [],
                                        'allocated_but_free': '',
                                        'notfound': '',
@@ -1471,33 +1492,75 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.delete('483c')
 
     def test_get_all_fcp_usage_statistics(self):
-        """Test the raw usage will be set correctly."""
+        """Test the raw usage will be set correctly.
+        Test Example
+        fcp_id VM_id conn  reserved path comment
+        ------ ----- ----  -------- ---- ------------------------------------
+        183c         0     0        0    {'state': 'free', 'owner': 'NONE'}
+        183d         0     0        0    {'state': 'free', 'owner': 'NONE'}
+        183e         0     0        0    {'state': 'free', 'owner': 'NONE'}
+        183f         0     0        0    {'state': 'free', 'owner': 'NONE'}
+        283c         1     1        0    {'state': 'notfound'}
+        283e         1     1        0    {'state': 'active', 'owner': 'fake'}
+        283f         1     1        0    {'state': 'active', 'owner': 'fake'}
+        2840         1     1        0    {'state': 'active', 'owner': 'fake'}
+        2842         1     1        0    {'state': 'notfound'}
+        383c         0     1        0    {'state': 'offline'}
+        483c         1     0        0    {'state': 'notfound'}
+        583c         0     0        1    {'state': 'active', 'owner': 'fake'}
+        583f         0     0        1    {'state': 'active', 'owner': 'fake'}
+        683c         1     0        1    {'state': 'free', 'owner': 'NONE'}
+        783c         0     0        1    {'state': 'notfound'}
+        883c         0     0        1    {'state': 'offline'}
+        """
         self.db_op = database.FCPDbOperator()
         self.db_op.new('183c', 0)
+        self.db_op.new('183d', 0)
+        self.db_op.new('183e', 0)
+        self.db_op.new('183f', 0)
         self.db_op.new('283c', 0)
+        self.db_op.new('283e', 0)
+        self.db_op.new('283f', 0)
+        self.db_op.new('2840', 0)
+        self.db_op.new('2842', 0)
         self.db_op.new('383c', 0)
         self.db_op.new('483c', 0)
         self.db_op.new('583c', 1)
+        self.db_op.new('583f', 1)
         self.db_op.new('683c', 1)
         self.db_op.new('783c', 1)
         self.db_op.new('883c', 1)
-        comment_state_free = {'state': 'free'}
+        comment_state_free = {'state': 'free', 'owner': 'NONE'}
         comment_owner_active = {'owner': 'fakeuser', 'state': 'active'}
         comment_state_offline = {'state': 'offline'}
         comment_state_notfound = {'state': 'notfound'}
         try:
             # case A: (reserve = 0 and conn = 0 and state = free)
             self.db_op.update_comment_of_fcp('183c', comment_state_free)
-            self.db_op.update_comment_of_fcp('183c', comment_state_free)
+            self.db_op.update_comment_of_fcp('183d', comment_state_free)
+            self.db_op.update_comment_of_fcp('183e', comment_state_free)
+            self.db_op.update_comment_of_fcp('183f', comment_state_free)
             # B: (reserve = 1 and conn != 0)
             self.db_op.reserve('283c')
             self.db_op.increase_usage('283c')
+            self.db_op.reserve('283e')
+            self.db_op.increase_usage('283e')
+            self.db_op.reserve('283f')
+            self.db_op.increase_usage('283f')
+            self.db_op.reserve('2840')
+            self.db_op.increase_usage('2840')
+            self.db_op.reserve('2842')
+            self.db_op.increase_usage('2842')
+            self.db_op.update_comment_of_fcp('283e', comment_owner_active)
+            self.db_op.update_comment_of_fcp('283f', comment_owner_active)
+            self.db_op.update_comment_of_fcp('2840', comment_owner_active)
             # C: (reserve = 1, conn = 0)
             self.db_op.reserve('383c')
             # D: (reserve = 0 and conn != 0)
             self.db_op.increase_usage('483c')
             # E: (reserve = 0, conn = 0, state = active)
             self.db_op.update_comment_of_fcp('583c', comment_owner_active)
+            self.db_op.update_comment_of_fcp('583f', comment_owner_active)
             # F: (conn != 0, state = free)
             self.db_op.increase_usage('683c')
             self.db_op.update_comment_of_fcp('683c', comment_state_free)
@@ -1507,6 +1570,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.update_comment_of_fcp('883c', comment_state_offline)
             # extra case 1: B + G
             self.db_op.update_comment_of_fcp('283c', comment_state_notfound)
+            self.db_op.update_comment_of_fcp('2842', comment_state_notfound)
             # extra case 2: C + H
             self.db_op.update_comment_of_fcp('383c', comment_state_offline)
             # extra case 3: D + G
@@ -1515,43 +1579,43 @@ class TestFCPVolumeManager(base.SDKTestCase):
             # raw data should not in ret value
             self.assertNotIn('raw', ret)
             statistic_usage = ret['statistics']
-            expected_usage = {0: {"available": '183C',
-                                  "allocated": '283C',
+            expected_usage = {0: {"total": '183C - 183F, 283C, '
+                                           '283E - 2840, 2842, 383C, 483C',
+                                  "available": '183C - 183F',
+                                  "allocated": '283C, 283E - 2840, 2842',
+                                  "reserve_only": '383C',
+                                  "connection_only": '483C',
                                   "unallocated_but_active": [],
                                   "allocated_but_free": '',
-                                  "notfound": '283C, 483C',
+                                  "notfound": '283C, 2842, 483C',
                                   "offline": '383C'},
-                              1: {"available": '',
+                              1: {"total": '583C, 583F, 683C, 783C, 883C',
+                                  "available": '',
                                   "allocated": '',
+                                  "reserve_only": '',
+                                  "connection_only": '683C',
                                   "unallocated_but_active": [
-                                      ('583C', 'fakeuser')],
+                                      ('583C', 'fakeuser'),
+                                      ('583F', 'fakeuser')],
                                   "allocated_but_free": '683C',
                                   "notfound": '783C',
                                   "offline": '883C'}}
-            # path 1 status
-            self.assertIn('183C', statistic_usage[0]['available'])
-            self.assertIn('283C', statistic_usage[0]['allocated'])
-            self.assertEqual([], statistic_usage[0]['unallocated_but_active'])
-            self.assertEqual('', statistic_usage[0]['allocated_but_free'])
-            self.assertIn('283C', statistic_usage[0]['notfound'])
-            self.assertIn('483C', statistic_usage[0]['notfound'])
-            self.assertIn('383C', statistic_usage[0]['offline'])
-            # path 2 status
-            self.assertEqual('', statistic_usage[1]['available'])
-            self.assertEqual('', statistic_usage[1]['allocated'])
-            self.assertIn(('583C', 'fakeuser'),
-                          statistic_usage[1]['unallocated_but_active'])
-            self.assertIn('683C', statistic_usage[1]['allocated_but_free'])
-            self.assertIn('783C', statistic_usage[1]['notfound'])
-            self.assertIn('883C', statistic_usage[1]['offline'])
             # overall status
             self.assertDictEqual(statistic_usage, expected_usage)
         finally:
             self.db_op.delete('183c')
+            self.db_op.delete('183d')
+            self.db_op.delete('183e')
+            self.db_op.delete('183f')
             self.db_op.delete('283c')
+            self.db_op.delete('283e')
+            self.db_op.delete('283f')
+            self.db_op.delete('2840')
+            self.db_op.delete('2842')
             self.db_op.delete('383c')
             self.db_op.delete('483c')
             self.db_op.delete('583c')
+            self.db_op.delete('583f')
             self.db_op.delete('683c')
             self.db_op.delete('783c')
             self.db_op.delete('883c')

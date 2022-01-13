@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -760,6 +760,8 @@ class FCPDbOperator(object):
         fcp_list example:
         ['1a03', '1b03']
         '''
+        LOG.info("Print at most 5 available FCP groups: {}".format(
+            list(fcp_pair_map.values())[:5]))
         if fcp_pair_map:
             fcp_list = random.choice(sorted(fcp_pair_map.values()))
         else:
