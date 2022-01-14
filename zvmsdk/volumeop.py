@@ -1315,31 +1315,42 @@ class FCPVolumeManager(object):
         phy_virt_wwpn_map = {}
         for fcp_no in fcp_list:
             wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
-            if not wwpn_npiv:
-                # wwpn_npiv not found in FCP DB
-                errmsg = ("NPIV WWPN of FCP device %s not found in "
-                          "database." % fcp_no)
-                LOG.error(errmsg)
-                raise exception.SDKVolumeOperationError(rs=11,
-                                                        userid=assigner_id,
-                                                        msg=errmsg)
-            else:
-                wwpns.append(wwpn_npiv)
+            if not all(wwpn_npiv, wwpn_phy):
+                # try to sync FCP status with z/VM
+                # and update the database to latest
+                LOG.warning("WWPNs of FCP device %s are not all found in "
+                            "database, the current content is (npiv wwpn: %s,"
+                            "physical wwpn: %s), will sync FCP status with "
+                            "z/VM and try again." % (fcp_no, wwpn_npiv,
+                                                     wwpn_phy))
+                self.fcp_mgr._sync_db_with_zvm()
+                # try to get wwpns again after sync
+                wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
+                if not all(wwpn_npiv, wwpn_phy):
+                    fcp_state = self.db.get_comment_of_fcp(fcp_no)['state']
+                    # WWPNs still not found in FCP DB
+                    errmsg = ("Still can not find WWPNs of FCP device %s in "
+                              "database even sync with z/VM, the current "
+                              "content is (npiv wwpn: %s, physical wwpn: %s) "
+                              "and its status is %s." % (fcp_no, wwpn_npiv,
+                                                         wwpn_phy, fcp_state))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(rs=11,
+                                                            userid=assigner_id,
+                                                            msg=errmsg)
+                else:
+                    LOG.info("After sync with z/VM, found "
+                             "(npiv wwpn: %s, physical wwpn: %s) for FCP "
+                             "device %s." % (wwpn_npiv, wwpn_phy, fcp_no))
+            # Both wwpn_npiv and wwpn_phy found
+            wwpns.append(wwpn_npiv)
             # We use initiator to build up zones on fabric, for NPIV, the
             # virtual ports are not yet logged in when we creating zones.
             # so we will generate the physical virtual initiator mapping
             # to determine the proper zoning on the fabric.
             # Refer to #7039 for details about avoid creating zones on
             # the fabric to which there is no fcp connected.
-            if not wwpn_phy:
-                errmsg = ("Physical WWPN of FCP device %s not found in "
-                          "database." % fcp_no)
-                LOG.error(errmsg)
-                raise exception.SDKVolumeOperationError(rs=11,
-                                                        userid=assigner_id,
-                                                        msg=errmsg)
-            else:
-                phy_virt_wwpn_map[wwpn_npiv] = wwpn_phy
+            phy_virt_wwpn_map[wwpn_npiv] = wwpn_phy
 
         # reserve or unreserve FCP record in database
         for fcp_no in fcp_list:

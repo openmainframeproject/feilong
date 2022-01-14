@@ -446,6 +446,8 @@ class FCPDbOperator(object):
 
     def get_comment_of_fcp(self, fcp):
         """Get the comment content, transfer into dict and return.
+        The return value will be like:
+            {'state': 'active', 'owner': 'iaas0001'}
         """
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT comment "
