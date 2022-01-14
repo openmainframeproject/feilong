@@ -1324,25 +1324,30 @@ class FCPVolumeManager(object):
                             "z/VM and try again." % (fcp_no, wwpn_npiv,
                                                      wwpn_phy))
                 self.fcp_mgr._sync_db_with_zvm()
+                fcp_comment = self.db.get_comment_of_fcp(fcp_no)
+                fcp_state = fcp_comment.get('state', '')
                 # try to get wwpns again after sync
                 wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
-                if not all(wwpn_npiv, wwpn_phy):
-                    fcp_comment = self.db.get_comment_of_fcp(fcp_no)
-                    fcp_state = fcp_comment.get('state', '')
-                    # WWPNs still not found in FCP DB
-                    errmsg = ("Still can not find WWPNs of FCP device %s in "
-                              "database even sync with z/VM, the current "
-                              "WWPNs are (npiv wwpn: %s, physical wwpn: %s) "
-                              "and FCP status is %s." % (fcp_no, wwpn_npiv,
-                                                         wwpn_phy, fcp_state))
+                if all(wwpn_npiv, wwpn_phy):
+                    LOG.info("After sync with z/VM, found "
+                             "(npiv wwpn: %s, physical wwpn: %s) for FCP "
+                             "device %s." % (wwpn_npiv, wwpn_phy, fcp_no))
+                elif fcp_state.lower() == 'notfound':
+                    # FCP is notfound in z/VM
+                    errmsg = ("Failed to get WWPNs of FCP device %s "
+                              "because it is not found in z/VM." % fcp_no)
                     LOG.error(errmsg)
                     raise exception.SDKVolumeOperationError(rs=11,
                                                             userid=assigner_id,
                                                             msg=errmsg)
                 else:
-                    LOG.info("After sync with z/VM, found "
-                             "(npiv wwpn: %s, physical wwpn: %s) for FCP "
-                             "device %s." % (wwpn_npiv, wwpn_phy, fcp_no))
+                    errmsg = ("The WWPNs of FCP device %s are empty in z/VM "
+                              "and its state is status is %s." % (fcp_no,
+                                                                  fcp_state))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(rs=11,
+                                                            userid=assigner_id,
+                                                            msg=errmsg)
             # Both wwpn_npiv and wwpn_phy found
             wwpns.append(wwpn_npiv)
             # We use initiator to build up zones on fabric, for NPIV, the
