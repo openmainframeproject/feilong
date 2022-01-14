@@ -1319,7 +1319,7 @@ class FCPVolumeManager(object):
                 # try to sync FCP status with z/VM
                 # and update the database to latest
                 LOG.warning("WWPNs of FCP device %s are not all found in "
-                            "database, the current content is (npiv wwpn: %s,"
+                            "database, the current WWPNs are (npiv wwpn: %s,"
                             "physical wwpn: %s), will sync FCP status with "
                             "z/VM and try again." % (fcp_no, wwpn_npiv,
                                                      wwpn_phy))
@@ -1331,8 +1331,8 @@ class FCPVolumeManager(object):
                     # WWPNs still not found in FCP DB
                     errmsg = ("Still can not find WWPNs of FCP device %s in "
                               "database even sync with z/VM, the current "
-                              "content is (npiv wwpn: %s, physical wwpn: %s) "
-                              "and its status is %s." % (fcp_no, wwpn_npiv,
+                              "WWPNs are (npiv wwpn: %s, physical wwpn: %s) "
+                              "and FCP status is %s." % (fcp_no, wwpn_npiv,
                                                          wwpn_phy, fcp_state))
                     LOG.error(errmsg)
                     raise exception.SDKVolumeOperationError(rs=11,
