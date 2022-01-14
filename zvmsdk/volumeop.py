@@ -1327,7 +1327,8 @@ class FCPVolumeManager(object):
                 # try to get wwpns again after sync
                 wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
                 if not all(wwpn_npiv, wwpn_phy):
-                    fcp_state = self.db.get_comment_of_fcp(fcp_no)['state']
+                    fcp_comment = self.db.get_comment_of_fcp(fcp_no)
+                    fcp_state = fcp_comment.get('state', '')
                     # WWPNs still not found in FCP DB
                     errmsg = ("Still can not find WWPNs of FCP device %s in "
                               "database even sync with z/VM, the current "
