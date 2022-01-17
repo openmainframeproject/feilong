@@ -897,6 +897,69 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.utils.get_smt_userid", Mock())
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.get_lpar_name")
+    def test_get_volume_connector_wwpn_not_found(self, get_lpar_name,
+                                                 get_fcp_info):
+        """Test when WWPNs of allocated FCP devices not found in DB."""
+        get_lpar_name.return_value = "fakehost"
+        base.set_conf('volume', 'fcp_list', 'b83c;c83c')
+        raw_fcp_info_from_zvm1 = [
+            'opnstk1: FCP device number: B83C',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 2007123400001234',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: 20076d8500005181',
+            'Owner: FAKEUSER',
+            'opnstk1: FCP device number: C83C',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 2007123400004567',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: 20076d8500005181',
+            'Owner: FAKEUSER']
+        raw_fcp_info_from_zvm2 = [
+            'opnstk1: FCP device number: B83C',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 2007123400001234',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: 20076d8500005181',
+            'Owner: FAKEUSER']
+        # insert new FCP into db
+        self.db_op.new('b83c', 0)
+        self.db_op.new('c83c', 1)
+        # set reserved to 1
+        self.db_op.reserve('b83c')
+        self.db_op.reserve('c83c')
+        # set connections to 1 and assigner_id to b83c
+        self.db_op.assign('b83c', 'fakeuser')
+        self.db_op.assign('c83c', 'fakeuser')
+        # set wwpns value, only set b83c
+        # leave c83c no wwpns to trigger exceptions
+        self.db_op.update_wwpns_of_fcp('b83c', '2007123400001234',
+                                       '20076d8500005181')
+        try:
+            # case1: even after sync, there is still no wwpns for c83c
+            get_fcp_info.return_value = raw_fcp_info_from_zvm2
+            self.assertRaises(exception.SDKVolumeOperationError,
+                              self.volumeops.get_volume_connector,
+                              'fakeuser', False)
+            # case2: get_wwpns_of_fcp return correct value after sync
+            get_fcp_info.return_value = raw_fcp_info_from_zvm1
+            connections = self.volumeops.get_volume_connector('fakeuser',
+                                                              False)
+            expected = {'zvm_fcp': ['b83c', 'c83c'],
+                        'wwpns': ['2007123400001234', '2007123400004567'],
+                        'phy_to_virt_initiators': {
+                            '2007123400001234': '20076d8500005181',
+                            '2007123400004567': '20076d8500005181'},
+                        'host': 'fakehost_fakeuser',
+                        'fcp_paths': 2}
+            self.assertEqual(expected, connections)
+        finally:
+            self.db_op.delete('b83c')
+            self.db_op.delete('c83c')
+
     @mock.patch("zvmsdk.smtclient.SMTClient.volume_refresh_bootmap")
     def test_volume_refresh_bootmap(self, mock_volume_refresh_bootmap):
         fcpchannels = ['5d71']

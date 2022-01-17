@@ -1315,7 +1315,7 @@ class FCPVolumeManager(object):
         phy_virt_wwpn_map = {}
         for fcp_no in fcp_list:
             wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
-            if not all(wwpn_npiv, wwpn_phy):
+            if not wwpn_npiv or not wwpn_phy:
                 # try to sync FCP status with z/VM
                 # and update the database to latest
                 LOG.warning("WWPN of FCP device %s not all found in "
@@ -1328,7 +1328,7 @@ class FCPVolumeManager(object):
                 fcp_state = fcp_comment.get('state', '')
                 # try to get wwpns again after sync
                 wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
-                if all(wwpn_npiv, wwpn_phy):
+                if wwpn_npiv and wwpn_phy:
                     LOG.info("After sync with z/VM, found "
                              "(npiv wwpn: %s, physical wwpn: %s) for FCP "
                              "device %s." % (wwpn_npiv, wwpn_phy, fcp_no))
@@ -1341,7 +1341,6 @@ class FCPVolumeManager(object):
                     # FCP is notfound in z/VM
                     errmsg = ("Failed to get WWPN of FCP device %s "
                               "because it is not found in z/VM." % fcp_no)
-                    
                     raise exception.SDKVolumeOperationError(
                             rs=11, userid=assigner_id, msg=errmsg)
                 else:
