@@ -298,8 +298,8 @@ Attach volume to a vm in z/VM
 
   - info: volume_info
   - connection: volume_conn
-  - assigner_id: guest_userid
-  - zvm_fcp: volume_fcp
+  - assigner_id: assigner_id
+  - zvm_fcp: fcp_list
   - target_wwpn: volume_wwpn
   - target_lun: volume_lun
   - os_version: guest_os_version
@@ -334,8 +334,8 @@ Detach volume from a vm in z/VM
 
   - info: volume_info
   - connection: volume_conn
-  - assigner_id: guest_userid
-  - zvm_fcp: volume_fcp
+  - assigner_id: assigner_id
+  - zvm_fcp: fcp_list
   - target_wwpn: volume_wwpn
   - target_lun: volume_lun
   - os_version: guest_os_version
@@ -420,7 +420,10 @@ Get all the FCP usage in database for z/VM.
 
 .. restapi_parameters:: parameters.yaml
 
-  - userid: guest_userid
+  - userid: userid_in_params
+  - raw: get_raw_data
+  - statistics: get_statistics_data
+  - sync_with_zvm: sync_with_zvm
 
 * Response code:
 
