@@ -1,5 +1,5 @@
 /**
- * Copyright 2017,2018 IBM Corporation
+ * Copyright 2017,2022 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,6 +294,9 @@ int displayHelpInfo(int smapiLevel) {
     if (smapiLevel >= 620) {
         printf("  System_Performance_Threshold_Disable\n"
                "  System_Performance_Threshold_Enable\n");
+    }
+    if (smapiLevel >= 720) {
+        printf("  System_Processor_Query\n");
     }
     if (smapiLevel >= 640) {
         printf("  System_RDR_File_Manage\n");
