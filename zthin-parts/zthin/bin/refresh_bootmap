@@ -337,6 +337,33 @@ function cleanup_fcpdevices {
       else
           inform "Failed to flush $map_name. RC: $rc, output: ${cmd_out}."
       fi
+      # Step 3: try flush multipath with "dmsetup suspend & remove".
+      inform "Try to flush $map_name with dmsetup cmds."
+      # For most cases, the device doesn't exist when enter here so the
+      # "dmsetup info" command would return "No such device or address".
+      dm_info=$(dmsetup info $map_name 2>&1)
+      rc=$?
+      if [[ $rc -eq 0 ]]; then
+          inform "Before dmsetup suspend, the dmsetup info: ${dm_info}."
+          suspend_out=$(dmsetup suspend $map_name 2>&1)
+          suspend_rc=$?
+          inform "dmsetup suspend rc: ${suspend_rc}, output: ${suspend_out}."
+          dm_info=$(dmsetup info $map_name 2>&1)
+          inform "After dmsetup suspend, the dmsetup info: ${dm_info}."
+          remove_out=$(dmsetup remove -f $map_name 2>&1)
+          remove_rc=$?
+          inform "dmsetup remove rc: ${remove_rc}, output: ${remove_out}."
+          dm_info=$(dmsetup info $map_name 2>&1)
+          info_rc=$?
+          if [[ $info_rc -eq 0 ]]; then
+              inform "Warning: $map_name still exist after dmsetup remove, info: ${dm_info}."
+          else
+              inform "$map_name does not exist in dmsetup info. RC: $info_rc, output: ${dm_info}."
+          fi 
+      else
+          # most cases would go here
+          inform "$map_name does not exist in dmsetup info. RC: $rc, output: ${dm_info}."
+      fi
   fi
 
   inform "Log information before EXIT."
@@ -1129,7 +1156,7 @@ function refreshFCPBootmap {
   #
   usable_fcps=(${!valid_paths_dict[*]})
   if [[ ${#usable_fcps[@]} -lt $minfcp ]]; then
-      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[*]}, but the number of usable FCPs(${usable_fcp[*]}) is less than required minimum FCP count: $minfcp."
+      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[*]}, but the number of usable FCPs(${usable_fcps[*]}) is less than required minimum FCP count: $minfcp."
       exit 9
   fi
 
