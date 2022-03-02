@@ -219,7 +219,7 @@ function checkSanity {
   # @Code:
   # Make sure the specified image file exists.
   if [[ $skipcopy != 'YES' && ! -f $imageFile ]]; then
-    printError 'The specified image file was not found: $imageFile.'
+    printError "The specified image file was not found: $imageFile."
     exit 3
   fi
 
