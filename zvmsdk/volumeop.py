@@ -1493,7 +1493,7 @@ class FCPVolumeManager(object):
                             "allocated by ZCC but its state is "
                             "free." % str(item))
             # case I: ((conn != 0) & assigner_id != owner)
-            elif assigner_id != owner:
+            elif assigner_id != owner and state != "notfound":
                 LOG.warning("When getting statistics, found a FCP record %s "
                             "allocated by ZCC but its assigner differs "
                             "from owner." % str(item))
