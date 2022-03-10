@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2022 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCont
 int systemPerformanceInformationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPerformanceThresholdDisable(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int systemProcessorQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemRDRFileManage(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSCSIDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSCSIDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
