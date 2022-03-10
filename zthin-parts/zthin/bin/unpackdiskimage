@@ -219,7 +219,7 @@ function checkSanity {
   # @Code:
   # Make sure the specified image file exists.
   if [[ $skipcopy != 'YES' && ! -f $imageFile ]]; then
-    printError 'The specified image file was not found: $imageFile.'
+    printError "The specified image file was not found: $imageFile."
     exit 3
   fi
 
@@ -619,11 +619,12 @@ function deployDiskImage {
     if [[ $(vmcp q v $alias | grep 'BLK ON DASD') ]]; then
       local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
                         awk '{print $1}')"
+      local targetDiskSize=`vmcp q v $alias | awk '{print $6}'`
       if [[ $diskSize -eq 0 ]]; then
           printError "$imageFile does not contain block information.  This appears to be a dummy image file."
           exit 3
       fi
-      if [[ ${diskSize} -le $(vmcp q v $alias | awk '{print $6}') ]]; then
+      if [[ ${diskSize} -le ${targetDiskSize} ]]; then
         errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
         if (( $? )); then
           printError "Failed to create a temporary file in the /var/log/zthin directory"
@@ -658,7 +659,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image. The image has $diskSize blocks in the header, deploy to a disk with $targetDiskSize blocks, either deploy to a bigger size target disk or create a smaller image."
         exit 3
       fi
     else
