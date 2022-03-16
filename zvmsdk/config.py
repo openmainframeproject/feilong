@@ -85,6 +85,28 @@ Sample NIC definitions in the z/VM user directory:
     NICDEF 1003 TYPE QDIO LAN SYSTEM <vswitch2> MACID <macid2>
         '''
         ),
+    Opt('user_default_share_unit',
+        section='zvm',
+        opt_type='int',
+        default=0,
+        help='''
+The default SHARE settings configuration.
+
+The recommend value of SHARE. From z/VM doc, SHARE is relative value of
+virtual machine and if you set SHARE to 100 while virtual CPUs are 4,
+then each vCPU get 25 entitlement.
+
+So the mechanism currently is:
+
+1) If a share is given, set SHARE value to the VM
+2) If no SHARE is given during creation, check user_default_share_unit
+3) If user_default_share_unit is 0 (current default), do nothing
+4) If user_default_share_unit it not 0, then insert statement
+`SHARE user_default_share_unit*vCPU` into user direct, for example,
+with user_default_share_unit=100, 4 vCPU will create `SHARE 400`.
+
+This align the best practice of z/VM recommendation.
+'''),
     Opt('default_admin_userid',
         section='zvm',
         help='''
