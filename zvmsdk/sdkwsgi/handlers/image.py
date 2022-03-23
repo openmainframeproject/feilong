@@ -33,7 +33,7 @@ LOG = log.LOG
 class ImageAction(object):
 
     def __init__(self):
-        self.client = connector.ZVMConnector(connection_type='socket',
+        self.client = connector.get_connector(connection_type='socket',
                                              ip_addr=CONF.sdkserver.bind_addr,
                                              port=CONF.sdkserver.bind_port)
 

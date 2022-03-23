@@ -35,9 +35,9 @@ LOG = log.LOG
 class HostAction(object):
 
     def __init__(self):
-        self.client = connector.ZVMConnector(connection_type='socket',
-                                             ip_addr=CONF.sdkserver.bind_addr,
-                                             port=CONF.sdkserver.bind_port)
+        self.client = connector.get_connector(
+            connection_type='socket', ip_addr=CONF.sdkserver.bind_addr,
+            port=CONF.sdkserver.bind_port)
 
     def get_info(self):
         info = self.client.send_request('host_get_info')

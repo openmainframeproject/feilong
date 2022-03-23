@@ -55,6 +55,11 @@ class ServiceUnavailable(Exception):
         self.resp = resp
 
 
+class ServiceUnauthorized(Exception):
+    def __init__(self, resp):
+        self.resp = resp
+
+
 class TokenNotFound(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -1041,9 +1046,9 @@ class RESTClient(object):
             raise TokenNotFound('token file not found.')
         return token
 
-    def _get_token(self):
+    def get_token(self, authentication_path):
         _headers = {'Content-Type': 'application/json'}
-        admin_token = self._get_admin_token(self.token_path)
+        admin_token = self._get_admin_token(authentication_path)
         _headers['X-Admin-Token'] = admin_token
 
         url = self.base_url + '/token'
@@ -1053,6 +1058,8 @@ class RESTClient(object):
         if response.status_code == 503:
             # service unavailable
             raise ServiceUnavailable(response)
+        elif response.status_code == 401:
+            raise ServiceUnauthorized(response)
         else:
             try:
                 token = response.headers['X-Auth-Token']
@@ -1061,8 +1068,9 @@ class RESTClient(object):
 
         return token
 
-    def _get_url_body_headers(self, api_name, *args, **kwargs):
+    def _get_url_body_headers(self, token, api_name, *args, **kwargs):
         headers = {}
+        headers['X-Auth-Token'] = token
         headers['Content-Type'] = 'application/json'
         count_params_in_path = DATABASE[api_name]['params_path']
         func = DATABASE[api_name]['request']
@@ -1111,9 +1119,6 @@ class RESTClient(object):
                 # if data is a file-like object
                 body = body
 
-        if self.token_path is not None:
-            _headers['X-Auth-Token'] = self._get_token()
-
         content_type = headers['Content-Type']
         stream = content_type == 'application/octet-stream'
         if stream:
@@ -1127,7 +1132,7 @@ class RESTClient(object):
                                         verify=self.verify)
         return response
 
-    def call(self, api_name, *args, **kwargs):
+    def call(self, token, api_name, *args, **kwargs):
         try:
             # check validation of arguments
             self._check_arguments(api_name, *args, **kwargs)
@@ -1135,8 +1140,8 @@ class RESTClient(object):
             method = DATABASE[api_name]['method']
 
             # get url,body with api_name and method
-            url, body, headers = self._get_url_body_headers(api_name,
-                                                        *args, **kwargs)
+            url, body, headers = self._get_url_body_headers(token, api_name,
+                                                            *args, **kwargs)
             response = self.api_request(url, method, body=body,
                                         headers=headers)
 

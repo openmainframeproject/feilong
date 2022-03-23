@@ -39,9 +39,9 @@ CONF = config.CONF
 
 class VMHandler(object):
     def __init__(self):
-        self.client = connector.ZVMConnector(connection_type='socket',
-                                             ip_addr=CONF.sdkserver.bind_addr,
-                                             port=CONF.sdkserver.bind_port)
+        self.client = connector.get_connector(
+            connection_type='socket', ip_addr=CONF.sdkserver.bind_addr,
+            port=CONF.sdkserver.bind_port)
 
     @validation.schema(guest.create)
     def create(self, body):
@@ -247,9 +247,9 @@ class VMHandler(object):
 class VMAction(object):
 
     def __init__(self):
-        self.client = connector.ZVMConnector(connection_type='socket',
-                                             ip_addr=CONF.sdkserver.bind_addr,
-                                             port=CONF.sdkserver.bind_port)
+        self.client = connector.get_connector(
+            connection_type='socket', ip_addr=CONF.sdkserver.bind_addr,
+            port=CONF.sdkserver.bind_port)
         self.dd_semaphore = threading.BoundedSemaphore(
             value=CONF.wsgi.max_concurrent_deploy_capture)
 
