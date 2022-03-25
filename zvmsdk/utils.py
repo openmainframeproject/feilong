@@ -70,6 +70,13 @@ def execute(cmd, timeout=None):
     return (rc, output)
 
 
+def vmcp(cmd, timeout=None):
+    # insert vmcp at beginning of the cmd call
+    cmd.insert(0, "vmcp")
+
+    return execute(cmd, timeout)
+
+
 def get_host():
     return ''.join([pwd.getpwuid(os.geteuid()).pw_name, '@',
                     CONF.network.my_ip])

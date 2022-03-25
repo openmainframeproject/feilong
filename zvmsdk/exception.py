@@ -64,6 +64,10 @@ class ZVMException(SDKBaseException):
     msg_fmt = 'ZVMException happened: %(msg)s'
 
 
+class ZVMVMCPExecutionFail(SDKBaseException):
+    msg_fmt = 'z/VM VMCP execution failed: %(msg)s'
+
+
 class ZVMNetworkError(SDKBaseException):
     msg_fmt = "z/VM network error: %(msg)s"
 

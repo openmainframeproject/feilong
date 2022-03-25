@@ -42,3 +42,8 @@ class ZVMUtilsTestCases(base.SDKTestCase):
     def test_get_lpar_name(self, vmcp_query):
         vmcp_query.return_value = b"IAAS01EF AT BOEM5401"
         self.assertEqual("BOEM5401", zvmutils.get_lpar_name())
+
+    @mock.patch.object(zvmutils, 'execute')
+    def test_vmcp_command(self, exec):
+        zvmutils.vmcp(["q", "userid"])
+        exec.assert_called_once_with(["vmcp", "q", "userid"], None)
