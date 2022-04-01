@@ -4457,6 +4457,42 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_get_defined_memory_user_more_than_6_fields(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G 64',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smtclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, 4096)
+        self.assertEqual(max_mem, 65536)
+        self.assertEqual(reserved_mem, 61440)
+        self.assertListEqual(user_direct, sample_definition)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_get_defined_memory_user_less_than_6_fields(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smtclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, -1)
+        self.assertEqual(max_mem, -1)
+        self.assertEqual(reserved_mem, -1)
+        self.assertListEqual(user_direct, sample_definition)
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_replace_user_direct_err(self, req):
         userid = 'testuid'
