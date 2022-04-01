@@ -3741,7 +3741,7 @@ class SMTClient(object):
             # u'USER userid password storage max privclass'
             if ent.startswith("USER "):
                 fields = ent.split(' ')
-                if len(fields) != 6:
+                if len(fields) < 6:
                     # This case should not exist if the target user
                     # is created by zcc and not updated manually by user
                     break
