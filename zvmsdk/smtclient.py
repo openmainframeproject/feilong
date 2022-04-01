@@ -623,8 +623,17 @@ class SMTClient(object):
         if cschedule:
             rd += ' --commandSchedule %s' % cschedule
 
+        # if share given, then user it
+        # or if CONF.zvm.user_default_share_unit is not 0
+        # set relative share to CONF.zvm.user_default_share_unit*cpu
         if cshare:
             rd += ' --commandSetShare "%s"' % cshare
+        else:
+            # only add SHARE statement if unit > 0
+            if CONF.zvm.user_default_share_unit > 0:
+                total = CONF.zvm.user_default_share_unit * cpu
+                data = 'RELATIVE %d' % total
+                rd += ' --commandSetShare "%s"' % data
 
         if rdomain:
             rd += ' --commandRDomain %s' % rdomain

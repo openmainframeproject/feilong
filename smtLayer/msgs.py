@@ -831,5 +831,18 @@ msg = {
         #   taken.
         # UserResp: Look up the reason the vmcp transfer command failed,
         #   correct the problem and reinvoke the function.
+    '0501': [{'overallRC': 5, 'rc': 1, 'rs': 501},
+            "ULT%s0501E Timeout Exception recevied on an attempt to " +
+            "execute a cmd: %s, exception: %s, " +
+            "details: %s",
+            ('GUT', 'CMD', 'EXCEPTION', 'EXCEPTION_DETAILS')],
+        # Explain: The command indicated by the message failed of timeout.
+        #   The error message contains exception name and details
+        #   contained in the exception.
+        # SysAct:   Processing of the function ends with no further
+        #   action taken.
+        # UserResp: Use the information in the message to determine
+        #   the cause of the error and correct the problem.
+        #   Reinvoke the function after you have corrected the problem.
     # 5000-6100: Reserved for SMCLI
     }

@@ -87,6 +87,7 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[], timeout=None):
        Command string to send
        (Optional) List of strCmd words (by index) to hide in
           sysLog by replacing the word with "<hidden>".
+       (Optional) timeout value in seconds for executing this command.
 
     Output:
        Dictionary containing the following:
@@ -135,6 +136,13 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[], timeout=None):
                 timeout=timeout)
         if isinstance(results['response'], bytes):
             results['response'] = bytes.decode(results['response'])
+    except subprocess.TimeoutExpired as e:
+        # Timeout exceptions from this system
+        rh.printSysLog("Timeout exception in vmUtils.execCmdThruIUCV")
+        results = msgs.msg['0501'][0]
+        msg = msgs.msg['0501'][1] % (modId, strCmd,
+            type(e).__name__, str(e))
+        results['response'] = msg
     except CalledProcessError as e:
         msg = []
         results['overallRC'] = 2

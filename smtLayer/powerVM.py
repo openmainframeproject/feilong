@@ -538,7 +538,7 @@ def reboot(rh):
     rh.printSysLog("Enter powerVM.reboot, userid: " + rh.userid)
 
     strCmd = "shutdown -r now"
-    results = execCmdThruIUCV(rh, rh.userid, strCmd)
+    results = execCmdThruIUCV(rh, rh.userid, strCmd, timeout = 60)
     if results['overallRC'] != 0:
         # Command failed to execute using IUCV.
         rh.printLn("ES", results['response'])
@@ -772,7 +772,7 @@ def softDeactivate(rh):
     if iucvResults['overallRC'] == 0:
         # We could talk to the machine, tell it to shutdown nicely.
         strCmd = "shutdown -h now"
-        iucvResults = execCmdThruIUCV(rh, rh.userid, strCmd)
+        iucvResults = execCmdThruIUCV(rh, rh.userid, strCmd, timeout = 60)
         if iucvResults['overallRC'] == 0:
             time.sleep(15)
         else:

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2022 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1937,6 +1937,69 @@ int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiIntern
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Performance_Threshold_Enable",
                 output->common.returnCode, output->common.reasonCode, vmapiContextP, strMsg);
+    }
+    return rc;
+}
+
+int systemProcessorQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "System_Processor_Query";
+    int rc;
+    int i;
+    int option;
+
+    int bytesleft;
+
+    char * targetIdentifier = NULL;
+    vmApiSystemProcessorQueryOutput * output;
+
+    // Options that have arguments are followed by a : character
+    while ((option = getopt(argC, argV, "h?")) != -1)
+        switch (option) {
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  System_Processor_Query\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli System_Processor_Query [-T] targetIdentifier\n\n"
+                    "DESCRIPTION\n"
+                    "  Use System_Processor_Query to list all real processors accessible to \n"
+                    "  the system and indicate the way in which each processor is being used. This \n"
+                    "  API will also return the mode of the logical partition.\n\n"
+                    "  There are no options required.\n\n");
+                printRCheaderHelp();
+                return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    printf("Unknown option -%c\n", optopt);
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    rc = smSystem_Processor_Query(vmapiContextP, "", 0, "", "dummy", &output);
+
+    if (rc) {
+        printAndLogProcessingErrors("System_Processor_Query", rc, vmapiContextP, "", 0);
+    } else if (output->common.returnCode || output->common.reasonCode) {
+        // Handle SMAPI return code and reason code
+        rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("System_Processor_Query", rc,
+                output->common.returnCode, output->common.reasonCode, output->errorDataLength, output->errorData, vmapiContextP, "");
+    } else {
+        DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+        printf("Partition mode: %s\n\n", output->partitionMode);
+
+        // start to parse system processor array
+        printf("ADDRESS STATUS TYPE CORE_ID\n");
+        for (i=0;i<output->systemProcessorArrayCount;i++) {
+            printf("%s\n", output->systemProcessorArray[i].systemProcessorInfo);
+        }
     }
     return rc;
 }

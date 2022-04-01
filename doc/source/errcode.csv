@@ -144,6 +144,7 @@
 4;1;4;412;ULTGUT0412E Malformed reply from SMAPI, unable to fill in performance information, exception: EXCEPTION, details: EXCEPTION_DETAILS, Response: OUTPUT
 4;1;4;423;ULTGUT0423W Unable to spool reader to all classes, it is possible that there may be additional console files available that are not listed in the response. Command: CMD, exception EXCEPTION, details EXCEPTION_DETAILS.  Will attempt to continue processing.
 4;1;4;424;ULTGUT0424E Failed to transfer FILE_LOCATION file to guest: USERID, out: OUTPUT
+5;1;1;501;ULTGUT0501E Timeout Exception recevied on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS
 8;1;None;None;ULTSMP0300E SMAPI API failed: API_NAME, overall rc: OVERALLRC, rc: RC, rs: RS, errno: ERRNO, cmd: CMD, out: OUTPUT
 25;1;301;0;ULTSMP0301E SMAPI API failed: API_NAME, response header does not have the expected 3 values before the (details) string. cmd: CMD, response header: HEADER, out: OUTPUT
 25;1;302;0;ULTSMP0302E SMAPI API failed: API_NAME, word 1 in the response header is not an integer or in the range of expected values. word 1: WORD1, cmd: CMD, response header: HEADER, out: OUTPUT
