@@ -132,6 +132,7 @@ DATABASE_NETWORK = 'sdk_network.sqlite'
 DATABASE_GUEST = 'sdk_guest.sqlite'
 DATABASE_IMAGE = 'sdk_image.sqlite'
 DATABASE_FCP = 'sdk_fcp.sqlite'
+DATABASE_CPUPOOL = 'sdk_cpupool.sqlite'
 
 IMAGE_TYPE = {
     'DEPLOY': 'netboot',

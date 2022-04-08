@@ -1100,3 +1100,84 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         # Clean up the images
         self.db_op.image_delete_record(imagename1)
         self.db_op.image_delete_record(imagename2)
+
+
+class CpupoolDbOperatorTestCase(base.SDKTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(CpupoolDbOperatorTestCase, cls).setUpClass()
+        cls.db_op = database.CpupoolDbOperator()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_cpupool_conn() as conn:
+            conn.execute("DROP TABLE cpupools")
+        super(CpupoolDbOperatorTestCase, cls).tearDownClass()
+
+    def test_check_existence_by_name(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+            self.db_op._check_existence_by_name, 'NOTEXIST')
+
+        p = self.db_op._check_existence_by_name('NOTEXIST',
+                                                ignore=True)
+        self.assertIsNone(p)
+
+    def test_insert_duplicate(self):
+        limittype = 'NOLIM'
+        cputype = 'IFL'
+        comments = 'no'
+        self.db_op.add_cpupool('DUMMY', limittype, cputype, comments)
+
+        self.assertRaises(exception.SDKObjectAlreadyExistError,
+                          self.db_op.add_cpupool, 'DUMMY',
+                          limittype, cputype, comments)
+        self.db_op.delete_cpupool('DUMMY')
+
+    def test_delete_not_exist(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.delete_cpupool, 'NOTEXIST')
+
+    def test_one_cpupool(self):
+        limittype = 'NOLIM'
+        cputype = 'IFL'
+        comments = 'no'
+        self.db_op.add_cpupool('DUMMY', limittype, cputype, comments)
+
+        cpupools = self.db_op.get_cpupools()
+        self.assertEqual(1, len(cpupools))
+        exp = [('DUMMY', 'NOLIM', 'IFL', 'no')]
+        self.assertListEqual(exp, cpupools)
+
+        cpupools = self.db_op.get_cpupool('DUMMY')
+        exp = ('DUMMY', 'NOLIM', 'IFL', 'no')
+        self.assertEqual(exp, cpupools)
+
+        self.db_op.delete_cpupool('DUMMY')
+        cpupools = self.db_op.get_cpupools()
+        self.assertEqual(0, len(cpupools))
+
+    def test_multiple_cpupools(self):
+        limittype = 'NOLIM'
+        cputype = 'IFL'
+        comments = 'no'
+        self.db_op.add_cpupool('DUMMY1', limittype, cputype, comments)
+        self.db_op.add_cpupool('DUMMY2', 'LIMIT', cputype, comments)
+        self.db_op.add_cpupool('DUMMY3', limittype, 'CP', comments)
+
+        cpupools = self.db_op.get_cpupools()
+        self.assertEqual(3, len(cpupools))
+        exp = [('DUMMY1', 'NOLIM', 'IFL', 'no'),
+               ('DUMMY2', 'LIMIT', 'IFL', 'no'),
+               ('DUMMY3', 'NOLIM', 'CP', 'no')]
+        self.assertListEqual(exp, cpupools)
+
+        self.db_op.delete_cpupool('DUMMY2')
+        cpupools = self.db_op.get_cpupools()
+        self.assertEqual(2, len(cpupools))
+        exp = [('DUMMY1', 'NOLIM', 'IFL', 'no'),
+               ('DUMMY3', 'NOLIM', 'CP', 'no')]
+        self.assertListEqual(exp, cpupools)
+
+        self.db_op.delete_cpupool('DUMMY1')
+        self.db_op.delete_cpupool('DUMMY3')

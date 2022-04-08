@@ -30,6 +30,7 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
     VOLUME     30
     IMAGE      40
     MONITOR    50
+    CPUPOOL    70
     SDKSERVER  100
     SDKWSGI    120
     SDKGENERAL 400
@@ -110,6 +111,7 @@ ModRCs = {
     'image': 40,
     'monitor': 50,
     'file': 60,
+    'cpupool': 70,
     'sdkserver': 100,
     'sdkwsgi': 120,
     # The 'zvmsdk' is used as the default module if module is not specified
@@ -262,6 +264,11 @@ errors = {
               2: "File export operation failed"},
              "Operation on file failed"
             ],
+# cpupool operation failed
+    'cpupool': [{'overallRC': 300, 'modID': ModRCs['cpupool'], 'rc': 300},
+                {1: "Database operation failed, error: %(msg)s"},
+                "Operation on cpupool failed"
+               ],
 # REST API Request error (Only used by sdkwsgi)
 # 'modID' would be set to ModRC['sdkwsgi']
     'RESTAPI': [{'overallRC': 400, 'modID': ModRCs['sdkwsgi'], 'rc': 400},
@@ -281,6 +288,11 @@ errors = {
                       "deleted out of z/VM Cloud Connector.")},
                  "The operated object does not exist"
                  ],
+# 'rs' is always 1
+    'alreadyExist': [{'overallRC': 404, 'modID': None, 'rc': 404},
+                     {1: "%(obj_desc)s already exist."},
+                     "The operated object does not exist"
+                    ],
 # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
                  {1: "Guest '%(userid)s' is not in active status.",

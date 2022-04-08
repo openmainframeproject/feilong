@@ -38,11 +38,14 @@ _NETWORK_CONN = None
 _IMAGE_CONN = None
 _GUEST_CONN = None
 _FCP_CONN = None
+_CPUPOOL_CONN = None
+
 _DBLOCK_VOLUME = threading.RLock()
 _DBLOCK_NETWORK = threading.RLock()
 _DBLOCK_IMAGE = threading.RLock()
 _DBLOCK_GUEST = threading.RLock()
 _DBLOCK_FCP = threading.RLock()
+_DBLOCK_CPUPOOL = threading.RLock()
 
 
 @contextlib.contextmanager
@@ -114,6 +117,27 @@ def get_fcp_conn():
         raise exception.SDKGuestOperationError(rs=1, msg=msg)
     finally:
         _DBLOCK_FCP.release()
+
+
+@contextlib.contextmanager
+def get_cpupool_conn():
+    global _CPUPOOL_CONN, _DBLOCK_CPUPOOL
+    if not _CPUPOOL_CONN:
+        _CPUPOOL_CONN = _init_db_conn(const.DATABASE_CPUPOOL)
+
+    _DBLOCK_CPUPOOL.acquire()
+    try:
+        yield _CPUPOOL_CONN
+    except exception.SDKBaseException as e:
+        msg = "Got SDK exception in CPUPOOL db action: %s" % six.text_type(e)
+        LOG.error(msg)
+        raise
+    except Exception as err:
+        msg = "Execute SQL statements error: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKGuestOperationError(rs=1, msg=msg)
+    finally:
+        _DBLOCK_CPUPOOL.release()
 
 
 def _init_db_conn(db_file):
@@ -1180,3 +1204,78 @@ class GuestDbOperator(object):
             return None
         # Code shouldn't come here, just in case
         return None
+
+
+class CpupoolDbOperator(object):
+
+    def __init__(self):
+        self._create_cpupool_tables()
+        self._module_id = 'cpupool'
+
+    def _create_cpupool_tables(self):
+        create_cpupool_table_sql = ' '.join((
+                'CREATE TABLE IF NOT EXISTS cpupools (',
+                'name             varchar(8) PRIMARY KEY COLLATE NOCASE,',
+                'limittype        varchar(8),',
+                'cputype          varchar(8),',
+                'comments         varchar(128))'))
+        with get_cpupool_conn() as conn:
+            conn.execute(create_cpupool_table_sql)
+
+    def _check_existence_by_name(self, pool, ignore=False):
+        p = self.get_cpupool(pool.upper())
+        if p is None:
+            msg = 'pool with name: %s does not exist in DB.' % pool
+            if ignore:
+                # Just print a warning message
+                LOG.info(msg)
+            else:
+                LOG.error(msg)
+                obj_desc = "pool with name: %s" % pool
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+        return p
+
+    def add_cpupool(self, pool, limittype='', cputype='', comments=''):
+        p = self._check_existence_by_name(pool, ignore=True)
+        if p:
+            msg = 'pool with name: %s already exist in DB.' % pool
+            LOG.error(msg)
+            obj_desc = "pool with name: %s" % pool
+            raise exception.SDKObjectAlreadyExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+
+        with get_cpupool_conn() as conn:
+            conn.execute(
+                "INSERT INTO cpupools VALUES (?, ?, ?, ?)",
+                (pool.upper(), limittype, cputype, comments))
+
+    def delete_cpupool(self, pool):
+        p = self._check_existence_by_name(pool, ignore=False)
+        if p is None:
+            return
+
+        with get_cpupool_conn() as conn:
+            conn.execute(
+                "DELETE FROM cpupools WHERE name=?", (pool.upper(),))
+
+    def get_cpupool(self, pool):
+        with get_cpupool_conn() as conn:
+            res = conn.execute("SELECT * FROM cpupools "
+                               "WHERE name=?", (pool.upper(),))
+            cpupool = res.fetchall()
+        # As id is the primary key, the filtered entry number should be 0 or 1
+        if len(cpupool) == 1:
+            return cpupool[0]
+        elif len(cpupool) == 0:
+            LOG.debug("Pool with name: %s not found from DB!" % pool)
+            return None
+        # Code shouldn't come here, just in case
+        return None
+
+    def get_cpupools(self):
+        with get_cpupool_conn() as conn:
+            res = conn.execute("SELECT * FROM cpupools")
+            cpupools = res.fetchall()
+
+        return cpupools
