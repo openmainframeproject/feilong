@@ -60,6 +60,15 @@ class RequestLog(object):
 
         return self.application(environ, _local_response)
 
+    def _force_debug(self, method, uri):
+        if method == 'POST' and uri == '/token':
+            return True
+
+        if method == 'GET' and uri == '/guests/nics':
+            return True
+
+        return False
+
     def _write_log(self, environ, req_uri, status, size, headers, exc_info):
         if size is None:
             size = '-'
@@ -72,7 +81,13 @@ class RequestLog(object):
                 'headers': headers,
                 'exc_info': exc_info
         }
+
         if LOG.isEnabledFor(logging.INFO):
-            LOG.info(self.format, log_format)
+            # POST '/token' and GET '/guests/nics'
+            # too often, so we want to avoid them
+            if self._force_debug(environ['REQUEST_METHOD'], req_uri):
+                LOG.debug(self.format, log_format)
+            else:
+                LOG.info(self.format, log_format)
         else:
             LOG.debug(self.format, log_format)
