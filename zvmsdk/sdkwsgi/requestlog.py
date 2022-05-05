@@ -14,7 +14,7 @@
 
 """Simple middleware for request logging."""
 
-import logging
+# import logging
 
 from zvmsdk import log
 from zvmsdk.sdkwsgi import util
@@ -72,7 +72,10 @@ class RequestLog(object):
                 'headers': headers,
                 'exc_info': exc_info
         }
-        if LOG.isEnabledFor(logging.INFO):
-            LOG.info(self.format, log_format)
-        else:
-            LOG.debug(self.format, log_format)
+        # if LOG.isEnabledFor(logging.INFO):
+        #     LOG.info(self.format, log_format)
+        # else:
+        #     LOG.debug(self.format, log_format)
+
+        # Save space of log to avoid too large log file
+        LOG.debug(self.format, log_format)
