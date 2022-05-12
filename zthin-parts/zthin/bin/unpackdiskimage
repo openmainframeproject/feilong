@@ -1290,6 +1290,12 @@ EOF
     inform "Deploying image to FCP disk at channel ${fcpChannel}."
   fi
 
+
+  # Technically this only apply for z15+ machine as we can speed up the
+  # zip process through zEDC, and no harm if we set for z15-
+  export DFLTCC=1
+  export DFLTCC_LEVEL_MASK=0x1fe
+
   if [[ $format = 'FCP' ]]; then
     deployFCPImage
   elif [[ $format = 'FBA' ]]; then
@@ -1308,6 +1314,11 @@ EOF
     printError "Disk image type not recognized."
     exit 3
   fi
+
+  # unpackdiskimage is an indenpendent process, so don't need unset it
+  # unset DFLTCC
+  # unset DFLTCC_LEVEL_MASK
+
 } #deployDiskImage{}
 
 
