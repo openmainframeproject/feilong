@@ -280,18 +280,72 @@ class FCPDbOperator(object):
         self._initialize_table()
 
     def _initialize_table(self):
-        sql = ' '.join((
-            'CREATE TABLE IF NOT EXISTS fcp(',
-            'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,',
-            'assigner_id    varchar(8) COLLATE NOCASE,',  # foreign key of a VM
-            'connections    integer,',  # 0 means no assigner
-            'reserved       integer,',  # 0 for not reserved
-            'path           integer,',  # 0 or path0, 1 for path1
-            'comment        varchar(128),',
-            'wwpn_npiv      varchar(16) COLLATE NOCASE,',
-            'wwpn_phy       varchar(16) COLLATE NOCASE)'))
+        # fcp_info_tables:
+        #   map the table name to the corresponding SQL to create it
+        #   key is the name of table to be created
+        #   value is the SQL to be executed to create the table
+        fcp_info_tables = {}
+        # table for basic info of FCP devices
+        fcp_info_tables['fcp'] = (
+            'CREATE TABLE IF NOT EXISTS fcp('
+            'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,'
+            'assigner_id    varchar(8) COLLATE NOCASE,'  # foreign key of a VM
+            'connections    integer,'  # 0 means no assigner
+            'reserved       integer,'  # 0 for not reserved
+            'comment        varchar(128),'
+            'wwpn_npiv      varchar(16) COLLATE NOCASE,'
+            'wwpn_phy       varchar(16) COLLATE NOCASE,'
+            'chpid          char(2),'
+            'tmpl_id        varchar(32))')
+
+        # table for FCP templates:
+        #   tmpl_id: template uuid, the primary key
+        #   tmple_name: the name of the template
+        #   description: the description for this template
+        #   is_default: is this template the default one on this host or not
+        #            1 for yes, 0 for no
+        fcp_info_tables['template'] = (
+            'CREATE TABLE IF NOT EXISTS template('
+            'id             varchar(32) PRIMARY KEY COLLATE NOCASE,'
+            'name           varchar(128),'
+            'description    varchar(255),'
+            'is_default     integer)')
+
+        # table for relationships between templates and storage providers:
+        #   tmpl_id: template uuid, the primary key
+        #   tmple_name: the name of the template
+        #   default: is this template the default one for a storage provider?
+        #            1 for yes, 0 for no
+        #   composite primary key (tmpl_id, sp_name)
+        fcp_info_tables['template_sp_mapping'] = (
+            'CREATE TABLE IF NOT EXISTS template_sp_mapping('
+            'tmpl_id        varchar(32),'
+            'sp_name        varchar(128),'
+            'is_default     integer,'
+            'PRIMARY KEY (tmpl_id, sp_name))')
+
+        # table for relationships between templates and FCP devices:
+        #   fcp_id: the fcp device ID
+        #   tmpl_id: the template uuid
+        #   path: the path number, 0 means the FCP device is in path0
+        #         1 means the FCP devices is in path1, and so on.
+        #   composite primary key (fcp_id, tmpl_id)
+        fcp_info_tables['template_fcp_mapping'] = (
+            'CREATE TABLE IF NOT EXISTS template_fcp_mapping('
+            'fcp_id         char(4),'
+            'tmpl_id        varchar(32),'
+            'path           integer,'
+            'PRIMARY KEY (fcp_id, tmpl_id))')
+
+        # create all the tables
         with get_fcp_conn() as conn:
-            conn.execute(sql)
+            for table_name in fcp_info_tables:
+                LOG.info("Creating table {} in FCP "
+                         "database.".format(table_name))
+                create_table_sql = fcp_info_tables[table_name]
+                conn.execute(create_table_sql)
+                LOG.info("Table {} created in FCP "
+                         "database.".format(table_name))
 
     def _update_reserve(self, fcp, reserved):
         with get_fcp_conn() as conn:
@@ -312,24 +366,6 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
             reserved = fcp_list[0][3]
             return reserved == 1
-
-    def negation(self, fcp):
-        """ now we have a problem, we need to lock FCP devices when attaching
-        or detaching is running. But detach has different process order with
-        attach.
-        When attach, Cinder will call get_volume_connector first and then
-        call attah_volume.
-        When detach, Cinder will call detach first and then call
-        get_volume_connector.
-        During this process, if we want to lock our FCP, we need a negation
-        or reverse operation to let us can lock FCP in multiprocess env.
-        """
-        if self.is_reserved(fcp):
-            # if reserved == 1, reverse it to 0
-            self.unreserve(fcp)
-        else:
-            # if reserved == 0, reverse it to 1
-            self.reserve(fcp)
 
     def find_and_reserve(self):
         with get_fcp_conn() as conn:
@@ -387,12 +423,12 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             if assigner_id:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                                      "connections, reserved, path, comment, "
+                                      "connections, reserved, chpid, comment, "
                                       "wwpn_npiv, wwpn_phy FROM fcp WHERE "
                                       "assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                                      "connections, reserved, path, comment, "
+                                      "connections, reserved, chpid, comment, "
                                       "wwpn_npiv, wwpn_phy FROM fcp")
             results = result.fetchall()
             if not results:
@@ -843,6 +879,11 @@ class FCPDbOperator(object):
             conn.execute("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=? "
                          "WHERE fcp_id=?",
                          (wwpn_npiv, wwpn_phy, fcp))
+
+    def update_chpid_of_fcp(self, fcp, chpid):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET chpid=? WHERE "
+                         "fcp_id=?", (chpid, fcp))
 
 
 class ImageDbOperator(object):

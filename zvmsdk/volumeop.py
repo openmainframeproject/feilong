@@ -388,12 +388,22 @@ class FCP(object):
         """
         lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         if isinstance(init_info, list) and (len(init_info) == lines_per_item):
-            self._dev_no = self._get_dev_number_from_line(init_info[0])
-            self._dev_status = self._get_dev_status_from_line(init_info[1])
-            self._npiv_port = self._get_wwpn_from_line(init_info[2])
-            self._chpid = self._get_chpid_from_line(init_info[3])
-            self._physical_port = self._get_wwpn_from_line(init_info[4])
-            self._owner = self._get_owner_from_line(init_info[5])
+            for line in init_info:
+                if 'FCP device number' in line:
+                    self._dev_no = self._get_dev_number_from_line(line)
+                elif 'Status' in line:
+                    self._dev_status = self._get_dev_status_from_line(line)
+                elif 'NPIV world wide port number' in line:
+                    self._npiv_port = self._get_wwpn_from_line(line)
+                elif 'Channel path ID' in line:
+                    self._chpid = self._get_chpid_from_line(line)
+                elif 'Physical world wide port numbe' in line:
+                    self._physical_port = self._get_wwpn_from_line(line)
+                else:
+                    LOG.info('Unknown line found in FCP information:%s', line)
+        else:
+            LOG.warning('When parsing FCP information, got an invalid '
+                        'instance %s', init_info)
 
     def get_dev_no(self):
         return self._dev_no
@@ -431,7 +441,7 @@ class FCPManager(object):
     def sync_db(self):
         """Sync FCP DB with FCP list and ZVM"""
         # First, sync with FCP list
-        self._sync_db_with_fcp_list()
+        # self._sync_db_with_fcp_list()
         # Second, sync with ZVM
         self._sync_db_with_zvm()
 
@@ -973,7 +983,7 @@ class FCPManager(object):
                 fcp_owner = fcp_dict_in_zvm[fcp].get_owner()
                 comment_dict['owner'] = fcp_owner
                 # NOTE(cao biao):
-                # we assume the WWPN of FCP will not change
+                # we assume the WWPN and CHPID of FCP will not change
                 # Hence, only update WWPN if
                 # wwpn_npiv column in database is not set
                 # and the FCP exists in z/VM
@@ -982,6 +992,10 @@ class FCPManager(object):
                     wwpn_npiv = fcp_dict_in_zvm[fcp].get_npiv_port()
                     wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
                     self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
+                chpid = fcp_dict_in_db[fcp][4]
+                if not chpid:
+                    chpid = fcp_dict_in_zvm[fcp].get_chpid()
+                    self.db.update_chpid_of_fcp(fcp, chpid)
             else:
                 notfound_fcp_set_for_logging.add(fcp)
                 comment_dict['state'] = 'notfound'
