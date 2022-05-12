@@ -280,18 +280,71 @@ class FCPDbOperator(object):
         self._initialize_table()
 
     def _initialize_table(self):
-        sql = ' '.join((
-            'CREATE TABLE IF NOT EXISTS fcp(',
-            'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,',
-            'assigner_id    varchar(8) COLLATE NOCASE,',  # foreign key of a VM
-            'connections    integer,',  # 0 means no assigner
-            'reserved       integer,',  # 0 for not reserved
-            'path           integer,',  # 0 or path0, 1 for path1
-            'comment        varchar(128),',
-            'wwpn_npiv      varchar(16) COLLATE NOCASE,',
-            'wwpn_phy       varchar(16) COLLATE NOCASE)'))
+        # fcp_info_tables:
+        #   map the table name to the corresponding SQL to create it
+        #   key is the name of table to be created
+        #   value is the SQL to be executed to create the table
+        fcp_info_tables = {}
+        # table for basic info of FCP devices
+        fcp_info_tables['fcp'] = (
+            'CREATE TABLE IF NOT EXISTS fcp('
+            'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,'
+            'assigner_id    varchar(8) COLLATE NOCASE,'  # foreign key of a VM
+            'connections    integer,'  # 0 means no assigner
+            'reserved       integer,'  # 0 for not reserved
+            'comment        varchar(128),'
+            'wwpn_npiv      varchar(16) COLLATE NOCASE,'
+            'wwpn_phy       varchar(16) COLLATE NOCASE,'
+            'chpid          char(2))')
+
+        # table for FCP templates:
+        #   tmpl_id: template uuid, the primary key
+        #   tmple_name: the name of the template
+        #   description: the description for this template, 128 is ok?
+        #   default: is this template the default one on this host?
+        #            1 for yes, 0 for no
+        fcp_info_tables['templates'] = (
+            'CREATE TABLE IF NOT EXISTS templates('
+            'tmpl_id        varchar(32) PRIMARY KEY COLLATE NOCASE,'
+            'tmpl_name      varchar(128),'
+            'description    varchar(128),'
+            'default        integer)')
+
+        # table for relationships between templates and storage providers:
+        #   tmpl_id: template uuid, the primary key
+        #   tmple_name: the name of the template
+        #   default: is this template the default one for a storage provider?
+        #            1 for yes, 0 for no
+        #   composite primary key (tmpl_id, sp_name)
+        fcp_info_tables['relationship_template_storage'] = (
+            'CREATE TABLE IF NOT EXISTS relationship_template_storage('
+            'tmpl_id        varchar(32),'
+            'sp_name        varchar(128),'
+            'default        integer,'
+            'PRIMARY KEY (tmpl_id, sp_name))')
+
+        # table for relationships between templates and FCP devices:
+        #   fcp_id: the fcp device ID
+        #   tmpl_id: the template uuid
+        #   path: the path number, 0 means the FCP device is in path0
+        #         1 means the FCP devices is in path1, and so on.
+        #   composite primary key (fcp_id, tmpl_id)
+        fcp_info_tables['relationship_template_fcp'] = (
+            'CREATE TABLE IF NOT EXISTS relationship_template_fcp('
+            'fcp_id         char(4),'
+            'tmpl_id        varchar(32),'
+            'path           integer,'
+            'PRIMARY KEY (fcp_id, tmpl_id))')
+
+        # create all the tables
         with get_fcp_conn() as conn:
-            conn.execute(sql)
+            for table_name in fcp_info_tables:
+                LOG.info("Creating table {} in FCP "
+                         "database.".format(table_name))
+                create_table_sql = fcp_info_tables[table_name]
+                conn.execute(create_table_sql)
+                LOG.info("Table {} created in FCP "
+                         "database.".format(table_name))
 
     def _update_reserve(self, fcp, reserved):
         with get_fcp_conn() as conn:
