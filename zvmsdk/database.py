@@ -885,6 +885,32 @@ class FCPDbOperator(object):
             conn.execute("UPDATE fcp SET chpid=? WHERE "
                          "fcp_id=?", (chpid, fcp))
 
+    def get_fcp_list_of_template(self, tmpl_id):
+        """Get the FCP devices set index by path.
+        For example:
+        {
+            0: {'1a00', '1a01', '1a02'},
+            1: {'1b00', '1b01', '1b02'},
+        }
+        """
+        fcp_list = {}
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT fcp_id, path FROM "
+                                  "relationship_template_fcp "
+                                  "WHERE tmpl_id=?", (tmpl_id,))
+            fcp_by_path = result.fetchall()
+            if not fcp_by_path:
+                msg = 'FCP devices under template %s does not exist in DB.' % tmpl_id
+                LOG.error(msg)
+                obj_desc = "FCP devices under template %s" % tmpl_id
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            for fcp in fcp_by_path:
+                if not fcp_list.get(fcp[1], None):
+                    fcp_list[fcp[1]] = set()
+                fcp_list[fcp[1]].add(fcp[0])
+        return fcp_list
+
 
 class ImageDbOperator(object):
 

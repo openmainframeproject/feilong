@@ -440,6 +440,8 @@ class FCPManager(object):
 
     def sync_db(self):
         """Sync FCP DB with FCP list and ZVM"""
+        # Note(CaoBiao): because we use FCP template to organize fcp devices
+        # so no need to call _sync_db_with_fcp_list
         # First, sync with FCP list
         # self._sync_db_with_fcp_list()
         # Second, sync with ZVM
