@@ -286,12 +286,24 @@ class FCPDbOperator(object):
         #   value is the SQL to be executed to create the table
         fcp_info_tables = {}
         # table for basic info of FCP devices
+        #   fcp_id: FCP device ID
+        #   assigner_id: foreign key representing a VM
+        #   connections: how many volumes connected to this FCP device,
+        #                0 means no assigner
+        #   reserved: 0 for not reserved by some operation
+        #   wwpn_npiv: NPIV WWPN number
+        #   wwpn_phy: Physical WWPN number
+        #   chpid: CHPID of FCP device
+        #   tmple_id: indecate which FCP template this FCP device was
+        #             allocated from, not which FCP template this FCP
+        #             device is in. because a FCP device may belong
+        #             to multiple FCP templates.
         fcp_info_tables['fcp'] = (
             'CREATE TABLE IF NOT EXISTS fcp('
             'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,'
-            'assigner_id    varchar(8) COLLATE NOCASE,'  # foreign key of a VM
-            'connections    integer,'  # 0 means no assigner
-            'reserved       integer,'  # 0 for not reserved
+            'assigner_id    varchar(8) COLLATE NOCASE,'
+            'connections    integer,'
+            'reserved       integer,'
             'comment        varchar(128),'
             'wwpn_npiv      varchar(16) COLLATE NOCASE,'
             'wwpn_phy       varchar(16) COLLATE NOCASE,'
@@ -299,8 +311,8 @@ class FCPDbOperator(object):
             'tmpl_id        varchar(32))')
 
         # table for FCP templates:
-        #   tmpl_id: template uuid, the primary key
-        #   tmple_name: the name of the template
+        #   id: template uuid, the primary key
+        #   name: the name of the template
         #   description: the description for this template
         #   is_default: is this template the default one on this host or not
         #            1 for yes, 0 for no
@@ -319,10 +331,8 @@ class FCPDbOperator(object):
         #   composite primary key (tmpl_id, sp_name)
         fcp_info_tables['template_sp_mapping'] = (
             'CREATE TABLE IF NOT EXISTS template_sp_mapping('
-            'tmpl_id        varchar(32),'
-            'sp_name        varchar(128),'
-            'is_default     integer,'
-            'PRIMARY KEY (tmpl_id, sp_name))')
+            'sp_name        varchar(128) PRIMARY KEY COLLATE NOCASE,'
+            'tmpl_id        varchar(32))')
 
         # table for relationships between templates and FCP devices:
         #   fcp_id: the fcp device ID
@@ -361,35 +371,102 @@ class FCPDbOperator(object):
 
     def is_reserved(self, fcp):
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp WHERE "
+            result = conn.execute("SELECT reserved FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
-            fcp_list = result.fetchall()
-            reserved = fcp_list[0][3]
+            reserved_data = result.fetchall()
+            if not reserved_data:
+                return False
+            reserved = reserved_data[0][0]
             return reserved == 1
 
-    def find_and_reserve(self):
+    def insert_multiple_records_into_fcp_table(self, fcp_info_list):
+        """Insert multiple FCP records into fcp table.
+        The fcp_info_list must be a list of FCP info set, for example:
+        the input fcp_info should be list of FCP info set, for example:
+        [('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+          'user1'),
+         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', 'free',
+          'user1'),
+         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+          'user2')]
+        """
+        data_to_insert = list()
+        for fcp in fcp_info_list:
+            new_comment = str({'state': fcp[4], 'owner': fcp[5]})
+            # compose a new list for update sql
+            # it is like for example:
+            # ['c05076de33000355', 'c05076de33002641', '27',
+            #  "{'state': '', 'owner': 'user1'}", '1a08']
+            new_record = list(fcp[0:4]) + [new_comment]
+            data_to_insert.append(new_record)
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp where connections=0 "
-                                  "and reserved=0")
-            fcp_list = result.fetchall()
-            if len(fcp_list) == 0:
-                LOG.info("no more fcp to be allocated")
-                return None
+            conn.executemany("INSERT INTO fcp (fcp_id, wwpn_npiv, wwpn_phy, "
+                             "chpid, comment) VALUES "
+                             "(?, ?, ?, ?, ?)", data_to_insert)
 
-            # allocate first fcp found
-            fcp = fcp_list[0][0]
-            self._update_reserve(fcp, 1)
-
-            return fcp
-
-    def new(self, fcp, path):
-        """Insert a FCP record into Table fcp"""
+    def insert_one_record_into_fcp_table(self, fcp_info):
+        """Insert one FCP record into fcp Table"""
         with get_fcp_conn() as conn:
             conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
-                         "connections, reserved, path, comment, "
-                         "wwpn_npiv, wwpn_phy) VALUES "
-                         "(?, ?, ?, ?, ?, ?, ?, ?)",
-                         (fcp, '', 0, 0, path, '', '', ''))
+                         "connections, reserved, comment, "
+                         "wwpn_npiv, wwpn_phy, chpid) VALUES "
+                         "(?, ?, ?, ?, ?, ?, ?, ?)", fcp_info)
+
+    def delete_multiple_records_from_fcp_table(self, fcp_id_list):
+        """Delete multiple FCP records from fcp table
+        The fcp_id_list is list of FCP IDs, for example:
+        ['1a00', '1b01', '1c02']
+        """
+        with get_fcp_conn() as conn:
+            conn.executemany("DELETE FROM fcp "
+                             "WHERE fcp_id=?", fcp_id_list)
+
+    def delete_one_record_from_fcp_table(self, fcp_id):
+        """Delete one FCP record from fcp table"""
+        with get_fcp_conn() as conn:
+            conn.execute("DELETE FROM fcp "
+                         "WHERE fcp_id=?", (fcp_id,))
+
+    def update_multiple_records_in_fcp_table(self, fcp_info_list):
+        """Update basic FCP info queried from zvm
+        the input fcp_info should be list of FCP info set, for example:
+        [('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+          'user1'),
+         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', 'free',
+          'user1'),
+         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+          'user2')]
+         """
+        # transfer state and owner to a comment dict
+        # the key is the id of the FCP device, the value is a comment dict
+        # for example:
+        # {'1a07': {'state': 'free', 'owner': 'user1'},
+        #  '1a08': {'state': 'active', 'owner': 'user2'}}
+        data_to_update = list()
+        for fcp in fcp_info_list:
+            new_comment = str({'state': fcp[4], 'owner': fcp[5]})
+            # compose a new list for update sql
+            # it is like for example:
+            # ['c05076de33000355', 'c05076de33002641', '27',
+            #  "{'state': '', 'owner': 'user1'}", '1a08']
+            new_record = list(fcp[1:4]) + [new_comment, fcp[0]]
+            data_to_update.append(new_record)
+        with get_fcp_conn() as conn:
+            conn.executemany("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=?, "
+                             "chpid=?, comment=? WHERE "
+                             "fcp_id=?", data_to_update)
+
+    def mark_records_as_notfound(self, fcp_id_list):
+        """Update multiple records' comments to update the state to nofound.
+        """
+        data_to_update = list()
+        for id in fcp_id_list:
+            new_comment = str({'state': 'notfound'})
+            new_record = [new_comment, id]
+            data_to_update.append(new_record)
+        with get_fcp_conn() as conn:
+            conn.executemany("UPDATE fcp set comment=? "
+                             "WHERE fcp_id=?", data_to_update)
 
     def assign(self, fcp, assigner_id, update_connections=True):
         with get_fcp_conn() as conn:
@@ -402,34 +479,31 @@ class FCPDbOperator(object):
                              "WHERE fcp_id=?",
                              (assigner_id, fcp))
 
-    def delete(self, fcp):
-        with get_fcp_conn() as conn:
-            conn.execute("DELETE FROM fcp "
-                         "WHERE fcp_id=?", (fcp,))
-
     def get_all_fcps_of_assigner(self, assigner_id=None):
         """Get dict of all fcp records of specified assigner.
         If assigner is None, will get all fcp records.
         Format of return is like :
         [
-          (fcp_id, userid, connections, reserved, path, comment,
-           wwpn_npiv, wwpn_phy),
-          ('283c', 'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'},
-           'c05076ddf7000002', 'c05076ddf7001d81'),
-          ('483c', 'user2', 0, 0, 1, {'state': 'free', 'owner': 'NONE'},
-           'c05076ddf7000001', 'c05076ddf7001d82')
+          (fcp_id, userid, connections, reserved, comment,
+           wwpn_npiv, wwpn_phy, chpid, tmpl_id),
+          ('283c', 'user1', 2, 1, {'state': 'active', 'owner': 'user1'},
+           'c05076ddf7000002', 'c05076ddf7001d81', 27, ''),
+          ('483c', 'user2', 0, 0, {'state': 'free', 'owner': 'NONE'},
+           'c05076ddf7000001', 'c05076ddf7001d82', 27, '')
         ]
         """
         with get_fcp_conn() as conn:
             if assigner_id:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                                      "connections, reserved, chpid, comment, "
-                                      "wwpn_npiv, wwpn_phy FROM fcp WHERE "
+                                      "connections, reserved, comment, "
+                                      "wwpn_npiv, wwpn_phy, chpid, "
+                                      "tmpl_id FROM fcp WHERE "
                                       "assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                                      "connections, reserved, chpid, comment, "
-                                      "wwpn_npiv, wwpn_phy FROM fcp")
+                                      "connections, reserved, comment, "
+                                      "wwpn_npiv, wwpn_phy, chpid, "
+                                      "tmpl_id FROM fcp")
             results = result.fetchall()
             if not results:
                 if assigner_id:
@@ -443,13 +517,13 @@ class FCPDbOperator(object):
                 fcp_info = []
                 for item in results:
                     item = list(item)
-                    comment = item[5]
+                    comment = item[4]
                     # Expectedly, comment is a string, such as,
                     # "{'state': 'xxx', 'owner': 'yyy'}"
                     if (comment and
                             comment.startswith('{') and
                             comment.endswith('}')):
-                        item[5] = eval(comment)
+                        item[4] = eval(comment)
                     fcp_info.append(tuple(item))
         return fcp_info
 
@@ -880,11 +954,6 @@ class FCPDbOperator(object):
                          "WHERE fcp_id=?",
                          (wwpn_npiv, wwpn_phy, fcp))
 
-    def update_chpid_of_fcp(self, fcp, chpid):
-        with get_fcp_conn() as conn:
-            conn.execute("UPDATE fcp SET chpid=? WHERE "
-                         "fcp_id=?", (chpid, fcp))
-
     def get_fcp_list_of_template(self, tmpl_id):
         """Get the FCP devices set index by path.
         For example:
@@ -900,7 +969,8 @@ class FCPDbOperator(object):
                                   "WHERE tmpl_id=?", (tmpl_id,))
             fcp_by_path = result.fetchall()
             if not fcp_by_path:
-                msg = 'FCP devices under template %s does not exist in DB.' % tmpl_id
+                msg = ('FCP devices under template %s does not '
+                       'exist in DB.' % tmpl_id)
                 LOG.error(msg)
                 obj_desc = "FCP devices under template %s" % tmpl_id
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
