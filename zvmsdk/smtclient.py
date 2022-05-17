@@ -623,8 +623,17 @@ class SMTClient(object):
         if cschedule:
             rd += ' --commandSchedule %s' % cschedule
 
+        # if share given, then user it
+        # or if CONF.zvm.user_default_share_unit is not 0
+        # set relative share to CONF.zvm.user_default_share_unit*cpu
         if cshare:
             rd += ' --commandSetShare "%s"' % cshare
+        else:
+            # only add SHARE statement if unit > 0
+            if CONF.zvm.user_default_share_unit > 0:
+                total = CONF.zvm.user_default_share_unit * cpu
+                data = 'RELATIVE %d' % total
+                rd += ' --commandSetShare "%s"' % data
 
         if rdomain:
             rd += ' --commandRDomain %s' % rdomain
@@ -3741,7 +3750,7 @@ class SMTClient(object):
             # u'USER userid password storage max privclass'
             if ent.startswith("USER "):
                 fields = ent.split(' ')
-                if len(fields) != 6:
+                if len(fields) < 6:
                     # This case should not exist if the target user
                     # is created by zcc and not updated manually by user
                     break

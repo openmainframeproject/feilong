@@ -581,6 +581,38 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_cms_cshare_unit(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        account = "dummy account aaa"
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 100)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby lbyuser1:lbyuser2 --ipl cms '
+              '--account "dummy account aaa" '
+              '--commandSetShare "RELATIVE 200"')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                  max_cpu, max_mem, 'cms', '', '', [], {},
+                                  account, [], '', '')
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
     def test_create_vm_cms_rdomain(self, add_guest, request, add_mdisks):
         user_id = 'fakeuser'
         cpu = 2
@@ -4422,6 +4454,42 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
+        self.assertEqual(reserved_mem, -1)
+        self.assertListEqual(user_direct, sample_definition)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_get_defined_memory_user_more_than_6_fields(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G 64',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smtclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, 4096)
+        self.assertEqual(max_mem, 65536)
+        self.assertEqual(reserved_mem, 61440)
+        self.assertListEqual(user_direct, sample_definition)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_get_defined_memory_user_less_than_6_fields(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smtclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, -1)
+        self.assertEqual(max_mem, -1)
         self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
