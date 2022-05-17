@@ -79,6 +79,37 @@ userid_create:
   in: body
   required: true
   type: string
+assigner_id:
+  description: |
+    The userid of the guest that the volume will be attached to or detached from.
+  in: body
+  required: true
+  type: string
+userid_in_params:
+  description: |
+    The userid of the guest specified in parameters of the url.
+    If specified, will only get data belongs to this guest.
+  in: parameter
+  required: false
+  type: string
+get_raw_data:
+  description: |
+    Whether to get raw FCP usage data from backend or not.
+  in: parameter
+  required: false
+  type: boolean
+get_statistics_data:
+  description: |
+    Whether to get statistics FCP usage data from backend.
+  in: parameter
+  required: false
+  type: boolean
+sync_with_zvm:
+  description: |
+    Whether to sync status of FCP devices with z/VM or not.
+  in: parameter
+  required: false
+  type: boolean
 guest_list:
   description: |
     Guests list
@@ -1220,7 +1251,7 @@ fcp_list:
     FCP devices list.
   in: body
   required: true
-  type: string
+  type: list
 wwpn_list:
   description: |
     World Wide Port Name IDs.
