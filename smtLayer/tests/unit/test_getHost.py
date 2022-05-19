@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+from smtLayer import ReqHandle
 from smtLayer import getHost
 from smtLayer.tests.unit import base
 
@@ -48,3 +50,94 @@ class SMTGetHostTestCase(base.SMTTestCase):
         parts = ['v1', '3390-?', 1, 10016]
         size = getHost._getDiskSize(parts)
         self.assertEqual(7384596480, size)
+
+    @mock.patch.object(getHost, 'invokeSMCLI')
+    def test_getCPUCount_without_STANDBY(self, fake_smcli):
+        fake_smcli.return_value = {
+            'overallRC': 0, 'rc': 0,
+            'rs': 0, 'errno': 0,
+            'response': 'Partition mode: Z/VM\n\n'
+                        'ADDRESS STATUS TYPE CORE_ID\n'
+                        '0000 MASTER-PROCESSOR CP 0000\n'
+                        '0002 ALTERNATE IFL 0001\n'
+                        '0003 PARKED IFL 0001\n'
+                        '0004 PARKED IFL 0002\n',
+            'strError': ''
+        }
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        print("return value1:", ret_total, ret_used)
+        self.assertEqual(4, ret_total)
+        self.assertEqual(4, ret_used)
+
+    @mock.patch.object(getHost, 'invokeSMCLI')
+    def test_getCPUCount_with_STANDBY(self, fake_smcli):
+        fake_smcli.return_value = {
+            'overallRC': 0, 'rc': 0,
+            'rs': 0, 'errno': 0,
+            'response': 'Partition mode: Z/VM\n\n'
+                        'ADDRESS STATUS TYPE CORE_ID\n'
+                        '0000 MASTER-PROCESSOR CP 0000\n'
+                        '0002 ALTERNATE IFL 0001\n'
+                        '0003 PARKED IFL 0001\n'
+                        '0004 STANDBY IFL 0002\n',
+            'strError': ''
+        }
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        print("return value2:", ret_total, ret_used)
+        self.assertEqual(4, ret_total)
+        self.assertEqual(3, ret_used)
+
+    @mock.patch.object(getHost, 'invokeSMCLI')
+    def test_getCPUCount_no_CPU(self, fake_smcli):
+        fake_smcli.return_value = {
+            'overallRC': 0, 'rc': 0,
+            'rs': 0, 'errno': 0,
+            'response': 'Partition mode: Z/VM\n\n'
+                        'ADDRESS STATUS TYPE CORE_ID\n',
+            'strError': ''
+        }
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        print("return value3:", ret_total, ret_used)
+        self.assertEqual(0, ret_total)
+        self.assertEqual(0, ret_used)
+
+    @mock.patch.object(getHost, 'invokeSMCLI')
+    def test_getCPUCount_noTypebutOOO(self, fake_smcli):
+        fake_smcli.return_value = {
+            'overallRC': 0, 'rc': 0,
+            'rs': 0, 'errno': 0,
+            'response': 'Partition mode: Z/VM\n\n'
+                        'ADDRESS STATUS OOO CORE_ID\n'
+                        '0000 MASTER-PROCESSOR CP 0000\n'
+                        '0002 ALTERNATE IFL 0001\n'
+                        '0003 PARKED IFL 0001\n'
+                        '0004 STANDBY IFL 0002\n',
+            'strError': ''
+        }
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        print("return value4:", ret_total, ret_used)
+        self.assertEqual(0, ret_total)
+        self.assertEqual(0, ret_used)
+
+    @mock.patch.object(getHost, 'invokeSMCLI')
+    def test_getCPUCount_with_overallRC_error(self, fake_smcli):
+        fake_smcli.return_value = {
+            'overallRC': 24, 'rc': 0,
+            'rs': 0, 'errno': 0,
+            'response': 'SMAPI API failed\n',
+            'strError': 'Input error'
+        }
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        print("return value5:", ret_total, ret_used)
+        self.assertEqual(0, ret_total)
+        self.assertEqual(0, ret_used)
