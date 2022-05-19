@@ -378,22 +378,38 @@ class FCP(object):
         """Initialize a FCP device object from several lines of string
            describing properties of the FCP device.
            Here is a sample:
-               opnstk1: FCP device number: B83D
-               opnstk1:   Status: Free
-               opnstk1:   NPIV world wide port number: NONE
-               opnstk1:   Channel path ID: 59
-               opnstk1:   Physical world wide port number: 20076D8500005181
+               FCP device number: 1D1E
+               Status: Free
+               NPIV world wide port number: C05076DE330003C2
+               Channel path ID: 27
+               Physical world wide port number: C05076DE33002E41
+               Owner: NONE
            The format comes from the response of xCAT, do not support
            arbitrary format.
         """
         lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         if isinstance(init_info, list) and (len(init_info) == lines_per_item):
-            self._dev_no = self._get_dev_number_from_line(init_info[0])
-            self._dev_status = self._get_dev_status_from_line(init_info[1])
-            self._npiv_port = self._get_wwpn_from_line(init_info[2])
-            self._chpid = self._get_chpid_from_line(init_info[3])
-            self._physical_port = self._get_wwpn_from_line(init_info[4])
-            self._owner = self._get_owner_from_line(init_info[5])
+            for line in init_info:
+                if 'FCP device number' in line:
+                    self._dev_no = self._get_dev_number_from_line(line)
+                elif 'Status' in line:
+                    self._dev_status = self._get_dev_status_from_line(line)
+                elif 'NPIV world wide port number' in line:
+                    self._npiv_port = self._get_wwpn_from_line(line)
+                elif 'Channel path ID' in line:
+                    self._chpid = self._get_chpid_from_line(line)
+                    if len(self._chpid) != 2:
+                        LOG.warn("CHPID value %s of FCP device %s is "
+                                 "invalid!" % (self._chpid, self._dev_no))
+                elif 'Physical world wide port numbe' in line:
+                    self._physical_port = self._get_wwpn_from_line(line)
+                elif 'Owner' in line:
+                    self._owner = self._get_owner_from_line(line)
+                else:
+                    LOG.info('Unknown line found in FCP information:%s', line)
+        else:
+            LOG.warning('When parsing FCP information, got an invalid '
+                        'instance %s', init_info)
 
     def get_dev_no(self):
         return self._dev_no
@@ -417,6 +433,17 @@ class FCP(object):
         # FIXME: add validation later
         return True
 
+    def to_tuple(self):
+        """Tranfer this object to a tuple type, format is like
+           (fcp_id, wwpn_npiv, wwpn_phy, chpid, state, owner)
+        for example:
+           ('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+          'user1')
+        """
+        return (self.get_dev_no(), self.get_npiv_port(),
+                self.get_physical_port(), self.get_chpid(),
+                self.get_dev_status(), self.get_owner())
+
 
 class FCPManager(object):
 
@@ -430,8 +457,10 @@ class FCPManager(object):
 
     def sync_db(self):
         """Sync FCP DB with FCP list and ZVM"""
+        # Note(CaoBiao): because we use FCP template to organize fcp devices
+        # so no need to call _sync_db_with_fcp_list
         # First, sync with FCP list
-        self._sync_db_with_fcp_list()
+        # self._sync_db_with_fcp_list()
         # Second, sync with ZVM
         self._sync_db_with_zvm()
 
@@ -630,32 +659,6 @@ class FCPManager(object):
 
         return fcp_info
 
-    def find_and_reserve_fcp(self, assigner_id):
-        """reserve the fcp to assigner_id
-
-        The function to reserve a fcp for user
-        1. Check whether assigner_id has a fcp already
-           if yes, make the reserve of that record to 1
-        2. No fcp, then find a fcp and reserve it
-
-        fcp will be returned, or None indicate no fcp
-        """
-        fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
-        if not fcp_list:
-            new_fcp = self.db.find_and_reserve()
-            if new_fcp is None:
-                LOG.info("no more fcp to be allocated")
-                return None
-
-            LOG.debug("allocated %s fcp for %s assigner" %
-                      (new_fcp, assigner_id))
-            return new_fcp
-        else:
-            # we got it from db, let's reuse it
-            old_fcp = fcp_list[0][0]
-            self.db.reserve(fcp_list[0][0])
-            return old_fcp
-
     def increase_fcp_usage(self, fcp, assigner_id=None):
         """Incrase fcp usage of given fcp
 
@@ -802,36 +805,6 @@ class FCPManager(object):
             all_fcp_pool[dev_no] = fcp
         return all_fcp_pool
 
-    def get_fcp_dict_in_fcp_list(self, fcp_list):
-        """Return a dict of all FCPs in fcp_list
-
-        Note: the key of the returned dict is in lowercase.
-        example (key=FCP, value=path):
-        {
-            '1a06': 0,
-            '1a09': 0,
-            '1a07': 0,
-
-            '1b05': 1,
-            '1b06': 1,
-            '1b0a': 1,
-        }
-        """
-
-        """
-        expanded_fcps example (key=path, value=FCPs):
-        {
-            0: {'1a06', '1a09', '1a07'},
-            1: {'1b05', '1b06', '1b0a'},
-        }
-        """
-        expanded_fcps = self._expand_fcp_list(fcp_list)
-        fcp_dict_in_fcp_list = {
-            fcp.lower(): path
-            for path, fcps in expanded_fcps.items()
-            for fcp in fcps}
-        return fcp_dict_in_fcp_list
-
     def get_fcp_dict_in_db(self):
         """Return a dict of all FCPs in FCP_DB
 
@@ -877,124 +850,102 @@ class FCPManager(object):
         smt_userid = zvmutils.get_smt_userid()
         # Return a dict of all FCPs in ZVM
         fcp_dict_in_zvm = self.get_all_fcp_pool(smt_userid)
-        fcp_dict_in_zvm = {fcp.lower(): fcp_dict_in_zvm[fcp]
+        fcp_id_to_object = {fcp.lower(): fcp_dict_in_zvm[fcp]
                            for fcp in fcp_dict_in_zvm}
-        return fcp_dict_in_zvm
+        return fcp_id_to_object
 
-    def _sync_db_with_fcp_list(self):
-        """Sync FCP DB with FCP list"""
+    def update_fcp_dict_into_fcp_table(self, fcp_dict_in_zvm):
+        """Update FCP records queried from zVM into FCP table."""
+        LOG.info("Enter: Update FCP dict into FCP table.")
 
-        LOG.info("Enter: Sync FCP DB with FCP list.")
-
-        # Get a dict of all FCPs in fcp_list
-        fcp_list = CONF.volume.fcp_list
-        fcp_dict_in_fcp_list = self.get_fcp_dict_in_fcp_list(fcp_list)
-
-        # Get a dict of all FCPs in FCP DB
+        # Get a dict of all FCPs already existed in FCP table
         fcp_dict_in_db = self.get_fcp_dict_in_db()
-        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
-
         # Divide FCPs into three sets
-        inter_set = set(fcp_dict_in_fcp_list) & set(fcp_dict_in_db)
+        inter_set = set(fcp_dict_in_zvm) & set(fcp_dict_in_db)
         del_fcp_set = set(fcp_dict_in_db) - inter_set
-        add_fcp_set = set(fcp_dict_in_fcp_list) - inter_set
-        LOG.info("FCPs remain unchanged: {}".format(inter_set))
-        LOG.info("FCPs to be removed: {}".format(del_fcp_set))
-        LOG.info("FCPs to be added: {}".format(add_fcp_set))
+        add_fcp_set = set(fcp_dict_in_zvm) - inter_set
 
-        # Update path of existing FCP if path changed
-        for fcp in inter_set:
-            old_path = fcp_dict_in_db[fcp][4]
-            new_path = fcp_dict_in_fcp_list[fcp]
-            if old_path != new_path:
-                self.db.update_path_of_fcp(fcp, new_path)
-                LOG.warn("FCP {} path changed from {} to {}.".format(
-                    fcp, old_path, new_path))
-        # Delete FCP from DB if connections=0 and reserve=0
-        del_fcp_set_for_logging = set()
-        ignore_del_fcp_set_for_logging = set()
+        # Add new records into FCP table
+        fcp_info_need_insert = [fcp_dict_in_zvm[fcp].to_tuple()
+                                for fcp in add_fcp_set]
+        LOG.info("New FCP devices found on z/VM: {}".format(add_fcp_set))
+        self.db.insert_multiple_records_into_fcp_table(fcp_info_need_insert)
+
+        # Delete FCP records from FCP table
+        # if it is connections=0 and reserve=0
+        LOG.info("FCP devices exist in database but not in "
+                 "z/VM any more: {}".format(del_fcp_set))
+        fcp_ids_secure_to_delete = set()
+        fcp_ids_not_found = set()
         for fcp in del_fcp_set:
             reserve = fcp_dict_in_db[fcp][3]
             connections = fcp_dict_in_db[fcp][2]
             if connections == 0 and reserve == 0:
-                self.db.delete(fcp)
-                del_fcp_set_for_logging.add(fcp)
+                fcp_ids_secure_to_delete.add(fcp)
             else:
-                ignore_del_fcp_set_for_logging.add(fcp)
-        # Add new FCP into DB
-        add_fcp_set_for_logging = set()
-        for fcp in add_fcp_set:
-            path = fcp_dict_in_fcp_list[fcp]
-            self.db.new(fcp, path)
-            add_fcp_set_for_logging.add(fcp)
-        # LOG
-        if del_fcp_set_for_logging:
-            LOG.info("FCPs removed: {}".format(del_fcp_set_for_logging))
-        if ignore_del_fcp_set_for_logging:
-            LOG.warn("Ignore the request of "
-                     "deleting in-use FCPs: {}."
-                     "".format(ignore_del_fcp_set_for_logging))
-        if add_fcp_set_for_logging:
-            LOG.info("FCPs added: {}".format(add_fcp_set_for_logging))
-        LOG.info("Exit: Sync FCP DB with FCP list.")
+                # these records not found in z/VM
+                # but still in-use in FCP table
+                fcp_ids_not_found.add(fcp)
+        self.db.delete_multiple_records_from_fcp_table(
+            fcp_ids_secure_to_delete)
+        LOG.info("FCP devices removed from FCP table: {}".format(
+            fcp_ids_secure_to_delete))
+        # For records not found in ZVM, but still in-use in DB
+        # mark them as not found
+        if fcp_ids_not_found:
+            self.db.mark_records_as_notfound(fcp_ids_not_found)
+            LOG.info("Ignore the request of deleting in-use "
+                     "FCPs: {}." .format(fcp_ids_not_found))
+
+        # Update status for FCP records already existed in DB
+        LOG.info("FCP devices exist in both database and "
+                 "z/VM: {}".format(inter_set))
+        fcp_ids_need_update = set()
+        for fcp in inter_set:
+            # Check state changed or not
+            # Possible state returned by ZVM:
+            # 'active', 'free' or 'offline'
+            fcp_state_db = fcp_dict_in_zvm[fcp].get_dev_status()
+            fcp_state_zvm = fcp_dict_in_db[fcp][4].get('state', None)
+            # Check owner changed or not
+            # Possbile FCP owner returned by ZVM:
+            # VM userid: if the FCP is attached to a VM
+            # A String "NONE": if the FCP is not attached
+            fcp_owner_db = fcp_dict_in_db[fcp][4].get('owner', 'NONE')
+            fcp_owner_zvm = fcp_dict_in_zvm[fcp].get_owner()
+            # Check wwpn changed or not
+            wwpn_npiv_db = fcp_dict_in_db[fcp][5]
+            wwpn_npiv_zvm = fcp_dict_in_zvm[fcp].get_npiv_port()
+            # Check chpid changed or not
+            chpid_db = fcp_dict_in_db[fcp][7]
+            chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
+            if fcp_state_zvm != fcp_state_db:
+                fcp_ids_need_update.add(fcp)
+            elif fcp_owner_db != fcp_owner_zvm:
+                fcp_ids_need_update.add(fcp)
+            elif wwpn_npiv_db != wwpn_npiv_zvm:
+                fcp_ids_need_update.add(fcp)
+            elif chpid_db != chpid_zvm:
+                fcp_ids_need_update.add(fcp)
+            else:
+                LOG.debug("No need to update record of FCP "
+                          "device {}".format(fcp))
+        fcp_info_need_update = [fcp_dict_in_zvm[fcp].to_tuple()
+                                for fcp in fcp_ids_need_update]
+        self.db.update_multiple_records_in_fcp_table(fcp_info_need_update)
+        LOG.info("FCP devices need to update records in "
+                 "fcp table {}".format(fcp_info_need_update))
+        LOG.info("Exits: Update FCP dict into FCP table.")
 
     def _sync_db_with_zvm(self):
         """Sync FCP DB with the FCP info queried from zVM"""
 
         LOG.info("Enter: Sync FCP DB with FCP info queried from z/VM.")
-
-        # Get a dict of all FCPs in FCP DB
-        fcp_dict_in_db = self.get_fcp_dict_in_db()
-
-        if not fcp_dict_in_db:
-            LOG.info("No FCPs exist in FCP DB. ")
-            LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
-            return
-
         LOG.info("Querying FCP status on z/VM.")
         # Get a dict of all FCPs in ZVM
         fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
-
-        offline_fcp_set_for_logging = set()
-        notfound_fcp_set_for_logging = set()
-        # Update DB column of comment based on the info queried from zVM
-        for fcp in fcp_dict_in_db:
-            comment_dict = dict()
-            if fcp in fcp_dict_in_zvm:
-                # Possible state returned by ZVM:
-                # 'active', 'free' or 'offline'
-                fcp_state = fcp_dict_in_zvm[fcp].get_dev_status()
-                comment_dict['state'] = fcp_state
-                if fcp_state == 'offline':
-                    offline_fcp_set_for_logging.add(fcp)
-                # Possbile FCP owner returned by ZVM:
-                # VM userid: if the FCP is attached to a VM
-                # A String "NONE": if the FCP is not attached
-                fcp_owner = fcp_dict_in_zvm[fcp].get_owner()
-                comment_dict['owner'] = fcp_owner
-                # NOTE(cao biao):
-                # we assume the WWPN of FCP will not change
-                # Hence, only update WWPN if
-                # wwpn_npiv column in database is not set
-                # and the FCP exists in z/VM
-                wwpn_npiv = fcp_dict_in_db[fcp][6]
-                if not wwpn_npiv:
-                    wwpn_npiv = fcp_dict_in_zvm[fcp].get_npiv_port()
-                    wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
-                    self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
-            else:
-                notfound_fcp_set_for_logging.add(fcp)
-                comment_dict['state'] = 'notfound'
-            self.db.update_comment_of_fcp(fcp, comment_dict)
-        # LOG
-        if offline_fcp_set_for_logging:
-            LOG.warn("FCPs offline: {}".format(
-                offline_fcp_set_for_logging))
-        if notfound_fcp_set_for_logging:
-            LOG.warn("FCPs not found in z/VM: {}".format(
-                notfound_fcp_set_for_logging))
-        fcp_dict_in_db = self.get_fcp_dict_in_db()
-        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
+        # Update the dict of all FCPs into FCP table in database
+        self.update_fcp_dict_into_fcp_table(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
 
 
