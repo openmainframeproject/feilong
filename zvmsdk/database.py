@@ -981,6 +981,34 @@ class FCPDbOperator(object):
                 fcp_list[fcp[1]].add(fcp[0])
         return fcp_list
 
+    def create_fcp_template(self, tmpl_id, name, description,
+                            fcp_devices_by_path, default_to_host,
+                            default_sp_name):
+        with get_fcp_conn() as conn:
+            # start a transaction
+            conn.execute("BEGIN TRANSACTION")
+            # 1. insert a new record in template table
+            tmpl_basics = (tmpl_id, name, description, default_to_host)
+            conn.execute("INSERT INTO template (id, name, description, "
+                         "is_default) VALUES (?, ?, ?, ?)", tmpl_basics)
+            # 2. insert new records in template_fcp_mapping
+            #    a record include (fcp_id, tmpl_id, path)
+            fcp_mapping = list()
+            for path in fcp_devices_by_path:
+                for fcp_id in fcp_devices_by_path[path]:
+                    new_record = [fcp_id, tmpl_id, path]
+                    fcp_mapping.append(new_record)
+            conn.executemany("INSERT INTO template_fcp_mapping (fcp_id, "
+                             "tmpl_id, path) VALUES (?, ?, ?)", fcp_mapping)
+            # 3. insert a new record in template_sp_mapping
+            if default_sp_name:
+                sp_mapping = [default_sp_name, tmpl_id]
+                conn.execute("INSERT INTO template_sp_mapping (sp_name, "
+                             "tmpl_id) VALUES (?, ?)", sp_mapping)
+                
+            # commit the transaction
+            conn.execute("COMMIT")
+
 
 class ImageDbOperator(object):
 

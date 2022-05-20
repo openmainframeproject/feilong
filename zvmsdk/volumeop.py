@@ -16,6 +16,7 @@
 import abc
 import re
 import shutil
+import uuid
 import six
 import threading
 import os
@@ -947,6 +948,21 @@ class FCPManager(object):
         # Update the dict of all FCPs into FCP table in database
         self.update_fcp_dict_into_fcp_table(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+    
+    def create_fcp_template(self, name, description, fcp_devices,
+                            default_to_host=False, default_sp_name=None):
+        LOG.info("Try to create a FCP template with name:%s,"
+                 "description:%s and fcp devices: %s." % (name, description,
+                                                          fcp_devices))
+        # Generate a template id for this new template
+        tmpl_id = uuid.uuid1()
+        # Get fcp devices info index by path
+        fcp_devices_by_path = self._expand_fcp_list(fcp_devices)
+        # Insert related records in FCP database
+        self.db.create_fcp_template(tmpl_id, name, description,
+                                    fcp_devices_by_path, default_to_host,
+                                    default_sp_name)
+        LOG.info("A FCP template was created with ID %s." % tmpl_id)
 
 
 # volume manager for FCP protocol
