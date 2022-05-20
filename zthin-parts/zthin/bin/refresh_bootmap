@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# Copyright 2020,2021 IBM Corp.
+# Copyright 2020,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -63,7 +63,7 @@ function cleanup_umountdir_and_disconnect_fcp {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
   # @Description:
-  
+
   if [[ -n ${deviceMountPoint} ]]; then
     if [[ -n ${zipl_conf} && -n ${BLS_dir} && -n ${zipl_postfix} ]]; then
       # remove the temporary copy of zipl.conf
@@ -282,16 +282,6 @@ function cleanup_fcpdevices {
   done
   inform "Finish removing LUN."
 
-  inform "Begin to offline and undedicate FCP devices"
-  # For offline and undedicate FCP, it should be done for all the inputed FCP devices
-  for fcp in "${INPUT_FCPS[@]}"
-  do
-      # dedicate and online FCP device
-      inform "Setting FCP device $fcp offline."
-      offlineUndedicateFcp $fcp 
-  done
-  inform "Finish disconnecting FCP devices."
-  
   # In some case, though the `multipath -f` reported the multipath device is flushed successfully, multipathd will continue to add new path
   # into the mpath device making the mpath device showing up again and the LVs on it then automatically be activated.
   # So, we add the check of mpath existence again here and do the deactivate of LVs and flush mpath device, to avoid leftover issue.
@@ -408,7 +398,8 @@ function parseArgs {
   isOption -v --verbose "      Print verbose output."      && verbose='-v'
   isOption -x --debug "        Print debugging output."    && debug='-x'
   isOption -t --type "         Device type. The default device typs is fcp and fcp is the only currently supported type."
-  isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
+  isOption -c --fcpcompute "   Compute FCP channel IDs. Support multi fcpchannel, split by ','."
+  isOption -f --fcpvm "        Target(VM) FCP channel IDs. Support multi fcpchannel, split by ','."
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
   isOption -d --wwid "         WWID of the volume, Example: 600507640083826de00000000000605b"
@@ -429,8 +420,12 @@ function parseArgs {
       device_type="${i#*=}"
       shift # past argument=value
       ;;
-      -f|--fcpchannel=*)
-      fcpchannel="${i#*=}"
+      -c|--fcpcompute=*)
+      fcpcompute="${i#*=}"
+      shift # past argument=value
+      ;;
+      -f|--fcpvm=*)
+      fcpvm="${i#*=}"
       shift # past argument=value
       ;;
       -w|--wwpn=*)
@@ -484,7 +479,7 @@ function checkSanity {
   #   Performs basic checks to ensure that a successful deploy can reasonably
   #   be expected.
   if [[ $device_type = 'fcp' ]]; then
-    if [[ ! $lun || ! $fcpchannel ]];then
+    if [[ ! $lun || ! $fcpvm || ! $fcpcompute ]];then
         printError "Exit MSG: Please specify lun and fcpchannel."
         exit 4
     fi
@@ -556,25 +551,20 @@ function truncaterdzfcp {
     rd_zfcp=""
     wwpn_idx=0
     selected_paths=0
-    valid_fcps=$(echo ${!valid_paths_dict[*]})
+	# Truncate based on vm fcp
 	while [[ $selected_paths -lt 8 ]]
 	do
 		inform "checking with wwpn_index: $wwpn_idx."
 		# for each fcp, get the wwpn corresponding to wwpn_idx
-		for fcp in ${valid_fcps[@]}
+		for fcp in "${INPUT_FCPS_VM[@]}"
 		do
-			wwpns=(${valid_paths_dict[$fcp]})
-			if [[ $wwpn_idx -lt ${#wwpns[@]} ]]; then
-				wwpn=${wwpns[$wwpn_idx]}
-				rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
-				((selected_paths=$selected_paths+1))
-			fi
+			rd_zfcp+="rd.zfcp=0.0.$fcp "
+			((selected_paths=$selected_paths+1))
 			# break when 8 paths found
 			if [[ $selected_paths -eq 8 ]]; then
 				break
 			fi
 		done
-		((wwpn_idx=$wwpn_idx+1))
 	done
 }
 
@@ -876,8 +866,11 @@ function refreshZIPL {
   # Due to the kernel command line length limitation of RHEL, we will limit the rd.zfcp
   # items count to 8. so if the valid paths count is greater than 8, we need to do truncation.
   # otherwise we can use the rd_zfcp string we get while finding the valid paths.
-  if [[ $valid_paths_count -gt 8 ]]; then
-  	inform "valid paths count $valid_paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
+
+  #Truncate based on vm fcp
+  vmfcpscount=${#INPUT_FCPS_VM[@]}
+  if [[ $vmfcpscount -gt 8 ]]; then
+  	inform "valid paths count $vmfcpscount is greater than 8, do truncation to get the rd.zfcp parameter."
   	truncaterdzfcp
   fi
   inform "Final rd.zfcp value is: $rd_zfcp."
@@ -1013,7 +1006,8 @@ function refreshFCPBootmap {
   local errorFile
 
   # all the input values don't have the prefix 0x
-  fcpchannels=$(echo ${fcpchannel} | tr '[:upper:]' '[:lower:]')
+  fcpvms=$(echo ${fcpvm} | tr '[:upper:]' '[:lower:]')
+  fcpcomputes=$(echo ${fcpcompute} | tr '[:upper:]' '[:lower:]')
   lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
   wwid=$(echo ${wwid} | tr '[:upper:]' '[:lower:]')
@@ -1028,17 +1022,18 @@ function refreshFCPBootmap {
   fi
 
   # Split fcpchannels and wwpn by ","
-  IFS=',' read -r -a INPUT_FCPS <<< "$fcpchannels"
+  IFS=',' read -r -a INPUT_FCPS_VM <<< "$fcpvms"
+  IFS=',' read -r -a INPUT_FCPS_COMPUTE <<< "$fcpcomputes"
   IFS=',' read -r -a INPUT_WWPNS <<< "$wwpn"
   
   # print the parameters value
-  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun, WWID: $wwid, minfcp: $minfcp."
+  inform "RefreshFCPBootmap begins. FCP_VM: ${INPUT_FCPS_VM[*]}, FCP_COMPUTE: ${INPUT_FCPS_COMPUTE[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun, WWID: $wwid, minfcp: $minfcp."
 
-  # Check the count of FCP devices, if greater than 8, report error and exit.
-  fcps_len=${#INPUT_FCPS[@]}
+  # Check the count of VM FCP devices, if greater than 8, report error and exit.
+  fcps_len=${#INPUT_FCPS_VM[@]}
   if [ $fcps_len -gt 8 ]
   then
-      printError "Exit MSG: The FCP channel count $fcps_len is greater than 8."
+      printError "Exit MSG: The FCP_VM channel count $fcps_len is greater than 8."
       exit 12
   fi
 
@@ -1049,35 +1044,19 @@ function refreshFCPBootmap {
       echo N > /sys/module/zfcp/parameters/allow_lun_scan
   fi
 
-  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
-  inform "zthinUserID is $zthinUserID"
-
   # Check whether multipath is enabled by checking the multipathd service
   checkMultipath
 
   # Register EXIT sigual for cleanup FCP devices.
   trap 'cleanup_fcpdevices' EXIT
 
-  # Dedicate and online each FCP device. Record the number of available FCP devices
+  # Don't need to dedicate or online FCP cpt. Assume all compute and vm fcp are online
   onlinefcpscount=0
   onlinefailed=""
   onlinesuccess=""
-  for fcp in "${INPUT_FCPS[@]}"
-  do
-    # dedicate and online FCP device
-    dedicateOnlineFcp $fcp
-    rc=$?
-    if [[ $rc -ne 0 ]]; then
-        printError "Failed to dedicate or online FCP: $fcp, rc is $rc."
-        onlinefailed+="$fcp "
-    else
-        ((onlinefcpscount=$onlinefcpscount+1))
-        onlinesuccess+="$fcp "
-    fi
-  done
 
-  # Print info of each FCP
-  for fcp in "${INPUT_FCPS[@]}"
+  # Print info of each FCP_COMPUTE
+  for fcp in "${INPUT_FCPS_COMPUTE[@]}"
   do
       # print the output of `systool -c fc_host` for debug
       host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
@@ -1091,9 +1070,10 @@ function refreshFCPBootmap {
       fi
   done
 
-  # if the number of online fcp is less than the min FCP number, exit
+  # if the number of online compute fcp is less than the min FCP number, exit
+  onlinefcpscount=${#INPUT_FCPS_COMPUTE[@]}
   if [[ $onlinefcpscount -lt $minfcp ]]; then
-      printError "Exit MSG: Failed to online FCP devices( $onlinefailed) and the number of online FCP devices( $onlinesuccess) is less than the required minimum FCP path count: $minfcp."
+      printError "Exit MSG: Failed to online FCP devices( $onlinefailed) and the number of online FCP devices( $onlinefcpscount) is less than the required minimum FCP path count: $minfcp."
       exit 1
   else
       inform "The number of online FCP devices: $onlinefcpscount satisfies the required minimum FCP path count: $minfcp."
@@ -1114,13 +1094,14 @@ function refreshFCPBootmap {
   # 0.0.1c04 0x500507680d760027
   lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
   inform "Output of 'lszfcp -P': $lszfcp_output."
-  declare -A valid_paths_dict
+  declare -A -g valid_paths_dict
   valid_paths_count=0
   rd_zfcp=""
-  # check whether each combination of input fcp and input wwpn is in the lszfcp_output
-  # the valid_paths_dict will contain all the valid combinations of inputed fcps and wwpns in the format:
+  # check whether each combination of input compute fcp and input wwpn is in the lszfcp_output
+  # the valid_paths_dict will contain all the valid combinations of inputed compute fcps and wwpns in the format:
   # (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
-  for fcp in "${INPUT_FCPS[@]}"
+  # Add path to valid_paths_dict based on computed fcp, and prepare rd_zfcp directly
+  for fcp in "${INPUT_FCPS_COMPUTE[@]}"
   do
       # match accessable target wwpns of this fcp
       for wwpn in "${INPUT_WWPNS[@]}"
@@ -1138,25 +1119,26 @@ function refreshFCPBootmap {
               fi
               # increase valid_paths_count
               ((valid_paths_count=$valid_paths_count+1))
-              # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
-              # set the kernel command line in zipl.conf to refresh zipl
-              rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
-          fi
+         fi
       done
+  done
+
+  for fcp_vm in "${INPUT_FCPS_VM[@]}"
+  do
+      rd_zfcp+="rd.zfcp=0.0.$fcp_vm "
   done
 
   # check whether there is valid combination of FCP and target wwpns found from the `lszfcp -P`
   if [[ $valid_paths_count -eq 0 ]]; then
-      printError "Exit MSG:  No valid path found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}."
+      printError "Exit MSG:  No valid path found between FCP devices: ${INPUT_FCPS_COMPUTE[*]} and wwpns: ${INPUT_WWPNS[*]}."
       exit 18
   fi
-  # Usable FCP: Only the FCPs that we can find a valid target WWPN via the `lszfcp -P` can be defined
-  # to VM.
-  # Check whether the count of usable FCPs are bigger than the minimum FCP count
+
+  # Check whether the count of vm FCPs are bigger than the minimum FCP count
   #
-  usable_fcps=(${!valid_paths_dict[*]})
-  if [[ ${#usable_fcps[@]} -lt $minfcp ]]; then
-      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[*]}, but the number of usable FCPs(${usable_fcps[*]}) is less than required minimum FCP count: $minfcp."
+  usable_fcps_count=${#INPUT_FCPS_VM[@]}
+  if [[ $usable_fcps_count -lt $minfcp ]]; then
+      printError "Exit MSG: VM FCPs include: ${INPUT_FCPS_VM[*]}, but the number of usable FCPs($usable_fcps_count}) is less than required minimum FCP count: $minfcp."
       exit 9
   fi
 
@@ -1207,7 +1189,7 @@ function refreshFCPBootmap {
 
   # check whether there is valid paths found
   if [[ -z $diskPath ]]; then
-    printError "Exit MSG: No avaialble disk found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
+    printError "Exit MSG: No avaialble disk found between compute node FCP devices: ${INPUT_FCPS_COMPUTE[*]} and wwpns: ${INPUT_WWPNS[*]}"
     printLogs
     exit 10
   fi
