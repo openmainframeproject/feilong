@@ -436,9 +436,11 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     reserve = kwargs.get('reserve', False)
+    fcp_template_id = kwargs.get('fcp_template_id', None)
     body = {'info':
         {
-            "reserve": reserve
+            "reserve": reserve,
+            "fcp_template_id": fcp_template_id
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
