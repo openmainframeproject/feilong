@@ -393,10 +393,14 @@ class FCPDbOperator(object):
          ('1a08', 'c05076de33000355', 'c05076de33002641', '27', 'active',
           'user2')]
         """
+        insert_data = list()
+        for fcp in fcp_info_list:
+            # set connections and reserved to 0 for new records
+            insert_data.append(list(fcp) + [0, 0])
         with get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp (fcp_id, wwpn_npiv, wwpn_phy, "
-                             "chpid, state, owner) VALUES "
-                             "(?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "chpid, state, owner, connections, reserved) "
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)", insert_data)
 
     def bulk_delete_from_fcp_table(self, fcp_id_list: list):
         """Delete multiple FCP records from fcp table
