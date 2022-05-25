@@ -1651,6 +1651,13 @@ class SDKAPI(object):
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
                                             connections)
 
+    @check_guest_exist()
+    def get_fcp_devices_of_assigner(self, userid):
+        """API to get FCP devices dedicated to a virtual machine.
+
+        :param str userid: the user id of the guest"""
+        return self._volumeop.get_fcp_devices_of_assigner(userid)
+
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.

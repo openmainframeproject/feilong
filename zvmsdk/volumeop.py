@@ -115,6 +115,9 @@ class VolumeOperatorAPI(object):
         return self._volume_manager.set_fcp_usage(fcp, assigner_id,
                                                   reserved, connections)
 
+    def get_fcp_devices_of_assigner(self, userid):
+        return self._volume_manager.fcp_mgr.get_fcp_devices_of_assigner(userid)
+
 
 @six.add_metaclass(abc.ABCMeta)
 class VolumeConfiguratorAPI(object):
@@ -911,9 +914,9 @@ class FCPManager(object):
             # so change the npiv value in fcp object to the value existed in
             # DB, then when update fcp table, the wwpn_npiv column will not be
             # overwritten
-            if wwpn_npiv_zvm != wwpn_npiv_db and\
-                0 != connections and 0 != reserved:
-                    fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
+            if (wwpn_npiv_zvm != wwpn_npiv_db and
+                0 != connections and 0 != reserved):
+                fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
             # Check chpid changed or not
             chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
             # Check state changed or not
@@ -955,6 +958,25 @@ class FCPManager(object):
         # Update the dict of all FCPs into FCP table in database
         self.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+
+    def get_fcp_devices_of_assigner(self, userid):
+        """Get FCP devices dedicated to a virtual machine.
+        return a list of set, each set include the FCP device info.
+        For example:
+        [
+          (fcp_id, userid, connections, reserved, wwpn_npiv, wwpn_phy,
+           chpid, state, owner, tmpl_id),
+          ('283c', 'user1', 2, 1, 'c05076ddf7000002', 'c05076ddf7001d81',
+           27,'active', 'user1', ''),
+          ('483c', 'user2', 0, 0, 'c05076ddf7000001', 'c05076ddf7001d82',
+           27, 'free', 'NONE', '')
+        ]
+        """
+        LOG.info("Enter: Try to get FCP devices dedicated to "
+                 "userid %s.", userid)
+        fcp_devices = self.db.get_all_fcps_of_assigner(userid)
+        LOG.info("Exit: Got FCP devices dedicated to userid "
+                 "%s: %s." % (userid, fcp_devices))
 
 
 # volume manager for FCP protocol

@@ -889,7 +889,7 @@ class FCPDbOperator(object):
         """Get the FCP devices set index by path.
         If no FCP devices found under this template,
         will return a empty dict {}.
-        
+
         The return value example:
         {
             0: {'1a00', '1a01', '1a02'},
