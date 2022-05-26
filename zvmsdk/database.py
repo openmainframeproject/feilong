@@ -370,6 +370,23 @@ class FCPDbOperator(object):
     def reserve(self, fcp):
         self._update_reserve(fcp, 1)
 
+    def unreserve_fcps(self, fcp_ids, fcp_template_id):
+        fcp_update_info = []
+        for fcp_id in fcp_ids:
+            fcp_update_info.append((fcp_id, fcp_template_id))
+        with get_fcp_conn() as conn:
+            conn.executemany("UPDATE fcp SET reserved=0, tmpl_id=NULL "
+                             "WHERE fcp_id=? AND tmpl_id=?", fcp_update_info)
+
+    def reserve_fcps(self, fcp_ids, assigner_id, fcp_template_id):
+        fcp_update_info = []
+        for fcp_id in fcp_ids:
+            fcp_update_info.append((assigner_id, fcp_template_id, fcp_id))
+        with get_fcp_conn() as conn:
+            conn.executemany("UPDATE fcp SET reserved=1, assigner_id=?, tmpl_id=? "
+                             "WHERE fcp_id=?", fcp_update_info)
+
+
     def is_reserved(self, fcp):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT reserved FROM fcp WHERE "
@@ -625,25 +642,33 @@ class FCPDbOperator(object):
 
     def get_allocated_fcps_from_assigner(self, assigner_id, fcp_template_id):
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM template_fcp_mapping "
+            result = conn.execute("SELECT fcp.fcp_id, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path "
+                                  "FROM template_fcp_mapping "
                                   "INNER JOIN fcp "
                                   "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
                                   "WHERE template_fcp_mapping.tmpl_id=? "
                                   "AND fcp.assigner_id=? "
                                   "AND (fcp.connections<>0 OR fcp.reserved<>0) "
-                                  "ORDER BY template_fcp_mapping.fcp_id ASC", (fcp_template_id, assigner_id))
+                                  "AND fcp.tmpl_id=?"
+                                  "ORDER BY template_fcp_mapping.fcp_id ASC", (fcp_template_id, assigner_id,
+                                                                               fcp_template_id))
             fcp_list = result.fetchall()
+
         return fcp_list
 
-    def get_reserved_fcps_from_assigner(self, assigner_id, fcp_template_id):
+    def get_unreservable_fcps_from_assigner(self, assigner_id, fcp_template_id):
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM template_fcp_mapping "
+            result = conn.execute("SELECT fcp.fcp_id, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path "
+                                  "FROM template_fcp_mapping "
                                   "INNER JOIN fcp "
                                   "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
                                   "WHERE template_fcp_mapping.tmpl_id=? "
                                   "AND fcp.assigner_id=? "
-                                  "AND (fcp.connections<>0 OR fcp.reserved<>0) "
-                                  "ORDER BY template_fcp_mapping.fcp_id ASC", (fcp_template_id, assigner_id))
+                                  "AND fcp.connections=0 "
+                                  "AND fcp.reserved<>0 "
+                                  "AND fcp.tmpl_id=? "
+                                  "ORDER BY template_fcp_mapping.fcp_id ASC", (fcp_template_id, assigner_id,
+                                                                               fcp_template_id))
             fcp_list = result.fetchall()
 
         return fcp_list
@@ -664,10 +689,11 @@ class FCPDbOperator(object):
 
         return fcp_list
 
-    def get_path_count(self):
+    def get_path_count(self, fcp_template_id):
         with get_fcp_conn() as conn:
             # Get distinct path list in DB
-            result = conn.execute("SELECT DISTINCT path FROM template_fcp_mapping")
+            result = conn.execute("SELECT DISTINCT path FROM template_fcp_mapping"
+                                  "WHERE tmpl_id=?", (fcp_template_id,))
             path_list = result.fetchall()
 
         return len(path_list)
@@ -752,7 +778,7 @@ class FCPDbOperator(object):
              ...           ]
             '''
             result = conn.execute("SELECT fcp.fcp_id, fcp.connections, "
-                                  "fcp.reserved, fcp.state "
+                                  "fcp.reserved, fcp.state, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path"
                                   "FROM fcp "
                                   "INNER JOIN template_fcp_mapping "
                                   "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
@@ -764,7 +790,7 @@ class FCPDbOperator(object):
         fcp_pair_map example:
          idx    fcp_pair
          ----------------
-        { 1 : ['1a01'],
+        { 1 : [('1a01', 'c05076de330003a3', '', 1)],
           2 : ['1a02'],
           3 : ['1a03']}
         '''
@@ -774,8 +800,11 @@ class FCPDbOperator(object):
             connections = fcps[i][1]
             reserved = fcps[i][2]
             state = fcps[i][3]
+            wwpn_npiv = fcps[i][4]
+            wwpn_phy = fcps[i][5]
+            fcp_path = fcps[i][6]
             if connections == reserved == 0 and state == 'free':
-                fcp_pair_map[i] = [fcp_no]
+                fcp_pair_map[i] = [(fcp_no, wwpn_npiv, wwpn_phy, fcp_path)]
         '''
         select out pairs if member count == path count
         fcp_pair_map example:
@@ -793,10 +822,13 @@ class FCPDbOperator(object):
                 connections = fcps[s + idx][1]
                 reserved = fcps[s + idx][2]
                 state = fcps[s + idx][3]
+                wwpn_npiv = fcps[s + idx][4]
+                wwpn_phy = fcps[s + idx][5]
+                fcp_path = fcps[s + idx][6]
                 if (idx < count_per_path[i + 1] and
                         connections == reserved == 0 and
                         state == 'free'):
-                    fcp_pair_map[idx].append(fcp_no)
+                    fcp_pair_map[idx].append((fcp_no, wwpn_npiv, wwpn_phy, fcp_path))
                 else:
                     fcp_pair_map.pop(idx)
                     break
@@ -823,11 +855,12 @@ class FCPDbOperator(object):
         fcp_list = []
         with get_fcp_conn() as conn:
             # Get distinct path list in DB
-            result = conn.execute("SELECT DISTINCT path FROM template_fcp_mapping")
+            result = conn.execute("SELECT DISTINCT path FROM template_fcp_mapping WHERE tmpl_id=?", (fcp_template_id,))
             path_list = result.fetchall()
             # Get fcp_list of every path
             for no in path_list:
-                result = conn.execute("SELECT * FROM template_fcp_mapping "
+                result = conn.execute("SELECT fcp.fcp_id, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path "
+                                      "FROM template_fcp_mapping "
                                       "INNER JOIN fcp "
                                       "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
                                       "WHERE template_fcp_mapping.tmpl_id=? "
@@ -841,7 +874,7 @@ class FCPDbOperator(object):
                     # continue to find whether other paths has available FCP
                     continue
                 index = random.randint(0, len(fcps) - 1)
-                fcp_list.append(fcps[index][0])
+                fcp_list.append(fcps[index])
         # Start to check whether the available count >= min_fcp_paths_count
         allocated_paths = len(fcp_list)
         total_paths = len(path_list)

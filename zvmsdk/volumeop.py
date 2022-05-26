@@ -50,6 +50,9 @@ FCPS = 'fcps'
 WWPNS = 'wwpns'
 DEDICATE = 'dedicate'
 
+_LOCK_RESERVE_FCP = threading.RLock()
+_LOCK_UNRESERVE_FCP = threading.RLock()
+
 
 def get_volumeop():
     global _VolumeOP
@@ -690,6 +693,125 @@ class FCPManager(object):
     def is_reserved(self, fcp):
         self.db.is_reserved(fcp)
 
+    def reserve_fcp_by_assigner_and_fcp_template(self, assigner_id, fcp_template_id):
+        """
+        Reserve FCP devices by assigner_id and fcp_template_id. In this method:
+        1. Get FCP list from db by assigner and fcp_template whose reserve=1
+        2. If fcp_list is not empty, just to use them.
+        3. If fcp_list is empty, get one from each path, then update 'reserved' and 'tmpl_id' in fcp table.
+
+        Returns: The fcp list data structure: [(fcp_id, wwpn_npiv, wwpn_phy, path)].
+                An example of fcp_list:
+                [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
+                ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 1)]
+        """
+        try:
+            _LOCK_RESERVE_FCP.acquire()
+            if fcp_template_id is None or len(fcp_template_id) == 0:
+                errmsg = "No FCP template is specified and no default FCP template is found."
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            # go here, means try to attach volumes
+            # first check whether this userid already has a FCP device
+            # get the FCP devices belongs to assigner_id
+            fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id, fcp_template_id)
+            LOG.info("Previously allocated records %s for instance %s in fcp template %s." %
+                     (fcp_list, assigner_id, fcp_template_id))
+            if not fcp_list:
+                # Sync DB to update FCP state,
+                # so that allocating new FCPs is based on the latest FCP state
+                self._sync_db_with_zvm()
+                # allocate new ones if fcp_list is empty
+                LOG.info("There is no allocated fcps for %s, will allocate "
+                         "new ones." % assigner_id)
+                if CONF.volume.get_fcp_pair_with_same_index:
+                    '''
+                    If use get_fcp_pair_with_same_index,
+                    then fcp pair is randomly selected from below combinations.
+                    [fa00,fb00],[fa01,fb01],[fa02,fb02]
+                    '''
+                    free_unreserved = self.db.get_fcp_pair_with_same_index(fcp_template_id)
+                else:
+                    '''
+                    If use get_fcp_pair,
+                    then fcp pair is randomly selected from below combinations.
+                    [fa00,fb00],[fa01,fb00],[fa02,fb00]
+                    [fa00,fb01],[fa01,fb01],[fa02,fb01]
+                    [fa00,fb02],[fa01,fb02],[fa02,fb02]
+                    '''
+                    free_unreserved = self.db.get_fcp_pair(fcp_template_id)
+                available_list = free_unreserved
+                fcp_ids = [fcp[0] for fcp in free_unreserved]
+                # record the assigner id in the fcp DB so that
+                # when the vm provision with both root and data volumes
+                # the root and data volume would get the same FCP devices
+                # with the get_volume_connector call.
+                assigner_id = assigner_id.upper()
+                self.db.reserve_fcps(fcp_ids, assigner_id, fcp_template_id)
+                LOG.info("Newly allocated %s fcp for %s assigner and FCP template %s" %
+                         (fcp_ids, assigner_id, fcp_template_id))
+            else:
+                # reuse the old ones if fcp_list is not empty
+                LOG.info("Found allocated fcps %s for %s in FCP template %s, will reuse them."
+                         % (fcp_list, assigner_id, fcp_template_id))
+                fcp_paths = set(fcp[3] for fcp in fcp_list)
+                path_count = len(fcp_paths)
+                if len(fcp_list) != path_count:
+                    # TODO: handle the case when len(fcp_list) < multipath_count
+                    LOG.warning("FCPs previously assigned to %s includes %s, "
+                                "it is not equal to the path count: %s." %
+                                (assigner_id, fcp_list, path_count))
+                # we got it from db, let's reuse it
+                available_list = fcp_list
+            return available_list
+        except Exception as err:
+            msg = "Failed to reserve FCP devices for assigner %s by FCP template %s error: %s" % \
+                  (assigner_id, fcp_template_id, err)
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=11, msg=msg)
+        finally:
+            _LOCK_RESERVE_FCP.release()
+
+    def unreserve_fcp_by_assigner_and_fcp_template(self, assigner_id, fcp_template_id):
+        """
+            Unreserve FCP devices by assigner_id and fcp_template_id. In this method:
+            1. Get FCP list from db by assigner and fcp_template whose reserve=1
+            2. If fcp_list is not empty, continue to use them.
+            3. If fcp_list is empty, get one from each path, then update 'reserved' and 'tmpl_id' in fcp table.
+
+            Returns: The fcp list data structure: [(fcp_id, wwpn_npiv, wwpn_phy, path)].
+                    An example of fcp_list:
+                    [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
+                    ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 1)]
+                    If no fcp can be gotten from db, return empty list.
+        """
+        try:
+            _LOCK_UNRESERVE_FCP.acquire()
+            # TODO check if the host only has one FCP template, if yes, use that one, or else, raise error.
+            if fcp_template_id is None:
+                errmsg = "fcp_template_id is not specified while releasing FCP devices."
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            fcp_list = self.db.get_unreservable_fcps_from_assigner(assigner_id, fcp_template_id)
+            if fcp_list:
+                fcp_ids = [fcp[0] for fcp in fcp_list]
+                LOG.info("Unreserve fcp device %s from "
+                         "instance %s and FCP template %s." % (fcp_ids, assigner_id, fcp_template_id))
+                self.db.unreserve_fcps(fcp_ids, fcp_template_id)
+                return fcp_list
+            return []
+        except Exception as err:
+            msg = "Failed to release FCP devices for assigner %s by FCP template %s error: %s" % \
+                  (assigner_id, fcp_template_id, err)
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=11, msg=msg)
+        finally:
+            _LOCK_UNRESERVE_FCP.release()
+
     def get_available_fcp(self, assigner_id, reserve, fcp_template_id):
         """ Return a group of available FCPs, one FCP per path
             For example,
@@ -1249,6 +1371,93 @@ class FCPVolumeManager(object):
             'fcp_template_id': fcp_template_id # if user doesn't specify it, it is the host default fcp template id
         }
         """
+        # TODO validate fcp_template_id
+        fcp_tmpl_id = fcp_template_id if fcp_template_id else self.db.get_default_fcp_template()
+        empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
+                           'phy_to_virt_initiators': {}, 'fcp_paths': 0, 'fcp_template_id': fcp_tmpl_id}
+
+        # get lpar name of the userid, if no host name got, raise exception
+        zvm_host = zvmutils.get_lpar_name()
+        if zvm_host == '':
+            errmsg = "failed to get z/VM LPAR name."
+            LOG.error(errmsg)
+            raise exception.SDKVolumeOperationError(rs=11,
+                                                    userid=assigner_id,
+                                                    msg=errmsg)
+        if reserve:
+            fcp_list = self.fcp_mgr.reserve_fcp_by_assigner_and_fcp_template(assigner_id, fcp_tmpl_id)
+        else:
+            fcp_list = self.fcp_mgr.unreserve_fcp_by_assigner_and_fcp_template(assigner_id, fcp_template_id)
+        if not fcp_list:
+            errmsg = ("No available FCP device found for %s and FCP template %s." % (assigner_id, fcp_template_id))
+            LOG.error(errmsg)
+            return empty_connector
+
+        # get wwpns of fcp devices
+        wwpns = []
+        phy_virt_wwpn_map = {}
+        for fcp in fcp_list:
+            wwpn_npiv = fcp[1]
+            wwpn_phy = fcp[2]
+            if not wwpn_npiv:
+                # wwpn_npiv not found in FCP DB
+                errmsg = ("NPIV WWPN of FCP device %s not found in "
+                          "database." % fcp[0])
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            else:
+                wwpns.append(wwpn_npiv)
+            # We use initiator to build up zones on fabric, for NPIV, the
+            # virtual ports are not yet logged in when we creating zones.
+            # so we will generate the physical virtual initiator mapping
+            # to determine the proper zoning on the fabric.
+            # Refer to #7039 for details about avoid creating zones on
+            # the fabric to which there is no fcp connected.
+            if not wwpn_phy:
+                errmsg = ("Physical WWPN of FCP device %s not found in "
+                          "database." % fcp[0])
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            else:
+                phy_virt_wwpn_map[wwpn_npiv] = wwpn_phy
+
+        # return the total path count
+        fcp_paths = set(fcp[3] for fcp in fcp_list)
+        fcp_ids = [fcp[0] for fcp in fcp_list]
+        # return the LPARname+VMuserid as host
+        ret_host = zvm_host + '_' + assigner_id
+        connector = {'zvm_fcp': fcp_ids,
+                     'wwpns': wwpns,
+                     'phy_to_virt_initiators': phy_virt_wwpn_map,
+                     'host': ret_host,
+                     'fcp_paths': len(fcp_paths),
+                     'fcp_template_id': fcp_tmpl_id}
+        LOG.info('get_volume_connector returns %s for assigner %s and fcp template %s' %
+                 (connector, assigner_id, fcp_tmpl_id))
+        return connector
+
+    def get_volume_connector_bak(self, assigner_id, reserve, fcp_template_id=None):
+        """Get connector information of the instance for attaching to volumes.
+
+        Connector information is a dictionary representing the Fibre
+        Channel(FC) port(s) that will be making the connection.
+        The properties of FC port(s) are as follows::
+        {
+            'zvm_fcp': [fcp1, fcp2]
+            'wwpns': [npiv_wwpn1, npiv_wwpn2]
+            'phy_to_virt_initiators':{
+                npiv_wwpn1: phy_wwpn1,
+                npiv_wwpn2: phy_wwpn2,
+            }
+            'host': LPARname_VMuserid,
+            'fcp_paths': 2,            # the count of fcp paths
+            'fcp_template_id': fcp_template_id # if user doesn't specify it, it is the host default fcp template id
+        }
+        """
         fcp_tmpl_id = fcp_template_id if fcp_template_id else self.db.get_default_fcp_template()
         empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
                            'phy_to_virt_initiators': {}, 'fcp_paths': 0, 'fcp_template_id': fcp_tmpl_id}
@@ -1258,7 +1467,6 @@ class FCPVolumeManager(object):
             raise exception.SDKVolumeOperationError(rs=11,
                                                     userid=assigner_id,
                                                     msg=errmsg)
-        # if reserve is False which means to release FCP devices, fcp_template_id must be specified. Or else, raise err.
         if fcp_template_id is None and reserve is False:
             errmsg = "fcp_template_id is not specified while releasing FCP devices."
             LOG.error(errmsg)
