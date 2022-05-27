@@ -778,7 +778,7 @@ class FCPDbOperator(object):
              ...           ]
             '''
             result = conn.execute("SELECT fcp.fcp_id, fcp.connections, "
-                                  "fcp.reserved, fcp.state, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path"
+                                  "fcp.reserved, fcp.state, fcp.wwpn_npiv, fcp.wwpn_phy, template_fcp_mapping.path "
                                   "FROM fcp "
                                   "INNER JOIN template_fcp_mapping "
                                   "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
@@ -796,13 +796,7 @@ class FCPDbOperator(object):
         '''
         # The FCP count of 1st path
         for i in range(count_per_path[0]):
-            fcp_no = fcps[i][0]
-            connections = fcps[i][1]
-            reserved = fcps[i][2]
-            state = fcps[i][3]
-            wwpn_npiv = fcps[i][4]
-            wwpn_phy = fcps[i][5]
-            fcp_path = fcps[i][6]
+            (fcp_no, connections, reserved, state, wwpn_npiv, wwpn_phy, fcp_path) = fcps[i]
             if connections == reserved == 0 and state == 'free':
                 fcp_pair_map[i] = [(fcp_no, wwpn_npiv, wwpn_phy, fcp_path)]
         '''
@@ -818,13 +812,7 @@ class FCPDbOperator(object):
             for i, c in enumerate(count_per_path[:-1]):
                 s += c
                 # avoid index out of range for per path in fcps[]
-                fcp_no = fcps[s + idx][0]
-                connections = fcps[s + idx][1]
-                reserved = fcps[s + idx][2]
-                state = fcps[s + idx][3]
-                wwpn_npiv = fcps[s + idx][4]
-                wwpn_phy = fcps[s + idx][5]
-                fcp_path = fcps[s + idx][6]
+                (fcp_no, connections, reserved, state, wwpn_npiv, wwpn_phy, fcp_path) = fcps[s + idx]
                 if (idx < count_per_path[i + 1] and
                         connections == reserved == 0 and
                         state == 'free'):
@@ -868,7 +856,7 @@ class FCPDbOperator(object):
                                       "AND fcp.reserved=0 "
                                       "AND fcp.state='free' "
                                       "AND template_fcp_mapping.path=? "
-                                      "ORDER BY template_fcp_mapping.fcp_id", (fcp_template_id, no[0]))
+                                      "ORDER BY template_fcp_mapping.path", (fcp_template_id, no[0]))
                 fcps = result.fetchall()
                 if not fcps:
                     # continue to find whether other paths has available FCP

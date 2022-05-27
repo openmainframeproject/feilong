@@ -1384,6 +1384,13 @@ class FCPVolumeManager(object):
             raise exception.SDKVolumeOperationError(rs=11,
                                                     userid=assigner_id,
                                                     msg=errmsg)
+        """
+            Reserve or unreserve FCP device according to assigner id and FCP template id.
+            The data structure of fcp_list is:  [(fcp_id, wwpn_npiv, wwpn_phy, path)].
+            An example of fcp_list:
+                [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
+                ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 1)]
+        """
         if reserve:
             fcp_list = self.fcp_mgr.reserve_fcp_by_assigner_and_fcp_template(assigner_id, fcp_tmpl_id)
         else:
@@ -1397,8 +1404,7 @@ class FCPVolumeManager(object):
         wwpns = []
         phy_virt_wwpn_map = {}
         for fcp in fcp_list:
-            wwpn_npiv = fcp[1]
-            wwpn_phy = fcp[2]
+            (fcp_id, wwpn_npiv, wwpn_phy, path) = fcp
             if not wwpn_npiv:
                 # wwpn_npiv not found in FCP DB
                 errmsg = ("NPIV WWPN of FCP device %s not found in "
