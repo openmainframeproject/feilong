@@ -302,8 +302,8 @@ class FCPDbOperator(object):
             'CREATE TABLE IF NOT EXISTS fcp('
             'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,'
             'assigner_id    varchar(8) COLLATE NOCASE,'
-            'connections    integer,'
-            'reserved       integer,'
+            'connections    integer DEFAULT 0,'
+            'reserved       integer DEFAULT 0,'
             'wwpn_npiv      varchar(16) COLLATE NOCASE,'
             'wwpn_phy       varchar(16) COLLATE NOCASE,'
             'chpid          char(2),'
@@ -395,8 +395,8 @@ class FCPDbOperator(object):
         """
         with get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp (fcp_id, wwpn_npiv, wwpn_phy, "
-                             "chpid, state, owner) VALUES "
-                             "(?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "chpid, state, owner) "
+                             "VALUES (?, ?, ?, ?, ?, ?)", fcp_info_list)
 
     def bulk_delete_from_fcp_table(self, fcp_id_list: list):
         """Delete multiple FCP records from fcp table
@@ -889,7 +889,7 @@ class FCPDbOperator(object):
         """Get the FCP devices set index by path.
         If no FCP devices found under this template,
         will return a empty dict {}.
-        
+
         The return value example:
         {
             0: {'1a00', '1a01', '1a02'},
