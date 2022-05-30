@@ -911,9 +911,9 @@ class FCPManager(object):
             # so change the npiv value in fcp object to the value existed in
             # DB, then when update fcp table, the wwpn_npiv column will not be
             # overwritten
-            if wwpn_npiv_zvm != wwpn_npiv_db and\
-                0 != connections and 0 != reserved:
-                    fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
+            if (wwpn_npiv_zvm != wwpn_npiv_db and
+                0 != connections and 0 != reserved):
+                fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
             # Check chpid changed or not
             chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
             # Check state changed or not
