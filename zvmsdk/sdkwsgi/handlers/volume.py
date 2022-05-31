@@ -165,7 +165,7 @@ def get_volume_connector(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     body = util.extract_json(req.body)
     reserve = body['info']['reserve']
-    fcp_template_id = body['info']['fcp_template_id'] if 'fcp_template_id' in body['info'] else None
+    fcp_template_id = body['info'].get('fcp_template_id', None)
     conn = _get_volume_conn(req, userid, reserve, fcp_template_id)
     conn_json = json.dumps(conn)
 
