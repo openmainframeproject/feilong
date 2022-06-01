@@ -15,6 +15,7 @@
 
 import netaddr
 import six
+import ast
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -1656,6 +1657,14 @@ class SDKAPI(object):
             ]
         }
         """
+        # pass in template_id_list and default_sp_list is string:
+        # "['36439338-db14-11ec-bb41-0201018b1dd2']"
+        # convert to list
+        if template_id_list and not isinstance(template_id_list, list):
+            template_id_list = ast.literal_eval(template_id_list)
+        if default_sp_list and not isinstance(default_sp_list, list):
+            default_sp_list = ast.literal_eval(default_sp_list)
+
         return self._volumeop.get_fcp_templates(
             template_id_list=template_id_list, assigner_id=assigner_id,
             default_sp_list=default_sp_list, host_default=host_default)
@@ -1765,6 +1774,12 @@ class SDKAPI(object):
             ]
         }
         """
+        # pass in template_id_list is string:
+        # "['36439338-db14-11ec-bb41-0201018b1dd2']"
+        # convert to list
+        if template_id_list and not isinstance(template_id_list, list):
+            template_id_list = ast.literal_eval(template_id_list)
+
         return self._volumeop.get_fcp_templates_details(
             template_id_list=template_id_list, raw=raw, statistics=statistics,
             sync_with_zvm=sync_with_zvm)

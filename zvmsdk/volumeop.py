@@ -21,7 +21,6 @@ import six
 import threading
 import os
 import string
-import ast
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -1325,14 +1324,9 @@ class FCPManager(object):
             raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
     
         elif template_id_list:
-            # after 
-            if template_id_list and not isinstance(template_id_list, list):
-                    template_id_list = ast.literal_eval(template_id_list)
             raw = self.db.get_fcp_templates(template_id_list)
 
         elif default_sp_list:
-            if not isinstance(default_sp_list, list):
-                default_sp_list = ast.literal_eval(default_sp_list)
             raw = self.db.get_sp_default_fcp_template(default_sp_list)
         
         elif host_default:
@@ -1500,8 +1494,7 @@ class FCPManager(object):
         # devices_cmd result format:
         # [(fcp_id|tmpl_id|path|assigner_id|connections|reserved|
         # wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)]
-        if template_id_list and not isinstance(template_id_list, list):
-            template_id_list = ast.literal_eval(template_id_list)
+
         tmpl_result, devices_result = self.db.get_fcp_templates_details(
             template_id_list)
 
