@@ -68,6 +68,23 @@ class VolumeAction(object):
                                         statistics=statistics,
                                         sync_with_zvm=sync_with_zvm)
 
+    @validation.query_schema(volume.get_fcp_templates)
+    def get_fcp_templates(self, req, template_id_list, assigner_id, 
+                          default_sp_list, host_default):
+        return self.client.send_request('get_fcp_templates',
+                                        template_id_list,
+                                        assigner_id,
+                                        default_sp_list,
+                                        host_default)
+
+    @validation.query_schema(volume.get_fcp_templates_details)
+    def get_fcp_templates_details(self, req, template_id_list, raw, statistics, sync_with_zvm):
+        return self.client.send_request('get_fcp_templates_details', 
+                                        template_id_list,
+                                        raw=raw,
+                                        statistics=statistics,
+                                        sync_with_zvm=sync_with_zvm)
+
     @validation.query_schema(volume.get_fcp_usage)
     def get_fcp_usage(self, req, fcp):
         return self.client.send_request('get_fcp_usage', fcp)
@@ -276,4 +293,65 @@ def create_fcp_template(req):
     req.response.body = utils.to_utf8(ret_json)
     req.response.status = util.get_http_code_from_sdk_return(ret)
     req.response.content_type = 'application/json'
+
+def get_fcp_templates(req):
+    def _get_fcp_templates(req, template_id_list, assigner_id,
+                           default_sp_list, host_default):
+        action = get_action()
+        return action.get_fcp_templates(req, template_id_list, assigner_id,
+                                        default_sp_list, host_default)
+
+    template_id_list = req.GET.get('template_id_list', None)
+    assigner_id = req.GET.get('assigner_id', None)
+    default_sp_list = req.GET.get('default_sp_list', None)
+    host_default = req.GET.get('host_default', False)
+
+    ret = _get_fcp_templates(req, template_id_list, assigner_id,
+                             default_sp_list, host_default)
+
+
+    ret_json = json.dumps(ret)
+    req.response.status = util.get_http_code_from_sdk_return(ret,
+                    additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
+    req.response.body = utils.to_utf8(ret_json)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_fcp_templates_details(req):
+    def _get_fcp_templates_details(req, template_id_list, raw, statistics,
+                                   sync_with_zvm):
+        action = get_action()
+        return action.get_fcp_templates_details(req, template_id_list, raw,
+                                                statistics, sync_with_zvm)
+
+    template_id_list = req.GET.get('template_id_list', None)
+
+    raw = req.GET.get('raw', 'false')
+    if raw.lower() == 'true':
+        raw = True
+    else:
+        raw = False
+
+    statistics = req.GET.get('statistics', 'true')
+    if statistics.lower() == 'true':
+        statistics = True
+    else:
+        statistics = False
+
+    sync_with_zvm = req.GET.get('sync_with_zvm', 'false')
+    if sync_with_zvm.lower() == 'true':
+        sync_with_zvm = True
+    else:
+        sync_with_zvm = False
+    ret = _get_fcp_templates_details(req, template_id_list, raw, statistics,
+                                     sync_with_zvm)
+
+    ret_json = json.dumps(ret)
+    req.response.status = util.get_http_code_from_sdk_return(ret,
+                    additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
+    req.response.body = utils.to_utf8(ret_json)
     return req.response

@@ -343,6 +343,14 @@ userid_list_array = {
     'type': 'array'
 }
 
+fcp_template_id_list = {
+    'items': {
+        'type': 'string',
+        'minLength': 1,
+    },
+    'type': 'array'
+}
+
 file_type = {
     'type': 'string',
     'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'swap', 'none']
