@@ -1320,11 +1320,11 @@ class FCPManager(object):
         raw = []
         ret = []
 
-        if assigner_id:
-            raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
-    
-        elif template_id_list:
+        if template_id_list:
             raw = self.db.get_fcp_templates(template_id_list)
+        
+        elif assigner_id:
+            raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
 
         elif default_sp_list:
             raw = self.db.get_sp_default_fcp_template(default_sp_list)
