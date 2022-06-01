@@ -62,8 +62,6 @@ ROUTE_LIST = (
     }),
     ('/volumes/fcptemplates', {
         'POST': volume.create_fcp_template,
-    }),
-     ('/volumes/fcptemplates', {
         'GET': volume.get_fcp_templates,
     }),
      ('/volumes/fcp_templates_details', {
