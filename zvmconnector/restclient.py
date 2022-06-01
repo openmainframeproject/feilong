@@ -473,10 +473,10 @@ def req_get_fcp_templates(start_index, *args, **kwargs):
         url += "?template_id_list=%s" % template_id_list
     elif assigner_id:
         url += "?assigner_id=%s" % assigner_id
-    elif host_default:
-        url += "?host_default=%s" % host_default
     elif default_sp_list:
         url += "?default_sp_list=%s" % default_sp_list
+    elif host_default:
+        url += "?host_default=%s" % host_default
     body = None
     return url, body
 
