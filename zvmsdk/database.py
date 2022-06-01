@@ -981,6 +981,173 @@ class FCPDbOperator(object):
                                      "tmpl_id=? WHERE sp_name=?",
                                      sp_mapping_to_update)
 
+    def get_fcp_templates(self, template_id_list=None):
+        """Get fcp templates base info by template_id_list.
+        If template_id_list is None, will get all the fcp templates in db.
+
+        return format:
+        [(id|name|description|is_default|sp_name)]
+        """
+        cmd = ("SELECT template.id, template.name, template.description, "
+               "template.is_default, template_sp_mapping.sp_name "
+               "FROM template "
+               "LEFT OUTER JOIN template_sp_mapping "
+               "ON template.id=template_sp_mapping.tmpl_id")
+
+        with get_fcp_conn() as conn:
+            if template_id_list:
+                result = conn.execute(
+                    cmd + " WHERE template.id "
+                    "IN (%s)" %
+                    ','.join('?'*len(template_id_list)), template_id_list)
+            else:
+                result = conn.execute(cmd)
+            
+            raw = result.fetchall()
+            if not raw:
+                msg = ('FCP Templates %s does not exist '
+                       'in DB.' % template_id_list)
+                LOG.error(msg)
+                obj_desc = "FCP templates: %s" % template_id_list
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                    modID=self._module_id)
+        return raw
+
+    def get_host_default_fcp_template(self):
+        """Get the host default fcp template base info.
+        return format: (id|name|description|is_default|sp_name)
+
+        when the  template is more than one SP's default,
+        then it will show up several times in the result.
+        """
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                "SELECT t.id, t.name, t.description, t.is_default, "
+                "ts.sp_name "
+                "FROM template AS t "
+                "LEFT OUTER JOIN template_sp_mapping AS ts "
+                "ON t.id=ts.tmpl_id "
+                "WHERE t.is_default=1")
+            raw = result.fetchall()
+            if not raw:
+                obj_desc = "Default FCP template of the host"
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+        return raw
+
+    def get_sp_default_fcp_template(self, sp_host_list):
+        """Get the sp_host_list default fcp template.
+        """
+        cmd = ("SELECT t.id, t.name, t.description, t.is_default, "
+              "ts.sp_name "
+              "FROM template_sp_mapping AS ts "
+              "INNER JOIN template AS t "
+              "ON ts.tmpl_id=t.id")
+        raw = []
+        with get_fcp_conn() as conn:
+            if len(sp_host_list)==1 and sp_host_list[0].lower() == 'all':
+                result = conn.execute(cmd)
+                raw = result.fetchall()
+            else:
+                for sp_host in sp_host_list:
+                    result = conn.execute(cmd +
+                        " WHERE ts.sp_name=?", (sp_host,))
+                    raw.extend(result.fetchall())
+            # raw format: id|name|description|is_default|sp_name
+            if not result:
+                obj_desc = "Default FCP template of %s" % sp_host_list
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+        return raw
+
+    def get_fcp_template_by_assigner_id(self, assigner_id):
+        """Get a templates list of specified assigner.
+        """
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                "SELECT t.id, t.name, t.description, t.is_default, "
+                "ts.sp_name "
+                "FROM fcp "
+                "INNER JOIN template AS t "
+                "ON fcp.tmpl_id=t.id "
+                "LEFT OUTER JOIN template_sp_mapping AS ts "
+                "ON fcp.tmpl_id=ts.tmpl_id "
+                "WHERE fcp.assigner_id=?", (assigner_id,))
+            raw = result.fetchall()
+            # id|name|description|is_default|sp_name
+            if not result:
+                obj_desc = "FCP templates belongs to userid: %s" % assigner_id
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+        return raw
+
+    def get_fcp_templates_details(self, template_id_list=None):
+        """Get templates detail info by template_id_list
+        If template_id_list=None, will get all the templates detail info.
+
+        Detail info including two parts: base info and fcp device info, these
+        two parts info will use two cmds to get from db and return out, outer
+        method will join these two return oupput.
+
+        'tmpl_cmd' is used to get base info from template table and
+        template_sp_mapping table.
+
+        tmpl_cmd result format:
+        id|name|description|is_default|sp_name
+
+        'devices_cmd' is used to get fcp device info. Device's template id is
+        gotten from template_fcp_mapping table, device's usage info is gotten
+        from fcp table. Because not all the templates' fcp device is in fcp
+        table, so the fcp device's template id should being gotten from
+        template_fcp_mapping table insteading of fcp table.
+
+        'devices_cmd' result format:
+        fcp_id|tmpl_id|path|assigner_id|connections|reserved|
+        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id
+
+        In 'devices_cmd' result: the first three properties are from
+        template_fcp_mapping table, and the others are from fcp table.
+        when the device is not in fcp table, all the properties in fcp
+        table will be None. For example: template '12345678' has a fcp
+        "1aaa" on path 0, but this device is not in fcp table, the
+        query result will be as below.
+
+        1aaa|12345678|0|||||||||
+        
+        """
+        tmpl_cmd = (
+            "SELECT t.id, t.name, t.description, t.is_default, ts.sp_name "
+            "FROM template AS t "
+            "LEFT OUTER JOIN template_sp_mapping AS ts "
+            "ON t.id=ts.tmpl_id")
+
+        devices_cmd = (
+            "SELECT tf.fcp_id, tf.tmpl_id, tf.path, fcp.assigner_id, "
+            "fcp.connections, fcp.reserved, fcp.wwpn_npiv, fcp.wwpn_phy, "
+            "fcp.chpid, fcp.state, fcp.owner, fcp.tmpl_id "
+            "FROM template_fcp_mapping AS tf "
+            "LEFT OUTER JOIN fcp "
+            "ON tf.fcp_id=fcp.fcp_id")
+
+        with get_fcp_conn() as conn:
+            if template_id_list:
+                tmpl_result = conn.execute(
+                    tmpl_cmd + " WHERE t.id IN (%s)" %
+                    ','.join('?'*len(template_id_list)), template_id_list)
+
+                devices_result = conn.execute(
+                    devices_cmd + " WHERE tf.tmpl_id "
+                    "IN (%s)" %
+                    ','.join('?'*len(template_id_list)), template_id_list)
+            else:
+                tmpl_result = conn.execute(tmpl_cmd)
+                devices_result = conn.execute(devices_cmd)
+
+            tmpl_result = tmpl_result.fetchall()
+            devices_result = devices_result.fetchall()
+
+        return (tmpl_result, devices_result)
+
 
 class ImageDbOperator(object):
 

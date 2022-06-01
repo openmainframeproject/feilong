@@ -1625,6 +1625,150 @@ class SDKAPI(object):
                                                 statistics=statistics,
                                                 sync_with_zvm=sync_with_zvm)
 
+    def get_fcp_templates(self, template_id_list=None, assigner_id=None,
+                         default_sp_list= None, host_default=False):
+        """Get template base info
+        :param template_id_list: (list) a list of template id,
+        if it is None, get fcp templates with other parameter
+        :param assigner_id: (str) a string of VM userid
+        :param host_default: (boolean) whether or not get host default fcp
+        template
+        :param default_sp_list: (list) a list of storage provider, to get the
+        list of storage provider's default fcp templates
+        :return: (dict) the base info of template
+        example:
+        {
+            templates: [
+                {
+                    name: t1,
+                    id: template1_id,
+                    description: description,
+                    host_default: 0,
+                    sp_default: [sp1]
+                },
+                {
+                    name: t2,
+                    id: template2_id,
+                    description: description,
+                    host_default: 1,
+                    sp_default: [sp1, sp2]
+                }
+            ]
+        }
+        """
+        return self._volumeop.get_fcp_templates(
+            template_id_list=template_id_list, assigner_id=assigner_id,
+            default_sp_list=default_sp_list, host_default=host_default)
+
+    def get_fcp_templates_details(self, template_id_list=None, raw=False,
+                                  statistics=True, sync_with_zvm=False):
+        """Get fcp templates detail info.
+        :param template_list: (list) if is None, will get all the templates on the host
+        :return: (dict) the raw and/or statistic data of temlate_list FCP devices
+        if sync_with_zvm:
+            self.fcp_mgr._sync_db_with_zvm()
+        if FCP DB is NOT empty and raw=True statistics=True
+        {
+            "fcp_templates":[
+                {
+                    "id":"36439338-db14-11ec-bb41-0201018b1dd2",
+                    "name":"default_template",
+                    "description":"This is Default template",
+                    "is_default":1,
+                    "sp_name":[
+                        "sp4",
+                        "v7k60"
+                    ],
+                    "raw":{
+                        # (fcp_id, template_id, assigner_id, connections,
+                        #  reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
+                        #  tmpl_id)
+                        "0":[
+                            [
+                                "1a0f",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "HLP0000B",
+                                0,
+                                0,
+                                "c05076de3300038b",
+                                "c05076de33002e41",
+                                "27",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ],
+                            [
+                                "1a0e",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "",
+                                0,
+                                0,
+                                "c05076de330003a2",
+                                "c05076de33002e41",
+                                "27",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ]
+                        ],
+                        "1":[
+                            [
+                                "1c0d",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "",
+                                0,
+                                0,
+                                "c05076de33000353",
+                                "c05076de33002641",
+                                "32",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ]
+                        ]
+                    },
+                    "statistics":{
+                        "0":{
+                            "total":"1A0E - 1A0F",
+                            "available":"1A0E - 1A0F",
+                            "allocated":"",
+                            "reserve_only":"",
+                            "connection_only":"",
+                            "unallocated_but_active":[
+
+                            ],
+                            "allocated_but_free":"",
+                            "notfound":"",
+                            "offline":"",
+                            "CHPIDs":{
+                                "27":"1A0E - 1A0F"
+                            }
+                        },
+                        "1":{
+                            "total":"1C0D",
+                            "available":"1C0D",
+                            "allocated":"",
+                            "reserve_only":"",
+                            "connection_only":"",
+                            "unallocated_but_active":[
+
+                            ],
+                            "allocated_but_free":"",
+                            "notfound":"",
+                            "offline":"",
+                            "CHPIDs":{
+                                "32":"1C0D"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        """
+        return self._volumeop.get_fcp_templates_details(
+            template_id_list=template_id_list, raw=raw, statistics=statistics,
+            sync_with_zvm=sync_with_zvm)
+        
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
         """API for getting FCP usage in database manually.
