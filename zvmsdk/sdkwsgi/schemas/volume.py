@@ -72,6 +72,32 @@ get_all_fcp_usage = {
 }
 
 
+get_fcp_templates = {
+    'type': 'object',
+    'properties': {
+        'template_id_list': parameter_types.fcp_template_id_list,
+        'assigner_id': parameter_types.single_param(parameter_types.userid),
+        'host_default': parameter_types.single_param(parameter_types.boolean),
+        'default_sp_list': {
+            'type': 'array'
+        }
+    },
+    'additionalProperties': False,
+}
+
+
+get_fcp_templates_details = {
+    'type': 'object',
+    'properties': {
+        'template_id_list': parameter_types.fcp_template_id_list,
+        'raw': parameter_types.single_param(parameter_types.boolean),
+        'statistics': parameter_types.single_param(parameter_types.boolean),
+        'sync_with_zvm': parameter_types.single_param(parameter_types.boolean),
+    },
+    'additionalProperties': False,
+}
+
+
 set_fcp_usage = {
     'type': 'object',
     'properties': {
