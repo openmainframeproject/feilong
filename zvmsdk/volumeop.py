@@ -16,6 +16,7 @@
 import abc
 import re
 import shutil
+import uuid
 import six
 import threading
 import os
@@ -114,6 +115,12 @@ class VolumeOperatorAPI(object):
     def set_fcp_usage(self, assigner_id, fcp, reserved, connections):
         return self._volume_manager.set_fcp_usage(fcp, assigner_id,
                                                   reserved, connections)
+
+    def create_fcp_template(self, name, description, fcp_devices,
+                            default_of_host: bool = False,
+                            default_of_sps: list = None):
+        return self._volume_manager.fcp_mgr.create_fcp_template(
+            name, description, fcp_devices, default_of_host, default_of_sps)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -955,6 +962,24 @@ class FCPManager(object):
         # Update the dict of all FCPs into FCP table in database
         self.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+
+    def create_fcp_template(self, name, description, fcp_devices,
+                            default_of_host: bool = False,
+                            default_of_sps: list = None):
+        LOG.info("Try to create a FCP template with name:%s,"
+                 "description:%s and fcp devices: %s." % (name, description,
+                                                          fcp_devices))
+        # Generate a template id for this new template
+        tmpl_id = str(uuid.uuid1())
+        # Get fcp devices info index by path
+        fcp_devices_by_path = self._expand_fcp_list(fcp_devices)
+        # Insert related records in FCP database
+        self.db.create_fcp_template(tmpl_id, name, description,
+                                    fcp_devices_by_path, default_of_host,
+                                    default_of_sps)
+        # TODO(Cao Biao): return more details about this template
+        return {'template_id': tmpl_id}
+        LOG.info("A FCP template was created with ID %s." % tmpl_id)
 
 
 # volume manager for FCP protocol

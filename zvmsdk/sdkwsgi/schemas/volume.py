@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from zvmsdk.sdkwsgi.validation import parameter_types
 
 
@@ -114,4 +113,24 @@ get_volume_connector = {
     },
     'additionalProperties': False,
 
+}
+
+
+create_fcp_template = {
+    'type': 'object',
+    'properties': {
+        'name': parameter_types.name,
+        'description': {
+            'type': 'string'
+        },
+        'fcp_devices': {
+            'type': 'string'
+        },
+        'default_of_host': parameter_types.boolean,
+        'default_of_sps': {
+            'type': 'array'
+        }
+    },
+    'required': ['name', 'description', 'fcp_devices'],
+    'additionalProperties': False,
 }
