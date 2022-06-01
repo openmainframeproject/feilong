@@ -88,6 +88,20 @@ class VolumeAction(object):
                                         transportfiles, guest_networks)
         return info
 
+    @validation.schema(volume.create_fcp_template)
+    def create_fcp_template(self, body=None):
+        name = body.get('name')
+        description = body.get('description')
+        fcp_devices = body.get('fcp_devices', None)
+        default_of_host = body.get('default_of_host', False)
+        default_of_sps = body.get('default_of_sps', None)
+
+        ret = self.client.send_request('create_fcp_template', name,
+                                       description, fcp_devices,
+                                       default_of_host=default_of_host,
+                                       default_of_sps=default_of_sps)
+        return ret
+
 
 def get_action():
     global _VOLUMEACTION
@@ -246,4 +260,20 @@ def get_all_fcp_usage(req):
                     additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
     req.response.body = utils.to_utf8(ret_json)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def create_fcp_template(req):
+    def _create_fcp_template(req):
+        action = get_action()
+        body = util.extract_json(req.body)
+        return action.create_fcp_template(body=body)
+
+    ret = _create_fcp_template(req)
+    ret_json = json.dumps(ret)
+    req.response.body = utils.to_utf8(ret_json)
+    req.response.status = util.get_http_code_from_sdk_return(ret)
+    req.response.content_type = 'application/json'
     return req.response

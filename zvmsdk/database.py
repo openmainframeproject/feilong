@@ -914,6 +914,73 @@ class FCPDbOperator(object):
                     fcp_list[path].add(fcp_id)
         return fcp_list
 
+    def fcp_template_exist_in_db(self, tmpl_id: str):
+        with get_fcp_conn() as conn:
+            query_sql = conn.execute("SELECT id from template "
+                                     "where id=?", (tmpl_id,))
+            query_ids = query_sql.fetchall()
+        if query_ids:
+            return True
+        else:
+            return False
+
+    def sp_name_exist_in_db(self, sp_name: str):
+        with get_fcp_conn() as conn:
+            query_sp = conn.execute("SELECT sp_name from template_sp_mapping "
+                                    "where sp_name=?", (sp_name,))
+            query_sp_names = query_sp.fetchall()
+
+        if query_sp_names:
+            return True
+        else:
+            return False
+
+    def create_fcp_template(self, tmpl_id, name, description,
+                            fcp_devices_by_path, default_of_host,
+                            default_of_sps):
+        # first check the template exist or not
+        # if already exist, raise exception
+        if self.fcp_template_exist_in_db(tmpl_id):
+            raise exception.SDKObjectAlreadyExistError(
+                    obj_desc=("FCP template '%s' already exist" % tmpl_id),
+                    modID='volume')
+        # then check the SP records exist in template_sp_mapping or not
+        # if already exist, will update the tmpl_id
+        # if not exist, will insert new records
+        sp_mapping_to_add = list()
+        sp_mapping_to_update = list()
+        for sp_name in default_of_sps:
+            record = (tmpl_id, sp_name)
+            if self.sp_name_exist_in_db(sp_name):
+                sp_mapping_to_update.append(record)
+            else:
+                sp_mapping_to_add.append(record)
+        # Prepare records include (fcp_id, tmpl_id, path)
+        # to be inserted into table template_fcp_mapping
+        fcp_mapping = list()
+        for path in fcp_devices_by_path:
+            for fcp_id in fcp_devices_by_path[path]:
+                new_record = [fcp_id, tmpl_id, path]
+                fcp_mapping.append(new_record)
+        with get_fcp_conn() as conn:
+            # 1. insert a new record in template table
+            tmpl_basics = (tmpl_id, name, description, default_of_host)
+            conn.execute("INSERT INTO template (id, name, description, "
+                         "is_default) VALUES (?, ?, ?, ?)", tmpl_basics)
+            # 2. insert new records in template_fcp_mapping
+            conn.executemany("INSERT INTO template_fcp_mapping (fcp_id, "
+                             "tmpl_id, path) VALUES (?, ?, ?)", fcp_mapping)
+            # 3. insert a new record in template_sp_mapping
+            if default_of_sps:
+                if sp_mapping_to_add:
+                    conn.executemany("INSERT INTO template_sp_mapping "
+                                     "(sp_name, tmpl_id) VALUES "
+                                     "(?, ?)", sp_mapping_to_add)
+                if sp_mapping_to_update:
+                    conn.executemany("UPDATE template_sp_mapping SET "
+                                     "tmpl_id=? WHERE sp_name=?",
+                                     sp_mapping_to_update)
+
 
 class ImageDbOperator(object):
 

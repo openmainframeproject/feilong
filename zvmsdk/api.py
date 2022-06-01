@@ -69,7 +69,7 @@ def check_guest_exist(check_index=0):
 def check_fcp_exist(check_index=0):
     """Check FCP exist in database.
 
-    :param check_index: The parameter index of fcp, default as 1
+    :param check_index: The parameter index of fcp, default as 0
 
     """
 
@@ -1650,6 +1650,25 @@ class SDKAPI(object):
         """
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
                                             connections)
+
+    def create_fcp_template(self, name, description, fcp_devices,
+                            default_of_host: bool = False,
+                            default_of_sps: list = None):
+        """API for creating a FCP template in database.
+
+        :param str name: the name of the template
+        :param str description: the description for the template
+        :param str fcp_devices: a fcp list is composed of fcp device IDs,
+            range indicator '-', and split indicator ';'.
+        :param bool default_to_host: this template is default to this
+            host or not
+        :param list default_of_sps: the list of storage providers that will
+            use this FCP template as default FCP template. If None, it means
+            no storage provider would use this FCP template as default.
+        """
+        return self._volumeop.create_fcp_template(
+            name, description, fcp_devices,
+            default_of_host=default_of_host, default_of_sps=default_of_sps)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
