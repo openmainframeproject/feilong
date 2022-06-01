@@ -304,7 +304,7 @@ def get_fcp_templates(req):
     template_id_list = req.GET.get('template_id_list', None)
     assigner_id = req.GET.get('assigner_id', None)
     default_sp_list = req.GET.get('default_sp_list', None)
-    host_default = req.GET.get('host_default', None)
+    host_default = req.GET.get('host_default', False)
 
     ret = _get_fcp_templates(req, template_id_list, assigner_id,
                              default_sp_list, host_default)
