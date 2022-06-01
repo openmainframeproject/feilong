@@ -683,7 +683,7 @@ class FCPDbOperator(object):
     def get_from_fcp(self, fcp):
         with get_fcp_conn() as conn:
 
-            result = conn.execute("SELECT * FROM fcp where fcp_id=? ", (fcp,))
+            result = conn.execute("SELECT * FROM fcp WHERE fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
 
         return fcp_list

@@ -685,12 +685,10 @@ class FCPManager(object):
 
         return connections
 
-    def _valid_fcp_devcies(self, fcp_list, assigner_id):
+    def _valid_fcp_devcie_wwpn(self, fcp_list, assigner_id):
         """This method is to check if the FCP wwpn_npiv or wwpn_phy is NULL, if yes, raise error"""
         for fcp in fcp_list:
-            fcp_id = fcp[0]
-            wwpn_npiv = fcp[1]
-            wwpn_phy = fcp[2]
+            fcp_id, wwpn_npiv, wwpn_phy, *_ = fcp
             if not wwpn_npiv:
                 # wwpn_npiv not found in FCP DB
                 errmsg = ("NPIV WWPN of FCP device %s not found in "
@@ -784,7 +782,7 @@ class FCPManager(object):
                     LOG.warning("FCPs previously assigned to %s includes %s, "
                                 "it is not equal to the path count: %s." %
                                 (assigner_id, fcp_list, path_count))
-                self._valid_fcp_devcies(fcp_list, assigner_id)
+                self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
                 # we got it from db, let's reuse it
                 available_list = fcp_list
             return available_list
@@ -819,7 +817,7 @@ class FCPManager(object):
                                                         msg=errmsg)
             fcp_list = self.db.get_reserved_fcps_from_assigner(assigner_id, fcp_template_id)
             if fcp_list:
-                self._valid_fcp_devcies(fcp_list, assigner_id)
+                self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
                 # the data structure of fcp_list is (fcp_id, wwpn_npiv, wwpn_phy, connections), only unreserve the fcps
                 # with connections=0
                 fcp_ids = [fcp[0] for fcp in fcp_list if fcp[3] == 0]
