@@ -281,6 +281,9 @@ errors = {
                       "deleted out of z/VM Cloud Connector.")},
                  "The operated object does not exist"
                  ],
+    'alreadyExist': [{'overallRC': 409, 'modID': None, 'rc': 409},
+                 {1: "%(obj_desc)s already exist."}
+                 ],
 # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
                  {1: "Guest '%(userid)s' is not in active status.",

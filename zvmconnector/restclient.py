@@ -477,6 +477,15 @@ def req_set_fcp_usage(start_index, *args, **kwargs):
     return url, body
 
 
+def req_create_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    body = {'name': args[start_index],
+            'description': args[start_index + 1],
+            'fcp_devices': args[start_index + 2]}
+    fill_kwargs_in_body(body, **kwargs)
+    return url, body
+
+
 def req_host_get_info(start_index, *args, **kwargs):
     url = '/host'
     body = None
@@ -879,6 +888,11 @@ DATABASE = {
         'args_required': 4,
         'params_path': 1,
         'request': req_set_fcp_usage},
+    'create_fcp_template': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 0,
+        'request': req_create_fcp_template},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,

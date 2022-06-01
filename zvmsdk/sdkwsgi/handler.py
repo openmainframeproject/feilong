@@ -57,8 +57,11 @@ ROUTE_LIST = (
     ('/volumes/conn/{userid}', {
         'GET': volume.get_volume_connector,
     }),
-     ('/volumes/fcp', {
+    ('/volumes/fcp', {
         'GET': volume.get_all_fcp_usage,
+    }),
+    ('/volumes/fcptemplates', {
+        'POST': volume.create_fcp_template,
     }),
      ('/volumes/fcp/{fcp_id}', {
         'GET': volume.get_fcp_usage,
