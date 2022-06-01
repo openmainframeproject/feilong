@@ -462,6 +462,42 @@ def req_get_all_fcp_usage(start_index, *args, **kwargs):
     return url, body
 
 
+def req_get_fcp_templates(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    template_id_list = kwargs.get('template_id_list', None)
+    assigner_id = kwargs.get('assigner_id', None)
+    default_sp_list = kwargs.get('default_sp_list', None)
+    host_default = kwargs.get('host_default', False)
+
+    if template_id_list:
+        url += "?template_id_list=%s" % template_id_list
+    elif assigner_id:
+        url += "?assigner_id=%s" % assigner_id
+    elif host_default:
+        url += "?host_default=%s" % host_default
+    elif default_sp_list:
+        url += "?default_sp_list=%s" % default_sp_list
+    body = None
+    return url, body
+
+
+def req_get_fcp_templates_details(start_index, *args, **kwargs):
+    url = '/volumes/fcp_templates_details'
+    template_id_list = kwargs.get('template_id_list', None)
+    raw = kwargs.get('raw', False)
+    statistics = kwargs.get('statistics', True)
+    sync_with_zvm = kwargs.get('sync_with_zvm', False)
+    if template_id_list:
+        url += "?template_id_list=%s&" % template_id_list
+    else:
+        url += "?"
+    url += "raw=%s&" % raw
+    url += "statistics=%s&" % statistics
+    url += "sync_with_zvm=%s" % sync_with_zvm
+    body = None
+    return url, body
+
+
 def req_get_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp/%s'
     body = None
@@ -878,6 +914,17 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_get_all_fcp_usage},
+    'get_fcp_templates': {
+        'method': 'GET',
+        'args_required': 0,
+        'args_optional': 1,
+        'params_path': 0,
+        'request': req_get_fcp_templates},
+    'get_fcp_templates_details': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_get_fcp_templates_details},
     'get_fcp_usage': {
         'method': 'GET',
         'args_required': 1,
