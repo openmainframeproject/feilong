@@ -960,8 +960,8 @@ class FCPDbOperator(object):
 
     def fcp_template_exist_in_db(self, tmpl_id: str):
         with get_fcp_conn() as conn:
-            query_sql = conn.execute("SELECT id from template "
-                                     "where id=?", (tmpl_id,))
+            query_sql = conn.execute("SELECT id FROM template "
+                                     "WHERE id=?", (tmpl_id,))
             query_ids = query_sql.fetchall()
         if query_ids:
             return True
@@ -970,8 +970,8 @@ class FCPDbOperator(object):
 
     def sp_name_exist_in_db(self, sp_name: str):
         with get_fcp_conn() as conn:
-            query_sp = conn.execute("SELECT sp_name from template_sp_mapping "
-                                    "where sp_name=?", (sp_name,))
+            query_sp = conn.execute("SELECT sp_name FROM template_sp_mapping "
+                                    "WHERE sp_name=?", (sp_name,))
             query_sp_names = query_sp.fetchall()
 
         if query_sp_names:
@@ -980,8 +980,26 @@ class FCPDbOperator(object):
             return False
 
     def create_fcp_template(self, tmpl_id, name, description,
-                            fcp_devices_by_path, default_of_host,
-                            default_of_sps):
+                            fcp_devices_by_path, host_default,
+                            default_sp_list):
+        """ Insert records of new fcp template in fcp DB
+
+        :param tmpl_id: fcp template id
+        :param name: fcp template name
+        :param description: description
+        :param fcp_devices_by_path:
+            Example:
+            if fcp_list is "0011-0013;0015;0017-0018",
+            then fcp_devices_by_path should be passed like:
+            {
+              0: {'0011' ,'0012', '0013'}
+              1: {'0015'}
+              2: {'0017', '0018'}
+            }
+        :param host_default: (bool)
+        :param default_sp_list: (list)
+        :return: NULL
+        """
         # first check the template exist or not
         # if already exist, raise exception
         if self.fcp_template_exist_in_db(tmpl_id):
@@ -993,7 +1011,7 @@ class FCPDbOperator(object):
         # if not exist, will insert new records
         sp_mapping_to_add = list()
         sp_mapping_to_update = list()
-        for sp_name in default_of_sps:
+        for sp_name in default_sp_list:
             record = (tmpl_id, sp_name)
             if self.sp_name_exist_in_db(sp_name):
                 sp_mapping_to_update.append(record)
@@ -1008,14 +1026,14 @@ class FCPDbOperator(object):
                 fcp_mapping.append(new_record)
         with get_fcp_conn() as conn:
             # 1. insert a new record in template table
-            tmpl_basics = (tmpl_id, name, description, default_of_host)
+            tmpl_basics = (tmpl_id, name, description, host_default)
             conn.execute("INSERT INTO template (id, name, description, "
                          "is_default) VALUES (?, ?, ?, ?)", tmpl_basics)
             # 2. insert new records in template_fcp_mapping
             conn.executemany("INSERT INTO template_fcp_mapping (fcp_id, "
                              "tmpl_id, path) VALUES (?, ?, ?)", fcp_mapping)
             # 3. insert a new record in template_sp_mapping
-            if default_of_sps:
+            if default_sp_list:
                 if sp_mapping_to_add:
                     conn.executemany("INSERT INTO template_sp_mapping "
                                      "(sp_name, tmpl_id) VALUES "
