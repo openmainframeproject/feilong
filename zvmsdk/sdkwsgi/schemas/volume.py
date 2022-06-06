@@ -152,8 +152,8 @@ create_fcp_template = {
         'fcp_devices': {
             'type': 'string'
         },
-        'default_of_host': parameter_types.boolean,
-        'default_of_sps': {
+        'host_default': parameter_types.boolean,
+        'default_sp_list': {
             'type': 'array'
         }
     },

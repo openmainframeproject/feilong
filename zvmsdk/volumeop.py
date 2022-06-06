@@ -119,10 +119,10 @@ class VolumeOperatorAPI(object):
                                                   reserved, connections)
 
     def create_fcp_template(self, name, description, fcp_devices,
-                            default_of_host: bool = False,
-                            default_of_sps: list = None):
+                            host_default: bool = False,
+                            default_sp_list: list = None):
         return self._volume_manager.fcp_mgr.create_fcp_template(
-            name, description, fcp_devices, default_of_host, default_of_sps)
+            name, description, fcp_devices, host_default, default_sp_list)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                           default_sp_list=None, host_default=False):
@@ -742,6 +742,7 @@ class FCPManager(object):
                 ('1d10', 'c12345abcdefg2', 'c1234abcd33002641')]
         """
         try:
+            global _LOCK_RESERVE_FCP
             _LOCK_RESERVE_FCP.acquire()
             if fcp_template_id is None or len(fcp_template_id) == 0:
                 errmsg = "No FCP template is specified and no default FCP template is found."
@@ -989,13 +990,15 @@ class FCPManager(object):
             # Check WWPNs changed or not
             wwpn_phy_zvm = fcp_dict_in_zvm[fcp].get_physical_port()
             wwpn_npiv_zvm = fcp_dict_in_zvm[fcp].get_npiv_port()
-            # If the FCP device is in-use, we can not change its npiv WWPN
-            # because storage need them to delete the host mappings,
-            # so change the npiv value in fcp object to the value existed in
-            # DB, then when update fcp table, the wwpn_npiv column will not be
-            # overwritten
+            # For an in-used FCP device,
+            # if its npiv_wwpn_zvm is changed in zvm,
+            # we will not update the npiv_wwpn_db in FCP DB;
+            # because the npiv_wwpn_db is need when detaching volumes,
+            # so as to delete the host-mapping from storage provider backend.
+            # Hence, we use npiv_wwpn_db to override npiv_wwpn_zvm
+            # in fcp_dict_in_zvm[fcp]
             if (wwpn_npiv_zvm != wwpn_npiv_db and
-                0 != connections and 0 != reserved):
+                    (0 != connections or 0 != reserved)):
                 fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
             # Check chpid changed or not
             chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
@@ -1040,8 +1043,8 @@ class FCPManager(object):
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
 
     def create_fcp_template(self, name, description, fcp_devices,
-                            default_of_host: bool = False,
-                            default_of_sps: list = None):
+                            host_default: bool = False,
+                            default_sp_list: list = None):
         LOG.info("Try to create a FCP template with name:%s,"
                  "description:%s and fcp devices: %s." % (name, description,
                                                           fcp_devices))
@@ -1051,8 +1054,8 @@ class FCPManager(object):
         fcp_devices_by_path = self._expand_fcp_list(fcp_devices)
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
-                                    fcp_devices_by_path, default_of_host,
-                                    default_of_sps)
+                                    fcp_devices_by_path, host_default,
+                                    default_sp_list)
         # TODO(Cao Biao): return more details about this template
         return {'template_id': tmpl_id}
         LOG.info("A FCP template was created with ID %s." % tmpl_id)

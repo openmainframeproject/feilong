@@ -110,13 +110,13 @@ class VolumeAction(object):
         name = body.get('name')
         description = body.get('description')
         fcp_devices = body.get('fcp_devices', None)
-        default_of_host = body.get('default_of_host', False)
-        default_of_sps = body.get('default_of_sps', None)
+        host_default = body.get('host_default', False)
+        default_sp_list = body.get('default_sp_list', None)
 
         ret = self.client.send_request('create_fcp_template', name,
                                        description, fcp_devices,
-                                       default_of_host=default_of_host,
-                                       default_of_sps=default_of_sps)
+                                       host_default=host_default,
+                                       default_sp_list=default_sp_list)
         return ret
 
 

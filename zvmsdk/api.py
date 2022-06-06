@@ -1813,23 +1813,23 @@ class SDKAPI(object):
                                             connections)
 
     def create_fcp_template(self, name, description, fcp_devices,
-                            default_of_host: bool = False,
-                            default_of_sps: list = None):
+                            host_default: bool = False,
+                            default_sp_list: list = None):
         """API for creating a FCP template in database.
 
         :param str name: the name of the template
         :param str description: the description for the template
         :param str fcp_devices: a fcp list is composed of fcp device IDs,
             range indicator '-', and split indicator ';'.
-        :param bool default_to_host: this template is default to this
+        :param bool host_default: this template is default to this
             host or not
-        :param list default_of_sps: the list of storage providers that will
+        :param list default_sp_list: the list of storage providers that will
             use this FCP template as default FCP template. If None, it means
             no storage provider would use this FCP template as default.
         """
         return self._volumeop.create_fcp_template(
             name, description, fcp_devices,
-            default_of_host=default_of_host, default_of_sps=default_of_sps)
+            host_default=host_default, default_sp_list=default_sp_list)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
