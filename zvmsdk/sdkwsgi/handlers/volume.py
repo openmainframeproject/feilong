@@ -294,6 +294,8 @@ def create_fcp_template(req):
     req.response.status = util.get_http_code_from_sdk_return(ret)
     req.response.content_type = 'application/json'
 
+@util.SdkWsgify
+@tokens.validate
 def get_fcp_templates(req):
     def _get_fcp_templates(req, template_id_list, assigner_id,
                            default_sp_list, host_default):
