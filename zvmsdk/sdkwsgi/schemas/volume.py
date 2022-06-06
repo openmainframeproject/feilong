@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from zvmsdk.sdkwsgi.validation import parameter_types
 
 
@@ -73,6 +72,32 @@ get_all_fcp_usage = {
 }
 
 
+get_fcp_templates = {
+    'type': 'object',
+    'properties': {
+        'template_id_list': parameter_types.fcp_template_id_list,
+        'assigner_id': parameter_types.single_param(parameter_types.userid),
+        'host_default': parameter_types.single_param(parameter_types.boolean),
+        'default_sp_list': {
+            'type': 'array'
+        }
+    },
+    'additionalProperties': False,
+}
+
+
+get_fcp_templates_details = {
+    'type': 'object',
+    'properties': {
+        'template_id_list': parameter_types.fcp_template_id_list,
+        'raw': parameter_types.single_param(parameter_types.boolean),
+        'statistics': parameter_types.single_param(parameter_types.boolean),
+        'sync_with_zvm': parameter_types.single_param(parameter_types.boolean),
+    },
+    'additionalProperties': False,
+}
+
+
 set_fcp_usage = {
     'type': 'object',
     'properties': {
@@ -114,4 +139,24 @@ get_volume_connector = {
     },
     'additionalProperties': False,
 
+}
+
+
+create_fcp_template = {
+    'type': 'object',
+    'properties': {
+        'name': parameter_types.name,
+        'description': {
+            'type': 'string'
+        },
+        'fcp_devices': {
+            'type': 'string'
+        },
+        'host_default': parameter_types.boolean,
+        'default_sp_list': {
+            'type': 'array'
+        }
+    },
+    'required': ['name', 'description', 'fcp_devices'],
+    'additionalProperties': False,
 }
