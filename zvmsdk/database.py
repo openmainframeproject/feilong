@@ -1036,7 +1036,7 @@ class FCPDbOperator(object):
             if default_sp_list:
                 if sp_mapping_to_add:
                     conn.executemany("INSERT INTO template_sp_mapping "
-                                     "(sp_name, tmpl_id) VALUES "
+                                     "(tmpl_id, sp_name) VALUES "
                                      "(?, ?)", sp_mapping_to_add)
                 if sp_mapping_to_update:
                     conn.executemany("UPDATE template_sp_mapping SET "
