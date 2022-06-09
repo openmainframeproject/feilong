@@ -1045,6 +1045,18 @@ class FCPManager(object):
     def create_fcp_template(self, name, description, fcp_devices,
                             host_default: bool = False,
                             default_sp_list: list = None):
+        """Create a fcp template and return the basic information of
+        the created template, for example:
+        {
+            'fcp_template': {
+                'name': 'bjcb-test-template',
+                'id': '36439338-db14-11ec-bb41-0201018b1dd2',
+                'description': 'This is Default template',
+                'host_default': True,
+                'default_sp_list': ['sp4', 'v7k60']
+            }
+        }
+        """
         LOG.info("Try to create a FCP template with name:%s,"
                  "description:%s and fcp devices: %s." % (name, description,
                                                           fcp_devices))
@@ -1056,9 +1068,13 @@ class FCPManager(object):
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
                                     default_sp_list)
-        # TODO(Cao Biao): return more details about this template
-        return {'template_id': tmpl_id}
+        # Return template basic info
         LOG.info("A FCP template was created with ID %s." % tmpl_id)
+        return {'fcp_template': {'name': name,
+                                 'id': tmpl_id,
+                                 'description': description,
+                                 'host_default': host_default,
+                                 'default_sp_list': default_sp_list}}
 
     def _update_template_fcp_raw_usage(self, raw_usage, raw_item):
         """group raw_item with template_id and path
