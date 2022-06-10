@@ -100,7 +100,8 @@ class VolumeOperatorAPI(object):
                                             guest_networks=guest_networks)
 
     def get_volume_connector(self, assigner_id, reserve, fcp_template_id=None):
-        return self._volume_manager.get_volume_connector(assigner_id, reserve, fcp_template_id=fcp_template_id)
+        return self._volume_manager.get_volume_connector(
+            assigner_id, reserve, fcp_template_id=fcp_template_id)
 
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
         return self._volume_manager.check_fcp_exist_in_db(fcp, raise_exec)
@@ -704,7 +705,9 @@ class FCPManager(object):
         return connections
 
     def _valid_fcp_devcie_wwpn(self, fcp_list, assigner_id):
-        """This method is to check if the FCP wwpn_npiv or wwpn_phy is NULL, if yes, raise error"""
+        """This method is to
+        check if the FCP wwpn_npiv or wwpn_phy is NULL,
+        if yes, raise error"""
         for fcp in fcp_list:
             fcp_id, wwpn_npiv, wwpn_phy, *_ = fcp
             if not wwpn_npiv:
@@ -734,7 +737,8 @@ class FCPManager(object):
         Reserve FCP devices by assigner_id and fcp_template_id. In this method:
         1. Get FCP list from db by assigner and fcp_template whose reserve=1
         2. If fcp_list is not empty, just to use them.
-        3. If fcp_list is empty, get one from each path, then update 'reserved' and 'tmpl_id' in fcp table.
+        3. If fcp_list is empty, get one from each path,
+           then update 'reserved' and 'tmpl_id' in fcp table.
 
         Returns: The fcp list data structure: [(fcp_id, wwpn_npiv, wwpn_phy)].
                 An example of fcp_list:
@@ -745,7 +749,8 @@ class FCPManager(object):
             global _LOCK_RESERVE_FCP
             _LOCK_RESERVE_FCP.acquire()
             if fcp_template_id is None or len(fcp_template_id) == 0:
-                errmsg = "No FCP template is specified and no default FCP template is found."
+                errmsg = ("No FCP template is specified and "
+                          "no default FCP template is found.")
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=11,
                                                         userid=assigner_id,
@@ -753,8 +758,10 @@ class FCPManager(object):
             # go here, means try to attach volumes
             # first check whether this userid already has a FCP device
             # get the FCP devices belongs to assigner_id
-            fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id, fcp_template_id)
-            LOG.info("Previously allocated records %s for instance %s in fcp template %s." %
+            fcp_list = self.db.get_allocated_fcps_from_assigner(
+                assigner_id, fcp_template_id)
+            LOG.info("Previously allocated records %s for "
+                     "instance %s in fcp template %s." %
                      (fcp_list, assigner_id, fcp_template_id))
             if not fcp_list:
                 # Sync DB to update FCP state,
@@ -769,7 +776,8 @@ class FCPManager(object):
                     then fcp pair is randomly selected from below combinations.
                     [fa00,fb00],[fa01,fb01],[fa02,fb02]
                     '''
-                    free_unreserved = self.db.get_fcp_devices_with_same_index(fcp_template_id)
+                    free_unreserved = self.db.get_fcp_devices_with_same_index(
+                        fcp_template_id)
                 else:
                     '''
                     If use get_fcp_pair,
@@ -789,15 +797,18 @@ class FCPManager(object):
                 # with the get_volume_connector call.
                 assigner_id = assigner_id.upper()
                 self.db.reserve_fcps(fcp_ids, assigner_id, fcp_template_id)
-                LOG.info("Newly allocated %s fcp for %s assigner and FCP template %s" %
+                LOG.info("Newly allocated %s fcp for %s assigner "
+                         "and FCP template %s" %
                          (fcp_ids, assigner_id, fcp_template_id))
             else:
                 # reuse the old ones if fcp_list is not empty
-                LOG.info("Found allocated fcps %s for %s in FCP template %s, will reuse them."
+                LOG.info("Found allocated fcps %s for %s in FCP template %s, "
+                         "will reuse them."
                          % (fcp_list, assigner_id, fcp_template_id))
                 path_count = self.db.get_path_count(fcp_template_id)
                 if len(fcp_list) != path_count:
-                    # TODO: handle the case when len(fcp_list) < multipath_count
+                    # TODO: handle the case
+                    #  when len(fcp_list) < multipath_count
                     LOG.warning("FCPs previously assigned to %s includes %s, "
                                 "it is not equal to the path count: %s." %
                                 (assigner_id, fcp_list, path_count))
@@ -806,8 +817,9 @@ class FCPManager(object):
                 available_list = fcp_list
             return available_list
         except Exception as err:
-            msg = "Failed to reserve FCP devices for assigner %s by FCP template %s error: %s" % \
-                  (assigner_id, fcp_template_id, err)
+            msg = ("Failed to reserve FCP devices "
+                   "for assigner %s by FCP template %s error: %s"
+                   % (assigner_id, fcp_template_id, err))
             LOG.error(msg)
             raise exception.SDKGuestOperationError(rs=11, msg=msg)
         finally:
@@ -815,39 +827,50 @@ class FCPManager(object):
 
     def unreserve_fcp_devices(self, assigner_id, fcp_template_id):
         """
-            Unreserve FCP devices by assigner_id and fcp_template_id. In this method:
-            1. Get FCP list from db by assigner and fcp_template whose reserved=1
-            2. If fcp_list is not empty, choose the ones with connections=0, and then set reserved=0 in fcp table in db
-            3. If fcp_list is empty, return empty list
+        Unreserve FCP devices by assigner_id and fcp_template_id.
+        In this method:
+        1. Get FCP list from db by assigner and
+           fcp_template whose reserved=1
+        2. If fcp_list is not empty,
+           choose the ones with connections=0,
+           and then set reserved=0 in fcp table in db
+        3. If fcp_list is empty, return empty list
 
-            Returns: The fcp list data structure: [(fcp_id, wwpn_npiv, wwpn_phy, connections)].
-                    An example of fcp_list:
-                    [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
-                    ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
-                    If no fcp can be gotten from db, return empty list.
+        Returns: The fcp list data structure:
+           [(fcp_id, wwpn_npiv, wwpn_phy, connections)].
+            An example of fcp_list:
+            [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
+            ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
+            If no fcp can be gotten from db, return empty list.
         """
         try:
-            # TODO check if the host only has one FCP template, if yes, use that one, or else, raise error.
+            # TODO check if the host only has one FCP template,
+            # if yes, use that one, or else, raise error.
             if fcp_template_id is None:
-                errmsg = "fcp_template_id is not specified while releasing FCP devices."
+                errmsg = ("fcp_template_id is not specified "
+                          "while releasing FCP devices.")
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=11,
                                                         userid=assigner_id,
                                                         msg=errmsg)
-            fcp_list = self.db.get_reserved_fcps_from_assigner(assigner_id, fcp_template_id)
+            fcp_list = self.db.get_reserved_fcps_from_assigner(
+                assigner_id, fcp_template_id)
             if fcp_list:
                 self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
-                # the data structure of fcp_list is (fcp_id, wwpn_npiv, wwpn_phy, connections), only unreserve the fcps
-                # with connections=0
+                # the data structure of fcp_list is
+                # (fcp_id, wwpn_npiv, wwpn_phy, connections),
+                # only unreserve the fcp with connections=0
                 fcp_ids = [fcp[0] for fcp in fcp_list if fcp[3] == 0]
                 LOG.info("Unreserve fcp device %s from "
-                         "instance %s and FCP template %s." % (fcp_ids, assigner_id, fcp_template_id))
+                         "instance %s and FCP template %s."
+                         % (fcp_ids, assigner_id, fcp_template_id))
                 self.db.unreserve_fcps(fcp_ids, fcp_template_id)
                 return fcp_list
             return []
         except Exception as err:
-            msg = "Failed to release FCP devices for assigner %s by FCP template %s.Error: %s" % \
-                  (assigner_id, fcp_template_id, err)
+            msg = ("Failed to release FCP devices for "
+                   "assigner %s by FCP template %s.Error: %s"
+                   % (assigner_id, fcp_template_id, err))
             LOG.error(msg)
             raise exception.SDKGuestOperationError(rs=11, msg=msg)
 
@@ -943,7 +966,8 @@ class FCPManager(object):
         fcp_info_need_insert = [fcp_dict_in_zvm[fcp].to_tuple()
                                 for fcp in add_fcp_set]
         LOG.info("New FCP devices found on z/VM: {}".format(add_fcp_set))
-        self.db.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info_need_insert)
+        self.db.bulk_insert_zvm_fcp_info_into_fcp_table(
+            fcp_info_need_insert)
 
         # Delete FCP records from FCP table
         # if it is connections=0 and reserve=0
@@ -1058,8 +1082,8 @@ class FCPManager(object):
         }
         """
         LOG.info("Try to create a FCP template with name:%s,"
-                 "description:%s and fcp devices: %s." % (name, description,
-                                                          fcp_devices))
+                 "description:%s and fcp devices: %s."
+                 % (name, description, fcp_devices))
         # Generate a template id for this new template
         tmpl_id = str(uuid.uuid1())
         # Get fcp devices info index by path
@@ -1083,16 +1107,19 @@ class FCPManager(object):
         wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)]
         return format:
         {
-            template_id: {
-                path1: [(fcp_id, template_id, assigner_id, connections,
-                         reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
-                         tmpl_id),()],
-                path2: [(),()],
-            }
+          template_id: {
+            path1: [(fcp_id, template_id, assigner_id,
+                     connections,
+                     reserved, wwpn_npiv, wwpn_phy,
+                     chpid, state, owner,
+                     tmpl_id),()],
+            path2: [(),()],
+          }
         }
         """
-        fcp_id, template_id, path_id, assigner_id, connections,\
-            reserved, wwpn_npiv, wwpn_phy, chpid, state, owner, tmpl_id = raw_item
+        (fcp_id, template_id, path_id, assigner_id, connections,
+         reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
+         tmpl_id) = raw_item
         if not raw_usage.get(template_id, None):
             raw_usage[template_id] = {}
         if not raw_usage[template_id].get(path_id, None):
@@ -1100,7 +1127,8 @@ class FCPManager(object):
         # remove path_id from raw data, keep the last templ_id to
         # represent from which template this FCP has been allocated out.
         return_raw = (fcp_id, template_id, assigner_id, connections,
-            reserved, wwpn_npiv, wwpn_phy, chpid, state, owner, tmpl_id)
+                      reserved, wwpn_npiv, wwpn_phy, chpid, state,
+                      owner, tmpl_id)
         raw_usage[template_id][path_id].append(return_raw)
         return raw_usage
 
@@ -1136,7 +1164,7 @@ class FCPManager(object):
 
     def _update_template_fcp_statistics_usage(self, statistics_usage,
                                               raw_item):
-        """Tranform raw usage in FCP database into statistic data.
+        """Transform raw usage in FCP database into statistic data.
 
         :param statistics_usage: (dict) to store statistics info
         :param raw_item: [list] to represent db query result
@@ -1154,7 +1182,7 @@ class FCPManager(object):
         table will be None. For example: template '12345678' has a fcp
         "1aaa" on path 0, but this device is not in fcp table, the
         query result will be as below.
-        
+
         1aaa|12345678|0||||||||||
 
         Note: the FCP id in the returned dict is in uppercase.
@@ -1172,11 +1200,11 @@ class FCPManager(object):
         # available, allocated, notfound,
         # unallocated_but_active, allocated_but_free
         # CHPIDs
-        fcp_id, template_id, path_id, assigner_id, connections,\
-            reserved, _, _, chpid, state, owner, _ = raw_item
+        (fcp_id, template_id, path_id, assigner_id, connections,
+         reserved, _, _, chpid, state, owner, _) = raw_item
 
         # The raw_item is for each fcp device, so there are multiple
-        # items for each single fcp template. 
+        # items for each single fcp template.
         # But the return result needs to group all the items by fcp template,
         # so construct a dict statistics_usage[template_id]
         # with template_id as key to group the info.
@@ -1401,21 +1429,16 @@ class FCPManager(object):
         template
         :return: (dict) the base info of template
         """
-        raw = []
         ret = []
 
         if template_id_list:
             raw = self.db.get_fcp_templates(template_id_list)
-        
         elif assigner_id:
             raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
-
         elif default_sp_list:
             raw = self.db.get_sp_default_fcp_template(default_sp_list)
-        
         elif host_default:
             raw = self.db.get_host_default_fcp_template()
-        
         else:
             # if no parameter, will get all fcp templates
             raw = self.db.get_fcp_templates(template_id_list)
@@ -1504,7 +1527,7 @@ class FCPManager(object):
                         # nomral in-use FCP
                         "allocated": ('1B00','1B05',...)
                         # case C: (reserve = 1, conn = 0)
-                        # the fcp should be in task or a bug cause this 
+                        # the fcp should be in task or a bug cause this
                         # situation
                         "reserve_only": ('1C00', '1C05', ...)
                         # case D: (reserve = 0 and conn != 0)
@@ -1957,38 +1980,52 @@ class FCPVolumeManager(object):
             }
             'host': LPARname_VMuserid,
             'fcp_paths': 2,            # the count of fcp paths
-            'fcp_template_id': fcp_template_id # if user doesn't specify it, it is either the SP default or the host
+            'fcp_template_id': fcp_template_id # if user doesn't specify it,
+                               it is either the SP default or the host
                                default template id
         }
         """
         # TODO validate fcp_template_id
-        fcp_tmpl_id = fcp_template_id if fcp_template_id else self.db.get_default_fcp_template()
-        empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
-                           'phy_to_virt_initiators': {}, 'fcp_paths': 0, 'fcp_template_id': fcp_tmpl_id}
+        fcp_tmpl_id = (fcp_template_id if fcp_template_id
+                       else self.db.get_default_fcp_template())
+        empty_connector = {'zvm_fcp': [],
+                           'wwpns': [],
+                           'host': '',
+                           'phy_to_virt_initiators': {},
+                           'fcp_paths': 0,
+                           'fcp_template_id': fcp_tmpl_id}
 
-        # get lpar name of the userid, if no host name got, raise exception
+        # get lpar name of the userid,
+        # if no host name got, raise exception
         zvm_host = zvmutils.get_lpar_name()
         if zvm_host == '':
             errmsg = "failed to get z/VM LPAR name."
             LOG.error(errmsg)
-            raise exception.SDKVolumeOperationError(rs=11,
-                                                    userid=assigner_id,
-                                                    msg=errmsg)
+            raise exception.SDKVolumeOperationError(
+                rs=11, userid=assigner_id, msg=errmsg)
         """
-            Reserve or unreserve FCP device according to assigner id and FCP template id.
-            The data structure of fcp_list is:  [(fcp_id, wwpn_npiv, wwpn_phy, connections)].
-            An example of fcp_list:
-                [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
-                ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
+        Reserve or unreserve FCP device
+        according to assigner id and FCP template id.
+        The data structure of fcp_list is:
+        [(fcp_id, wwpn_npiv, wwpn_phy, connections)].
+        An example of fcp_list:
+            [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 0),
+            ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
         """
         if reserve:
-            # The data structure of fcp_list is: [(fcp_id, wwpn_npiv, wwpn_phy)]
-            fcp_list = self.fcp_mgr.reserve_fcp_devices(assigner_id, fcp_tmpl_id)
+            # The data structure of fcp_list is:
+            # [(fcp_id, wwpn_npiv, wwpn_phy)]
+            fcp_list = self.fcp_mgr.reserve_fcp_devices(
+                assigner_id, fcp_tmpl_id)
         else:
-            # The data structure of fcp_list is: [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
-            fcp_list = self.fcp_mgr.unreserve_fcp_devices(assigner_id, fcp_template_id)
+            # The data structure of fcp_list is:
+            # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
+            fcp_list = self.fcp_mgr.unreserve_fcp_devices(
+                assigner_id, fcp_template_id)
         if not fcp_list:
-            errmsg = ("No available FCP device found for %s and FCP template %s." % (assigner_id, fcp_template_id))
+            errmsg = ("No available FCP device found "
+                      "for %s and FCP template %s."
+                      % (assigner_id, fcp_template_id))
             LOG.error(errmsg)
             return empty_connector
 
@@ -2010,8 +2047,9 @@ class FCPVolumeManager(object):
                      'host': ret_host,
                      'fcp_paths': len(fcp_list),
                      'fcp_template_id': fcp_tmpl_id}
-        LOG.info('get_volume_connector returns %s for assigner %s and fcp template %s' %
-                 (connector, assigner_id, fcp_tmpl_id))
+        LOG.info('get_volume_connector returns %s for '
+                 'assigner %s and fcp template %s'
+                 % (connector, assigner_id, fcp_tmpl_id))
         return connector
 
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
@@ -2029,7 +2067,7 @@ class FCPVolumeManager(object):
                 return False
         else:
             return True
-    
+
     def get_all_fcp_usage(self, assigner_id=None, raw=False, statistics=True,
                           sync_with_zvm=False):
         """Get all fcp information grouped by FCP id.
@@ -2125,7 +2163,8 @@ class FCPVolumeManager(object):
         try:
             raw_usage = self.db.get_all_fcps_of_assigner(assigner_id)
         except exception.SDKObjectNotExistError:
-            LOG.warning("When getting fcp usage, no fcp records found in "
+            LOG.warning("When getting fcp usage, "
+                        "no fcp records found in "
                         "database and ignore the exception.")
             raw_usage = []
 
@@ -2144,10 +2183,12 @@ class FCPVolumeManager(object):
         for item in raw_usage:
             # get raw fcp usage
             if raw:
-                self._update_template_fcp_raw_usage(raw_usage_by_path, item)
+                self._update_template_fcp_raw_usage(
+                    raw_usage_by_path, item)
             # get fcp statistics usage
             if statistics:
-                self._update_statistics_usage(statistics_usage, item)
+                self._update_statistics_usage(
+                    statistics_usage, item)
         # store usage into returned value
         if raw:
             LOG.debug("raw FCP usage: %s" % raw_usage_by_path)
