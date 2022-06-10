@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -69,7 +69,7 @@ class VolumeAction(object):
                                         sync_with_zvm=sync_with_zvm)
 
     @validation.query_schema(volume.get_fcp_templates)
-    def get_fcp_templates(self, req, template_id_list, assigner_id, 
+    def get_fcp_templates(self, req, template_id_list, assigner_id,
                           default_sp_list, host_default):
         return self.client.send_request('get_fcp_templates',
                                         template_id_list,
@@ -78,8 +78,9 @@ class VolumeAction(object):
                                         host_default)
 
     @validation.query_schema(volume.get_fcp_templates_details)
-    def get_fcp_templates_details(self, req, template_id_list, raw, statistics, sync_with_zvm):
-        return self.client.send_request('get_fcp_templates_details', 
+    def get_fcp_templates_details(self, req, template_id_list, raw,
+                                  statistics, sync_with_zvm):
+        return self.client.send_request('get_fcp_templates_details',
                                         template_id_list,
                                         raw=raw,
                                         statistics=statistics,
@@ -191,7 +192,8 @@ def volume_refresh_bootmap(req):
 def get_volume_connector(req):
     def _get_volume_conn(req, userid, reserve, fcp_template_id):
         action = get_action()
-        return action.get_volume_connector(req, userid, reserve, fcp_template_id)
+        return action.get_volume_connector(req, userid, reserve,
+                                           fcp_template_id)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     body = util.extract_json(req.body)
@@ -294,6 +296,7 @@ def create_fcp_template(req):
     req.response.status = util.get_http_code_from_sdk_return(ret)
     req.response.content_type = 'application/json'
 
+
 @util.SdkWsgify
 @tokens.validate
 def get_fcp_templates(req):
@@ -310,7 +313,6 @@ def get_fcp_templates(req):
 
     ret = _get_fcp_templates(req, template_id_list, assigner_id,
                              default_sp_list, host_default)
-
 
     ret_json = json.dumps(ret)
     req.response.status = util.get_http_code_from_sdk_return(ret,
