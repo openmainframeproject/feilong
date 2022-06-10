@@ -299,7 +299,7 @@ class FCPDbOperator(object):
         #   owner: VM userid representing an unique VM,
         #          it is read from z/VM hypervisor and
         #          may differ with assigner_id
-        #   tmple_id: indicate from which FCP template this FCP device was
+        #   tmpl_id: indicate from which FCP template this FCP device was
         #             allocated, not to which FCP template this FCP
         #             device belong. because a FCP device may belong
         #             to multiple FCP templates.
