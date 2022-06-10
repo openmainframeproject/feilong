@@ -1076,8 +1076,8 @@ class FCPManager(object):
                 'name': 'bjcb-test-template',
                 'id': '36439338-db14-11ec-bb41-0201018b1dd2',
                 'description': 'This is Default template',
-                'host_default': True,
-                'default_sp_list': ['sp4', 'v7k60']
+                'is_default': True,
+                'sp_name': ['sp4', 'v7k60']
             }
         }
         """
@@ -1097,8 +1097,8 @@ class FCPManager(object):
         return {'fcp_template': {'name': name,
                                  'id': tmpl_id,
                                  'description': description,
-                                 'host_default': host_default,
-                                 'default_sp_list': default_sp_list}}
+                                 'is_default': host_default,
+                                 'sp_name': default_sp_list}}
 
     def _update_template_fcp_raw_usage(self, raw_usage, raw_item):
         """group raw_item with template_id and path
