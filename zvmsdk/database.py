@@ -1202,7 +1202,7 @@ class FCPDbOperator(object):
         "1aaa" on path 0, but this device is not in fcp table, the
         query result will be as below.
 
-        1aaa|12345678|0||||||||| 
+        1aaa|12345678|0|||||||||
         """
         tmpl_cmd = (
             "SELECT t.id, t.name, t.description, "

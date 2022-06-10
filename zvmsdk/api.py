@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1583,7 +1583,8 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid, reserve=False, fcp_template_id=None):
+    def get_volume_connector(self, userid, reserve=False,
+                             fcp_template_id=None):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1602,9 +1603,11 @@ class SDKAPI(object):
 
         :param str userid: the user id of the guest
         :param boolean reserve: the flag to reserve FCP device
-        :param str fcp_template_id: the fcp template id which FCP devices are allocated by
+        :param str fcp_template_id: the fcp template id
+               which FCP devices are allocated by
         """
-        return self._volumeop.get_volume_connector(userid, reserve, fcp_template_id)
+        return self._volumeop.get_volume_connector(
+            userid, reserve, fcp_template_id)
 
     def get_all_fcp_usage(self, userid=None, raw=False, statistics=True,
                           sync_with_zvm=False):
@@ -1671,11 +1674,14 @@ class SDKAPI(object):
             template_id_list=template_id_list, assigner_id=assigner_id,
             default_sp_list=default_sp_list, host_default=host_default)
 
-    def get_fcp_templates_details(self, template_id_list=None, raw=False,
-                                  statistics=True, sync_with_zvm=False):
+    def get_fcp_templates_details(self, template_id_list=None,
+                                  raw=False, statistics=True,
+                                  sync_with_zvm=False):
         """Get fcp templates detail info.
-        :param template_list: (list) if is None, will get all the templates on the host
-        :return: (dict) the raw and/or statistic data of temlate_list FCP devices
+        :param template_list: (list) if is None,
+                              will get all the templates on the host
+        :return: (dict) the raw and/or statistic data
+                        of temlate_list FCP devices
         if sync_with_zvm:
             self.fcp_mgr._sync_db_with_zvm()
         if FCP DB is NOT empty and raw=True statistics=True
@@ -1783,9 +1789,9 @@ class SDKAPI(object):
             template_id_list = ast.literal_eval(template_id_list)
 
         return self._volumeop.get_fcp_templates_details(
-            template_id_list=template_id_list, raw=raw, statistics=statistics,
-            sync_with_zvm=sync_with_zvm)
-        
+            template_id_list=template_id_list, raw=raw,
+            statistics=statistics, sync_with_zvm=sync_with_zvm)
+
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
         """API for getting FCP usage in database manually.
