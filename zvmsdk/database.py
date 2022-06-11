@@ -322,7 +322,10 @@ class FCPDbOperator(object):
         #   name: the name of the template
         #   description: the description for this template
         #   is_default: is this template the default one on this host or not
-        #            1/True for yes, 0/False for no
+        #       1/True for yes, 0/False for no
+        #       note: SQLite recognizes the keywords "TRUE" and "FALSE",
+        #       those keywords are saved in SQLite
+        #       as integer 1 and 0 respectively
         fcp_info_tables['template'] = (
             "CREATE TABLE IF NOT EXISTS template("
             "id             varchar(32)  NOT NULL COLLATE NOCASE,"
