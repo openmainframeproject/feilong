@@ -1155,7 +1155,7 @@ class FCPManager(object):
                 template_dict[id] = {"id": id,
                                      "name": name,
                                      "description": description,
-                                     "is_default": is_default,
+                                     "is_default": bool(is_default),
                                      "sp_name": [sp_name]}
             # one fcp template can be multiple sp's default template
             if sp_name and sp_name not in template_dict[id]["sp_name"]:
@@ -1368,7 +1368,7 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd2",
                 "name": "default_template",
                 "description": "This is Default template",
-                "is_default": 1,
+                "is_default": True,
                 "sp_name": [
                     "v7k60",
                     "sp4"
@@ -1378,7 +1378,7 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
                 "name": "test_template",
                 "description": "just for test",
-                "is_default": 0,
+                "is_default": False,
                 "sp_name": [
                     "ds8k60c1"
                 ]
@@ -1387,7 +1387,7 @@ class FCPManager(object):
                 "id": "12345678",
                 "name": "templatet1",
                 "description": "test1",
-                "is_default": 0,
+                "is_default": False,
                 "sp_name": [
                     "sp3"
                 ]
@@ -1408,7 +1408,7 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd2",
                 "name": "default_template",
                 "description": "This is Default template",
-                "is_default": 1,
+                "is_default": True,
                 "sp_name": [
                     "v7k60",
                     "sp4"
@@ -1418,7 +1418,7 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
                 "name": "test_template",
                 "description": "just for test",
-                "is_default": 0,
+                "is_default": False,
                 "sp_name": [
                     "ds8k60c1"
                 ]
@@ -1466,7 +1466,7 @@ class FCPManager(object):
                     "id":"36439338-db14-11ec-bb41-0201018b1dd2",
                     "name":"default_template",
                     "description":"This is Default template",
-                    "is_default":1,
+                    "is_default":True,
                     "sp_name":[
                         "sp4",
                         "v7k60"

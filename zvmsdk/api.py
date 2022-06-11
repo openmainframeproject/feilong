@@ -1691,7 +1691,7 @@ class SDKAPI(object):
                     "id":"36439338-db14-11ec-bb41-0201018b1dd2",
                     "name":"default_template",
                     "description":"This is Default template",
-                    "is_default":1,
+                    "is_default":True,
                     "sp_name":[
                         "sp4",
                         "v7k60"
