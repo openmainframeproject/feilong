@@ -872,7 +872,8 @@ class FCPManager(object):
                    "assigner %s by FCP template %s.Error: %s"
                    % (assigner_id, fcp_template_id, err))
             LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=11, msg=msg)
+            raise exception.SDKGuestOperationError(rs=11, userid=assigner_id,
+                                                   msg=msg)
 
     def get_all_fcp_pool(self, assigner_id):
         """Return a dict of all FCPs in ZVM
