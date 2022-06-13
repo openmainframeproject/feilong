@@ -2093,7 +2093,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_couple_nic_to_vswitch_no_vlan(self, couple_nic, replace,
                                    lock, get_user):
         replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
-                        "NICDEF 1000 LAN SYSTEM VS1"]
+                        "NICDEF 1000 LAN SYSTEM VS1 PORTTYPE ACCESS"]
         get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
@@ -2113,7 +2113,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_couple_nic_to_vswitch_vlan(self, couple_nic, replace,
                                    lock, get_user):
         replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
-                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55 PORTTYPE ACCESS"]
         get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
@@ -2135,7 +2135,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_couple_nic_to_vswitch_vlan_fail(self, couple_nic, replace,
                                    lock, get_user, request):
         replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
-                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55 PORTTYPE ACCESS"]
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
@@ -2168,6 +2168,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock.assert_not_called()
         replace.assert_not_called()
         couple_nic.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_port_type(self, couple_nic, replace,
+                                   lock, get_user):
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1 PORTTYPE TRUNK"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
+        self._smtclient.couple_nic_to_vswitch("fake_userid",
+                                               "1000",
+                                               "VS1",
+                                               active=True,
+                                               port_type='TRUNK')
+        lock.assert_called_with("fake_userid")
+        replace.assert_called_with("fake_userid", replace_data)
+        couple_nic.assert_called_with("fake_userid",
+                                      "1000",
+                                      "VS1",
+                                      active=True)
 
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
