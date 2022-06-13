@@ -2181,7 +2181,8 @@ class SMTClient(object):
         LOG.info(msg)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
-                              vswitch_name, active=False, vlan_id=-1):
+                              vswitch_name, active=False,
+                              vlan_id=-1, port_type='ACCESS'):
         """Couple nic to vswitch."""
         if active:
             msg = ("both in the user direct of guest %s and on "
@@ -2219,9 +2220,11 @@ class SMTClient(object):
                     # vlan_id < 0 means no VLAN ID given
                     v = nicdef
                     if vlan_id < 0:
-                        v += " LAN SYSTEM %s" % vswitch_name
+                        v += " LAN SYSTEM %s PORTTYPE %s" \
+                             % (vswitch_name, port_type)
                     else:
-                        v += " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
+                        v += " LAN SYSTEM %s VLAN %s PORTTYPE %s" \
+                             % (vswitch_name, vlan_id, port_type)
 
                     new_user_direct.append(v)
         try:
