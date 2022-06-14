@@ -50,6 +50,8 @@ def get_network_conn():
     global _NETWORK_CONN, _DBLOCK_NETWORK
     if not _NETWORK_CONN:
         _NETWORK_CONN = _init_db_conn(const.DATABASE_NETWORK)
+        # enable access columns by name
+        _NETWORK_CONN.row_factory = sqlite3.Row
 
     _DBLOCK_NETWORK.acquire()
     try:
@@ -67,6 +69,8 @@ def get_image_conn():
     global _IMAGE_CONN, _DBLOCK_IMAGE
     if not _IMAGE_CONN:
         _IMAGE_CONN = _init_db_conn(const.DATABASE_IMAGE)
+        # enable access columns by name
+        _IMAGE_CONN.row_factory = sqlite3.Row
 
     _DBLOCK_IMAGE.acquire()
     try:
@@ -83,6 +87,8 @@ def get_guest_conn():
     global _GUEST_CONN, _DBLOCK_GUEST
     if not _GUEST_CONN:
         _GUEST_CONN = _init_db_conn(const.DATABASE_GUEST)
+        # enable access columns by name
+        _GUEST_CONN.row_factory = sqlite3.Row
 
     _DBLOCK_GUEST.acquire()
     try:
@@ -100,6 +106,8 @@ def get_fcp_conn():
     global _FCP_CONN, _DBLOCK_FCP
     if not _FCP_CONN:
         _FCP_CONN = _init_db_conn(const.DATABASE_FCP)
+        # enable access columns by name
+        _FCP_CONN.row_factory = sqlite3.Row
 
     _DBLOCK_FCP.acquire()
     try:
