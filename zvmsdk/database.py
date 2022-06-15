@@ -391,7 +391,7 @@ class FCPDbOperator(object):
         for fcp_id in fcp_ids:
             fcp_update_info.append((fcp_id, fcp_template_id))
         with get_fcp_conn() as conn:
-            conn.executemany("UPDATE fcp SET reserved=0, tmpl_id=NULL "
+            conn.executemany("UPDATE fcp SET reserved=0, tmpl_id='' "
                              "WHERE fcp_id=? AND tmpl_id=?", fcp_update_info)
 
     def reserve_fcps(self, fcp_ids, assigner_id, fcp_template_id):
@@ -773,8 +773,8 @@ class FCPDbOperator(object):
                 "AND fcp.connections=0 "
                 "AND fcp.reserved=0 "
                 "AND fcp.state='free' "
-                "AND fcp.wwpn_npiv IS NOT NULL "
-                "AND fcp.wwpn_phy IS NOT NULL "
+                "AND fcp.wwpn_npiv IS NOT '' "
+                "AND fcp.wwpn_phy IS NOT '' "
                 "GROUP BY template_fcp_mapping.path "
                 "ORDER BY template_fcp_mapping.path", (fcp_template_id,))
             free_count_per_path = [a[0] for a in result.fetchall()]
@@ -811,8 +811,8 @@ class FCPDbOperator(object):
                 "INNER JOIN template_fcp_mapping "
                 "ON template_fcp_mapping.fcp_id=fcp.fcp_id "
                 "WHERE template_fcp_mapping.tmpl_id=? "
-                "AND fcp.wwpn_npiv IS NOT NULL "
-                "AND fcp.wwpn_phy IS NOT NULL "
+                "AND fcp.wwpn_npiv IS NOT '' "
+                "AND fcp.wwpn_phy IS NOT '' "
                 "ORDER BY template_fcp_mapping.path, "
                 "template_fcp_mapping.fcp_id", (fcp_template_id,))
             fcps = result.fetchall()
@@ -893,8 +893,8 @@ class FCPDbOperator(object):
                     "AND fcp.reserved=0 "
                     "AND fcp.state='free' "
                     "AND template_fcp_mapping.path=? "
-                    "AND fcp.wwpn_npiv IS NOT NULL "
-                    "AND fcp.wwpn_phy IS NOT NULL "
+                    "AND fcp.wwpn_npiv IS NOT '' "
+                    "AND fcp.wwpn_phy IS NOT '' "
                     "ORDER BY template_fcp_mapping.path",
                     (fcp_template_id, no[0]))
                 fcps = result.fetchall()
