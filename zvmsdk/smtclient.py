@@ -2220,8 +2220,7 @@ class SMTClient(object):
                     # vlan_id < 0 means no VLAN ID given
                     v = nicdef
                     if vlan_id < 0:
-                        v += " LAN SYSTEM %s PORTTYPE %s" \
-                             % (vswitch_name, port_type)
+                        v += " LAN SYSTEM %s" % vswitch_name
                     else:
                         v += " LAN SYSTEM %s VLAN %s PORTTYPE %s" \
                              % (vswitch_name, vlan_id, port_type)
