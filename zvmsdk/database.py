@@ -1056,14 +1056,18 @@ class FCPDbOperator(object):
                 new_record = [fcp_id, tmpl_id, path]
                 fcp_mapping.append(new_record)
         with get_fcp_conn() as conn:
-            # 1. insert a new record in template table
+            # 1. change existing records' is_default to False
+            #    if new host default fcp template will be created
+            if host_default is True:
+                conn.execute("UPDATE template SET is_default=?", (False,))
+            # 2. insert a new record in template table
             tmpl_basics = (tmpl_id, name, description, host_default)
             conn.execute("INSERT INTO template (id, name, description, "
                          "is_default) VALUES (?, ?, ?, ?)", tmpl_basics)
-            # 2. insert new records in template_fcp_mapping
+            # 3. insert new records in template_fcp_mapping
             conn.executemany("INSERT INTO template_fcp_mapping (fcp_id, "
                              "tmpl_id, path) VALUES (?, ?, ?)", fcp_mapping)
-            # 3. insert a new record in template_sp_mapping
+            # 4. insert a new record in template_sp_mapping
             if default_sp_list:
                 if sp_mapping_to_add:
                     conn.executemany("INSERT INTO template_sp_mapping "
