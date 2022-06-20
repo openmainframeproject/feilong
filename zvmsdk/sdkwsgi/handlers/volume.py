@@ -112,6 +112,14 @@ class VolumeAction(object):
         description = body.get('description')
         fcp_devices = body.get('fcp_devices', None)
         host_default = body.get('host_default', False)
+        # ensure host_default parameter is boolean type
+        # because of the database's requirements
+        valid_true_values = [True, 'True', 'TRUE', 'true', '1',
+                         'ON', 'On', 'on', 'YES', 'Yes', 'yes']
+        if host_default in valid_true_values:
+            host_default = True
+        else:
+            host_default = False
         default_sp_list = body.get('default_sp_list', None)
 
         ret = self.client.send_request('create_fcp_template', name,
