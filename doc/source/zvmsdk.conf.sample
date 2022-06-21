@@ -253,7 +253,7 @@
 #  would fail.
 # 
 # This param is optional
-#min_fcp_paths_count=None
+#min_fcp_paths_count=2
 
 
 # 

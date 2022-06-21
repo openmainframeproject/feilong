@@ -821,7 +821,9 @@ class FCPManager(object):
                    "for assigner %s by FCP template %s error: %s"
                    % (assigner_id, fcp_template_id, err))
             LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=11, msg=msg)
+            raise exception.SDKVolumeOperationError(rs=11,
+                                                    userid=assigner_id,
+                                                    msg=msg)
         finally:
             _LOCK_RESERVE_FCP.release()
 
@@ -868,12 +870,13 @@ class FCPManager(object):
                 return fcp_list
             return []
         except Exception as err:
-            msg = ("Failed to release FCP devices for "
+            errmsg = ("Failed to release FCP devices for "
                    "assigner %s by FCP template %s.Error: %s"
-                   % (assigner_id, fcp_template_id, err))
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=11, userid=assigner_id,
-                                                   msg=msg)
+                   % (assigner_id, fcp_template_id, str(err)))
+            LOG.error(errmsg)
+            raise exception.SDKVolumeOperationError(rs=11,
+                                                    userid=assigner_id,
+                                                    msg=errmsg)
 
     def get_all_fcp_pool(self, assigner_id):
         """Return a dict of all FCPs in ZVM
