@@ -526,6 +526,7 @@ reached the timeout, the attach/detach will fail.
         ),
     Opt('min_fcp_paths_count',
         section='volume',
+        default=2,
         opt_type='int',
         help='''
 The minimum number of FCP paths that should be defined to a vm when attaching

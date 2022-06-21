@@ -311,162 +311,567 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
-    def test_new(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('2222', 1)
-        try:
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(2, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual(0, fcp[4])
+    def _insert_data_into_fcp_table(self, fcp_info_list):
+        # insert data into all columns of fcp table
+        with database.get_fcp_conn() as conn:
+            conn.executemany("INSERT INTO fcp "
+                             "(fcp_id, assigner_id, connections, "
+                             "reserved, wwpn_npiv, wwpn_phy, chpid, "
+                             "state, owner, tmpl_id) VALUES "
+                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
 
-            fcp = fcp_list[1]
-            self.assertEqual('2222', fcp[0])
-            self.assertEqual(1, fcp[4])
+    def _insert_data_into_template_table(self, templates_info):
+        # insert data into all columns of template table
+        with database.get_fcp_conn() as conn:
+            conn.executemany("INSERT INTO template "
+                             "(id, name, description, is_default) "
+                             "VALUES (?, ?, ?, ?)", templates_info)
+
+    def _insert_data_into_template_fcp_mapping_table(self,
+                                                     template_fcp_mapping):
+        # insert data into all columns of template_fcp_mapping table
+        with database.get_fcp_conn() as conn:
+            conn.executemany("INSERT INTO template_fcp_mapping "
+                             "(fcp_id, tmpl_id, path) "
+                             "VALUES (?, ?, ?)", template_fcp_mapping)
+
+    def _insert_data_into_template_sp_mapping_table(self,
+                                                    template_sp_mapping):
+        # insert data into all columns of template_sp_mapping table
+        with database.get_fcp_conn() as conn:
+            conn.executemany("INSERT INTO template_sp_mapping "
+                             "(sp_name, tmpl_id) "
+                             "VALUES (?, ?)", template_sp_mapping)
+
+    #########################################################
+    #             Test cases for Table fcp                  #
+    #########################################################
+    def test_default_values_of_fcp_table(self):
+        """Test the default values of columns in fcp table"""
+        pass
+
+    def test_unreserve_fcps(self):
+        """Test API unreserve_fcps"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id),
+                         ('2222', '', 0, 1, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id),
+                         ('3333', '', 0, 1, 'c05076de33000333',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # test API function
+        try:
+            self.db_op.unreserve_fcps(fcp_id_list, template_id)
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            # check default values of (assigner_id, connections) are correct
+            self.assertEqual('', userid)
+            self.assertEqual(0, conn)
+            # check reserved value
+            self.assertEqual(0, reserved)
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('2222')
+            self.assertEqual('', userid)
+            self.assertEqual(0, conn)
+            self.assertEqual(0, reserved)
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('3333')
+            self.assertEqual('', userid)
+            self.assertEqual(0, conn)
+            self.assertEqual(0, reserved)
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('2222')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_reserve_fcps(self):
+        """Test API reserve_fcps"""
+        pass
+
+    def test_bulk_insert(self):
+        """Test API bulk_insert_zvm_fcp_info_into_fcp_table"""
+        pass
+
+    def test_bulk_delete(self):
+        """Test API bulk_delete_from_fcp_table"""
+        pass
+
+    def test_bulk_update_fcp_info(self):
+        """Test API bulk_update_zvm_fcp_info_in_fcp_table"""
+        pass
+
+    def test_bulk_update_fcp_state(self):
+        """Test API bulk_update_state_in_fcp_table"""
+        pass
 
     def test_assign(self):
-        self.db_op.new('1111', 0)
-
+        """Test API assign"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        """
+        format of item in fcp_info_list:
+        (fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy,
+         chpid, state, owner, tmpl_id)
+        """
+        fcp_info_list = [('1111', '', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', '',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # test API function
         try:
-            self.db_op.assign('1111', 'incuser')
-
+            # case1: update_connections == False
+            self.db_op.assign('1111', 'user1', update_connections=False)
             fcp_list = self.db_op.get_all()
-
+            # only one record exists
             self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
+            # check values(fcp_id, assigner_id, connections)
+            self.assertEqual('1111', fcp_list[0][0])
+            self.assertEqual('user1', fcp_list[0][1])
+            self.assertEqual(0, fcp_list[0][2])
+            # case2: default update_connections == True
+            self.db_op.assign('1111', 'user2')
+            fcp_list = self.db_op.get_all()
+            self.assertEqual('1111', fcp_list[0][0])
+            self.assertEqual('user2', fcp_list[0][1])
+            self.assertEqual(1, fcp_list[0][2])
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_get_all_fcps_of_assigner(self):
+        """Test API get_all_fcps_of_assigner with assigner_id parameter"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        """
+        format of item in fcp_info_list:
+        (fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy,
+         chpid, state, owner, tmpl_id)
+        """
+        fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('2222', 'user2', 0, 0, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # test API function
+        try:
+            # case 1, the assigner not specified
+            res = self.db_op.get_all_fcps_of_assigner()
+            # Format of return is like:
+            # [(fcp_id, userid, connections, reserved, wwpn_npiv, wwpn_phy,
+            #   chpid, state, owner, tmpl_id), (...)].
+            self.assertEqual(len(res), 2)
+            self.assertEqual(len(res[0]), 10)
+            # connections == 0
+            self.assertEqual(res[0][2], 0)
+            # case 2, specify an assigner_id
+            res = self.db_op.get_all_fcps_of_assigner(assigner_id='user2')
+            self.assertEqual(len(res), 1)
+            self.assertEqual(len(res[0]), 10)
+            self.assertEqual(res[0][1], 'user2')
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_get_all_fcps_exception(self):
+        """Test API get_all_fcps_of_assigner when no data in DB"""
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.get_all_fcps_of_assigner,
+                          None)
+
+    def test_get_usage_of_fcp(self):
+        """Test API get_usage_of_fcp"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            self.assertEqual('', userid)
+            self.assertEqual(2, conn)
+            self.assertEqual(1, reserved)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_update_usage_of_fcp(self):
+        """Test API update_usage_of_fcp"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', 'user2', 1, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            # update reserved to 1, connection to 2, assigner_id to user2
+            self.db_op.update_usage_of_fcp('1111', 'user2', 1, 2)
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            self.assertEqual('user2', userid)
+            self.assertEqual(1, reserved)
+            self.assertEqual(2, conn)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_increase_usage(self):
+        """Test API increase_usage"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
             self.db_op.increase_usage('1111')
-
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual(2, fcp[2])
-
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            self.assertEqual('', userid)
+            self.assertEqual(3, conn)
+            self.assertEqual(1, reserved)
         finally:
-            self.db_op.delete('1111')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_get_all_free(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('1112', 0)
-        self.db_op.new('1113', 0)
-        self.db_op.new('1114', 0)
+    def test_increase_usage_of_not_exist_fcp(self):
+        """Test API increase_usage when fcp id not exist"""
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.increase_usage, 'xxxx')
 
+    def test_increase_usage_by_assigner(self):
+        """Test API increase_usage_by_assigner"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', 'user1', 1, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            self.db_op.assign('1111', 'user1')
-            self.db_op.assign('1112', 'user2')
-            self.db_op.decrease_usage('1112')
-            self.db_op.reserve('1114')
-
-            fcp_list = self.db_op.get_all_free_unreserved()
-            self.assertEqual(2, len(fcp_list))
-            fcp_list.sort()
-            fcp = fcp_list[0]
-            self.assertEqual('1112', fcp[0])
-            fcp = fcp_list[1]
-            self.assertEqual('1113', fcp[0])
+            self.db_op.increase_usage_by_assigner('1111', 'user1')
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            self.assertEqual('user1', userid)
+            self.assertEqual(2, conn)
+            self.assertEqual(1, reserved)
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
-            self.db_op.delete('1113')
-            self.db_op.delete('1114')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_get_reserved_fcps_from_assigner(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('1112', 1)
+    def test_increase_usage_by_not_exist_assigner(self):
+        """Test API increase_usage_by_assigner when assigner_id not exist"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 1, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # record belonging to user2 does not exist
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.increase_usage_by_assigner,
+                          '1111', 'fakeuser')
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
+    def test_decrease_usage_of_not_exist_fcp(self):
+        """Test API decrease_usage when fcp_id not exist"""
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.decrease_usage, 'xxxx')
+
+    def test_decrease_usage_no_connections(self):
+        """Test API decrease_usage when connections is 0"""
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 0, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # decrease when connections == 0
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.decrease_usage, '1111')
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_decrease_usage(self):
+        """Test API decrease_usage"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            # case1: connections == 0 and reserve == 0
-            self.db_op.assign('1111', 'user1', update_connections=False)
-            self.db_op.assign('1112', 'user2', update_connections=False)
-            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user2')
-            self.assertEqual(0, len(fcp_list))
-            # case2: reserve != 0 and connections == 0
-            self.db_op.reserve('1112')
-            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user2')
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1112', fcp[0])
-            self.assertEqual('user2', fcp[1])
-            # case3: connections != 0 and reserve == 0
-            self.db_op.unreserve('1112')
-            self.db_op.assign('1111', 'user1')
-            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user1')
-            self.assertEqual(0, len(fcp_list))
+            self.db_op.decrease_usage('1111')
+            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            self.assertEqual('', userid)
+            self.assertEqual(1, conn)
+            self.assertEqual(1, reserved)
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_get_allocated_fcps_from_assigner(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('1112', 1)
-
+    def test_get_connections_from_assigner(self):
+        """Test API get_connections_from_assigner"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', 'user1', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('2222', 'user1', 3, 1, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            # case1: connections == 0
-            self.db_op.assign('1111', 'user1', update_connections=False)
-            self.db_op.assign('1112', 'user1', update_connections=False)
-            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user1')
-            self.assertEqual(0, len(fcp_list))
-            # case2: connections != 0
-            self.db_op.assign('1111', 'user2', update_connections=True)
-            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user2')
-            self.assertEqual(1, len(fcp_list))
-            # case3: reserve != 0
-            self.db_op.assign('1112', 'user2', update_connections=False)
-            self.db_op.reserve('1112')
-            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user2')
-            self.assertEqual(2, len(fcp_list))
-
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual('user2', fcp[1])
+            conn = self.db_op.get_connections_from_assigner('user1')
+            self.assertEqual(5, conn)
+            conn = self.db_op.get_connections_from_assigner('user2')
+            self.assertEqual(0, conn)
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_get_connections_from_fcp(self):
+        """Test API get_connections_from_fcp"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id),
+                         ('2222', '', 3, 1, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            conn = self.db_op.get_connections_from_fcp('1111')
+            self.assertEqual(2, conn)
+            conn = self.db_op.get_connections_from_fcp('2222')
+            self.assertEqual(3, conn)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_get_all(self):
+        pass
 
     def test_get_from_fcp(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('1112', 2)
-
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          template_id),
+                         ('2222', '', 3, 1, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'user1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            self.db_op.assign('1111', 'user1')
-            self.db_op.assign('1112', 'user2')
-
             fcp_list = self.db_op.get_from_fcp('1111')
             self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual('user1', fcp[1])
+            self.assertEqual('1111', fcp_list[0][0])
+            self.assertEqual(2, fcp_list[0][2])
+            self.assertEqual(1, fcp_list[0][3])
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_reserve_unreserve(self):
-        self.db_op.new('1111', 2)
+    def test_get_wwpns_of_fcp(self):
+        pass
+
+    def test_update_wwpns_of_fcp(self):
+        pass
+
+    #########################################################
+    #       Test cases for Table template_fcp_mapping       #
+    #########################################################
+    def test_update_path_of_fcp(self):
+        """Test API update_usage_of_fcp"""
+        # pre create data in FCP DB for test
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        template_fcp = [('1111', template_id, 1),
+                        ('2222', template_id, 2)]
+        fcp_id_list = [fcp_info[0] for fcp_info in template_fcp]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
         try:
-            self.db_op.reserve('1111')
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-
-            self.assertEqual(1, fcp[3])
-
-            self.db_op.unreserve('1111')
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-
-            self.assertEqual(0, fcp[3])
+            self.db_op.update_path_of_fcp('1111', 3, template_id)
+            path = self.db_op.get_path_of_fcp('1111', template_id)
+            self.assertEqual(3, path)
         finally:
-            self.db_op.delete('1111')
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_get_fcp_pair_with_same_index(self):
-        '''
+    def test_bulk_delete_fcp_from_template(self):
+        """Test API delete_fcp_from_path"""
+        pass
+
+    def test_get_path_count(self):
+        pass
+
+    def test_get_fcp_list_of_template(self):
+        pass
+
+    #########################################################
+    #            Test cases for Table template              #
+    #########################################################
+    def test_default_values_of_template_table(self):
+        """Test the default values of columns in fcp table"""
+        pass
+
+    def test_get_default_fcp_template(self):
+        pass
+
+    def test_fcp_template_exist_in_db(self):
+        pass
+
+    #########################################################
+    #       Test cases for Table template_sp_mapping        #
+    #########################################################
+    def test_default_values_of_template_sp_mapping_table(self):
+        """Test the default values of columns in fcp table"""
+        pass
+
+    def test_sp_name_exist_in_db(self):
+        pass
+
+    #########################################################
+    #        Test cases related to multiple tables          #
+    #########################################################
+    def test_get_allocated_fcps_from_assigner(self):
+        """Test API get_allocated_fcps_from_assigner"""
+        # prepare data for fcp template "1111;2222"
+        # insert test data into table template_fcp_mapping
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        template_fcp = [('1111', template_id, 0),
+                        ('2222', template_id, 1)]
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert test data into table fcp
+        fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('2222', 'user1', 0, 0, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            # case1: reserved and connections == 0
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+                'user1', template_id)
+            self.assertEqual(0, len(fcp_list))
+            # case2: reserved == 0 and connections != 0
+            #   increase connections to 1
+            self.db_op.increase_usage('1111')
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+                'user1', template_id)
+            self.assertEqual(1, len(fcp_list))
+            # case3: reserved != 0 and connections == 0
+            self.db_op.reserve_fcps(['2222'], 'user2', template_id)
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+                'user2', template_id)
+            self.assertEqual(1, len(fcp_list))
+            # case4: reserve !=0 and connections != 0
+            self.db_op.assign('1111', 'user2', update_connections=True)
+            self.db_op.assign('2222', 'user2', update_connections=True)
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+                'user2', template_id)
+            self.assertEqual(2, len(fcp_list))
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_get_reserved_fcps_from_assigner(self):
+        # prepare data for fcp template "1111;2222"
+        # insert test data into table fcp
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('2222', 'user1', 0, 0, 'c05076de33000222',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert test data into table template_fcp_mapping
+        template_fcp = [('1111', template_id, 0),
+                        ('2222', template_id, 1)]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        try:
+            # case1: reserved and connections == 0
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner(
+                'user1', template_id)
+            self.assertEqual(0, len(fcp_list))
+            # case2: reserved == 0 and connections != 0
+            #   increase connections to 1
+            self.db_op.increase_usage('1111')
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner(
+                'user1', template_id)
+            self.assertEqual(0, len(fcp_list))
+            # case3: reserved !=0 and connection == 0
+            #   set reserved to 1
+            self.db_op.reserve_fcps(['2222'], 'user2', template_id)
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner(
+                'user2', template_id)
+            self.assertEqual(1, len(fcp_list))
+            # case4: reserve !=0 and connections != 0
+            #   set reserved to 1
+            self.db_op.reserve_fcps(fcp_id_list, 'user2', template_id)
+            #   set connections to 1
+            self.db_op.assign('1111', 'user2', update_connections=True)
+            self.db_op.assign('2222', 'user2', update_connections=True)
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+                'user2', template_id)
+            self.assertEqual(2, len(fcp_list))
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_get_fcp_devices_with_same_index(self):
+        '''Test get_fcp_devices_with_same_index
+
         get_fcp_pair_with_same_index() only returns
         two possible values:
         case 1
@@ -482,74 +887,94 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
            an empty list(i.e. [])
            if no expected pair found
         '''
+        # prepare data for fcp template "1111;2222"
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        # insert test data into table fcp
+        # Usage in test data:
+        #   1a00 usage is connections == 2, reserved == 0
+        #   1a02 usage is connections == 1, reserved == 1
+        #   1b00 usage is connections == 0, reserved == 1
+        #   others are connections ==0, reserved == 0
+        # State in test data:
+        #   1a01, 1a03, 1a04, 1b01, 1b03 are free
+        #   1a00, 1b04 are active
+        #   others are ''
+        # WWPNs in test data:
+        #   1b02 wwpns are empty, others are normal
+        fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('1a01', '', 0, 0, 'c05076de33000a01',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1a02', '', 1, 1, 'c05076de33000a02',
+                          'c05076de33002641', '27', '', 'owner1',
+                          ''),
+                         ('1a03', '', 0, 0, 'c05076de33000a03',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1a04', '', 0, 0, 'c05076de33000a04',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1b00', '', 0, 1, 'c05076de33000b00',
+                          'c05076de33002642', '30', '', 'owner1',
+                          ''),
+                         ('1b01', '', 0, 0, 'c05076de33000b01',
+                          'c05076de33002642', '30', 'free', 'owner1',
+                          ''),
+                         ('1b02', '', 0, 0, '',
+                          '', '30', 'notfound', 'owner1',
+                          ''),
+                         ('1b03', '', 0, 0, 'c05076de33000b03',
+                          'c05076de33002642', '30', 'free', 'owner1',
+                          ''),
+                         ('1b04', '', 0, 0, 'c05076de33000b04',
+                          'c05076de33002642', '30', 'active', 'owner1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert test data into table template_fcp_mapping
+        template_fcp = [('1a00', template_id, 0),
+                        ('1a01', template_id, 0),
+                        ('1a02', template_id, 0),
+                        ('1a03', template_id, 0),
+                        ('1a04', template_id, 0),
+                        ('1b00', template_id, 1),
+                        ('1b01', template_id, 1),
+                        ('1b02', template_id, 1),
+                        ('1b03', template_id, 1),
+                        ('1b04', template_id, 1)]
+        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
         try:
             # test case1
-            fcp_list = self.db_op.get_fcp_pair_with_same_index()
+            fcp_list = self.db_op.get_fcp_devices_with_same_index('fakeid')
             self.assertEqual([], fcp_list)
             # test case2
-            self.db_op.new('1a00', 0)
-            self.db_op.new('1a01', 0)
-            self.db_op.new('1a02', 0)
-            self.db_op.new('1a03', 0)
-            self.db_op.new('1a04', 0)
-            self.db_op.new('1a05', 0)
-            self.db_op.new('1b00', 1)
-            self.db_op.new('1b01', 1)
-            self.db_op.new('1b02', 1)
-            self.db_op.new('1b03', 1)
-            self.db_op.new('1b04', 1)
-            self.db_op.increase_usage('1a00')
-            self.db_op.increase_usage('1a00')
-            self.db_op.increase_usage('1a02')
-            self.db_op.reserve('1a02')
-            self.db_op.reserve('1b00')
-            free_comment = {
-                'state': 'free',
-                'owner': 'NONE'
-            }
-            active_comment = {
-                'state': 'active',
-                'owner': 'JACK0004'
-            }
-            free_fcps = (
-                '1a01', '1a03', '1a04',
-                '1b01', '1b03'
-            )
-            active_fcps = (
-                '1a00', '1b04'
-            )
-            for fcp in free_fcps:
-                self.db_op.update_comment_of_fcp(fcp, free_comment)
-            for fcp in active_fcps:
-                self.db_op.update_comment_of_fcp(fcp, active_comment)
             # expected result
-            expected_pairs_1 = {('1a01', '1b01'), ('1a03', '1b03')}
+            #   can not return 1a04 because it do not have 1bxx with same ndex
+            expected_results = {('1a01', '1b01'), ('1a03', '1b03')}
             result = set()
             for i in range(10):
-                fcp_list = self.db_op.get_fcp_pair_with_same_index()
-                result.add(tuple(fcp_list))
-            self.assertEqual(result, expected_pairs_1)
-            # test case3
-            self.db_op.reserve('1a01')
-            self.db_op.reserve('1b03')
-            for i in range(10):
-                fcp_list = self.db_op.get_fcp_pair_with_same_index()
-                self.assertEqual(fcp_list, [])
+                fcp_list = self.db_op.get_fcp_devices_with_same_index(
+                    template_id)
+                result.add(tuple([fcp[0] for fcp in fcp_list]))
+            self.assertEqual(result, expected_results)
+            # test case3:
+            self.db_op.reserve_fcps(['1a01', '1b03'], '', template_id)
+            # after reserve_fcps, no available pair records with same index
+            fcp_list = self.db_op.get_fcp_devices_with_same_index(
+                template_id)
+            self.assertEqual(fcp_list, [])
         finally:
-            self.db_op.delete('1a00')
-            self.db_op.delete('1a01')
-            self.db_op.delete('1a02')
-            self.db_op.delete('1a03')
-            self.db_op.delete('1a04')
-            self.db_op.delete('1a05')
-            self.db_op.delete('1b00')
-            self.db_op.delete('1b01')
-            self.db_op.delete('1b02')
-            self.db_op.delete('1b03')
-            self.db_op.delete('1b04')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_get_fcp_pair(self):
-        '''
+    def test_get_fcp_devices(self):
+        '''Test API get_fcp_devices
+
         get_fcp_pair() only returns
         the following possible values:
         e.g. When FCP DB contains FCPs from 2 paths
@@ -566,204 +991,121 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
            an empty list(i.e. [])
            if no expected pair found
         '''
+        # prepare data for fcp template "1a00-1a04;1b00-1b04"
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        # insert test data into table fcp
+        # Usage in test data:
+        #   1a00 usage is connections == 2, reserved == 0
+        #   1a02 usage is connections == 1, reserved == 1
+        #   1b00 usage is connections == 0, reserved == 1
+        #   others are connections ==0, reserved == 0
+        # State in test data:
+        #   1a01, 1a03, 1a04, 1b01, 1b03 are free
+        #   1a00, 1b04 are active
+        #   others are ''
+        # WWPNs in test data:
+        #   1b02 wwpns are empty, others are normal
+        fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('1a01', '', 0, 0, 'c05076de33000a01',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1a02', '', 1, 1, 'c05076de33000a02',
+                          'c05076de33002641', '27', '', 'owner1',
+                          ''),
+                         ('1a03', '', 0, 0, 'c05076de33000a03',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1a04', '', 0, 0, 'c05076de33000a04',
+                          'c05076de33002641', '27', 'free', 'owner1',
+                          ''),
+                         ('1b00', '', 0, 1, 'c05076de33000b00',
+                          'c05076de33002642', '30', '', 'owner1',
+                          ''),
+                         ('1b01', '', 0, 0, 'c05076de33000b01',
+                          'c05076de33002642', '30', 'free', 'owner1',
+                          ''),
+                         ('1b02', '', 0, 0, '',
+                          '', '30', 'notfound', 'owner1',
+                          ''),
+                         ('1b03', '', 0, 0, 'c05076de33000b03',
+                          'c05076de33002642', '30', 'free', 'owner1',
+                          ''),
+                         ('1b04', '', 0, 0, 'c05076de33000b04',
+                          'c05076de33002642', '30', 'active', 'owner1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert test data into table template_fcp_mapping
+        template_fcp = [('1a00', template_id, 0),
+                        ('1a01', template_id, 0),
+                        ('1a02', template_id, 0),
+                        ('1a03', template_id, 0),
+                        ('1a04', template_id, 0),
+                        ('1b00', template_id, 1),
+                        ('1b01', template_id, 1),
+                        ('1b02', template_id, 1),
+                        ('1b03', template_id, 1),
+                        ('1b04', template_id, 1)]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+        # insert new test data
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
         try:
-            # test case1
-            self.db_op.new('1a00', 0)
-            self.db_op.new('1a01', 0)
-            self.db_op.new('1a02', 0)
-            self.db_op.new('1a03', 0)
-            self.db_op.new('1a04', 0)
-            self.db_op.new('1a05', 0)
-            self.db_op.new('1b00', 1)
-            self.db_op.new('1b01', 1)
-            self.db_op.new('1b02', 1)
-            self.db_op.new('1b03', 1)
-            self.db_op.new('1b04', 1)
-            self.db_op.increase_usage('1a00')
-            self.db_op.increase_usage('1a00')
-            self.db_op.increase_usage('1a02')
-            self.db_op.reserve('1a02')
-            self.db_op.reserve('1b00')
-            free_comment = {
-                'state': 'free',
-                'owner': 'NONE'
-            }
-            active_comment = {
-                'state': 'active',
-                'owner': 'JACK0004'
-            }
-            free_fcps = (
-                '1a01', '1a03', '1a04',
-                '1b01', '1b03'
-            )
-            active_fcps = (
-                '1a00', '1b04'
-            )
-            for fcp in free_fcps:
-                self.db_op.update_comment_of_fcp(fcp, free_comment)
-            for fcp in active_fcps:
-                self.db_op.update_comment_of_fcp(fcp, active_comment)
             # expected result
-            expected_pairs_1 = {
+            all_possible_pairs = {
                 ('1a01', '1b01'), ('1a01', '1b03'),
                 ('1a03', '1b01'), ('1a03', '1b03'),
                 ('1a04', '1b01'), ('1a04', '1b03')
             }
+            # exhaustion to get all possible pairs
             result = set()
             for i in range(300):
-                fcp_list = self.db_op.get_fcp_pair()
-                result.add(tuple(fcp_list))
-            self.assertEqual(result, expected_pairs_1)
-            # test case2
-            CONF.volume.min_fcp_paths_count = 1
-            self.db_op.reserve('1a01')
-            self.db_op.reserve('1a03')
-            self.db_op.reserve('1a04')
-            expected_pairs_2 = {('1b01',), ('1b03',)}
-            result = set()
-            for i in range(10):
-                fcp_list = self.db_op.get_fcp_pair()
-                result.add(tuple(fcp_list))
-            self.assertEqual(result, expected_pairs_2)
-            # test case3
-            self.db_op.reserve('1b01')
-            self.db_op.reserve('1b03')
+                fcp_list = self.db_op.get_fcp_devices(template_id)
+                # fcp_list include fcp_id, wwpn_npiv, wwpn_phy
+                # we test fcp_id only
+                result.add(tuple([fcp[0] for fcp in fcp_list]))
+            self.assertEqual(result, all_possible_pairs)
+            # test case2: no available fcp device in one path
+            #   reserve all fcp devices in path 0
+            self.db_op.reserve_fcps(['1a01', '1a03', '1a04'], '', template_id)
             # expected result
             for i in range(10):
-                fcp_list = self.db_op.get_fcp_pair()
+                fcp_list = self.db_op.get_fcp_devices(template_id)
                 self.assertEqual(fcp_list, [])
+            # test case3: min_fcp_paths_count was set to 1
+            CONF.volume.min_fcp_paths_count = 1
+            all_possible_pairs = {('1b01',), ('1b03',)}
+            result = set()
+            for i in range(10):
+                fcp_list = self.db_op.get_fcp_devices(template_id)
+                result.add(tuple([fcp[0] for fcp in fcp_list]))
+            self.assertEqual(result, all_possible_pairs)
         finally:
-            self.db_op.delete('1a00')
-            self.db_op.delete('1a01')
-            self.db_op.delete('1a02')
-            self.db_op.delete('1a03')
-            self.db_op.delete('1a04')
-            self.db_op.delete('1a05')
-            self.db_op.delete('1b00')
-            self.db_op.delete('1b01')
-            self.db_op.delete('1b02')
-            self.db_op.delete('1b03')
-            self.db_op.delete('1b04')
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_find_and_reserve(self):
-        self.db_op.new('1111', 1)
-        self.db_op.new('1112', 2)
+    def test_create_fcp_template(self):
+        pass
 
-        try:
-            fcp = self.db_op.find_and_reserve()
-            self.assertEqual('1111', fcp)
+    def test_get_fcp_templates(self):
+        pass
 
-            fcp_list = self.db_op.get_from_fcp('1111')
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual(1, fcp[3])
-        finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
+    def test_get_host_default_fcp_template(self):
+        pass
 
-    def test_decrease_usage(self):
-        self.db_op.new('1111', 0)
+    def test_get_sp_default_fcp_template(self):
+        pass
 
-        try:
-            self.db_op.assign('1111', 'decuser')
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.db_op.increase_usage('1111')
-            self.db_op.increase_usage('1111')
+    def test_get_fcp_template_by_assigner_id(self):
+        pass
 
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual(3, fcp[2])
-
-            self.db_op.decrease_usage('1111')
-            fcp_list = self.db_op.get_all()
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual(2, fcp[2])
-
-        finally:
-            self.db_op.delete('1111')
-
-    def test_decrease_usage_of_not_exist_fcp(self):
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.decrease_usage, 'xxxx')
-
-    def test_increase_usage_of_not_exist_fcp(self):
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.increase_usage, 'xxxx')
-
-    def test_increase_usage_by_assigner(self):
-        self.db_op.new('1111', 0)
-        try:
-            self.db_op.assign('1111', 'auser')
-            self.db_op.increase_usage_by_assigner('1111', 'buser')
-            fcp_list = self.db_op.get_all()
-            fcp = fcp_list[0]
-            self.assertEqual(u'buser', fcp[1])
-        finally:
-            self.db_op.delete('1111')
-
-    def test_update_path_of_fcp(self):
-        self.db_op.new('2222', 0)
-        try:
-            self.db_op.assign('2222', 'auser')
-            self.db_op.update_path_of_fcp('2222', 1)
-            res = self.db_op.get_from_fcp('2222')
-            self.assertEqual(1, res[0][4])
-        finally:
-            self.db_op.delete('2222')
-
-    def test_update_comment_of_fcp(self):
-        self.db_op.new('2222', 0)
-        try:
-            new_comment = {'state': 'offline'}
-            self.db_op.update_comment_of_fcp('2222', new_comment)
-            self.assertDictEqual(self.db_op.get_comment_of_fcp('2222'),
-                                 new_comment)
-            new_comment = {'owner': 'fakeuser'}
-            self.db_op.update_comment_of_fcp('2222', new_comment)
-            self.assertDictEqual(self.db_op.get_comment_of_fcp('2222'),
-                                 {'owner': 'fakeuser'})
-        finally:
-            self.db_op.delete('2222')
-
-    def test_get_all_fcps_exception(self):
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.get_all_fcps_of_assigner,
-                          None)
-
-    def test_get_all_fcps(self):
-        """Test case when assigner_id specified or not.
-        """
-        self.db_op.new('1111', 0)
-        self.db_op.new('2222', 1)
-        try:
-            # case 1, the assigner not specified
-            res = self.db_op.get_all_fcps_of_assigner()
-            # Format of return is like:
-            # [(fcp_id, userid, connections, reserved, path, comment), (...)].
-            self.assertEqual(len(res), 2)
-            self.assertEqual(len(res[0]), 8)
-            # connections == 0
-            self.assertEqual(res[0][2], 0)
-            # path of 1111 is 0
-            self.assertEqual(res[0][4], 0)
-            # path of 2222 is 1
-            self.assertEqual(res[1][4], 1)
-            # case 2, assigner_id
-            self.db_op.assign('1111', 'fakeuser')
-            res = self.db_op.get_all_fcps_of_assigner(assigner_id='fakeuser')
-            self.assertEqual(len(res), 1)
-            self.assertEqual(len(res[0]), 8)
-            self.assertEqual(res[0][1], 'fakeuser')
-        finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('2222')
+    def test_get_fcp_templates_details(self):
+        pass
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
