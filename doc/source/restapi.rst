@@ -409,36 +409,6 @@ Get volume connector for z/VM.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
    :language: javascript
 
-Get all FCP Usage of specified userid
----------------------------------------
-
-**GET /volumes/fcp**
-
-Get all the FCP usage in database for z/VM.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: userid_in_params
-  - raw: get_raw_data
-  - statistics: get_statistics_data
-  - sync_with_zvm: sync_with_zvm
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. restapi_parameters:: parameters.yaml
-
-  - output: fcp_usage
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_all_fcp_usage.tpl
-
 Get FCP Usage
 --------------------
 
