@@ -1609,28 +1609,6 @@ class SDKAPI(object):
         return self._volumeop.get_volume_connector(
             userid, reserve, fcp_template_id)
 
-    def get_all_fcp_usage(self, userid=None, raw=False, statistics=True,
-                          sync_with_zvm=False):
-        """API for getting all the FCP usage for specified userid.
-
-        :param str userid: the user id of the guest. if userid is None,
-                           will return all the fcp usage in database.
-
-        :returns: dict describing reserved,connections values of the FCP
-                  in database. For example:
-                  {
-                      '1a11': ['userid', 0, 1],
-                      '1b11': ['fakeid', 1, 3],
-                      '1c11': ['fakeid', 1, 2],
-                      '1d11': ['fakeid', 1, 0]
-                  }
-                  the keys are the fcp IDs, the value is a list contains
-                  [userid, reserved, connections] values.
-        """
-        return self._volumeop.get_all_fcp_usage(userid, raw=raw,
-                                                statistics=statistics,
-                                                sync_with_zvm=sync_with_zvm)
-
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                          default_sp_list= None, host_default=False):
         """Get template base info
