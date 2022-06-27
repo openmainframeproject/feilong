@@ -130,6 +130,8 @@ class VolumeOperatorAPI(object):
             template_id_list, raw=raw, statistics=statistics,
             sync_with_zvm=sync_with_zvm)
 
+    def delete_fcp_template(self, template_id):
+        return self._volume_manager.fcp_mgr.delete_fcp_template(template_id)
 
 @six.add_metaclass(abc.ABCMeta)
 class VolumeConfiguratorAPI(object):
@@ -1688,6 +1690,13 @@ class FCPManager(object):
         for value in template_info.values():
             ret.append(value)
         return {"fcp_templates": ret}
+
+    def delete_fcp_template(self, template_id):
+        """Delete fcp template by id.
+        :param template_id: (str)
+        :return: no return result
+        """
+        return self.db.delete_fcp_template(template_id)
 
 
 # volume manager for FCP protocol

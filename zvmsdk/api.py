@@ -1770,6 +1770,9 @@ class SDKAPI(object):
             template_id_list=template_id_list, raw=raw,
             statistics=statistics, sync_with_zvm=sync_with_zvm)
 
+    def delete_fcp_template(self, template_id):
+        return self._volumeop.delete_fcp_template(template_id)
+
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
         """API for getting FCP usage in database manually.
