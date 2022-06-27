@@ -1155,12 +1155,14 @@ class FCPManager(object):
         template_dict = {}
         for item in raw_data:
             id, name, description, is_default, sp_name = item
+            if sp_name == 'null':
+                sp_name = None
             if not template_dict.get(id, None):
                 template_dict[id] = {"id": id,
                                      "name": name,
                                      "description": description,
                                      "is_default": bool(is_default),
-                                     "sp_name": [sp_name]}
+                                     "sp_name": []}
             # one fcp template can be multiple sp's default template
             if sp_name and sp_name not in template_dict[id]["sp_name"]:
                 template_dict[id]["sp_name"].append(sp_name)
