@@ -79,6 +79,9 @@ class VolumeAction(object):
                                         statistics=statistics,
                                         sync_with_zvm=sync_with_zvm)
 
+    def delete_fcp_template(self, template_id):
+        return self.client.send_request('delete_fcp_template', template_id)
+
     @validation.query_schema(volume.get_fcp_usage)
     def get_fcp_usage(self, req, fcp):
         return self.client.send_request('get_fcp_usage', fcp)
@@ -320,4 +323,22 @@ def get_fcp_templates_details(req):
                     additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
     req.response.body = utils.to_utf8(ret_json)
+    return req.response
+
+@util.SdkWsgify
+@tokens.validate
+def delete_fcp_template(req):
+    def _delete_fcp_template(template_id):
+        action = get_action()
+
+        return action.delete_fcp_template(template_id)
+
+    template_id = util.wsgi_path_item(req.environ, 'template_id')
+    info = _delete_fcp_template(template_id)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+                    additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
     return req.response

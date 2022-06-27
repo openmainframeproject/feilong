@@ -467,7 +467,7 @@ def req_get_fcp_templates(start_index, *args, **kwargs):
 
 
 def req_get_fcp_templates_details(start_index, *args, **kwargs):
-    url = '/volumes/fcp_templates_details'
+    url = '/volumes/fcptemplates/detail'
     template_id_list = kwargs.get('template_id_list', None)
     raw = kwargs.get('raw', False)
     statistics = kwargs.get('statistics', True)
@@ -479,6 +479,12 @@ def req_get_fcp_templates_details(start_index, *args, **kwargs):
     url += "raw=%s&" % raw
     url += "statistics=%s&" % statistics
     url += "sync_with_zvm=%s" % sync_with_zvm
+    body = None
+    return url, body
+
+
+def req_delete_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates/%s'
     body = None
     return url, body
 
@@ -905,6 +911,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_get_fcp_templates_details},
+    'delete_fcp_template': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_delete_fcp_template},
     'get_fcp_usage': {
         'method': 'GET',
         'args_required': 1,
