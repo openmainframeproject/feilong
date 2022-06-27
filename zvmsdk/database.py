@@ -714,7 +714,7 @@ class FCPDbOperator(object):
             else:
                 LOG.warning(
                     "Can not find the default FCP template for this host.")
-                return []
+                return ''
 
     def fcp_template_exist_in_db(self, fcp_template_id: str):
         with get_fcp_conn() as conn:
