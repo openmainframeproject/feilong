@@ -726,6 +726,16 @@ class FCPDbOperator(object):
         else:
             return False
 
+    def fcp_template_allocated_in_db(self, tmpl_id: str):
+        with get_fcp_conn() as conn:
+            query_sql = conn.execute("SELECT tmpl_id FROM fcp "
+                                     "WHERE tmpl_id=?", (tmpl_id,))
+            query_ids = query_sql.fetchall()
+        if query_ids:
+            return True
+        else:
+            return False
+
     #########################################################
     #          DML for Table template_sp_mapping            #
     #########################################################
@@ -1235,6 +1245,25 @@ class FCPDbOperator(object):
                 "WHERE fcp.connections<>0 OR fcp.reserved<>0) "
                 "AND tmpl_id=? AND fcp_id=?",
                 records_to_delete)
+
+    def delete_fcp_template(self, template_id):
+        """Remove fcp template record from template, template_sp_mapping,
+        template_fcp_mapping and fcp tables."""
+        with get_fcp_conn() as conn:
+            if self.fcp_template_allocated_in_db(template_id):
+                errmsg = ("The fcp template has allocated fcp, can't delete "
+                        "it from fcp db.")
+                LOG.error(errmsg)
+                raise exception.SDKBaseException(msg=errmsg)
+            conn.execute("DELETE FROM template WHERE id=?",
+                         (template_id,))
+            conn.execute("DELETE FROM template_sp_mapping WHERE tmpl_id=?",
+                         (template_id,))
+            conn.execute("DELETE FROM template_fcp_mapping WHERE tmpl_id=?",
+                         (template_id,))
+            LOG.debug("Template record %s is removed from "
+                      "template, template_sp_mapping and "
+                      "template_fcp_mapping tables" % template_id)
 
 
 class ImageDbOperator(object):
