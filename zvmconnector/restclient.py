@@ -447,23 +447,6 @@ def req_get_volume_connector(start_index, *args, **kwargs):
     return url, body
 
 
-def req_get_all_fcp_usage(start_index, *args, **kwargs):
-    url = '/volumes/fcp'
-    userid = kwargs.get('userid', None)
-    raw = kwargs.get('raw', False)
-    statistics = kwargs.get('statistics', True)
-    sync_with_zvm = kwargs.get('sync_with_zvm', False)
-    if userid:
-        url += "?userid=%s&" % userid
-    else:
-        url += "?"
-    url += "raw=%s&" % raw
-    url += "statistics=%s&" % statistics
-    url += "sync_with_zvm=%s" % sync_with_zvm
-    body = None
-    return url, body
-
-
 def req_get_fcp_templates(start_index, *args, **kwargs):
     url = '/volumes/fcptemplates'
     template_id_list = kwargs.get('template_id_list', None)
@@ -911,11 +894,6 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_get_volume_connector},
-    'get_all_fcp_usage': {
-        'method': 'GET',
-        'args_required': 0,
-        'params_path': 0,
-        'request': req_get_all_fcp_usage},
     'get_fcp_templates': {
         'method': 'GET',
         'args_required': 0,

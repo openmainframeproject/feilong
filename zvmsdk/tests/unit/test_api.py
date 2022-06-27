@@ -501,14 +501,6 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.vswitch_grant_user("testvsw", self.userid)
         guv.assert_called_once_with("testvsw", self.userid)
 
-    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_all_fcp_usage")
-    def test_get_all_fcp_usage(self, mock_get_all_usage):
-        self.api.get_all_fcp_usage()
-        mock_get_all_usage.assert_called_once_with(None,
-                                                   raw=False,
-                                                   statistics=True,
-                                                   sync_with_zvm=False)
-
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.attach_volume_to_instance")
     def test_volume_attach(self, mock_attach):
         connection_info = {'platform': 'x86_64',
