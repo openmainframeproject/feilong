@@ -1216,7 +1216,11 @@ class FCPManager(object):
         if not statistics_usage[template_id].get(path_id, None):
             statistics_usage[template_id][path_id] = {
                 "total": [],
+                "total_count": 0,
+                "single_fcp": [],
+                "range_fcp": [],
                 "available": [],
+                "available_count": 0,
                 "allocated": [],
                 "reserve_only": [],
                 "connection_only": [],
@@ -1332,24 +1336,47 @@ class FCPManager(object):
     def _shrink_fcp_list_in_statistics_usage(self, statistics_usage):
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
-                # section is one from
-                # 'allocated', 'available', 'notfound', 'offline'
-                # 'allocated_but_free', 'unallocated_but_active'
-                for section in template_statistics[path]:
-                    # Do NOT transform unallocated_but_active,
-                    # because its value also contains VM userid.
-                    # e.g. [('1b04','owner1'), ('1b05','owner2')]
-                    if (section != 'unallocated_but_active' and
-                        section != 'CHPIDs'):
-                        fcp_list = template_statistics[path][section]
-                        template_statistics[path][section] = (
-                            self._shrink_fcp_list(fcp_list))
-                    if section == 'CHPIDs':
-                        for chpid, fcps in template_statistics[
-                            path]['CHPIDs'].items():
-                            fcp_list = fcps
-                            template_statistics[path]['CHPIDs'][chpid] = (
-                                self._shrink_fcp_list(fcp_list))
+                if template_statistics[path]["total"]:
+                    template_statistics[path][
+                        "total_count"] = len(template_statistics[path][
+                                                "total"])
+                if template_statistics[path]["available"]:
+                    template_statistics[path][
+                        "available_count"] = len(template_statistics[path][
+                                                    "available"])
+                need_shrink_sections = ["total",
+                                        "available",
+                                        "allocated",
+                                        "reserve_only",
+                                        "connection_only",
+                                        "allocated_but_free",
+                                        "notfound",
+                                        "offline"]
+                # Do NOT transform unallocated_but_active,
+                # because its value also contains VM userid.
+                # e.g. [('1b04','owner1'), ('1b05','owner2')]
+                # Do NOT transform CHPIDs, total_count, single_fcp,
+                # range_fcp and available_count
+                for section in need_shrink_sections:
+                    fcp_list = template_statistics[path][section]
+                    template_statistics[path][section] = (
+                        self._shrink_fcp_list(fcp_list))
+                # shrink for each CHIPID
+                for chpid, fcps in template_statistics[
+                    path]['CHPIDs'].items():
+                    fcp_list = fcps
+                    template_statistics[path]['CHPIDs'][chpid] = (
+                        self._shrink_fcp_list(fcp_list))
+
+    def _split_singe_range_fcp_list(self, statistics_usage):
+        for template_statistics in statistics_usage.values():
+            for path in template_statistics:
+                total_fcp = template_statistics[path]['total'].split(',')
+                for fcp in total_fcp:
+                    if '-' in fcp:
+                        template_statistics[path]['range_fcp'].append(fcp.strip())
+                    else:
+                        template_statistics[path]['single_fcp'].append(fcp.strip())
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                           default_sp_list=None, host_default=False):
@@ -1651,6 +1678,7 @@ class FCPManager(object):
             LOG.info("statistic FCP usage before shrink: %s"
                      % statistics_usage)
             self._shrink_fcp_list_in_statistics_usage(statistics_usage)
+            self._split_singe_range_fcp_list(statistics_usage)
             LOG.info("statistic FCP usage after shrink: %s"
                      % statistics_usage)
             # update base info with statistics_usage
