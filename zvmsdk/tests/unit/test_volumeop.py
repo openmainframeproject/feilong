@@ -751,14 +751,14 @@ class TestFCPManager(base.SDKTestCase):
                 "name": "name1",
                 "description": "desc1",
                 "is_default": False,
-                "sp_name": [None]
+                "sp_name": []
             },
             'fakehos2-1111-1111-1111-111111111111': {
                 "id": "fakehos2-1111-1111-1111-111111111111",
                 "name": "name2",
                 "description": "desc2",
                 "is_default": False,
-                "sp_name": [None]
+                "sp_name": []
             },
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c': {
                 "id": "ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c",
