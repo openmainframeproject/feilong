@@ -119,6 +119,8 @@ get_volume_connector = {
             'type': 'object',
             'properties': {
                 'reserve': parameter_types.boolean,
+                'fcp_template_id': parameter_types.fcp_template_id,
+                'sp_name': parameter_types.name
             },
             'required': ['info'],
             'additionalProperties': False,

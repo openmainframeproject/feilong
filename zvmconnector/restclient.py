@@ -437,10 +437,12 @@ def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     reserve = kwargs.get('reserve', False)
     fcp_template_id = kwargs.get('fcp_template_id', None)
+    sp_name = kwargs.get('sp_name', None)
     body = {'info':
         {
             "reserve": reserve,
-            "fcp_template_id": fcp_template_id
+            "fcp_template_id": fcp_template_id,
+            "sp_name": sp_name
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)

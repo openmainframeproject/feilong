@@ -371,13 +371,15 @@ class FCPDbOperator(object):
     #########################################################
     #                DML for Table fcp                      #
     #########################################################
-    def unreserve_fcps(self, fcp_ids, fcp_template_id):
+    def unreserve_fcps(self, fcp_ids):
+        if not fcp_ids:
+            return
         fcp_update_info = []
         for fcp_id in fcp_ids:
-            fcp_update_info.append((fcp_id, fcp_template_id))
+            fcp_update_info.append((fcp_id,))
         with get_fcp_conn() as conn:
             conn.executemany("UPDATE fcp SET reserved=0, tmpl_id='' "
-                             "WHERE fcp_id=? AND tmpl_id=?", fcp_update_info)
+                             "WHERE fcp_id=?", fcp_update_info)
 
     def reserve_fcps(self, fcp_ids, assigner_id, fcp_template_id):
         fcp_update_info = []
@@ -750,6 +752,18 @@ class FCPDbOperator(object):
         else:
             return False
 
+    def fcp_template_sp_mapping_exist_in_db(self, sp_name: str, fcp_template_id: str):
+        with get_fcp_conn() as conn:
+            query_mapping = conn.execute("SELECT sp_name FROM template_sp_mapping "
+                                         "WHERE sp_name=? and tmpl_id=?",
+                                         (sp_name, fcp_template_id))
+            mapping = query_mapping.fetchall()
+
+        if mapping:
+            return True
+        else:
+            return False
+
     #########################################################
     #           DML related to multiple tables              #
     #########################################################
@@ -1085,13 +1099,6 @@ class FCPDbOperator(object):
                 result = conn.execute(cmd)
 
             raw = result.fetchall()
-            if not raw:
-                msg = ('FCP Templates %s does not exist '
-                       'in DB.' % template_id_list)
-                LOG.error(msg)
-                obj_desc = "FCP templates: %s" % template_id_list
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
         return raw
 
     def get_host_default_fcp_template(self):
@@ -1110,10 +1117,6 @@ class FCPDbOperator(object):
                 "ON t.id=ts.tmpl_id "
                 "WHERE t.is_default=1")
             raw = result.fetchall()
-            if not raw:
-                obj_desc = "Default FCP template of the host"
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
         return raw
 
     def get_sp_default_fcp_template(self, sp_host_list):
@@ -1135,11 +1138,6 @@ class FCPDbOperator(object):
                     result = conn.execute(
                         cmd + " WHERE ts.sp_name=?", (sp_host,))
                     raw.extend(result.fetchall())
-            # raw format: id|name|description|is_default|sp_name
-            if not result:
-                obj_desc = "Default FCP template of %s" % sp_host_list
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
         return raw
 
     def get_fcp_template_by_assigner_id(self, assigner_id):
@@ -1157,10 +1155,6 @@ class FCPDbOperator(object):
                 "WHERE fcp.assigner_id=?", (assigner_id,))
             raw = result.fetchall()
             # id|name|description|is_default|sp_name
-            if not result:
-                obj_desc = "FCP templates belongs to userid: %s" % assigner_id
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
         return raw
 
     def get_fcp_templates_details(self, template_id_list=None):

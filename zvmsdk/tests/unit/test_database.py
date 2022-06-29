@@ -369,7 +369,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         # test API function
         try:
-            self.db_op.unreserve_fcps(fcp_id_list, template_id)
+            self.db_op.unreserve_fcps(fcp_id_list)
             userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
             # check default values of (assigner_id, connections) are correct
             self.assertEqual('', userid)
@@ -769,6 +769,19 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     def test_sp_name_exist_in_db(self):
         pass
 
+    def test_fcp_template_sp_mapping_exist_in_db(self):
+        template_sp_mapping = [('0001', 'v7k60'), ('0002', 'ds8k')]
+        # insert test data into table template_sp_mapping
+        self._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+        try:
+            res1 = self.db_op.fcp_template_sp_mapping_exist_in_db('0001', 'v7k60')
+            self.assertTrue(res1)
+            res2 = self.db_op.fcp_template_sp_mapping_exist_in_db('0002', 'v7k60')
+            self.assertFalse(res2)
+        finally:
+            self.db_op.delete_fcp_template('0001')
+            self.db_op.delete_fcp_template('0002')
+
     #########################################################
     #        Test cases related to multiple tables          #
     #########################################################
@@ -954,7 +967,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual([], fcp_list)
             # test case2
             # expected result
-            #   can not return 1a04 because it do not have 1bxx with same ndex
+            #   can not return 1a04 because it does not have 1bxx with same ndex
             expected_results = {('1a01', '1b01'), ('1a03', '1b03')}
             result = set()
             for i in range(10):
