@@ -1584,7 +1584,7 @@ class SDKAPI(object):
         self._networkops.delete_vswitch(vswitch_name, persist)
 
     def get_volume_connector(self, userid, reserve=False,
-                             fcp_template_id=None):
+                             fcp_template_id=None, sp_name=None):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1605,9 +1605,10 @@ class SDKAPI(object):
         :param boolean reserve: the flag to reserve FCP device
         :param str fcp_template_id: the fcp template id
                which FCP devices are allocated by
+        :param str sp_name: the storage provider name
         """
         return self._volumeop.get_volume_connector(
-            userid, reserve, fcp_template_id)
+            userid, reserve, fcp_template_id, sp_name)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                          default_sp_list= None, host_default=False):

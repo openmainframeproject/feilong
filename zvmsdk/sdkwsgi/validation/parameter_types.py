@@ -351,6 +351,11 @@ fcp_template_id_list = {
     'type': 'array'
 }
 
+fcp_template_id = {
+    'type': 'string',
+    'minLength': 1
+}
+
 file_type = {
     'type': 'string',
     'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'swap', 'none']
