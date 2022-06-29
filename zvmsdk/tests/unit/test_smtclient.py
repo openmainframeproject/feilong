@@ -65,6 +65,21 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           self._smtclient._request, requestData)
 
     @mock.patch.object(smt.SMT, 'request')
+    def test_private_request_failed_110(self, request):
+        requestData = "fake request"
+        request.return_value = {'overallRC': 25, 'rc': -110,
+                                'rs': '0', 'logEntries': []}
+        try:
+            self._smtclient._request(requestData)
+        except exception.SDKInternalError as e:
+            data = ('This is likely to be caused by temporary z/VM '
+                    'SMAPI down issue')
+            self.assertTrue(str(e).__contains__(data))
+            return
+
+        raise Exception("should raise exception.SDKInternalError")
+
+    @mock.patch.object(smt.SMT, 'request')
     def test_private_request_failed_596(self, request):
         requestData = "fake request"
         request.return_value = {'overallRC': 1, 'rc': 596,
