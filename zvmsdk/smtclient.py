@@ -110,8 +110,14 @@ class SMTClient(object):
             # Check whether this smt error belongs to internal error, if so,
             # raise internal error, otherwise raise clientrequestfailed error
             if _is_smt_internal_error(results):
-                msg = "SMT internal error. Results: %s" % str(results)
-                LOG.error(msg)
+                msg = "SMT internal error. Results: %s." % str(results)
+
+                rc = results.get('rc', 0)
+                if rc in [-110, -102, -103, -108]:
+                    msg += ("This is likely to be caused by temporary z/VM "
+                            "SMAPI down issue, Contact with your z/VM "
+                            "administrators for further help")
+
                 raise exception.SDKInternalError(msg=msg,
                                                     modID='smt',
                                                     results=results)
