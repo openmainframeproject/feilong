@@ -52,6 +52,12 @@ LOG = log.LOG
 _LOCK = threading.Lock()
 CHUNKSIZE = 4096
 
+DIRMAINT_ERROR_MESSAGE = ("https://www-40.ibm.com/servers/resourcelink/"
+    "svc0302a.nsf/pages/zVMV7R2gc246282?OpenDocument")
+CP_ERROR_MESSAGE = ("https://www-40.ibm.com/servers/resourcelink/"
+    "svc0302a.nsf/pages/zVMV7R2gc246270?OpenDocument")
+
+
 _SMT_CLIENT = None
 
 
@@ -110,8 +116,21 @@ class SMTClient(object):
                                                     modID='smt',
                                                     results=results)
             else:
-                msg = ("SMT request failed. RequestData: '%s', Results: '%s'"
-                       % (requestData, str(results)))
+                # no solution if we don't know, so empty string
+                solution = ''
+                rc = results.get('rc', 0)
+
+                if rc == 396:
+                    solution = (("CP command failed, with error code %s."
+                                "Check <%s> on z/VM CP error messages")
+                                % (results['rs'], CP_ERROR_MESSAGE))
+                if rc == 596:
+                    solution = (("DIRMAINT command failed, with error code %s."
+                                "Check <%s> on z/VM DIRMAINT error messages")
+                                % (results['rs'], DIRMAINT_ERROR_MESSAGE))
+
+                msg = (("SMT request failed. RequestData: '%s', Results: '%s'."
+                        "%s") % (requestData, str(results), solution))
                 raise exception.SDKSMTRequestFailed(results, msg)
         return results
 
