@@ -737,6 +737,11 @@ class SMTClient(object):
                 result = "Profile '%s'" % profile
                 raise exception.SDKObjectNotExistError(obj_desc=result,
                                                        modID='guest')
+            elif((err.results['rc'] == 596) and (err.results['rs'] == 3658)):
+                # internal issue 9939
+                # That is because a previous definition of CIC may have
+                # caused it to be defined. I would log it somewhere.
+                LOG.warning("ignoring 596/3658 as it might be defined already")
             else:
                 msg = ''
                 if action is not None:
