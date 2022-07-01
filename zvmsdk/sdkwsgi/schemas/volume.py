@@ -101,6 +101,7 @@ set_fcp_usage = {
                 'connections': {
                     'type': ['integer'],
                 },
+                'fcp_template_id': parameter_types.fcp_template_id,
             },
             'required': ['reserved', 'connections'],
             'additionalProperties': False,

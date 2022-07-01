@@ -111,9 +111,11 @@ class VolumeOperatorAPI(object):
     def get_fcp_usage(self, fcp):
         return self._volume_manager.get_fcp_usage(fcp)
 
-    def set_fcp_usage(self, assigner_id, fcp, reserved, connections):
+    def set_fcp_usage(self, assigner_id, fcp, reserved, connections,
+                      fcp_template_id):
         return self._volume_manager.set_fcp_usage(fcp, assigner_id,
-                                                  reserved, connections)
+                                                  reserved, connections,
+                                                  fcp_template_id)
 
     def create_fcp_template(self, name, description, fcp_devices,
                             host_default: bool = False,
@@ -2015,12 +2017,16 @@ class FCPVolumeManager(object):
             return True
 
     def get_fcp_usage(self, fcp):
-        userid, reserved, connections = self.db.get_usage_of_fcp(fcp)
-        LOG.debug("Got userid:%s, reserved:%s, connections:%s of "
-                  "FCP:%s" % (userid, reserved, connections, fcp))
-        return userid, reserved, connections
+        userid, reserved, connections, tmpl_id = self.db.get_usage_of_fcp(fcp)
+        LOG.debug("Got userid:%s, reserved:%s, connections:%s, tmpl_id: %s "
+                  "of FCP:%s" % (userid, reserved, connections, fcp, tmpl_id))
+        return userid, reserved, connections, tmpl_id
 
-    def set_fcp_usage(self, fcp, assigner_id, reserved, connections):
-        self.db.update_usage_of_fcp(fcp, assigner_id, reserved, connections)
+    def set_fcp_usage(self, fcp, assigner_id, reserved, connections,
+                      fcp_template_id):
+        self.db.update_usage_of_fcp(fcp, assigner_id, reserved, connections,
+                                    fcp_template_id)
         LOG.info("Set usage of fcp %s to userid:%s, reserved:%s, "
-                 "connections:%s." % (fcp, assigner_id, reserved, connections))
+                 "connections:%s, tmpl_id: %s." % (fcp, assigner_id,
+                                                   reserved, connections,
+                                                   fcp_template_id))

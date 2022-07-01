@@ -434,20 +434,24 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # test API function
         try:
             self.db_op.unreserve_fcps(fcp_id_list)
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             # check default values of (assigner_id, connections) are correct
             self.assertEqual('', userid)
             self.assertEqual(0, conn)
             # check reserved value
             self.assertEqual(0, reserved)
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('2222')
+            # tmpl_id set to ''
+            self.assertEqual('', tmpl_id)
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('2222')
             self.assertEqual('', userid)
             self.assertEqual(0, conn)
             self.assertEqual(0, reserved)
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('3333')
+            self.assertEqual('', tmpl_id)
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('3333')
             self.assertEqual('', userid)
             self.assertEqual(0, conn)
             self.assertEqual(0, reserved)
+            self.assertEqual('', tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -566,10 +570,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # insert new test data
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('', userid)
             self.assertEqual(2, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -587,11 +592,13 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
             # update reserved to 1, connection to 2, assigner_id to user2
-            self.db_op.update_usage_of_fcp('1111', 'user2', 1, 2)
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            new_tmpl_id = 'newhost-1111-1111-1111-111111111111'
+            self.db_op.update_usage_of_fcp('1111', 'user2', 1, 2, new_tmpl_id)
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('user2', userid)
             self.assertEqual(1, reserved)
             self.assertEqual(2, conn)
+            self.assertEqual(new_tmpl_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -609,10 +616,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
             self.db_op.increase_usage('1111')
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('', userid)
             self.assertEqual(3, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -635,10 +643,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
             self.db_op.increase_usage_by_assigner('1111', 'user1')
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('user1', userid)
             self.assertEqual(2, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -695,10 +704,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
             self.db_op.decrease_usage('1111')
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('1111')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('', userid)
             self.assertEqual(1, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 

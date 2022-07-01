@@ -93,9 +93,12 @@ class VolumeAction(object):
         userid = body['info']['userid']
         reserved = body['info']['reserved']
         connections = body['info']['connections']
+        fcp_template_id = body['info']['fcp_template_id']
+        if not fcp_template_id:
+            fcp_template_id = ''
         return self.client.send_request('set_fcp_usage',
                                         fcp, userid, reserved,
-                                        connections)
+                                        connections, fcp_template_id)
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, wwid,
                                transportfiles, guest_networks):
