@@ -807,16 +807,6 @@ class FCPDbOperator(object):
         else:
             return False
 
-    def fcp_template_allocated_in_db(self, tmpl_id: str):
-        with get_fcp_conn() as conn:
-            query_sql = conn.execute("SELECT tmpl_id FROM fcp "
-                                     "WHERE tmpl_id=?", (tmpl_id,))
-            query_ids = query_sql.fetchall()
-        if query_ids:
-            return True
-        else:
-            return False
-
     @staticmethod
     def update_basic_info_of_fcp_template(record):
         """ update basic info of a fcp template
@@ -1606,11 +1596,21 @@ class FCPDbOperator(object):
         """Remove fcp template record from template, template_sp_mapping,
         template_fcp_mapping and fcp tables."""
         with get_fcp_conn() as conn:
-            if self.fcp_template_allocated_in_db(template_id):
-                errmsg = ("The FCP device template has FCP devices allocated, "
-                          "hence the template is not allowed for deletion.")
-                LOG.error(errmsg)
-                raise exception.SDKBaseException(msg=errmsg)
+            if not self.fcp_template_exist_in_db(template_id):
+                obj_desc = ("FCP device template {} ".format(template_id))
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
+            inuse_fcp_devices = self.get_inuse_fcp_device_by_fcp_template(
+                template_id)
+            if inuse_fcp_devices:
+                inuse_fcp_devices = utils.shrink_fcp_list(
+                    [fcp['fcp_id'] for fcp in inuse_fcp_devices])
+                detail = ("Deleting a FCP device template "
+                          "is not allowed if there is any FCP device allocated "
+                          "from the template. The FCP devices ({}) are "
+                          "allocated from template {}"
+                          .format(inuse_fcp_devices, template_id))
+                raise exception.SDKConflictError(modID='volume', rs=22,
+                                                 msg=detail)
             conn.execute("DELETE FROM template WHERE id=?",
                          (template_id,))
             conn.execute("DELETE FROM template_sp_mapping WHERE tmpl_id=?",
