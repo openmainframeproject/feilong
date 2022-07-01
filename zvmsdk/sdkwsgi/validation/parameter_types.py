@@ -344,22 +344,18 @@ userid_list_array = {
 }
 
 fcp_template_id = {
-    'type': 'string',
-    'minLength': 36,
-    'maxLength': 36
+   'oneOf': [
+        {'type': 'null'},
+        {'type': 'string', 'maxLength': 36}
+    ]
 }
 
 fcp_template_id_list = {
     'items': {
         'type': 'string',
-        'minLength': 1
+        'maxLength': 36,
     },
     'type': 'array'
-}
-
-fcp_template_id = {
-    'type': 'string',
-    'minLength': 1
 }
 
 file_type = {

@@ -542,16 +542,17 @@ class FCPDbOperator(object):
             assigner_id = fcp_info['assigner_id']
             reserved = fcp_info['reserved']
             connections = fcp_info['connections']
+            tmpl_id = fcp_info['tmpl_id']
 
-        return assigner_id, reserved, connections
+        return assigner_id, reserved, connections, tmpl_id
 
-    def update_usage_of_fcp(self, fcp, assigner_id, reserved, connections):
+    def update_usage_of_fcp(self, fcp, assigner_id, reserved, connections,
+                            fcp_template_id):
         with get_fcp_conn() as conn:
             conn.execute("UPDATE fcp SET assigner_id=?, reserved=?, "
-                         "connections=? WHERE fcp_id=?", (assigner_id,
-                                                          reserved,
-                                                          connections,
-                                                          fcp))
+                         "connections=?, tmpl_id=? WHERE fcp_id=?",
+                         (assigner_id, reserved, connections,
+                          fcp_template_id, fcp))
 
     def increase_usage(self, fcp_id):
         with get_fcp_conn() as conn:
