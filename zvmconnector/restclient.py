@@ -501,7 +501,8 @@ def req_set_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp/%s'
     body = {'info': {'userid': args[start_index],
                      'reserved': args[start_index + 1],
-                     'connections': args[start_index + 2]}}
+                     'connections': args[start_index + 2],
+                     'fcp_template_id': args[start_index + 3]}}
     fill_kwargs_in_body(body['info'], **kwargs)
     return url, body
 
@@ -936,7 +937,7 @@ DATABASE = {
         'request': req_get_fcp_usage},
     'set_fcp_usage': {
         'method': 'PUT',
-        'args_required': 4,
+        'args_required': 5,
         'params_path': 1,
         'request': req_set_fcp_usage},
     'create_fcp_template': {

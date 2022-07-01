@@ -1782,13 +1782,16 @@ class SDKAPI(object):
         :param str fcp: the fcp ID of FCP device
 
         :returns: list describing reserved,connections values of the FCP
-                  in database. For example, ['fakeid', 1, 3] means the
-                  userid is fakeid, reserved value is 1, and connections is 3.
+                  in database. For example,
+                  ['fakeid', 1, 3, 'b7ad5cba-f225-11ec-a5cf-02553600000f'] means
+                  the userid is fakeid, reserved value is 1, connections is 3,
+                  fcp_template_id is 'b7ad5cba-f225-11ec-a5cf-02553600000f'.
         """
         return self._volumeop.get_fcp_usage(fcp)
 
     @check_fcp_exist()
-    def set_fcp_usage(self, fcp, userid, reserved, connections):
+    def set_fcp_usage(self, fcp, userid, reserved, connections,
+                      fcp_template_id):
         """API for setting FCP usage in database manually.
 
         :param str userid: the user id of the guest
@@ -1796,9 +1799,10 @@ class SDKAPI(object):
         :param int reserved: the value set to reserved value of FCP database
         :param int connections: the value set to connections value of
                                 FCP database
+        :param str fcp_template_id: the ID of the FCP template.
         """
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
-                                            connections)
+                                            connections, fcp_template_id)
 
     def create_fcp_template(self, name, description, fcp_devices,
                             host_default: bool = False,

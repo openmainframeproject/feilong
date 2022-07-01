@@ -414,18 +414,20 @@ class TestFCPManager(base.SDKTestCase):
             flag1 = self.fcpops.add_fcp_for_assigner('a83c', 'dummy1')
             self.assertEqual(True, flag1)
 
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('a83c')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('a83c')
             self.assertEqual('dummy1', userid)
             self.assertEqual(1, conn)
             self.assertEqual(0, reserved)
+            self.assertEqual(template_id, tmpl_id)
 
             flag2 = self.fcpops.add_fcp_for_assigner('a83d', 'user2')
             self.assertEqual(False, flag2)
 
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('a83d')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('a83d')
             self.assertEqual('user2', userid)
             self.assertEqual(3, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -798,10 +800,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
                         'fcp_template_id': template_id}
             self.assertDictEqual(expected, connector)
 
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('b83c')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('b83c')
             self.assertEqual('fakeuser', userid)
             self.assertEqual(0, conn)
             self.assertEqual(0, reserved)
+            # because reserve is False, so tmpl_id set to ''
+            self.assertEqual('', tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
@@ -870,10 +874,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                         'fcp_template_id': template_id}
             self.assertDictEqual(expected, connector)
 
-            userid, reserved, conn = self.db_op.get_usage_of_fcp('b83c')
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('b83c')
             self.assertEqual('FAKEUSER', userid)
             self.assertEqual(0, conn)
             self.assertEqual(1, reserved)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
@@ -1436,10 +1441,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                              "chpid, state, owner, tmpl_id) VALUES "
                              "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
         try:
-            userid, reserved, conns = self.volumeops.get_fcp_usage('283c')
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('283c')
             self.assertEqual(userid, 'user1')
             self.assertEqual(reserved, 1)
             self.assertEqual(conns, 2)
+            self.assertEqual(template_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -1458,10 +1464,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
                              "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
         try:
             # change reserved to 0 and connections to 3
-            self.volumeops.set_fcp_usage('283c', 'user2', 0, 3)
-            userid, reserved, conns = self.volumeops.get_fcp_usage('283c')
+            new_tmpl_id = 'newhost-1111-1111-1111-111111111111'
+            self.volumeops.set_fcp_usage('283c', 'user2', 0, 3, new_tmpl_id)
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('283c')
             self.assertEqual(userid, 'user2')
             self.assertEqual(reserved, 0)
             self.assertEqual(conns, 3)
+            self.assertEqual(new_tmpl_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
