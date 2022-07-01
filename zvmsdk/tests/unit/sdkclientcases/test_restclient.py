@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -940,6 +940,24 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guest_grow_root_volume", self.fake_userid,
                          'RHEL7.8')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_edit_fcp_template(self, get_token, request):
+        method = 'PUT'
+        fake_tmpl_id = 'fake_template_id' + '0' * 20
+        url = '/volumes/fcptemplates/%s' % fake_tmpl_id
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'name': 'fake_name', 'description': 'desc'}
+        self.client.call("edit_fcp_template",
+                         fake_tmpl_id, **kwargs)
+        body = json.dumps(kwargs)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

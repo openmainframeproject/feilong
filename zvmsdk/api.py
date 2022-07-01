@@ -1819,6 +1819,49 @@ class SDKAPI(object):
             name, description, fcp_devices,
             host_default=host_default, default_sp_list=default_sp_list)
 
+    def edit_fcp_template(self, fcp_template_id, name=None,
+                          description=None, fcp_devices=None,
+                          host_default=None, default_sp_list=None):
+        """ Edit a FCP device template
+
+        The kwargs values are pre-validated in two places:
+          validate kwargs types
+            in zvmsdk/sdkwsgi/schemas/volume.py
+          set a kwarg as None if not passed by user
+            in zvmsdk/sdkwsgi/handlers/volume.py
+
+        If any kwarg is None, the kwarg will not be updated.
+
+        :param fcp_template_id: template id
+        :param name:            template name
+        :param description:     template desc
+        :param fcp_devices:     FCP devices divided into
+                                different paths by semicolon
+          Format:
+            "fcp-devices-from-path0;fcp-devices-from-path1;..."
+          Example:
+            "0011-0013;0015;0017-0018",
+        :param host_default: (bool)
+        :param default_sp_list: (list)
+          Example:
+            ["SP1", "SP2"]
+        :return:
+          Example
+            {
+              'fcp_template': {
+                'name': 'bjcb-test-template',
+                'id': '36439338-db14-11ec-bb41-0201018b1dd2',
+                'description': 'This is Default template',
+                'is_default': True,
+                'sp_name': ['sp4', 'v7k60']
+              }
+            }
+        """
+        return self._volumeop.edit_fcp_template(
+            fcp_template_id, name=name, description=description,
+            fcp_devices=fcp_devices, host_default=host_default,
+            default_sp_list=default_sp_list)
+
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.

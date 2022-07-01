@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
 #
@@ -343,10 +343,16 @@ userid_list_array = {
     'type': 'array'
 }
 
+fcp_template_id = {
+    'type': 'string',
+    'minLength': 36,
+    'maxLength': 36
+}
+
 fcp_template_id_list = {
     'items': {
         'type': 'string',
-        'minLength': 1,
+        'minLength': 1
     },
     'type': 'array'
 }
