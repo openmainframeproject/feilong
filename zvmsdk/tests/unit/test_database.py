@@ -1,4 +1,4 @@
-# Copyright 2017, 2021 IBM Corp.
+# Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -15,7 +15,9 @@
 
 import mock
 import uuid
+import random
 
+from zvmsdk import utils
 from zvmsdk import config
 from zvmsdk import database
 from zvmsdk import exception
@@ -342,6 +344,68 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             conn.executemany("INSERT INTO template_sp_mapping "
                              "(sp_name, tmpl_id) "
                              "VALUES (?, ?)", template_sp_mapping)
+
+    def _prepare_fcp_info_for_a_test_fcp_template(self):
+        """ Prepare FCP device info for test
+        1. create a fcp template with fcp_devices
+        2. set some of the fcp_devices as inuse
+
+        Note: Remember to do cleanup after using the func
+        Example code-block:
+          try:
+              tid = self._prepare_fcp_info_for_a_test_fcp_template()
+              # do some thing with tid
+              test_my_function()
+          finally:
+              # clean up by call _purge_fcp_db()
+              _purge_fcp_db()
+        """
+        #   a. create_fcp_template
+        #   b. bulk_insert_zvm_fcp_info_into_fcp_table
+        #       insert '1A00-1A03;1B00-1B03'
+        #   c. reserve_fcps
+        #       set assigner_id and tmpl_id
+        #       ('1a01', '1b03')
+        #   d. increase_usage
+        #       set connections
+        #       ('1a01', '1b03')
+        tmpl_id = 'fake_id_' + str(random.randint(100000, 999999))
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': []}
+        self.db_op.create_fcp_template(
+            tmpl_id, kwargs['name'], kwargs['description'],
+            utils.expand_fcp_list(kwargs['fcp_devices']),
+            host_default=kwargs['host_default'],
+            default_sp_list=kwargs['default_sp_list'])
+        fcp_info = [
+            ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
+            ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+        # set FCP ('1a01', '1b03') as inuse
+        try:
+            self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
+        except exception.SDKGuestOperationError as ex:
+            if 'UNIQUE constraint failed' in str(ex):
+                pass
+            else:
+                raise
+        reserve_info = (('1a01', '1b03'), 'user1', tmpl_id)
+        self.db_op.reserve_fcps(*reserve_info)
+        self.db_op.increase_usage('1a01')
+        self.db_op.increase_usage('1b03')
+        return tmpl_id
+
+    @staticmethod
+    def _purge_fcp_db():
+        """ Delete all records in the fcp related tables """
+        with database.get_fcp_conn() as conn:
+            conn.execute("DELETE FROM fcp")
+            conn.execute("DELETE FROM template")
+            conn.execute("DELETE FROM template_fcp_mapping")
+            conn.execute("DELETE FROM template_sp_mapping")
 
     #########################################################
     #             Test cases for Table fcp                  #
@@ -716,11 +780,23 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     def test_update_wwpns_of_fcp(self):
         pass
 
+    def test_get_inuse_fcp_device_by_fcp_template(self):
+        """ Test get_inuse_fcp_device_by_fcp_template """
+        try:
+            # prepare test data by set inuse FCP ('1a01', '1b03')
+            tmpl_id = self._prepare_fcp_info_for_a_test_fcp_template()
+            expected = {'1a01', '1b03'}
+            fcps = self.db_op.get_inuse_fcp_device_by_fcp_template(tmpl_id)
+            result = {f['fcp_id'] for f in fcps}
+            self.assertEqual(expected, result)
+        finally:
+            self._purge_fcp_db()
+
     #########################################################
     #       Test cases for Table template_fcp_mapping       #
     #########################################################
-    def test_update_path_of_fcp(self):
-        """Test API update_usage_of_fcp"""
+    def test_update_path_of_fcp_device(self):
+        """Test API update_usage_of_fcp_device"""
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         template_fcp = [('1111', template_id, 1),
@@ -730,7 +806,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
         self._insert_data_into_template_fcp_mapping_table(template_fcp)
         try:
-            self.db_op.update_path_of_fcp('1111', 3, template_id)
+            self.db_op.update_path_of_fcp_device((3, '1111', template_id))
             path = self.db_op.get_path_of_fcp('1111', template_id)
             self.assertEqual(3, path)
         finally:
@@ -746,6 +822,41 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     def test_get_fcp_list_of_template(self):
         pass
 
+    def test_bulk_delete_fcp_device_from_fcp_template(self):
+        """ Test bulk_delete_fcp_device_from_fcp_template """
+        try:
+            # prepare test data by create a template
+            # with FCP devices as 1A00-1A03;1B00-1B03
+            tmpl_id = self._prepare_fcp_info_for_a_test_fcp_template()
+            expected = {'1a00', '1a01', '1a03', '1b00', '1b01', '1b03'}
+            rec = ((tmpl_id, '1a02'), (tmpl_id, '1b02'))
+            self.db_op.bulk_delete_fcp_device_from_fcp_template(rec)
+            # verify
+            _, fcp_detail = self.db_op.get_fcp_templates_details([tmpl_id])
+            fcp_in_db = {f['fcp_id'] for f in fcp_detail}
+            self.assertEqual(expected, fcp_in_db)
+        finally:
+            self._purge_fcp_db()
+
+    def test_bulk_insert_fcp_device_into_fcp_template(self):
+        """ Test bulk_insert_fcp_device_into_fcp_template """
+        try:
+            # prepare test data by create a template
+            # with FCP devices as 1A00-1A03;1B00-1B03
+            tmpl_id = self._prepare_fcp_info_for_a_test_fcp_template()
+            expected = {
+                '1a00', '1a01', '1a02', '1a03', '1a04',
+                '1b00', '1b01', '1b02', '1b03', '1b04'}
+            # bulk insert FCPs 1a04,1b04
+            rec = ((tmpl_id, '1a04', 0), (tmpl_id, '1b04', 1))
+            self.db_op.bulk_insert_fcp_device_into_fcp_template(rec)
+            # verify
+            _, fcp_detail = self.db_op.get_fcp_templates_details([tmpl_id])
+            fcp_in_db = {f['fcp_id'] for f in fcp_detail}
+            self.assertEqual(expected, fcp_in_db)
+        finally:
+            self._purge_fcp_db()
+
     #########################################################
     #            Test cases for Table template              #
     #########################################################
@@ -758,6 +869,52 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     def test_fcp_template_exist_in_db(self):
         pass
+
+    def test_update_basic_info_of_fcp_template(self):
+        """ Test update_basic_info_of_fcp_template """
+        try:
+            # prepare test data by create 2 templates
+            # with is_default as False
+            tmpl_id_1 = self._prepare_fcp_info_for_a_test_fcp_template()
+            tmpl_id_2 = self._prepare_fcp_info_for_a_test_fcp_template()
+            # case1:
+            # set tmpl_id_1 is_default as True
+            expected_1 = ('name1', 'desc1', True, tmpl_id_1)
+            self.db_op.update_basic_info_of_fcp_template(expected_1)
+            # verify
+            info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
+            result_1 = (
+                info_1['name'], info_1['description'],
+                bool(info_1['is_default']), tmpl_id_1)
+            self.assertEqual(expected_1, result_1)
+            info_2 = self.db_op.get_fcp_templates_details([tmpl_id_2])[0][0]
+            self.assertEqual(False, bool(info_2['is_default']))
+
+            # case2:
+            # set tmpl_id_2 is_default as True
+            expected_2 = ('name2', 'desc2', True, tmpl_id_2)
+            self.db_op.update_basic_info_of_fcp_template(expected_2)
+            # verify
+            info_2 = self.db_op.get_fcp_templates_details([tmpl_id_2])[0][0]
+            result_2 = (
+                info_2['name'], info_2['description'],
+                bool(info_2['is_default']), tmpl_id_2)
+            self.assertEqual(expected_2, result_2)
+            info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
+            self.assertEqual(False, bool(info_1['is_default']))
+
+            # case3:
+            # set both tmpl_id_1 and tmpl_id_2 as False for is_default
+            expected_1 = ('name1', 'desc1', False, tmpl_id_1)
+            expected_2 = ('name2', 'desc2', False, tmpl_id_2)
+            self.db_op.update_basic_info_of_fcp_template(expected_1)
+            self.db_op.update_basic_info_of_fcp_template(expected_2)
+            info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
+            self.assertEqual(False, bool(info_1['is_default']))
+            info_2 = self.db_op.get_fcp_templates_details([tmpl_id_2])[0][0]
+            self.assertEqual(False, bool(info_2['is_default']))
+        finally:
+            self._purge_fcp_db()
 
     #########################################################
     #       Test cases for Table template_sp_mapping        #
@@ -774,13 +931,38 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # insert test data into table template_sp_mapping
         self._insert_data_into_template_sp_mapping_table(template_sp_mapping)
         try:
-            res1 = self.db_op.fcp_template_sp_mapping_exist_in_db('0001', 'v7k60')
+            res1 = self.db_op.fcp_template_sp_mapping_exist_in_db('0001',
+                                                                  'v7k60')
             self.assertTrue(res1)
-            res2 = self.db_op.fcp_template_sp_mapping_exist_in_db('0002', 'v7k60')
+            res2 = self.db_op.fcp_template_sp_mapping_exist_in_db('0002',
+                                                                  'v7k60')
             self.assertFalse(res2)
         finally:
             self.db_op.delete_fcp_template('0001')
             self.db_op.delete_fcp_template('0002')
+
+    def test_bulk_set_sp_default_by_fcp_template(self):
+        """ Test bulk_set_sp_default_by_fcp_template """
+        try:
+            # create 1st template(tmpl_id_1)
+            # with default_sp_list=['SP1', 'SP2']
+            tmpl_id_1 = self._prepare_fcp_info_for_a_test_fcp_template()
+            self.db_op.edit_fcp_template(tmpl_id_1,
+                                         default_sp_list=['SP1', 'SP2'])
+            # create 2nd template(tmpl_id_2)
+            # with default_sp_list=['SP3', 'SP4']
+            tmpl_id_2 = self._prepare_fcp_info_for_a_test_fcp_template()
+            self.db_op.edit_fcp_template(tmpl_id_2,
+                                         default_sp_list=['SP3', 'SP4'])
+            # set tmpl_id_1 with ['SP3', 'SP4']
+            self.db_op.bulk_set_sp_default_by_fcp_template(
+                tmpl_id_1, ['SP3', 'SP4'])
+            info = self.db_op.get_fcp_templates_details([tmpl_id_1])[0]
+            result = {r['sp_name'].upper() for r in info}
+            expected = {'SP3', 'SP4'}
+            self.assertEqual(expected, result)
+        finally:
+            self._purge_fcp_db()
 
     #########################################################
     #        Test cases related to multiple tables          #
@@ -966,8 +1148,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             fcp_list = self.db_op.get_fcp_devices_with_same_index('fakeid')
             self.assertEqual([], fcp_list)
             # test case2
-            # expected result
-            #   can not return 1a04 because it does not have 1bxx with same ndex
+            # expected result:
+            # it can not return 1a04 because
+            # it does not have 1bxx with same index
             expected_results = {('1a01', '1b01'), ('1a03', '1b03')}
             result = set()
             for i in range(10):
@@ -1104,6 +1287,126 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     def test_create_fcp_template(self):
         pass
+
+    def test_edit_fcp_template(self):
+        """ Test edit_fcp_template()
+
+        """
+        tmpl_id = 'fake_id_0000'
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': []
+        }
+        try:
+            # case1:
+            # validate: FCP device template
+            obj_desc = ("FCP device template {}".format(tmpl_id))
+            with self.assertRaises(exception.SDKObjectNotExistError) as cm:
+                self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            # The following 3 assertions are the same
+            # (Pdb) pp str(cm.exception)
+            # 'FCP device template fake_id_0000 does not exist.'
+            self.assertIn(obj_desc, cm.exception.message)
+            self.assertIn(obj_desc, str(cm.exception))
+            self.assertRaisesRegex(exception.SDKObjectNotExistError,
+                                   obj_desc,
+                                   self.db_op.edit_fcp_template,
+                                   tmpl_id, **kwargs)
+
+            # case2:
+            # validate: add or delete path from FCP template
+            # preparation:
+            #   a. create_fcp_template
+            #   b. bulk_insert_zvm_fcp_info_into_fcp_table
+            #       insert '1A00-1A03;1B00-1B03'
+            #   c. reserve_fcps
+            #       set assigner_id and tmpl_id
+            #       ('1a01', '1b03')
+            #   d. increase_usage
+            #       set connections
+            #       ('1a01', '1b03')
+            kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03'
+            self.db_op.create_fcp_template(
+                tmpl_id, kwargs['name'], kwargs['description'],
+                utils.expand_fcp_list(kwargs['fcp_devices']),
+                host_default=kwargs['host_default'],
+                default_sp_list=kwargs['default_sp_list'])
+            fcp_info = [
+                ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
+                ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+            # set FCP ('1a01', '1b03') as inuse
+            self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
+            reserve_info = (('1a01', '1b03'), 'user1', tmpl_id)
+            self.db_op.reserve_fcps(*reserve_info)
+            self.db_op.increase_usage('1a01')
+            self.db_op.increase_usage('1b03')
+            # add path
+            kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03;1c00'
+            detail = "Adding or deleting path.*from template {}".format(
+                tmpl_id)
+            self.assertRaisesRegex(exception.ValidationError,
+                                   detail,
+                                   self.db_op.edit_fcp_template,
+                                   tmpl_id, **kwargs)
+            # delete path
+            kwargs['fcp_devices'] = '1A00-1A03'
+            detail = "Adding or deleting path.*from template {}".format(
+                tmpl_id)
+            self.assertRaisesRegex(exception.ValidationError,
+                                   detail,
+                                   self.db_op.edit_fcp_template,
+                                   tmpl_id, **kwargs)
+
+            # case3
+            # validate: not allowed to remove inuse FCP ('1a01', '1b03')
+            kwargs['fcp_devices'] = '1A00;1B00'
+            not_allow_for_del = {f[0] for f in fcp_info}
+            detail = ("The FCP devices ({}) are missing from the input."
+                      .format(utils.shrink_fcp_list(list(not_allow_for_del))))
+            with self.assertRaises(exception.ValidationError) as cm:
+                self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            self.assertIn(detail, str(cm.exception))
+
+            # case4
+            # DML: table template_fcp_mapping
+            # (based on the preparation done in case2)
+            # a. insert fcp device : 1a05-1a07, 1b05-1b07
+            # b. remove fcp device : 1a02, 1b02
+            # c. update fcp path   :
+            #      change 1a01,1a03 from path0 to path1
+            #      change 1b01,1b03 from path1 to path0
+            kwargs['fcp_devices'] = '1A00,1B01,1B03;1B00,1A01,1A03'
+            self.db_op.edit_fcp_template(
+                tmpl_id, fcp_devices=kwargs['fcp_devices'])
+            expected = utils.expand_fcp_list(kwargs['fcp_devices'])
+            _, fcp_detail = self.db_op.get_fcp_templates_details([tmpl_id])
+            fcp_in_db = {0: set(), 1: set()}
+            for row in fcp_detail:
+                fcp_in_db[row['path']].add(row['fcp_id'])
+            self.assertEqual(expected, fcp_in_db)
+
+            # case5
+            # DML: table(template and template_sp_mapping)
+            # (based on the preparation done in case2)
+            kwargs['name'] = 'test_name'
+            kwargs['description'] = 'test_desc'
+            kwargs['host_default'] = True
+            kwargs['default_sp_list'] = ['SP1', 'SP2']
+            tmpl_basic = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            expected = {'fcp_template': {
+                'id': tmpl_id,
+                'name': kwargs['name'],
+                'description': kwargs['description'],
+                'is_default': kwargs['host_default'],
+                'sp_name': kwargs['default_sp_list']
+            }}
+            self.assertEqual(expected, tmpl_basic)
+        finally:
+            # clean up
+            self._purge_fcp_db()
 
     def test_get_fcp_templates(self):
         pass

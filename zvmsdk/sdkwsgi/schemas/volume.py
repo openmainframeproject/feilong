@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -149,4 +149,25 @@ create_fcp_template = {
     },
     'required': ['name', 'description', 'fcp_devices'],
     'additionalProperties': False,
+}
+
+
+edit_fcp_template = {
+    'type': 'object',
+    'properties': {
+        'fcp_template_id': parameter_types.fcp_template_id,
+        'name': parameter_types.name,
+        'description': {
+            'type': 'string'
+        },
+        'fcp_devices': {
+            'type': 'string'
+        },
+        'host_default': parameter_types.boolean,
+        'default_sp_list': {
+            'type': 'array'
+        }
+    },
+    'required': ['fcp_template_id'],
+    'additionalProperties': False
 }

@@ -126,6 +126,23 @@ class VolumeAction(object):
                                        default_sp_list=default_sp_list)
         return ret
 
+    @validation.schema(volume.edit_fcp_template)
+    def edit_fcp_template(self, body=None):
+        fcp_template_id = body.get('fcp_template_id')
+        name = body.get('name', None)
+        description = body.get('description', None)
+        fcp_devices = body.get('fcp_devices', None)
+        host_default = body.get('host_default', None)
+        default_sp_list = body.get('default_sp_list', None)
+
+        ret = self.client.send_request('edit_fcp_template',
+                                       fcp_template_id,
+                                       name=name, description=description,
+                                       fcp_devices=fcp_devices,
+                                       host_default=host_default,
+                                       default_sp_list=default_sp_list)
+        return ret
+
 
 def get_action():
     global _VOLUMEACTION
@@ -267,6 +284,22 @@ def create_fcp_template(req):
 
 @util.SdkWsgify
 @tokens.validate
+def edit_fcp_template(req):
+    def _edit_fcp_template(req_body):
+        action = get_action()
+        return action.edit_fcp_template(body=req_body)
+
+    body = util.extract_json(req.body)
+    body['fcp_template_id'] = util.wsgi_path_item(req.environ, 'template_id')
+    ret = _edit_fcp_template(body)
+    ret_json = json.dumps(ret)
+    req.response.body = utils.to_utf8(ret_json)
+    req.response.status = util.get_http_code_from_sdk_return(ret)
+    req.response.content_type = 'application/json'
+
+
+@util.SdkWsgify
+@tokens.validate
 def get_fcp_templates(req):
     def _get_fcp_templates(req, template_id_list, assigner_id,
                            default_sp_list, host_default):
@@ -283,8 +316,8 @@ def get_fcp_templates(req):
                              default_sp_list, host_default)
 
     ret_json = json.dumps(ret)
-    req.response.status = util.get_http_code_from_sdk_return(ret,
-                    additional_handler=util.handle_not_found)
+    req.response.status = util.get_http_code_from_sdk_return(
+        ret, additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
     req.response.body = utils.to_utf8(ret_json)
     return req.response
@@ -327,6 +360,7 @@ def get_fcp_templates_details(req):
     req.response.content_type = 'application/json'
     req.response.body = utils.to_utf8(ret_json)
     return req.response
+
 
 @util.SdkWsgify
 @tokens.validate

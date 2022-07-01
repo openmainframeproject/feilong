@@ -16,13 +16,32 @@
 import mock
 import shutil
 import uuid
-from mock import Mock
 
 from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import volumeop
 from zvmsdk.tests.unit import base
+
+
+class TestVolumeOperatorAPI(base.SDKTestCase):
+
+    def setUp(self):
+        super(TestVolumeOperatorAPI, self).setUp()
+        self.operator = volumeop.VolumeOperatorAPI()
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.edit_fcp_template")
+    def test_edit_fcp_template(self, mock_edit_tmpl):
+        """ Test edit_fcp_template """
+        tmpl_id = 'fake_id'
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': ['sp1']}
+        self.operator.edit_fcp_template(tmpl_id, **kwargs)
+        mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
 
 class TestVolumeConfiguratorAPI(base.SDKTestCase):
@@ -366,141 +385,6 @@ class TestFCPManager(base.SDKTestCase):
             conn.executemany("DELETE FROM template_sp_mapping "
                              "WHERE tmpl_id=?", templates_id)
 
-    def test_expand_fcp_list_normal(self):
-        fcp_list = "1f10;1f11;1f12;1f13;1f14"
-        expected = {0: set(['1f10']),
-                    1: set(['1f11']),
-                    2: set(['1f12']),
-                    3: set(['1f13']),
-                    4: set(['1f14'])}
-
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_dash(self):
-        fcp_list = "1f10-1f14"
-        expected = {0: set(['1f10', '1f11', '1f12', '1f13', '1f14'])}
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_normal_plus_dash(self):
-        fcp_list = "1f10;1f11-1f13;1f17"
-        expected = {0: set(['1f10']),
-                    1: set(['1f11', '1f12', '1f13']),
-                    2: set(['1f17'])}
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_normal_plus_2dash(self):
-        fcp_list = "1f10;1f11-1f13;1f17-1f1a;1f02"
-        expected = {0: set(['1f10']),
-                    1: set(['1f11', '1f12', '1f13']),
-                    2: set(['1f17', '1f18', '1f19', '1f1a']),
-                    3: set(['1f02'])}
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_uncontinuous_equal_count(self):
-        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,5d73-5d74"
-        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
-                    1: set(['5d70', '5d71', '5d73', '5d74'])}
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_4_uncontinuous_equal_count(self):
-        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,\
-            5d73-5d74;1111-1112,1113-1114;2211-2212,2213-2214"
-        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
-                    1: set(['5d70', '5d71', '5d73', '5d74']),
-                    2: set(['1111', '1112', '1113', '1114']),
-                    3: set(['2211', '2212', '2213', '2214']),
-                   }
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    def test_expand_fcp_list_with_uncontinuous_not_equal_count(self):
-        fcp_list = "5c73-5c74;5d70-5d71,5d73-5d74"
-        expected = {0: set(['5c73', '5c74']),
-                    1: set(['5d70', '5d71', '5d73', '5d74'])}
-        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
-        self.assertEqual(expected, fcp_info)
-
-    @mock.patch("zvmsdk.volumeop.FCPManager."
-                "_verify_fcp_list_in_hex_format", Mock())
-    def test_shrink_fcp_list(self):
-        """Test _shrink_fcp_list"""
-
-        # Case1: only one FCP in the list.
-        fcp_list = ['1A01']
-        expected_fcp_str = '1A01'
-        result = self.fcpops._shrink_fcp_list(fcp_list)
-        self.assertEqual(expected_fcp_str, result)
-
-        # Case 2: all the FCPs are continuous.
-        expected_fcp_str = [
-            '1A01 - 1A0E',      # continuous in last 1 digit
-            '1A0E - 1A2E',      # continuous in last 2 digits
-            '1AEF - 1B1F']      # continuous in last 3 digits
-        expected_fcp_count = [
-            14,       # continuous in last 1 digit
-            33,       # continuous in last 2 digits
-            49]       # continuous in last 3 digits
-        for idx, efs in enumerate(expected_fcp_str):
-            fcp_list = list(
-                self.fcpops._expand_fcp_list(efs)[0])
-            result = self.fcpops._shrink_fcp_list(fcp_list.copy())
-            self.assertEqual(efs, result)
-            self.assertEqual(expected_fcp_count[idx], len(fcp_list))
-
-        # Case 3: not all the FCPs are continuous.
-        expected_fcp_str = [
-            '1A01, 1A0E - 1A2E',    # case 3.1
-            '1A0E - 1A2E, 1B01',    # case 3.2
-            '1A05, 1A0E - 1A2E, 1A4A, 1AEF - 1B1F',  # case 3.3
-            '1A0E - 1A2E, 1A4A, 1A5B, 1AEF - 1B1F']  # case 3.4
-        expected_fcp_count = [
-            34,     # case 3.1
-            34,     # case 3.2
-            84,     # case 3.3
-            84      # case 3.4
-        ]
-        for idx, efs in enumerate(expected_fcp_str):
-            fcp_list = list(
-                self.fcpops._expand_fcp_list(efs)[0])
-            result = self.fcpops._shrink_fcp_list(fcp_list.copy())
-            self.assertEqual(efs, result)
-            self.assertEqual(expected_fcp_count[idx], len(fcp_list))
-
-        # Case 4: an empty list.
-        fcp_list = []
-        expected_fcp_str = ''
-        result = self.fcpops._shrink_fcp_list(fcp_list)
-        self.assertEqual(expected_fcp_str, result)
-
-    def test_verify_fcp_list_in_hex_format(self):
-        """Test _verify_fcp_list_in_hex_format(fcp_list)"""
-        # case1: not a list object
-        fcp_list = '1A00 - 1A03'
-        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
-                               "not a list object",
-                               self.fcpops._verify_fcp_list_in_hex_format,
-                               fcp_list)
-        # case2: FCP(1A0) length != 4
-        fcp_list = ['1A00', '1A0']
-        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
-                               "non-hex value",
-                               self.fcpops._verify_fcp_list_in_hex_format,
-                               fcp_list)
-        # case3: FCP(1A0G) not a 4-digit hex
-        fcp_list = ['1A00', '1a0G']
-        self.assertRaisesRegex(exception.SDKInvalidInputFormat,
-                               "non-hex value",
-                               self.fcpops._verify_fcp_list_in_hex_format,
-                               fcp_list)
-        # case4: FCP(1A0R) not a 4-digit hex
-        fcp_list = ['1a00', '1A0F']
-        self.fcpops._verify_fcp_list_in_hex_format(fcp_list)
-
     @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
     def test_get_all_fcp_info(self, get_fcp_info):
         """Test get_all_fcp_info"""
@@ -788,6 +672,19 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list,
                                                      new_template_id)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.edit_fcp_template")
+    def test_edit_fcp_template(self, mock_db_edit_tmpl):
+        """ Test edit_fcp_template """
+        tmpl_id = 'fake_id'
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': ['sp1']}
+        self.fcpops.edit_fcp_template(tmpl_id, **kwargs)
+        mock_db_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
 
 class TestFCPVolumeManager(base.SDKTestCase):
