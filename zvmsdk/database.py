@@ -26,6 +26,7 @@ from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import utils
 
 
 CONF = config.CONF
@@ -33,7 +34,6 @@ LOG = log.LOG
 
 
 _DIR_MODE = 0o755
-_VOLUME_CONN = None
 _NETWORK_CONN = None
 _IMAGE_CONN = None
 _GUEST_CONN = None
@@ -102,18 +102,37 @@ def get_fcp_conn():
         _FCP_CONN = _init_db_conn(const.DATABASE_FCP)
         # enable access columns by name
         _FCP_CONN.row_factory = sqlite3.Row
-
     _DBLOCK_FCP.acquire()
     try:
+        # sqlite DB not allow to start a transaction within a transaction,
+        # so, only begin a transaction when no other alive transaction
+        if not _FCP_CONN.in_transaction:
+            _FCP_CONN.execute("BEGIN")
+            skip_commit = False
+        else:
+            skip_commit = True
         yield _FCP_CONN
     except exception.SDKBaseException as err:
+        # rollback only if _FCP_CONN.execute("BEGIN")
+        # is invoked when entering the contextmanager
+        if not skip_commit:
+            _FCP_CONN.execute("ROLLBACK")
         msg = "Got SDK exception in FCP DB operation: %s" % six.text_type(err)
         LOG.error(msg)
         raise
     except Exception as err:
+        # rollback only if _FCP_CONN.execute("BEGIN")
+        # is invoked when entering the contextmanager
+        if not skip_commit:
+            _FCP_CONN.execute("ROLLBACK")
         msg = "Execute SQL statements error: %s" % six.text_type(err)
         LOG.error(msg)
         raise exception.SDKGuestOperationError(rs=1, msg=msg)
+    else:
+        # commit only if _FCP_CONN.execute("BEGIN")
+        # is invoked when entering the contextmanager
+        if not skip_commit:
+            _FCP_CONN.execute("COMMIT")
     finally:
         _DBLOCK_FCP.release()
 
@@ -395,7 +414,7 @@ class FCPDbOperator(object):
         """Insert multiple records into fcp table witch fcp info queried
         from z/VM.
 
-        The input fcp_info should be list of FCP info set, for example:
+        The input fcp_info_list should be list of FCP info, for example:
         [(fcp_id, wwpn_npiv, wwpn_phy, chpid, state, owner),
          ('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
           'user1'),
@@ -666,6 +685,20 @@ class FCPDbOperator(object):
                          "WHERE fcp_id=?",
                          (wwpn_npiv, wwpn_phy, fcp))
 
+    @staticmethod
+    def get_inuse_fcp_device_by_fcp_template(fcp_template_id):
+        """ Get the FCP devices allocated from the template """
+        with get_fcp_conn() as conn:
+            query_sql = conn.execute("SELECT * FROM fcp "
+                                     "WHERE tmpl_id=?",
+                                     (fcp_template_id,))
+            result = query_sql.fetchall()
+        # result example
+        # [<sqlite3.Row object at 0x3ff8d1d64d0>,
+        #  <sqlite3.Row object at 0x3ff8d1d6570>,
+        #  <sqlite3.Row object at 0x3ff8d1d6590>]
+        return result
+
     #########################################################
     #          DML for Table template_fcp_mapping           #
     #########################################################
@@ -685,13 +718,22 @@ class FCPDbOperator(object):
                                                        modID=self._module_id)
             return path_info['path']
 
-    def update_path_of_fcp(self, fcp_id, path, fcp_template_id):
-        """Update the path number for the specified FCP in specified
-        fcp template in table template_fcp_mapping."""
+    @staticmethod
+    def update_path_of_fcp_device(record):
+        """ update path of single fcp device
+            from table template_fcp_mapping
+
+            :param record (tuple)
+                example:
+                (path, fcp_id, fcp_template_id)
+
+            :return NULL
+        """
         with get_fcp_conn() as conn:
-            conn.execute("UPDATE template_fcp_mapping SET path=? WHERE "
-                         "fcp_id=? and tmpl_id=?", (path, fcp_id,
-                                                    fcp_template_id))
+            conn.execute("UPDATE template_fcp_mapping "
+                         "SET path=? "
+                         "WHERE fcp_id=? and tmpl_id=?",
+                         record)
 
     def get_path_count(self, fcp_template_id):
         with get_fcp_conn() as conn:
@@ -702,6 +744,43 @@ class FCPDbOperator(object):
             path_list = result.fetchall()
 
         return len(path_list)
+
+    @staticmethod
+    def bulk_delete_fcp_device_from_fcp_template(records):
+        """ Delete multiple fcp device
+            from table template_fcp_mapping
+
+            :param records (iter)
+                example:
+                [(fcp_template_id, fcp_id), ...]
+
+            :return NULL
+        """
+        with get_fcp_conn() as conn:
+            conn.executemany(
+                "DELETE FROM template_fcp_mapping "
+                "WHERE tmpl_id=? AND fcp_id=?",
+                records)
+
+    @staticmethod
+    def bulk_insert_fcp_device_into_fcp_template(records):
+        """ Insert multiple fcp device
+            from table template_fcp_mapping
+
+            :param records (iter)
+                example:
+                [
+                    (fcp_template_id, fcp_id, path),
+                    ...
+                ]
+
+            :return NULL
+        """
+        with get_fcp_conn() as conn:
+            conn.executemany(
+                "INSERT INTO template_fcp_mapping "
+                "(tmpl_id, fcp_id, path) VALUES (?, ?, ?)",
+                records)
 
     #########################################################
     #               DML for Table template                  #
@@ -738,6 +817,30 @@ class FCPDbOperator(object):
         else:
             return False
 
+    @staticmethod
+    def update_basic_info_of_fcp_template(record):
+        """ update basic info of a fcp template
+            in table template
+
+            :param record (tuple)
+                example:
+                (name, description, host_default, fcp_template_id)
+
+            :return NULL
+        """
+        name, description, host_default, fcp_template_id = record
+        with get_fcp_conn() as conn:
+            # 1. change the is_default of existing templates to False,
+            #    if the is_default of the being-created template is True,
+            #    because only one default template per host is allowed
+            if host_default is True:
+                conn.execute("UPDATE template SET is_default=?", (False,))
+            # 2. update current template
+            conn.execute("UPDATE template "
+                         "SET name=?, description=?, is_default=? "
+                         "WHERE id=?",
+                         record)
+
     #########################################################
     #          DML for Table template_sp_mapping            #
     #########################################################
@@ -752,9 +855,11 @@ class FCPDbOperator(object):
         else:
             return False
 
-    def fcp_template_sp_mapping_exist_in_db(self, sp_name: str, fcp_template_id: str):
+    def fcp_template_sp_mapping_exist_in_db(self, sp_name: str,
+                                            fcp_template_id: str):
         with get_fcp_conn() as conn:
-            query_mapping = conn.execute("SELECT sp_name FROM template_sp_mapping "
+            query_mapping = conn.execute("SELECT sp_name "
+                                         "FROM template_sp_mapping "
                                          "WHERE sp_name=? and tmpl_id=?",
                                          (sp_name, fcp_template_id))
             mapping = query_mapping.fetchall()
@@ -763,6 +868,44 @@ class FCPDbOperator(object):
             return True
         else:
             return False
+
+    @staticmethod
+    def bulk_set_sp_default_by_fcp_template(template_id,
+                                            sp_name_list):
+        """ Set a default FCP template
+            for multiple storage providers
+
+            The function only manipulate table(template_fcp_mapping)
+
+            :param template_id: the FCP device template id
+            :param sp_name_list: a list of storage provider hostname
+
+            :return NULL
+        """
+        # Example:
+        # if
+        #  a.the existing-in-db storage providers for template_id:
+        #      ['sp1', 'sp2']
+        #  b.the sp_name_list is ['sp3', 'sp4']
+        # then
+        #  c.remove records of ['sp1', 'sp2'] from db
+        #  d.remove records of ['sp3', 'sp4'] if any from db
+        #  e.insert ['sp3', 'sp4'] with template_id as default
+        with get_fcp_conn() as conn:
+            # delete all records related to the template_id
+            conn.execute("DELETE FROM template_sp_mapping "
+                         "WHERE tmpl_id=?", (template_id,))
+            # delete all records related to the
+            # storage providers in sp_name_list
+            records = ((sp, ) for sp in sp_name_list)
+            conn.executemany("DELETE FROM template_sp_mapping "
+                             "WHERE sp_name=?", records)
+            # insert new record for each
+            # storage provider in sp_name_list
+            records = ((template_id, sp) for sp in sp_name_list)
+            conn.executemany("INSERT INTO template_sp_mapping "
+                             "(tmpl_id, sp_name) VALUES (?, ?)",
+                             records)
 
     #########################################################
     #           DML related to multiple tables              #
@@ -1033,7 +1176,7 @@ class FCPDbOperator(object):
             raise exception.SDKObjectAlreadyExistError(
                     obj_desc=("FCP template '%s' already "
                               "exist" % fcp_template_id),
-                    modID='volume')
+                    modID=self._module_id)
         # then check the SP records exist in template_sp_mapping or not
         # if already exist, will update the tmpl_id
         # if not exist, will insert new records
@@ -1053,8 +1196,9 @@ class FCPDbOperator(object):
                 new_record = [fcp_id, fcp_template_id, path]
                 fcp_mapping.append(new_record)
         with get_fcp_conn() as conn:
-            # 1. change existing records' is_default to False
-            #    if new host default fcp template will be created
+            # 1. change the is_default of existing templates to False,
+            #    if the is_default of the being-created template is True,
+            #    because only one default template per host is allowed
             if host_default is True:
                 conn.execute("UPDATE template SET is_default=?", (False,))
             # 2. insert a new record in template table
@@ -1074,6 +1218,221 @@ class FCPDbOperator(object):
                     conn.executemany("UPDATE template_sp_mapping SET "
                                      "tmpl_id=? WHERE sp_name=?",
                                      sp_mapping_to_update)
+
+    def edit_fcp_template(self, fcp_template_id, name=None, description=None,
+                          fcp_devices=None, host_default=None,
+                          default_sp_list=None):
+        """ Edit a FCP device template
+
+        The kwargs values are pre-validated in two places:
+          validate kwargs types
+            in zvmsdk/sdkwsgi/schemas/volume.py
+          set a kwarg as None if not passed by user
+            in zvmsdk/sdkwsgi/handlers/volume.py
+
+        If any kwarg is None, the kwarg will not be updated.
+
+        :param fcp_template_id: template id
+        :param name:            template name
+        :param description:     template desc
+        :param fcp_devices:     FCP devices divided into
+                                different paths by semicolon
+          Format:
+            "fcp-devices-from-path0;fcp-devices-from-path1;..."
+          Example:
+            "0011-0013;0015;0017-0018",
+        :param host_default: (bool)
+        :param default_sp_list: (list)
+          Example:
+            ["SP1", "SP2"]
+        :return:
+          Example
+            {
+              'fcp_template': {
+                'name': 'bjcb-test-template',
+                'id': '36439338-db14-11ec-bb41-0201018b1dd2',
+                'description': 'This is Default template',
+                'is_default': True,
+                'sp_name': ['sp4', 'v7k60']
+              }
+            }
+        """
+        with get_fcp_conn():
+            # The following multiple DQLs(Database query)
+            # are put into the with-block with DMLs
+            # because the consequent DMLs(Database modification)
+            # depend on the result of the DQLs.
+            # So that, other threads can NOT begin a sqlite transacation
+            # util current thread exits the with-block.
+            # Refer to 'def get_fcp_conn' for thread lock
+
+            # DQL: validate: FCP device template
+            if not self.fcp_template_exist_in_db(fcp_template_id):
+                obj_desc = ("FCP device template {}".format(fcp_template_id))
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
+
+            # DQL: validate: add or delete path from FCP template.
+            # If fcp_devices is None, it means user do not want to
+            # modify fcp_devices, so skip the validation;
+            # otherwise, perform the validation.
+            if fcp_devices is not None:
+                fcp_path_count_from_input = len(
+                    [i for i in fcp_devices.split(';') if i])
+                fcp_path_count_in_db = self.get_path_count(fcp_template_id)
+                if fcp_path_count_from_input != fcp_path_count_in_db:
+                    inuse_fcp = self.get_inuse_fcp_device_by_fcp_template(
+                        fcp_template_id)
+                    if inuse_fcp:
+                        inuse_fcp = utils.shrink_fcp_list(
+                            [fcp['fcp_id'] for fcp in inuse_fcp])
+                        detail = ("Adding or deleting path from a FCP "
+                                  "device template is not allowed if "
+                                  "there is any FCP device allocated "
+                                  "from the template. The FCP devices "
+                                  "({}) are allocated from template {}."
+                                  .format(inuse_fcp, fcp_template_id))
+                        raise exception.ValidationError(detail=detail)
+
+            tmpl_basic, fcp_detail = self.get_fcp_templates_details(
+                [fcp_template_id])
+
+            # DML: table template_fcp_mapping
+            if fcp_devices is not None:
+                # fcp_from_input:
+                # fcp devices from user input
+                # example:
+                # {'0011': 0, '0013': 0,  <<< path 0
+                #  '0015': 1,             <<< path 1
+                #  '0018': 2, '0017': 2}  <<< path 2
+                fcp_from_input = dict()
+                # fcp_devices_by_path:
+                # example:
+                # if fcp_devices is "0011-0013;0015;0017-0018",
+                # then fcp_devices_by_path is :
+                # {
+                #   0: {'0011', '0013'}
+                #   1: {'0015'}
+                #   2: {'0017', '0018'}
+                # }
+                fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
+                for path in fcp_devices_by_path:
+                    for fcp_id in fcp_devices_by_path[path]:
+                        fcp_from_input[fcp_id] = path
+                # fcp_in_db:
+                # FCP devices belonging to fcp_template_id
+                # queried from database including the FCP devices
+                # that are not found in z/VM
+                # example:
+                # {'0011': <sqlite3.Row object at 0x3ff85>,
+                #  '0013': <sqlite3.Row object at 0x3f3da>}
+                fcp_in_db = dict()
+                for row in fcp_detail:
+                    fcp_in_db[row['fcp_id']] = row
+                # Divide the FCP devices into three sets
+                add_set = set(fcp_from_input) - set(fcp_in_db)
+                inter_set = set(fcp_from_input) & set(fcp_in_db)
+                del_set = set(fcp_in_db) - set(fcp_from_input)
+                # only unused FCP devices can be
+                # deleted from a FCP device template.
+                # Note:
+                #  connections == None:
+                #   the fcp only exists in table(template_fcp_mapping),
+                #   rather than table(fcp)
+                #  connections == 0:
+                #   the fcp exists in both tables
+                #   and it is not allocated from FCP DB
+                not_allow_for_del = set()
+                for fcp in del_set:
+                    if (fcp_in_db[fcp]['connections'] not in (None, 0) or
+                            fcp_in_db[fcp]['reserved'] not in (None, 0)):
+                        not_allow_for_del.add(fcp)
+                # validate: not allowed to remove inuse FCP devices
+                if not_allow_for_del:
+                    not_allow_for_del = utils.shrink_fcp_list(
+                        list(not_allow_for_del))
+                    detail = ("The FCP devices ({}) are missing "
+                              "from the input. These FCP devices "
+                              "are allocated to virtual machines, "
+                              "ensure they are included in the "
+                              "FCP device list."
+                              .format(not_allow_for_del))
+                    raise exception.ValidationError(detail=detail)
+
+                # DML: table template_fcp_mapping
+                LOG.info("DML: table template_fcp_mapping")
+                # 1. delete from table template_fcp_mapping
+                records_to_delete = [
+                    (fcp_template_id, fcp_id)
+                    for fcp_id in del_set]
+                self.bulk_delete_fcp_device_from_fcp_template(
+                    records_to_delete)
+                LOG.info("FCP devices ({}) removed from FCP template {}."
+                         .format(utils.shrink_fcp_list(list(del_set)),
+                                 fcp_template_id))
+                # 2. insert into table template_fcp_mapping
+                records_to_insert = [
+                    (fcp_template_id, fcp_id, fcp_from_input[fcp_id])
+                    for fcp_id in add_set]
+                self.bulk_insert_fcp_device_into_fcp_template(
+                    records_to_insert)
+                LOG.info("FCP devices ({}) added into FCP template {}."
+                         .format(utils.shrink_fcp_list(list(add_set)),
+                                 fcp_template_id))
+                # 3. update table template_fcp_mapping
+                #    update path of fcp devices if changed
+                for fcp in inter_set:
+                    path_from_input = fcp_from_input[fcp]
+                    path_in_db = fcp_in_db[fcp]['path']
+                    if path_from_input != path_in_db:
+                        record_to_update = (
+                            fcp_from_input[fcp], fcp, fcp_template_id)
+                        self.update_path_of_fcp_device(record_to_update)
+                        LOG.info("FCP device ({}) updated into "
+                                 "FCP template {} from path {} to path {}."
+                                 .format(fcp, fcp_template_id,
+                                         fcp_in_db[fcp]['path'],
+                                         fcp_from_input[fcp]))
+
+            # DML: table template
+            if (name, description, host_default) != (None, None, None):
+                LOG.info("DML: table template")
+                record_to_update = (
+                    name if name is not None
+                    else tmpl_basic[0]['name'],
+                    description if description is not None
+                    else tmpl_basic[0]['description'],
+                    host_default if host_default is not None
+                    else tmpl_basic[0]['is_default'],
+                    fcp_template_id)
+                self.update_basic_info_of_fcp_template(record_to_update)
+                LOG.info("FCP template basic info updated.")
+
+            # DML: table template_sp_mapping
+            if default_sp_list is not None:
+                LOG.info("DML: table template_sp_mapping")
+                self.bulk_set_sp_default_by_fcp_template(fcp_template_id,
+                                                         default_sp_list)
+                LOG.info("Default template of storage providers ({}) "
+                         "updated.".format(default_sp_list))
+
+            # Return template basic info queried from DB
+            # tmpl_basic is a list containing one or more sqlite.Row objects
+            # Example:
+            #  if a template is the SP-level default for 2 SPs (SP1 and SP2)
+            #  (i.e. the template has 2 entries in table template_sp_mapping
+            #  then tmpl_basic is a list containing 2 Row objects,
+            #  the only different value between the 2 Row objects is 'sp_name'
+            #  (i.e. tmpl_basic[0]['sp_name'] is 'SP1',
+            #  while tmpl_basic[1]['sp_name'] is 'SP2'.
+            tmpl_basic = self.get_fcp_templates_details([fcp_template_id])[0]
+            return {'fcp_template': {
+                'name': tmpl_basic[0]['name'],
+                'id': tmpl_basic[0]['id'],
+                'description': tmpl_basic[0]['description'],
+                'is_default': bool(tmpl_basic[0]['is_default']),
+                'sp_name':
+                    [] if tmpl_basic[0]['sp_name'] is None
+                    else [r['sp_name'] for r in tmpl_basic]}}
 
     def get_fcp_templates(self, template_id_list=None):
         """Get fcp templates base info by template_id_list.
@@ -1159,11 +1518,14 @@ class FCPDbOperator(object):
 
     def get_fcp_templates_details(self, template_id_list=None):
         """Get templates detail info by template_id_list
+
+        :param template_id_list: must be a list or None
+
         If template_id_list=None, will get all the templates detail info.
 
         Detail info including two parts: base info and fcp device info, these
         two parts info will use two cmds to get from db and return out, outer
-        method will join these two return oupput.
+        method will join these two return output.
 
         'tmpl_cmd' is used to get base info from template table and
         template_sp_mapping table.
@@ -1245,8 +1607,8 @@ class FCPDbOperator(object):
         template_fcp_mapping and fcp tables."""
         with get_fcp_conn() as conn:
             if self.fcp_template_allocated_in_db(template_id):
-                errmsg = ("The fcp template has allocated fcp, can't delete "
-                        "it from fcp db.")
+                errmsg = ("The FCP device template has FCP devices allocated, "
+                          "hence the template is not allowed for deletion.")
                 LOG.error(errmsg)
                 raise exception.SDKBaseException(msg=errmsg)
             conn.execute("DELETE FROM template WHERE id=?",

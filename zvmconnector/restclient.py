@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -515,6 +515,17 @@ def req_create_fcp_template(start_index, *args, **kwargs):
     return url, body
 
 
+def req_edit_fcp_template(start_index, *args, **kwargs):
+    # the function is called by _get_url_body_headers()
+    url = '/volumes/fcptemplates/%s'
+    body = dict()
+    # no other args except fcp_templated_id in url path,
+    # param in url path is set by _get_url_body_headers().
+    # hence, only save kwargs in body
+    fill_kwargs_in_body(body, **kwargs)
+    return url, body
+
+
 def req_host_get_info(start_index, *args, **kwargs):
     url = '/host'
     body = None
@@ -933,6 +944,22 @@ DATABASE = {
         'args_required': 3,
         'params_path': 0,
         'request': req_create_fcp_template},
+    'edit_fcp_template': {
+        'method': 'PUT',
+        # args_required and args_optional are used for args rather than kwargs,
+        # refer to 'def _check_arguments' for details.
+        # In total,
+        #   1 args: fcp_template_id
+        #   5 kwargs: name, desc, fcp_devices, host_default, default_sp_list
+        # args_required : 1
+        #   fcp_template_id
+        'args_required': 1,
+        # params_path is the count of params in url path,
+        # url path is '/volumes/fcptemplates/%s'
+        #   %s is for fcp_template_id
+        #   %s is from args
+        'params_path': 1,
+        'request': req_edit_fcp_template},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,
@@ -1075,10 +1102,10 @@ class RESTClient(object):
         if 'args_optional' in DATABASE[api_name].keys():
             optional = DATABASE[api_name]['args_optional']
         if len(args) < count:
-            msg = "Missing some args,please check:%s." % args
+            msg = "Missing some args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
         if len(args) > count + optional:
-            msg = "Too many args,please check:%s." % args
+            msg = "Too many args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
 
     def _get_admin_token(self, path):
@@ -1190,7 +1217,7 @@ class RESTClient(object):
 
             # get url,body with api_name and method
             url, body, headers = self._get_url_body_headers(api_name,
-                                                        *args, **kwargs)
+                                                            *args, **kwargs)
             response = self.api_request(url, method, body=body,
                                         headers=headers)
 
