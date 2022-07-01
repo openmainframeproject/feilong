@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # Copyright 2011 OpenStack Foundation.
 #
@@ -29,6 +29,7 @@ import sys
 import tempfile
 import time
 import traceback
+import string
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -621,3 +622,192 @@ def check_userid_on_others(userid):
     except Exception as err:
         msg = ("Could not find the userid: %s") % err
         raise exception.SDKInternalError(msg=msg)
+
+
+def expand_fcp_list(fcp_list):
+    """Expand fcp list string into a python list object which contains
+    each fcp devices in the list string. A fcp list is composed of fcp
+    device addresses, range indicator '-', and split indicator ';'.
+
+    Example 1:
+    if fcp_list is "0011-0013;0015;0017-0018",
+    then the function will return
+    {
+      0: {'0011' ,'0012', '0013'}
+      1: {'0015'}
+      2: {'0017', '0018'}
+    }
+
+    Example 2:
+    if fcp_list is empty string: '',
+    then the function will return an empty set: {}
+
+    ATTENTION: To support multipath, we expect fcp_list should be like
+    "0011-0014;0021-0024", "0011-0014" should have been on same physical
+    WWPN which we called path0, "0021-0024" should be on another physical
+    WWPN we called path1 which is different from "0011-0014".
+    path0 and path1 should have same count of FCP devices in their group.
+    When attach, we will choose one WWPN from path0 group, and choose
+    another one from path1 group. Then we will attach this pair of WWPNs
+    together to the guest as a way to implement multipath.
+    """
+    LOG.debug("Expand FCP list %s" % fcp_list)
+
+    if not fcp_list:
+        return dict()
+    fcp_list = fcp_list.strip()
+    fcp_list = fcp_list.replace(' ', '')
+    range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
+    match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                    {'range': range_pattern}
+
+    item_pattern = "(%(range)s)(,%(range)s?)*" % \
+                   {'range': range_pattern}
+
+    multi_match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                   {'range': item_pattern}
+
+    if not re.match(match_pattern, fcp_list) and \
+       not re.match(multi_match_pattern, fcp_list):
+        errmsg = ("Invalid FCP address %s") % fcp_list
+        raise exception.SDKInternalError(msg=errmsg)
+
+    fcp_devices = {}
+    path_no = 0
+    for _range in fcp_list.split(';'):
+        for item in _range.split(','):
+            # remove duplicate entries
+            devices = set()
+            if item != '':
+                if '-' not in item:
+                    # single device
+                    fcp_addr = int(item, 16)
+                    devices.add("%04x" % fcp_addr)
+                else:
+                    # a range of address
+                    (_min, _max) = item.split('-')
+                    _min = int(_min, 16)
+                    _max = int(_max, 16)
+                    for fcp_addr in range(_min, _max + 1):
+                        devices.add("%04x" % fcp_addr)
+                if fcp_devices.get(path_no):
+                    fcp_devices[path_no].update(devices)
+                else:
+                    fcp_devices[path_no] = devices
+        path_no = path_no + 1
+    return fcp_devices
+
+
+def shrink_fcp_list(fcp_list):
+    """ Transform a FCP list to a string.
+
+        :param fcp_list: (list) a list object contains FCPs.
+        Case 1: only one FCP in the list.
+            e.g. fcp_list = ['1A01']
+        Case 2: all the FCPs are continuous.
+            e.g. fcp_list =['1A01', '1A02', '1A03']
+        Case 3: not all the FCPs are continuous.
+            e.g. fcp_list = ['1A01', '1A02', '1A03',
+                            '1A05',
+                            '1AFF', '1B00', '1B01',
+                            '1B04']
+        Case 4: an empty list.
+            e.g. fcp_list = []
+
+        :return fcp_str: (str)
+        Case 1: fcp_str = '1A01'
+        Case 2: fcp_str = '1A01 - 1A03'
+        Case 3: fcp_str = '1A01 - 1A03, 1A05,
+                           1AFF - 1B01, 1B04'
+        Case 4: fcp_str = ''
+    """
+
+    def __transform_fcp_list_into_str(local_fcp_list):
+        """ Transform the FCP list into a string
+            by recursively do the transformation
+            against the first continuous range of the list,
+            which is being shortened by list.pop(0) on the fly
+
+            :param local_fcp_list:
+            (list) a list object contains FCPs.
+
+            In Python, hex is stored in the form of strings.
+            Because incrementing is done on integers,
+            we need to convert hex to an integer for doing math.
+        """
+        # Case 1: only one FCP in the list.
+        if len(local_fcp_list) == 1:
+            fcp_section.append(local_fcp_list[0])
+        else:
+            start_fcp = int(local_fcp_list[0], 16)
+            end_fcp = int(local_fcp_list[-1], 16)
+            count = len(local_fcp_list) - 1
+            # Case 2: all the FCPs are continuous.
+            if start_fcp + count == end_fcp:
+                # e.g. hex(int('1A01',16)) is '0x1a01'
+                section_str = '{} - {}'.format(
+                    hex(start_fcp)[2:], hex(end_fcp)[2:])
+                fcp_section.append(section_str)
+            # Case 3: not all the FCPs are continuous.
+            else:
+                start_fcp = int(local_fcp_list.pop(0), 16)
+                for idx, fcp in enumerate(local_fcp_list.copy()):
+                    next_fcp = int(fcp, 16)
+                    # pop the fcp if it is continuous with the last
+                    # e.g.
+                    # when start_fcp is '1A01',
+                    # pop '1A02' and '1A03'
+                    if start_fcp + idx + 1 == next_fcp:
+                        local_fcp_list.pop(0)
+                        continue
+                    # e.g.
+                    # when start_fcp is '1A01',
+                    # next_fcp '1A05' is NOT continuous with the last
+                    else:
+                        end_fcp = start_fcp + idx
+                        # e.g.
+                        # when start_fcp is '1A01',
+                        # end_fcp is '1A03'
+                        if start_fcp != end_fcp:
+                            # e.g. hex(int('1A01',16)) is '0x1a01'
+                            section_str = '{} - {}'.format(
+                                hex(start_fcp)[2:], hex(end_fcp)[2:])
+                        # e.g.
+                        # when start_fcp is '1A05',
+                        # end_fcp is '1A05'
+                        else:
+                            section_str = hex(start_fcp)[2:]
+                        fcp_section.append(section_str)
+                        break
+                # recursively transform if FCP list still not empty
+                if local_fcp_list:
+                    __transform_fcp_list_into_str(local_fcp_list)
+
+    fcp_section = list()
+    fcp_str = ''
+    if fcp_list:
+        # sort fcp_list in hex order, e.g.
+        # before sort: ['1E01', '1A02', '1D03']
+        # after sort:  ['1A02', '1D03', '1E01']
+        fcp_list.sort()
+        __transform_fcp_list_into_str(fcp_list)
+        # return a string contains all FCP
+        fcp_str = ', '.join(fcp_section).upper()
+    return fcp_str
+
+
+def verify_fcp_list_in_hex_format(fcp_list):
+    """Verify each FCP in the list is in Hex format
+    :param fcp_list: (list) a list object contains FCPs.
+    """
+    if not isinstance(fcp_list, list):
+        errmsg = ('fcp_list ({}) is not a list object.'
+                  '').format(fcp_list)
+        raise exception.SDKInvalidInputFormat(msg=errmsg)
+    # Verify each FCP should be a 4-digit hex
+    for fcp in fcp_list:
+        if not (len(fcp) == 4 and
+                all(char in string.hexdigits for char in fcp)):
+            errmsg = ('FCP list {} contains non-hex value.'
+                      '').format(fcp_list)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)

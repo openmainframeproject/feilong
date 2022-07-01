@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -39,6 +39,19 @@ class SDKAPITestCase(base.SDKTestCase):
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.edit_fcp_template")
+    def test_edit_fcp_template(self, mock_edit_tmpl):
+        """ Test edit_fcp_template """
+        tmpl_id = 'fake_id'
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': ['sp1']}
+        self.api.edit_fcp_template(tmpl_id, **kwargs)
+        mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
     @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
     def test_guest_get_power_state_real(self, gstate):
