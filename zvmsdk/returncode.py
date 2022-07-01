@@ -334,6 +334,8 @@ errors = {
                       "error: the memory size to be increased: '%(inc)im' "
                       "is greater than the maximum reserved memory size: "
                       "'%(max)im'."),
+                  22: ("Failed to delete FCP device template, "
+                      "error: %(msg)s"),
                   },
                  "The operated object status conflict"
                  ],
