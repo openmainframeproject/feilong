@@ -708,9 +708,10 @@ function connectDisk {
   local attempts=1
   while [[ $(mkdir $diskConnectionLock; echo $?) -ne 0 ]]; do
     if [[ $attempts -gt 120 ]]; then
+      warn "Manual remove ${diskConnectionLock} if you are sure no concurrent actions to unblock"
       return 5
     fi
-    if [[ $(( $attempts % 30 )) -eq 0 ]]; then
+    if [[ $(( $attempts % 5 )) -eq 0 ]]; then
       warn "Waiting on lock: ${diskConnectionLock}" | sed 's/^/  /'
     fi
     attempts=$((attempts + 1))

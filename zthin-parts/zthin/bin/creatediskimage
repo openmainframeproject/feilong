@@ -36,8 +36,15 @@ function printCMDUsage {
   #   to parse the command-line argument list.
   # @Override in zthinshellutils
   # @Code:
-  echo "USAGE: $CMDNAME [OPTIONS] USER_ID CHANNEL_ID IMAGE_FILE"
-  echo "       $CMDNAME [OPTIONS] CHANNEL_ID WWPN LUN IMAGE_FILE"
+  echo "USAGE: $CMDNAME [OPTIONS] USER_ID DEVICE_ID IMAGE_FILE"
+  echo "         - Create image from USERID and its device number"
+  echo "                                                         "
+  echo "       $CMDNAME [OPTIONS] FCP_ID WWNN LUN IMAGE_FILE"
+  echo "         - Create image from FCP device and WWNN/LUN"
+  echo "                                                                                               "
+  echo "       <USER_ID>: The ID of the virtual machine to create image from, e.g USER01"
+  echo "       <DEVICE_ID>: The ID of the device to create image from on the <USER_ID>, e.g 0100"
+  echo "       <FCP_ID><WWNN><LUN>: The FCP device, WWNN and LUN to create the image from"
 
   echo "${optionHelp}"
   echo "NAMED ARGUMENTS: ${namedArgListing}"
