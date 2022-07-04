@@ -64,6 +64,53 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient._request, requestData)
 
+    @mock.patch.object(smt.SMT, 'request')
+    def test_private_request_failed_110(self, request):
+        requestData = "fake request"
+        request.return_value = {'overallRC': 25, 'rc': -110,
+                                'rs': '0', 'logEntries': []}
+        try:
+            self._smtclient._request(requestData)
+        except exception.SDKInternalError as e:
+            data = ('This is likely to be caused by temporary z/VM '
+                    'SMAPI down issue')
+            self.assertTrue(str(e).__contains__(data))
+            return
+
+        raise Exception("should raise exception.SDKInternalError")
+
+    @mock.patch.object(smt.SMT, 'request')
+    def test_private_request_failed_596(self, request):
+        requestData = "fake request"
+        request.return_value = {'overallRC': 1, 'rc': 596,
+                                'rs': '1234', 'logEntries': []}
+        try:
+            self._smtclient._request(requestData)
+        except exception.SDKSMTRequestFailed as e:
+            data = ("Check <https://www-40.ibm.com/servers/resourcelink/"
+                    "svc0302a.nsf/pages/zVMV7R2gc246282?OpenDocument>"
+                    " on z/VM DIRMAINT error messages")
+            self.assertTrue(str(e).__contains__(data))
+            return
+
+        raise Exception("should raise exception.SDKSMTRequestFailed")
+
+    @mock.patch.object(smt.SMT, 'request')
+    def test_private_request_failed_396(self, request):
+        requestData = "fake request"
+        request.return_value = {'overallRC': 1, 'rc': 396,
+                                'rs': '1234', 'logEntries': []}
+        try:
+            self._smtclient._request(requestData)
+        except exception.SDKSMTRequestFailed as e:
+            data = ("Check <https://www-40.ibm.com/servers/resourcelink/"
+                    "svc0302a.nsf/pages/zVMV7R2gc246270?OpenDocument>"
+                    " on z/VM CP error messages")
+            self.assertTrue(str(e).__contains__(data))
+            return
+
+        raise Exception("should raise exception.SDKSMTRequestFailed")
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_guest_start(self, request):
         fake_userid = 'FakeID'
@@ -2113,7 +2160,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_couple_nic_to_vswitch_vlan(self, couple_nic, replace,
                                    lock, get_user):
         replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
-                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55 PORTTYPE ACCESS"]
         get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
@@ -2135,7 +2182,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_couple_nic_to_vswitch_vlan_fail(self, couple_nic, replace,
                                    lock, get_user, request):
         replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
-                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55 PORTTYPE ACCESS"]
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
@@ -2168,6 +2215,28 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock.assert_not_called()
         replace.assert_not_called()
         couple_nic.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_port_type(self, couple_nic, replace,
+                                   lock, get_user):
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 8 PORTTYPE TRUNK"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
+        self._smtclient.couple_nic_to_vswitch("fake_userid",
+                                               "1000",
+                                               "VS1",
+                                               active=True,
+                                               vlan_id=8,
+                                               port_type='TRUNK')
+        lock.assert_called_with("fake_userid")
+        replace.assert_called_with("fake_userid", replace_data)
+        couple_nic.assert_called_with("fake_userid",
+                                      "1000",
+                                      "VS1",
+                                      active=True)
 
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
