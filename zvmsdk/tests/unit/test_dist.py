@@ -37,7 +37,8 @@ class RHEL7TestCase(base.SDKTestCase):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.95.1',
                'cidr': "192.168.95.0/24",
-               'nic_vdev': '1000'}]
+               'nic_vdev': '1000',
+               'mtu': 1600}]
         file_path = '/etc/sysconfig/network-scripts/'
         first = False
         files_and_cmds = self.linux_dist.create_network_configuration_files(
@@ -49,8 +50,9 @@ class RHEL7TestCase(base.SDKTestCase):
         self.assertEqual('BROADCAST="192.168.95.255"', cfg_str[2])
         self.assertEqual('GATEWAY="192.168.95.1"', cfg_str[3])
         self.assertEqual('IPADDR="192.168.95.10"', cfg_str[4])
-        self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
-        self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
+        self.assertEqual('MTU="1600"', cfg_str[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
 
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
@@ -147,7 +149,8 @@ class RHEL8TestCase(base.SDKTestCase):
                            'dns_addr': ['9.0.2.1', '9.0.3.1'],
                            'gateway_addr': '192.168.95.1',
                            'cidr': "192.168.95.0/24",
-                           'nic_vdev': '1000'}]
+                           'nic_vdev': '1000',
+                           'mtu': 8000}]
         file_path = '/etc/sysconfig/network-scripts/'
         first = False
         files_and_cmds = self.linux_dist.create_network_configuration_files(
@@ -159,8 +162,9 @@ class RHEL8TestCase(base.SDKTestCase):
         self.assertEqual('BROADCAST="192.168.95.255"', cfg_str[2])
         self.assertEqual('GATEWAY="192.168.95.1"', cfg_str[3])
         self.assertEqual('IPADDR="192.168.95.10"', cfg_str[4])
-        self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
-        self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
+        self.assertEqual('MTU="8000"', cfg_str[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
 
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
