@@ -121,8 +121,9 @@ class LinuxDist(object):
     def _generate_network_configuration(self, network, vdev, active=False):
         ip_v4 = dns_str = gateway_v4 = ''
         ip_cidr = netmask_v4 = broadcast_v4 = ''
-        net_cmd = ''
+        net_cmd = mtu = ''
         dns_v4 = []
+
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
@@ -146,6 +147,10 @@ class LinuxDist(object):
             if broadcast_v4 == 'None':
                 broadcast_v4 = ''
 
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         device = self._get_device_name(vdev)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
@@ -156,7 +161,7 @@ class LinuxDist(object):
 
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4, address_read,
-                                    subchannels, dns_v4)
+                                    subchannels, dns_v4, mtu)
         cmd_str = self._get_cmd_str(address_read, address_write,
                                     address_data)
         route_str = self._get_route_str(gateway_v4)
@@ -331,7 +336,7 @@ class rhel(LinuxDist):
         return '/etc/sysconfig/network-scripts/'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4):
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = 'DEVICE=\"' + device + '\"\n'
         cfg_str += 'BOOTPROTO=\"static\"\n'
         cfg_str += 'BROADCAST=\"' + broadcast_v4 + '\"\n'
@@ -343,6 +348,7 @@ class rhel(LinuxDist):
         cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
         cfg_str += 'OPTIONS=\"layer2=1\"\n'
         cfg_str += 'SUBCHANNELS=\"' + subchannels + '\"\n'
+        cfg_str += 'MTU=\"' + mtu + '\"\n'
         if (dns_v4 is not None) and (len(dns_v4) > 0):
             i = 1
             for dns in dns_v4:
