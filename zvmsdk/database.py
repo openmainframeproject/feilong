@@ -786,18 +786,6 @@ class FCPDbOperator(object):
     #########################################################
     #               DML for Table template                  #
     #########################################################
-    def get_default_fcp_template(self):
-        """Get the default FCP template for this Host."""
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT id FROM template WHERE is_default=1")
-            fcp_tmpl_id = result.fetchall()
-            if fcp_tmpl_id:
-                return fcp_tmpl_id[0][0]
-            else:
-                LOG.warning(
-                    "Can not find the default FCP template for this host.")
-                return ''
-
     def fcp_template_exist_in_db(self, fcp_template_id: str):
         with get_fcp_conn() as conn:
             query_sql = conn.execute("SELECT id FROM template "
