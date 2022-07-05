@@ -1046,8 +1046,6 @@ class FCPManager(object):
         template_dict = {}
         for item in raw_data:
             id, name, description, is_default, sp_name = item
-            if sp_name == 'null':
-                sp_name = None
             if not template_dict.get(id, None):
                 template_dict[id] = {"id": id,
                                      "name": name,
@@ -1264,16 +1262,18 @@ class FCPManager(object):
                         utils.shrink_fcp_list(fcp_list))
 
     def _split_singe_range_fcp_list(self, statistics_usage):
+        range_fcp = []
+        single_fcp = []
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
                 total_fcp = template_statistics[path]['total'].split(',')
                 for fcp in total_fcp:
                     if '-' in fcp:
-                        template_statistics[path]['range_fcp'].append(
-                            fcp.strip())
+                        range_fcp.append(fcp.strip())
                     else:
-                        template_statistics[path]['single_fcp'].append(
-                            fcp.strip())
+                        single_fcp.append(fcp.strip())
+                template_statistics[path]['range_fcp'] = ', '.join(range_fcp)
+                template_statistics[path]['single_fcp'] = ', '.join(single_fcp)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                           default_sp_list=None, host_default=False):
