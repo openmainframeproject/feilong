@@ -359,6 +359,7 @@ class TestFCPManager(base.SDKTestCase):
         super(TestFCPManager, cls).setUpClass()
         cls.fcpops = volumeop.FCPManager()
         cls.db_op = database.FCPDbOperator()
+        cls.fcp_vol_mgr = TestFCPVolumeManager()
 
     def _insert_data_into_fcp_table(self, fcp_info_list):
         # insert data into all columns of fcp table
@@ -464,6 +465,198 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(info_1b03['reserved'], 1)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_reserve_fcp_devices_with_existed_reserved_fcp(self):
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        sp_name = "fake_sp_name"
+        fcp_info_list = [('1a10', assinger_id, 1, 1, 'c05076de3300a83c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('1b10', assinger_id, 1, 1, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1a11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1b11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id)
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert data into template_fcp_mapping table
+        template_fcp = [('1a10', template_id, 0),
+                        ('1b10', template_id, 1)]
+        self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert data into template table to add a default template
+        templates = [(template_id, 'name1', 'desc1', 1)]
+        template_id_list = [tmpl[0] for tmpl in templates]
+        self._insert_data_into_template_table(templates)
+
+        template_sp_mapping = [(sp_name, template_id)]
+        self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+
+        try:
+            available_list, fcp_tmpl_id = self.fcpops.reserve_fcp_devices(
+                assinger_id, template_id, sp_name)
+            expected_fcp_list = [('1a10', 'c05076de3300a83c', 'c05076de33002641'),
+                                 ('1b10', 'c05076de3300b83c', 'c05076de33002641')]
+            actual_fcp_list = []
+            for fcp in available_list:
+                fcp_id, wwpn_npiv, wwpn_phy = fcp
+                actual_fcp_list.append((fcp_id, wwpn_npiv, wwpn_phy))
+            self.assertEqual(template_id, fcp_tmpl_id)
+            self.assertEqual(expected_fcp_list, actual_fcp_list)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self._delete_from_template_table(template_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_reserve_fcp_devices_without_existed_reserved_fcp(self):
+        """
+        reserve fcp devices for the assigner which hasn't reserved any
+        fcp devices before
+        """
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        sp_name = "fake_sp_name"
+        fcp_info_list = [('1a10', '', 0, 0, 'c05076de3300a83c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('1b10', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1a11', '', 0, 0, 'c05076de3300c83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1b11', '', 0, 0, 'c05076de3300d83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id)
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert data into template_fcp_mapping table
+        template_fcp = [('1a10', template_id, 0),
+                        ('1b10', template_id, 1)]
+        self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert data into template table to add a default template
+        templates = [(template_id, 'name1', 'desc1', 1)]
+        template_id_list = [tmpl[0] for tmpl in templates]
+        self._insert_data_into_template_table(templates)
+
+        template_sp_mapping = [(sp_name, template_id)]
+        self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+
+        try:
+            available_list, fcp_tmpl_id = self.fcpops.reserve_fcp_devices(
+                assinger_id, template_id, sp_name)
+            actual_fcp_list = []
+            for fcp in available_list:
+                fcp_id, wwpn_npiv, wwpn_phy = fcp
+                actual_fcp_list.append((fcp_id, wwpn_npiv, wwpn_phy))
+            self.assertEqual(template_id, fcp_tmpl_id)
+            self.assertEqual(2, len(actual_fcp_list))
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self._delete_from_template_table(template_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_reserve_fcp_devices_without_default_template(self):
+        """
+        Not specify template id, and no sp default template and
+        no host default template, should raise error
+        """
+        template_id = None
+        assinger_id = "wxy0001"
+        sp_name = "fake_sp_name"
+
+        # insert data into template table to add a default template
+        templates = [('0001', 'name1', 'desc1', 0)]
+        template_id_list = [tmpl[0] for tmpl in templates]
+        self._insert_data_into_template_table(templates)
+        try:
+            self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                                   "No FCP template is specified and no "
+                                   "default FCP template is found.",
+                                   self.fcpops.reserve_fcp_devices,
+                                   assinger_id, template_id, sp_name)
+        finally:
+            self._delete_from_template_table(template_id_list)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_allocated_fcps_from_assigner")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_devices")
+    def test_reserve_fcp_devices_without_free_fcp_device(self, mocked_get_fcp_devices,
+                                                    mocked_get_allocated_fcps):
+        from zvmsdk import config
+        config.CONF.volume.get_fcp_pair_with_same_index = None
+        mocked_get_fcp_devices.return_value = []
+        mocked_get_allocated_fcps.return_value = []
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        sp_name = "fake_sp_name"
+        available_list, fcp_tmpl_id = self.fcpops.reserve_fcp_devices(
+            assinger_id, template_id, sp_name)
+        self.assertEqual(template_id, fcp_tmpl_id)
+        self.assertEqual(0, len(available_list))
+
+    def test_unreserve_fcp_devices_without_fcp_template(self):
+        """
+        if not specify fcp_template_id when calling unreserve_fcp_devices,
+        error will be raised
+        """
+        assigner_id = "test_assigner"
+        self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                               "fcp_template_id is not specified while "
+                               "releasing FCP devices",
+                               self.fcpops.unreserve_fcp_devices,
+                               assigner_id, None)
+
+    def test_unreserve_fcp_devices_return_empty_array(self):
+        """If not found any fcp devices to release, return empty array"""
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        fcp_info_list = [('1a10', assinger_id, 0, 0, 'c05076de3300a83c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          template_id),
+                         ('1b10', assinger_id, 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1a11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id),
+                         ('1b11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          template_id)
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert data into template_fcp_mapping table
+        template_fcp = [('1a10', template_id, 0),
+                        ('1b10', template_id, 1)]
+        self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
+            template_fcp)
+
+        try:
+            res = self.fcpops.unreserve_fcp_devices(assinger_id, template_id)
+            self.assertEqual(len(res), 0)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_valid_fcp_devcie_wwpn(self):
+        assigner_id = 'test_assigner_1'
+        fcp_list_1 = [('1a10', '', ''), ('1b10', 'wwpn_npiv_0', 'wwpn_phy_0')]
+        self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                               "NPIV WWPN of FCP device 1a10 not found",
+                               self.fcpops._valid_fcp_devcie_wwpn,
+                               fcp_list_1, assigner_id)
+
+        fcp_list_2 = [('1a10', 'wwpn_npiv_0', ''), ('1b10', 'wwpn_npiv_0', 'wwpn_phy_0')]
+        self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                               "Physical WWPN of FCP device 1a10 not found",
+                               self.fcpops._valid_fcp_devcie_wwpn,
+                               fcp_list_2, assigner_id)
 
     @mock.patch("zvmsdk.utils.get_smt_userid", mock.Mock())
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
@@ -883,6 +1076,17 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
             self._delete_from_template_table(template_id_list)
+
+    def test_get_volume_connector_reserve_with_error(self):
+        """The specified FCP template doesn't exist, should raise error."""
+        assigner_id = 'fakeuser'
+        fcp_template_id = '0001'
+        sp_name = 'v7k60'
+        self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                               "fcp_template_id 0001 for storage provider "
+                               "v7k60 doesn't exist.",
+                               self.volumeops.get_volume_connector,
+                               assigner_id, True, fcp_template_id, sp_name)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.volume_refresh_bootmap")
     def test_volume_refresh_bootmap(self, mock_volume_refresh_bootmap):

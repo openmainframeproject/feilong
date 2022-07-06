@@ -631,7 +631,7 @@ class FCPManager(object):
                     '''
                     free_unreserved = self.db.get_fcp_devices(fcp_tmpl_id)
                 if not free_unreserved:
-                    return []
+                    return [], fcp_tmpl_id
                 available_list = free_unreserved
                 fcp_ids = [fcp[0] for fcp in free_unreserved]
                 # record the assigner id in the fcp DB so that
