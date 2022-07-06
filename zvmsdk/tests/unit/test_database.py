@@ -938,8 +938,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     def test_fcp_template_sp_mapping_exist_in_db(self):
         template_sp_mapping = [('0001', 'v7k60'), ('0002', 'ds8k')]
+        template = [('0001', 'template1', 'template1', 1),
+                    ('0002', 'template2', 'template2', 0)]
         # insert test data into table template_sp_mapping
         self._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+        self._insert_data_into_template_table(template)
         try:
             res1 = self.db_op.fcp_template_sp_mapping_exist_in_db('0001',
                                                                   'v7k60')
