@@ -17,6 +17,7 @@ import mock
 import shutil
 import uuid
 
+from zvmsdk import config
 from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
@@ -513,6 +514,7 @@ class TestFCPManager(base.SDKTestCase):
             self._delete_from_template_table(template_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
     def test_reserve_fcp_devices_without_existed_reserved_fcp(self):
         """
         reserve fcp devices for the assigner which hasn't reserved any
@@ -522,17 +524,17 @@ class TestFCPManager(base.SDKTestCase):
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
         fcp_info_list = [('1a10', '', 0, 0, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'active', 'owner1',
-                          template_id),
+                          'c05076de33002641', '27', 'free', '',
+                          ''),
                          ('1b10', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
-                          template_id),
+                          'c05076de33002641', '27', 'free', '',
+                          ''),
                          ('1a11', '', 0, 0, 'c05076de3300c83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
-                          template_id),
+                          'c05076de33002641', '27', 'free', '',
+                          ''),
                          ('1b11', '', 0, 0, 'c05076de3300d83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
-                          template_id)
+                          'c05076de33002641', '27', 'free', '',
+                          '')
                          ]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -547,7 +549,7 @@ class TestFCPManager(base.SDKTestCase):
 
         template_sp_mapping = [(sp_name, template_id)]
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
-
+        config.CONF.volume.get_fcp_pair_with_same_index = 1
         try:
             available_list, fcp_tmpl_id = self.fcpops.reserve_fcp_devices(
                 assinger_id, template_id, sp_name)
@@ -584,11 +586,10 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             self._delete_from_template_table(template_id_list)
 
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
     @mock.patch("zvmsdk.database.FCPDbOperator.get_allocated_fcps_from_assigner")
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_devices")
-    def test_reserve_fcp_devices_without_free_fcp_device(self, mocked_get_fcp_devices,
-                                                    mocked_get_allocated_fcps):
-        from zvmsdk import config
+    def test_reserve_fcp_devices_without_free_fcp_device(self, mocked_get_fcp_devices, mocked_get_allocated_fcps):
         config.CONF.volume.get_fcp_pair_with_same_index = None
         mocked_get_fcp_devices.return_value = []
         mocked_get_allocated_fcps.return_value = []
