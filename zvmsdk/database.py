@@ -378,14 +378,12 @@ class FCPDbOperator(object):
             'PRIMARY KEY (fcp_id, tmpl_id))')
 
         # create all the tables
+        LOG.info("Initializing FCP database.")
         with get_fcp_conn() as conn:
             for table_name in fcp_info_tables:
-                LOG.info("Creating table {} in FCP "
-                         "database.".format(table_name))
                 create_table_sql = fcp_info_tables[table_name]
                 conn.execute(create_table_sql)
-                LOG.info("Table {} created in FCP "
-                         "database.".format(table_name))
+        LOG.info("FCP database initialized.")
 
     #########################################################
     #                DML for Table fcp                      #
