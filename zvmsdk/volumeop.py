@@ -1631,7 +1631,10 @@ class FCPVolumeManager(object):
         self.config_api = VolumeConfiguratorAPI()
         self._smtclient = smtclient.get_smtclient()
         self._lock = threading.RLock()
-        self.db = database.FCPDbOperator()
+        # previously FCPDbOperator is initialized twice, here we
+        # just do following variable redirection to avoid too much
+        # reference code changes
+        self.db = self.fcp_mgr.db
 
     def _dedicate_fcp(self, fcp, assigner_id):
         self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
