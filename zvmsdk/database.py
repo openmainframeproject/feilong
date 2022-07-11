@@ -832,20 +832,6 @@ class FCPDbOperator(object):
         else:
             return False
 
-    def fcp_template_sp_mapping_exist_in_db(self, sp_name: str,
-                                            fcp_template_id: str):
-        with get_fcp_conn() as conn:
-            query_mapping = conn.execute("SELECT sp_name "
-                                         "FROM template_sp_mapping "
-                                         "WHERE sp_name=? and tmpl_id=?",
-                                         (sp_name, fcp_template_id))
-            mapping = query_mapping.fetchall()
-
-        if mapping:
-            return True
-        else:
-            return False
-
     @staticmethod
     def bulk_set_sp_default_by_fcp_template(template_id,
                                             sp_name_list):

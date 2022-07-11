@@ -1923,18 +1923,9 @@ class FCPVolumeManager(object):
                                default template id
         }
         """
-        fcp_template_exists = True
-        if fcp_template_id:
-            if sp_name:
-                fcp_template_exists = \
-                    self.db.fcp_template_sp_mapping_exist_in_db(
-                        sp_name, fcp_template_id)
-            else:
-                fcp_template_exists = self.db.fcp_template_exist_in_db(
-                    fcp_template_id)
-        if not fcp_template_exists:
-            errmsg = ("fcp_template_id %s for storage provider %s "
-                      "doesn't exist." % (fcp_template_id, sp_name))
+        if fcp_template_id and \
+                not self.db.fcp_template_exist_in_db(fcp_template_id):
+            errmsg = ("fcp_template_id %s doesn't exist." % fcp_template_id)
             LOG.error(errmsg)
             raise exception.SDKVolumeOperationError(
                 rs=11, userid=assigner_id, msg=errmsg)
