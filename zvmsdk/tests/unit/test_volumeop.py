@@ -1084,8 +1084,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         fcp_template_id = '0001'
         sp_name = 'v7k60'
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
-                               "fcp_template_id 0001 for storage provider "
-                               "v7k60 doesn't exist.",
+                               "fcp_template_id 0001 doesn't exist.",
                                self.volumeops.get_volume_connector,
                                assigner_id, True, fcp_template_id, sp_name)
 
