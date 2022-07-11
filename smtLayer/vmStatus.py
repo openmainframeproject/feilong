@@ -50,16 +50,21 @@ class SMAPIStatus():
         self.continueFail += 1
 
     def Get(self):
-        status = {'totalSuccess': self.totalSuccess,
+        status = {'SMAPI':
+                  {'totalSuccess': self.totalSuccess,
                   'totalFail': self.totalFail,
                   'lastSuccess': self.lastSuccess,
                   'lastFail': self.lastFail,
                   'continueousFail': self.continueFail,
                   'healthy': self.IsHealthy()}
+                 }
         return status
 
     def IsHealthy(self):
         return self.continueFail < CONTINUE_FAIL_THRESHOLD
+
+
+_SMAPIStatus = None
 
 
 def GetSMAPIStatus():
