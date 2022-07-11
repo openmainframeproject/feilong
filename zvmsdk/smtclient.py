@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1162,7 +1162,7 @@ class SMTClient(object):
                                                        msg=msg)
             # Get the os version of the vm
             try:
-                os_version = self._guest_get_os_version(userid)
+                os_version = self.guest_get_os_version(userid)
             except exception.SDKSMTRequestFailed as err:
                 msg = ('Failed to execute command on capture source vm %(vm)s'
                        'to get os version with error %(err)s'
@@ -1308,7 +1308,7 @@ class SMTClient(object):
         LOG.info('Image %s is captured and imported to image repository '
                  'successfully' % image_name)
 
-    def _guest_get_os_version(self, userid):
+    def guest_get_os_version(self, userid):
         os_version = ''
         release_file = self.execute_cmd(userid, 'ls /etc/*-release')
         if '/etc/os-release' in release_file:
@@ -3566,7 +3566,7 @@ class SMTClient(object):
         available_addrs.difference_update(used_set)
         return list(available_addrs)
 
-    def _get_active_cpu_addrs(self, userid):
+    def get_active_cpu_addrs(self, userid):
         # Get the active cpu addrs in two-digit hex string in upper case
         # Sample output for 'lscpu --parse=ADDRESS':
         # # The following is the parsable format, which can be fed to other
@@ -3668,7 +3668,7 @@ class SMTClient(object):
         # Get active cpu count and compare with requested count
         # If request count is smaller than the current count, then report
         # error and exit immediately.
-        active_addrs = self._get_active_cpu_addrs(userid)
+        active_addrs = self.get_active_cpu_addrs(userid)
         active_count = len(active_addrs)
         if active_count > count:
             LOG.error("Failed to live resize cpus of guest: %(uid)s, "
@@ -4123,6 +4123,17 @@ class SMTClient(object):
             and results.get('response'):
             return results.get('response')
         return []
+
+    def guest_get_kernel_info(self, userid):
+        # Get the kernel info of 'uname -srm'
+        try:
+            kernel_info = self.execute_cmd(userid, "uname -srm")
+            return kernel_info[0]
+        except exception.SDKSMTRequestFailed as err:
+            msg = err.format_message()
+            LOG.error("Get kernel info from the guest %s failed: %s"
+                      % (userid, msg))
+        return ''
 
 
 class FilesystemBackend(object):
