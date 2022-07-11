@@ -1321,3 +1321,45 @@ fcp_connections:
   in: body
   required: true
   type: integer
+smapi_healthy:
+  description: |
+    Status of SMAPI healthy
+  in: body
+  required: true
+  type: dict
+totalSuccess:
+  description: |
+    The total success calls for SMAPI.
+  in: body
+  required: true
+  type: integer
+totalFail:
+  description: |
+    The total fail calls for SMAPI.
+  in: body
+  required: true
+  type: integer
+lastSuccess:
+  description: |
+    The last success call for SMAPI.
+  in: body
+  required: true
+  type: string
+lastFail:
+  description: |
+    The last fail call for SMAPI.
+  in: body
+  required: true
+  type: string
+continueousFail:
+  description: |
+    The count of continueous fail.
+  in: body
+  required: true
+  type: integer
+healthy:
+  description: |
+    Whether SMAPI is healthy.
+  in: body
+  required: true
+  type: integer
