@@ -1404,19 +1404,297 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self._purge_fcp_db()
 
     def test_get_fcp_templates(self):
-        pass
+        """test get_fcp_templates"""
+        self._purge_fcp_db()
+        try:
+            # prepare test data
+            tmpl_id_1 = 'fake_id_0001'
+            kwargs1 = {
+                'name': 'new_name1',
+                'description': 'new_desc1',
+                'fcp_devices': '1A00-1A03;1B00-1B03',
+                'host_default': False,
+                'default_sp_list': []
+            }
+            tmpl_id_2 = 'fake_id_0002'
+            kwargs2 = {
+                'name': 'new_name2',
+                'description': 'new_desc2',
+                'fcp_devices': '1C00-1C03;1D00-1D03',
+                'host_default': True,
+                'default_sp_list': ['fake_sp']
+            }
+            self.db_op.create_fcp_template(
+                tmpl_id_1, kwargs1['name'], kwargs1['description'],
+                utils.expand_fcp_list(kwargs1['fcp_devices']),
+                host_default=kwargs1['host_default'],
+                default_sp_list=kwargs1['default_sp_list'])
+            self.db_op.create_fcp_template(
+                tmpl_id_2, kwargs2['name'], kwargs2['description'],
+                utils.expand_fcp_list(kwargs2['fcp_devices']),
+                host_default=kwargs2['host_default'],
+                default_sp_list=kwargs2['default_sp_list'])
+
+            # case1: get_fcp_templates by template_id_list
+            expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', False, None)
+            info_1 = self.db_op.get_fcp_templates([tmpl_id_1])[0]
+            result_1 = (
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+            self.assertEqual(expected_1, result_1)
+
+            # case2: get_fcp_templates without parameter, will get all
+            # templates info
+            expected_2 = (tmpl_id_2, 'new_name2', 'new_desc2', True, 'fake_sp')
+            info_all = self.db_op.get_fcp_templates()
+            self.assertEqual(2, len(info_all))
+            result_1 = (
+                info_all[0][0], info_all[0][1], info_all[0][2],
+                bool(info_all[0][3]), info_all[0][4])
+            result_2 = (
+                info_all[1][0], info_all[1][1], info_all[1][2],
+                bool(info_all[1][3]), info_all[1][4])
+            self.assertEqual(expected_1, result_1)
+            self.assertEqual(expected_2, result_2)
+        finally:
+            self._purge_fcp_db()
 
     def test_get_host_default_fcp_template(self):
-        pass
+        """test get_host_default_fcp_template"""
+        try:
+            # prepare test data
+            tmpl_id_1 = 'fake_id_0001'
+            kwargs1 = {
+                'name': 'new_name1',
+                'description': 'new_desc1',
+                'fcp_devices': '1A00-1A03;1B00-1B03',
+                'host_default': True,
+                'default_sp_list': []
+            }
+            tmpl_id_2 = 'fake_id_0002'
+            kwargs2 = {
+                'name': 'new_name2',
+                'description': 'new_desc2',
+                'fcp_devices': '1C00-1C03;1D00-1D03',
+                'host_default': False,
+                'default_sp_list': ['fake_sp']
+            }
+            self.db_op.create_fcp_template(
+                tmpl_id_1, kwargs1['name'], kwargs1['description'],
+                utils.expand_fcp_list(kwargs1['fcp_devices']),
+                host_default=kwargs1['host_default'],
+                default_sp_list=kwargs1['default_sp_list'])
+            self.db_op.create_fcp_template(
+                tmpl_id_2, kwargs2['name'], kwargs2['description'],
+                utils.expand_fcp_list(kwargs2['fcp_devices']),
+                host_default=kwargs2['host_default'],
+                default_sp_list=kwargs2['default_sp_list'])
+            
+            # get by host_default=True
+            info_1 = self.db_op.get_host_default_fcp_template()[0]
+            expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', True, None)
+            result_1 = (
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+            self.assertEqual(expected_1, result_1)
+        finally:
+            self._purge_fcp_db()        
 
     def test_get_sp_default_fcp_template(self):
-        pass
+        """test get_sp_default_fcp_template"""
+        try:
+            # prepare test data
+            tmpl_id_1 = 'fake_id_0001'
+            kwargs1 = {
+                'name': 'new_name1',
+                'description': 'new_desc1',
+                'fcp_devices': '1A00-1A03;1B00-1B03',
+                'host_default': False,
+                'default_sp_list': ['v7k60']
+            }
+            tmpl_id_2 = 'fake_id_0002'
+            kwargs2 = {
+                'name': 'new_name2',
+                'description': 'new_desc2',
+                'fcp_devices': '1C00-1C03;1D00-1D03',
+                'host_default': True,
+                'default_sp_list': ['ds8k']
+            }
+            self.db_op.create_fcp_template(
+                tmpl_id_1, kwargs1['name'], kwargs1['description'],
+                utils.expand_fcp_list(kwargs1['fcp_devices']),
+                host_default=kwargs1['host_default'],
+                default_sp_list=kwargs1['default_sp_list'])
+            self.db_op.create_fcp_template(
+                tmpl_id_2, kwargs2['name'], kwargs2['description'],
+                utils.expand_fcp_list(kwargs2['fcp_devices']),
+                host_default=kwargs2['host_default'],
+                default_sp_list=kwargs2['default_sp_list'])
+            # case1: get by one sp
+            info_1 = self.db_op.get_sp_default_fcp_template(['v7k60'])[0]
+            expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', False, 'v7k60')
+            result_1 = (
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+            self.assertEqual(expected_1, result_1)
+
+            # case2: get by 'all' sp
+            expected_2 = (tmpl_id_2, 'new_name2', 'new_desc2', True, 'ds8k')
+            info_all = self.db_op.get_sp_default_fcp_template(['all'])
+            self.assertEqual(2, len(info_all))
+            result_1 = (
+                info_all[0][0], info_all[0][1], info_all[0][2],
+                bool(info_all[0][3]), info_all[0][4])
+            result_2 = (
+                info_all[1][0], info_all[1][1], info_all[1][2],
+                bool(info_all[1][3]), info_all[1][4])
+            self.assertEqual(expected_1, result_1)
+            self.assertEqual(expected_2, result_2)
+        finally:
+            self._purge_fcp_db() 
 
     def test_get_fcp_template_by_assigner_id(self):
-        pass
+        """test get_fcp_template_by_assigner_id"""
+        try:
+            # prepare test data, template_1 has assigner_id='user1'
+            tmpl_id_1 = self._prepare_fcp_info_for_a_test_fcp_template()
+            # template_2 does not have assigner_id
+            tmpl_id_2 = 'fake_id_0002'
+            kwargs2 = {
+                'name': 'new_name2',
+                'description': 'new_desc2',
+                'fcp_devices': '1C00-1C03;1D00-1D03',
+                'host_default': True,
+                'default_sp_list': ['fake_sp']
+            }
+            self.db_op.create_fcp_template(
+                tmpl_id_2, kwargs2['name'], kwargs2['description'],
+                utils.expand_fcp_list(kwargs2['fcp_devices']),
+                host_default=kwargs2['host_default'],
+                default_sp_list=kwargs2['default_sp_list'])
+
+            info_1 = self.db_op.get_fcp_template_by_assigner_id('user1')[0]
+            expected_1 = (tmpl_id_1, 'new_name', 'new_desc', False, None)
+            result_1 = (
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+            self.assertEqual(expected_1, result_1)
+        finally:
+            self._purge_fcp_db()
 
     def test_get_fcp_templates_details(self):
-        pass
+        """test get_fcp_templates_details"""
+        try:
+            # prepare test data, template_1 has assigner_id='user1'
+            tmpl_id_1 = 'fake_id_' + str(random.randint(100000, 999999))
+            kwargs1 = {
+                'name': 'new_name1',
+                'description': 'new_desc1',
+                'fcp_devices': '1A00',
+                'host_default': False,
+                'default_sp_list': []
+            }
+            # template_2 does not have assigner_id
+            tmpl_id_2 = 'fake_id_' + str(random.randint(100000, 999999))
+            kwargs2 = {
+                'name': 'new_name2',
+                'description': 'new_desc2',
+                'fcp_devices': '1C00-1C01;1D00-1D01',
+                'host_default': True,
+                'default_sp_list': ['fake_sp']
+            }
+            self.db_op.create_fcp_template(
+                tmpl_id_1, kwargs1['name'], kwargs1['description'],
+                utils.expand_fcp_list(kwargs1['fcp_devices']),
+                host_default=kwargs1['host_default'],
+                default_sp_list=kwargs1['default_sp_list'])            
+            self.db_op.create_fcp_template(
+                tmpl_id_2, kwargs2['name'], kwargs2['description'],
+                utils.expand_fcp_list(kwargs2['fcp_devices']),
+                host_default=kwargs2['host_default'],
+                default_sp_list=kwargs2['default_sp_list'])
+            fcp_info = [
+                ('1a00', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active',
+                'user1')]
+            try:
+                self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
+            except exception.SDKGuestOperationError as ex:
+                if 'UNIQUE constraint failed' in str(ex):
+                    pass
+                else:
+                    raise
+            reserve_info = (('1a00'), 'user1', tmpl_id_1)
+            self.db_op.reserve_fcps(*reserve_info)
+
+            # case1: get all templates detail
+            result = self.db_op.get_fcp_templates_details()
+            tmpl_result = result[0]
+            fcp_result = result[1]
+
+            # should include 2 templates info
+            self.assertEqual(2, len(tmpl_result))
+
+            expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
+                                        False, None)
+            template_info_1 =(tmpl_result[0][0], tmpl_result[0][1],
+                              tmpl_result[0][2], bool(tmpl_result[0][3]),
+                              tmpl_result[0][4])
+            self.assertEqual(template_info_1, expected_template_info_1)
+
+            expected_template_info_2 = (tmpl_id_2, 'new_name2', 'new_desc2',
+                                        True, 'fake_sp')            
+            template_info_2 =(tmpl_result[1][0], tmpl_result[1][1],
+                              tmpl_result[1][2], bool(tmpl_result[1][3]),
+                              tmpl_result[1][4])
+            self.assertEqual(template_info_2, expected_template_info_2)
+
+            # should include 5 fcps info of the two templates
+            self.assertEqual(5, len(fcp_result))
+
+            # case2: get by template_id_list
+            result = self.db_op.get_fcp_templates_details([tmpl_id_1])
+            # should include 1 template info
+            self.assertEqual(1, len(result[0]))
+            expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
+                                        False, None)
+            template_info_1 =(tmpl_result[0][0], tmpl_result[0][1],
+                              tmpl_result[0][2], bool(tmpl_result[0][3]),
+                              tmpl_result[0][4])
+            self.assertEqual(template_info_1, expected_template_info_1)
+            # should include 1 fcp info of the template
+            self.assertEqual(1, len(result[1]))
+            fcp_in_db = result[1]
+            expected = ('1a00', tmpl_id_1, 0, '', 0, 1, 'wwpn_npiv_1',
+                                 'wwpn_phy_1', 27, 'active', 'user1', tmpl_id_1)
+            i = 0
+            for fcp in fcp_in_db:
+                self.assertEqual(fcp[i], expected[i])
+                i += 1
+        finally:
+            self._purge_fcp_db()
+
+    def test_delete_fcp_template(self):
+        try:
+            # case1: delete a in-use template
+            tmpl_id_1 = self._prepare_fcp_info_for_a_test_fcp_template()
+            self.assertRaises(exception.SDKConflictError,
+                              self.db_op.delete_fcp_template,
+                              tmpl_id_1)
+            
+            # case2: normal case
+            self.db_op.unreserve_fcps(['1A01', '1B03'])
+            self.db_op.delete_fcp_template(tmpl_id_1)
+
+            # case3: delete a non-exist template
+            obj_desc = ("FCP device template {}".format(tmpl_id_1))
+            with self.assertRaises(exception.SDKObjectNotExistError) as cm:
+                self.db_op.delete_fcp_template(tmpl_id_1)
+            # The following 3 assertions are the same
+            # 'FCP device template fake_id_0000 does not exist.'
+            self.assertIn(obj_desc, cm.exception.message)
+            self.assertIn(obj_desc, str(cm.exception))
+            self.assertRaisesRegex(exception.SDKObjectNotExistError,
+                                   obj_desc,
+                                   self.db_op.delete_fcp_template,
+                                   tmpl_id_1)
+        finally:
+            self._purge_fcp_db()
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
