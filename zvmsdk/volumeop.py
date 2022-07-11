@@ -1003,12 +1003,11 @@ class FCPManager(object):
         return format:
         {
           template_id: {
-            path1: [(fcp_id, template_id, assigner_id,
+            path: [(fcp_id, template_id, assigner_id,
                      connections,
                      reserved, wwpn_npiv, wwpn_phy,
                      chpid, state, owner,
-                     tmpl_id),()],
-            path2: [(),()],
+                     tmpl_id),()]
           }
         }
         """
@@ -1262,10 +1261,10 @@ class FCPManager(object):
                         utils.shrink_fcp_list(fcp_list))
 
     def _split_singe_range_fcp_list(self, statistics_usage):
-        range_fcp = []
-        single_fcp = []
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
+                range_fcp = []
+                single_fcp = []
                 total_fcp = template_statistics[path]['total'].split(',')
                 for fcp in total_fcp:
                     if '-' in fcp:
@@ -1325,7 +1324,7 @@ class FCPManager(object):
         providers' default fcp templates.
 
         Example:
-        sp_host_list = ['v7k60', 'ds8k60c1]
+        sp_host_list = ['v7k60', 'ds8k60c1']
 
         return:
         {
