@@ -748,7 +748,7 @@ class sles(LinuxDist):
         return '/etc/sysconfig/network/'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4):
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = "BOOTPROTO=\'static\'\n"
         cfg_str += "IPADDR=\'%s\'\n" % ip_v4
         cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
@@ -756,6 +756,7 @@ class sles(LinuxDist):
         cfg_str += "STARTMODE=\'onboot\'\n"
         cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
                     address_read)
+        cfg_str += "MTU=\'%s\'\n" % mtu
         if (dns_v4 is not None) and (len(dns_v4) > 0):
             self.dns_v4 = dns_v4
         else:
@@ -1142,13 +1143,14 @@ class ubuntu(LinuxDist):
         return '/etc/network/interfaces'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4):
+                     netmask_v4, mtu):
         cfg_str = 'auto ' + device + '\n'
         cfg_str += 'iface ' + device + ' inet static\n'
         cfg_str += 'address ' + ip_v4 + '\n'
         cfg_str += 'netmask ' + netmask_v4 + '\n'
         cfg_str += 'broadcast ' + broadcast_v4 + '\n'
         cfg_str += 'gateway ' + gateway_v4 + '\n'
+        cfg_str += 'mtu ' + mtu + '\n'
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
@@ -1176,9 +1178,13 @@ class ubuntu(LinuxDist):
             if broadcast_v4 == 'None':
                 broadcast_v4 = ''
 
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
-                                    ip_v4, netmask_v4)
+                                    ip_v4, netmask_v4, mtu)
 
         return cfg_str, dns_str
 
@@ -1400,7 +1406,7 @@ class ubuntu20(ubuntu):
 
     def _generate_network_configuration(self, network, vdev):
         ip_v4 = dns_str = gateway_v4 = ''
-        cidr = ''
+        cidr = mtu = ''
         dns_v4 = []
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
@@ -1421,6 +1427,10 @@ class ubuntu20(ubuntu):
             (network['cidr'] is not None)):
             cidr = network['cidr'].split('/')[1]
 
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         device = self._get_device_name(vdev)
         if dns_v4:
             cfg_str = {'network':
@@ -1428,6 +1438,7 @@ class ubuntu20(ubuntu):
                                 {device:
                                     {'addresses': [ip_v4 + '/' + cidr],
                                      'gateway4': gateway_v4,
+                                     'mtu': mtu,
                                      'nameservers':
                                         {'addresses': dns_v4}
                                     }
@@ -1440,7 +1451,8 @@ class ubuntu20(ubuntu):
                             {'ethernets':
                                 {device:
                                     {'addresses': [ip_v4 + '/' + cidr],
-                                     'gateway4': gateway_v4
+                                     'gateway4': gateway_v4,
+                                     'mtu': mtu
                                     }
                                 },
                             'version': 2
