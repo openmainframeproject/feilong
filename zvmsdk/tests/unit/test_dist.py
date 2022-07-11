@@ -292,6 +292,26 @@ class SLESTestCase(base.SDKTestCase):
         self.sles12_dist = self.dist_manager.get_linux_dist('sles12')()
         self.sles15_dist = self.dist_manager.get_linux_dist('sles15')()
 
+    def test_create_network_configuration_files(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': "192.168.95.0/24",
+                           'nic_vdev': '1000',
+                           'mtu': 8000}]
+        file_path = '/etc/sysconfig/network/'
+        first = False
+        files_and_cmds = self.sles15_dist.create_network_configuration_files(
+            file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        cfg_str = net_conf_files[0][1].split('\n')
+        self.assertEqual("BOOTPROTO='static'", cfg_str[0])
+        self.assertEqual("IPADDR='192.168.95.10'", cfg_str[1])
+        self.assertEqual("NETMASK='255.255.255.0'", cfg_str[2])
+        self.assertEqual("BROADCAST='192.168.95.255'", cfg_str[3])
+        self.assertEqual("NAME='OSA Express Network card (1000)'", cfg_str[5])
+        self.assertEqual("MTU='8000'", cfg_str[6])
+
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
     def test_get_volume_attach_configuration_cmds(self, get_template,
@@ -397,7 +417,8 @@ class UBUNTU20TestCase(base.SDKTestCase):
                            'dns_addr': ['9.0.2.1', '9.0.3.1'],
                            'gateway_addr': '192.168.95.1',
                            'cidr': "192.168.95.0/24",
-                           'nic_vdev': '1000'}]
+                           'nic_vdev': '1000',
+                           'mtu': 6000}]
         file_path = '/etc/netplan/'
         first = True
         files_and_cmds = self.linux_dist.create_network_configuration_files(
@@ -410,6 +431,7 @@ class UBUNTU20TestCase(base.SDKTestCase):
                             {'enc1000':
                                 {'addresses': ['192.168.95.10/24'],
                                 'gateway4': '192.168.95.1',
+                                'mtu': '6000',
                                 'nameservers':
                                     {'addresses': ['9.0.2.1', '9.0.3.1']}
                                 }
