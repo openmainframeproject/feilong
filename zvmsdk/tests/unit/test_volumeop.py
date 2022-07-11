@@ -44,6 +44,40 @@ class TestVolumeOperatorAPI(base.SDKTestCase):
         self.operator.edit_fcp_template(tmpl_id, **kwargs)
         mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_templates")
+    def test_get_fcp_templates(self, mock_get_tmpl):
+        """ Test get_fcp_templates in VolumeOperator"""
+        tmpl_list = ['fake_id']
+        assigner_id = 'fake_user'
+        host_default = True
+        default_sp_list = ['fake_sp']
+        self.operator.get_fcp_templates(template_id_list=tmpl_list,
+                                        assigner_id=assigner_id,
+                                        default_sp_list=default_sp_list,
+                                        host_default=host_default)
+        mock_get_tmpl.assert_called_once_with(tmpl_list,
+                                              assigner_id,
+                                              default_sp_list,
+                                              host_default)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_templates_details")
+    def test_get_fcp_templates_details(self, mock_get_tmpl_details):
+        """ Test get_fcp_templates_details in VolumeOperator"""
+        tmpl_list = ['fake_id']
+        self.operator.get_fcp_templates_details(template_id_list=tmpl_list,
+                                        raw=True, statistics=True,
+                                        sync_with_zvm=False)
+        mock_get_tmpl_details.assert_called_once_with(tmpl_list, raw=True,
+                                                      statistics=True,
+                                                      sync_with_zvm=False)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.delete_fcp_template")
+    def test_delete_fcp_template(self, mock_delete_tmpl):
+        """ Test delete_fcp_template in VolumeOperator"""
+        tmpl_id = 'fake_id'
+        self.operator.delete_fcp_template(tmpl_id)
+        mock_delete_tmpl.assert_called_once_with(tmpl_id)
+
 
 class TestVolumeConfiguratorAPI(base.SDKTestCase):
 
@@ -881,6 +915,271 @@ class TestFCPManager(base.SDKTestCase):
             'default_sp_list': ['sp1']}
         self.fcpops.edit_fcp_template(tmpl_id, **kwargs)
         mock_db_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
+
+    def test_update_template_fcp_raw_usage(self):
+        raw = ('fcp_id_1', 'tmpl_id_1', 0, 'assigner_id', 1, 0,
+            'wwpn_npiv', 'wwpn_phy', 'chpid', 'state', 'owner', '')
+        expected = {
+            'tmpl_id_1': {
+                0: [('fcp_id_1', 'tmpl_id_1', 'assigner_id', 1, 0,
+                    'wwpn_npiv', 'wwpn_phy', 'chpid', 'state', 'owner', '')]}}
+        result = self.fcpops._update_template_fcp_raw_usage({}, raw)
+        self.assertDictEqual(result, expected)
+
+    def test_get_fcp_templates(self):
+        """ Test get_fcp_templates in FCPManager"""
+        try:
+            # prepare test data
+            template_id_1 = 'template_id_1'
+            template_id_2 = 'template_id_2'
+            templates = [(template_id_1, 'name1', 'desc1', 1),
+                        (template_id_2, 'name2', 'desc2', 0)]
+            self._delete_from_template_table([template_id_1, template_id_2])
+            self._insert_data_into_template_table(templates)
+            template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
+            self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+
+            fcp_info_list_2 = [
+                            # allocated
+                            ('1b00', 'user2', 1, 1, 'c05076de3300c83c',
+                            'c05076de33002641', '27', 'active', '',
+                            template_id_2),
+                            # unallocated_but_active
+                            ('1b01', '', 0, 0, 'c05076de3300d83c',
+                            'c05076de33002641', '35', 'active', 'owner2',
+                            '')]
+            fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
+            self._insert_data_into_fcp_table(fcp_info_list_2)
+            # case1: get by template_id_list
+            result_1 = self.fcpops.get_fcp_templates([template_id_1])
+            expected_1 = {
+                "fcp_templates": [
+                    {
+                    "id": template_id_1,
+                    "name": "name1",
+                    "description": "desc1",
+                    "is_default": True,
+                    "sp_name": ["sp1"]
+                    }]}
+            self.assertDictEqual(result_1, expected_1)
+
+            # case2: get by assigner_id
+            expected_2 = {
+                "fcp_templates": [
+                    {
+                    "id": template_id_2,
+                    "name": "name2",
+                    "description": "desc2",
+                    "is_default": False,
+                    "sp_name": ["sp2"]
+                    }]}
+            result_2 = self.fcpops.get_fcp_templates(assigner_id='user2')
+            self.assertDictEqual(result_2, expected_2)
+
+            # case3: get by host_default=True
+            result_3 = self.fcpops.get_fcp_templates(host_default=True)
+            self.assertDictEqual(result_3, expected_1)
+
+            # # case4: get by host_default=False
+            # result_4 = self.fcpops.get_fcp_templates(host_default=False)
+            # self.assertDictEqual(result_4, expected_2)
+
+            # case5: get by default_sp_list=['sp1']
+            result_5 = self.fcpops.get_fcp_templates(default_sp_list=['sp1'])
+            self.assertDictEqual(result_5, expected_1)
+
+            # case6: get by default_sp_list=['all']
+            expected_all = {
+                "fcp_templates": [
+                    {
+                        "id": template_id_1,
+                        "name": "name1",
+                        "description": "desc1",
+                        "is_default": True,
+                        "sp_name": ["sp1"]
+                    },
+                    {
+                        "id": template_id_2,
+                        "name": "name2",
+                        "description": "desc2",
+                        "is_default": False,
+                        "sp_name": ["sp2"]
+                    }]}
+            result_6 = self.fcpops.get_fcp_templates(default_sp_list=['all'])
+            self.assertDictEqual(result_6, expected_all)
+
+            # case7: without any parameter, will get all templates
+            result_7 = self.fcpops.get_fcp_templates()
+            self.assertDictEqual(result_7, expected_all)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
+            self._delete_from_template_table([template_id_1, template_id_2])
+
+    @mock.patch(
+        "zvmsdk.volumeop.FCPManager._update_template_fcp_raw_usage")
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_get_fcp_templates_details(self, mock_sync, mock_raw):
+        """ Test get_fcp_templates_details in FCPManager"""
+        try:
+            self.maxDiff = None
+            # prepare test data
+            template_id_1 = 'template_id_1'
+            template_id_2 = 'template_id_2'
+            templates = [(template_id_1, 'name1', 'desc1', 1),
+                        (template_id_2, 'name2', 'desc2', 0)]
+            self._delete_from_template_table([template_id_1, template_id_2])
+            self._insert_data_into_template_table(templates)
+            template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
+            self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
+
+            fcp_info_list_1 = [
+                            # available
+                            ('1a00', '', 0, 0, 'c05076de3300a83c',
+                            'c05076de33002641', '27', 'free', '',
+                            '')
+                            ]
+            fcp_info_list_2 = [
+                            # allocated
+                            ('1b00', 'user2', 1, 1, 'c05076de3300c83c',
+                            'c05076de33002641', '27', 'active', '',
+                            template_id_2),
+                            # unallocated_but_active
+                            ('1b01', '', 0, 0, 'c05076de3300d83c',
+                            'c05076de33002641', '35', 'active', 'owner2',
+                            '')]
+            fcp_id_list_1 = [fcp_info[0] for fcp_info in fcp_info_list_1]
+            fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
+            self._insert_data_into_fcp_table(fcp_info_list_1)
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
+            self._insert_data_into_fcp_table(fcp_info_list_2)
+            template_fcp = [('1a00', template_id_1, 0),
+                            ('1x00', template_id_1, 1),
+                            ('1b00', template_id_2, 0),
+                            ('1b01', template_id_2, 1)]
+            fcp_id_list_1.append('1x00')
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
+            self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
+
+            # case1: test get_fcp_templates_details without input parameter
+            expected_1 = {
+                "id": template_id_1,
+                "name": "name1",
+                "description": "desc1",
+                "is_default": True,
+                "sp_name": ["sp1"],
+                "statistics": {
+                    0: {
+                            "total": "1A00",
+                            "total_count": 1,
+                            "single_fcp": "1A00",
+                            "range_fcp": "",
+                            "available": "1A00",
+                            "available_count": 1,
+                            "allocated": "",
+                            "reserve_only": "",
+                            "connection_only": "",
+                            "unallocated_but_active": [],
+                            "allocated_but_free": "",
+                            "notfound": "",
+                            "offline": "",
+                            "CHPIDs": {"27": "1A00"}},
+                    1: {
+                            "total": "1X00",
+                            "total_count": 1,
+                            "single_fcp": "1X00",
+                            "range_fcp": "",
+                            "available": "",
+                            "available_count": 0,
+                            "allocated": "",
+                            "reserve_only": "",
+                            "connection_only": "",
+                            "unallocated_but_active": [],
+                            "allocated_but_free": "",
+                            "notfound": "1X00",
+                            "offline": "",
+                            "CHPIDs": {}}
+                }
+                }
+            expected_2 = {
+                "id": template_id_2,
+                "name": "name2",
+                "description": "desc2",
+                "is_default": False,
+                "sp_name": ["sp2"],
+                "statistics": {
+                    0: {
+                            "total": "1B00",
+                            "total_count": 1,
+                            "single_fcp": "1B00",
+                            "range_fcp": "",
+                            "available": "",
+                            "available_count": 0,
+                            "allocated": "1B00",
+                            "reserve_only": "",
+                            "connection_only": "",
+                            "unallocated_but_active": [],
+                            "allocated_but_free": "",
+                            "notfound": "",
+                            "offline": "",
+                            "CHPIDs": {"27": "1B00"}},
+                    1: {
+                            "total": "1B01",
+                            "total_count": 1,
+                            "single_fcp": "1B01",
+                            "range_fcp": "",
+                            "available": "",
+                            "available_count": 0,
+                            "allocated": "",
+                            "reserve_only": "",
+                            "connection_only": "",
+                            "unallocated_but_active": [
+                                ("1B01", "owner2")],
+                            "allocated_but_free": "",
+                            "notfound": "",
+                            "offline": "",
+                            "CHPIDs": {"35": "1B01"}
+                    }
+                }
+            }
+            expected_all = {
+                "fcp_templates": [expected_1, expected_2]}
+            result_all = self.fcpops.get_fcp_templates_details(raw=False,
+                                                             statistics=True,
+                                                             sync_with_zvm=False)
+            mock_sync.assert_not_called()
+            self.assertDictEqual(result_all, expected_all)
+
+            # case2: get_fcp_templates_details by template_id_list
+            result = self.fcpops.get_fcp_templates_details(template_id_list=[template_id_1],
+                                                             raw=False,
+                                                             statistics=True,
+                                                             sync_with_zvm=False)
+            expected = {'fcp_templates': [expected_1]}
+            self.assertDictEqual(result, expected)
+
+            # case3: get_fcp_templates_details with raw=True and sync_with_zvm=True
+            self.fcpops.get_fcp_templates_details(template_id_list=[template_id_1],
+                                                    raw=True,
+                                                    statistics=True,
+                                                    sync_with_zvm=True)
+            mock_raw.assert_called()
+            mock_sync.assert_called()
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
+            self._delete_from_template_table([template_id_1, template_id_2])
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.delete_fcp_template")
+    def test_delete_fcp_template(self, mock_db_delete_tmpl):
+        """ Test delete_fcp_template in FCPManager"""
+        self.fcpops.delete_fcp_template('tmpl_id')
+        mock_db_delete_tmpl.assert_called_once_with('tmpl_id')
 
 
 class TestFCPVolumeManager(base.SDKTestCase):
