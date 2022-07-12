@@ -15,6 +15,7 @@
 #    under the License.
 
 from datetime import datetime
+from threading import Lock
 
 
 CONTINUE_FAIL_THRESHOLD = 20
@@ -36,18 +37,26 @@ class SMAPIStatus():
         self.totalSuccess = 0
         self.totalFail = 0
 
-    def recordSuccess(self):
+        # we have multiple threads for cloud connector, need lock for
+        # operations for global data
+        self.lock = Lock()
+
+    def RecordSuccess(self):
+        self.lock.acquire()
         self.lastSuccess = datetime.now()
         self.totalSuccess += 1
 
         # we think a success means there is no continue Fail
         self.continueFail = 0
+        self.lock.release()
 
-    def recordFail(self):
+    def RecordFail(self):
+        self.lock.acquire()
         self.lastFail = datetime.now()
         self.totalFail += 1
 
         self.continueFail += 1
+        self.lock.release()
 
     def Get(self):
         status = {'SMAPI':
