@@ -1395,8 +1395,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'id': tmpl_id,
                 'name': kwargs['name'],
                 'description': kwargs['description'],
-                'is_default': kwargs['host_default'],
-                'sp_name': kwargs['default_sp_list']
+                'host_default': kwargs['host_default'],
+                'storage_providers': kwargs['default_sp_list']
             }}
             self.assertEqual(expected, tmpl_basic)
         finally:
