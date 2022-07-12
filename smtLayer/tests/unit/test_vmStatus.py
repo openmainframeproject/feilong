@@ -23,8 +23,8 @@ class SMTvmStatusTestCase(base.SMTTestCase):
 
     def test_get_success(self):
         s = vmStatus.SMAPIStatus()
-        s.recordSuccess()
-        s.recordSuccess()
+        s.RecordSuccess()
+        s.RecordSuccess()
 
         ret = s.Get()['SMAPI']
         d = ret.pop('lastSuccess', None)
@@ -38,8 +38,8 @@ class SMTvmStatusTestCase(base.SMTTestCase):
 
     def test_get_fail(self):
         s = vmStatus.SMAPIStatus()
-        s.recordFail()
-        s.recordFail()
+        s.RecordFail()
+        s.RecordFail()
 
         ret = s.Get()['SMAPI']
         d = ret.pop('lastFail', None)
@@ -53,9 +53,9 @@ class SMTvmStatusTestCase(base.SMTTestCase):
 
     def test_get_multiplefail(self):
         s = vmStatus.SMAPIStatus()
-        s.recordSuccess()
+        s.RecordSuccess()
         for i in range(40):
-            s.recordFail()
+            s.RecordFail()
 
         ret = s.Get()['SMAPI']
         d = ret.pop('lastFail', None)
