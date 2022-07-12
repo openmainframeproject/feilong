@@ -66,7 +66,7 @@ get_fcp_templates = {
         'template_id_list': parameter_types.fcp_template_id_list,
         'assigner_id': parameter_types.single_param(parameter_types.userid),
         'host_default': parameter_types.single_param(parameter_types.boolean),
-        'default_sp_list': {
+        'storage_providers': {
             'type': 'array'
         }
     },
@@ -121,7 +121,7 @@ get_volume_connector = {
             'properties': {
                 'reserve': parameter_types.boolean,
                 'fcp_template_id': parameter_types.fcp_template_id,
-                'sp_name': parameter_types.name
+                'storage_provider': parameter_types.name
             },
             'required': ['info'],
             'additionalProperties': False,
@@ -144,7 +144,7 @@ create_fcp_template = {
             'type': 'string'
         },
         'host_default': parameter_types.boolean,
-        'default_sp_list': {
+        'storage_providers': {
             'type': 'array'
         }
     },
@@ -165,7 +165,7 @@ edit_fcp_template = {
             'type': 'string'
         },
         'host_default': parameter_types.boolean,
-        'default_sp_list': {
+        'storage_providers': {
             'type': 'array'
         }
     },

@@ -992,8 +992,8 @@ class RESTClientTestCase(unittest.TestCase):
                                    verify=False)
 
         default_sp_list = 'default_sp_list'
-        kwargs = {'default_sp_list': default_sp_list}
-        url = '/volumes/fcptemplates?default_sp_list=%s' % default_sp_list
+        kwargs = {'storage_providers': default_sp_list}
+        url = '/volumes/fcptemplates?storage_providers=%s' % default_sp_list
         full_uri = self.base_url + url
         self.client.call("get_fcp_templates",
                          *args, **kwargs)
