@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -68,6 +68,30 @@ class VMOps(object):
         power_stat = self.get_power_state(userid)
         perf_info = self._smtclient.get_image_performance_info(userid)
 
+        # Get the online CPU number, OS distro and kernel version
+        try:
+            act_cpus = self._smtclient.get_active_cpu_addrs(userid)
+            act_cpus_num = len(act_cpus)
+            LOG.debug('Online cpu info: %s, %d' % (act_cpus, act_cpus_num))
+        except exception.SDKSMTRequestFailed as err:
+            msg = ('Failed to execute command on capture source vm %(vm)s '
+                   'to get online cpu number with error %(err)s'
+                   % {'vm': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
+            act_cpus_num = 0
+
+        try:
+            os_distro = self._smtclient.guest_get_os_version(userid)
+            kernel_info = self._smtclient.guest_get_kernel_info(userid)
+            LOG.debug('OS and kernel info: %s, %s' % (os_distro, kernel_info))
+        except exception.SDKSMTRequestFailed as err:
+            msg = ('Failed to execute command on capture source vm %(vm)s '
+                   'to get OS distro with error %(err)s'
+                   % {'vm': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
+            os_distro = ''
+            kernel_info = ''
+
         if perf_info:
             try:
                 max_mem_kb = int(perf_info['max_memory'].split()[0])
@@ -85,7 +109,10 @@ class VMOps(object):
                     'max_mem_kb': max_mem_kb,
                     'mem_kb': mem_kb,
                     'num_cpu': num_cpu,
-                    'cpu_time_us': cpu_time_us}
+                    'cpu_time_us': cpu_time_us,
+                    'online_cpu_num': act_cpus_num,
+                    'os_distro': os_distro,
+                    'kernel_info': kernel_info}
         else:
             # virtual machine in shutdown state or not exists
             dict_info = self._smtclient.get_user_direct(userid)
@@ -94,7 +121,10 @@ class VMOps(object):
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
                 'mem_kb': 0,
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
-                'cpu_time_us': 0}
+                'cpu_time_us': 0,
+                'online_cpu_num': act_cpus_num,
+                'os_distro': os_distro,
+                'kernel_info': kernel_info}
 
     def get_adapters_info(self, userid):
         adapters_info = self._smtclient.get_adapters_info(userid)
