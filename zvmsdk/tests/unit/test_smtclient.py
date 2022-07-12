@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -2863,7 +2863,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 'CPE_NAME="cpe:/o:redhat:enterprise_linux:'
                                 '7.0:GA:server"',
                                 'HOME_URL="https://www.redhat.com/"']]
-        result = self._smtclient._guest_get_os_version(userid)
+        result = self._smtclient.guest_get_os_version(userid)
         self.assertEqual(result, 'rhel7.0')
 
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
@@ -2873,7 +2873,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 '/etc/system-release'],
                                ['Red Hat Enterprise Linux Server release 6.7'
                                 ' (Santiago)']]
-        result = self._smtclient._guest_get_os_version(userid)
+        result = self._smtclient.guest_get_os_version(userid)
         self.assertEqual(result, 'rhel6.7')
 
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
@@ -2892,7 +2892,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 'BUG_REPORT_URL="http://bugs.launchpad.net'
                                 '/ubuntu/"',
                                 'UBUNTU_CODENAME=xenial']]
-        result = self._smtclient._guest_get_os_version(userid)
+        result = self._smtclient.guest_get_os_version(userid)
         self.assertEqual(result, 'ubuntu16.04')
 
     @mock.patch.object(database.GuestDbOperator,
@@ -2936,7 +2936,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_good_path_unreachable_poweron(
@@ -3013,7 +3013,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_good_path_poweroff(self, guest_connection_status,
@@ -3089,7 +3089,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_good_path_poweroff_os(self,
@@ -3173,7 +3173,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_poweroff_with_force_disk(self,
@@ -3258,7 +3258,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_poweroff_with_device_ass(self,
@@ -3345,7 +3345,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_softstop')
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_good_path_poweron(self, guest_connection_status,
@@ -3402,7 +3402,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_os_mock.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
-    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_error_path(self, guest_connection_status,
@@ -3850,7 +3850,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                        '# Address',
                        '0', '3', '10', '19']
         exec_cmd.return_value = active_cpus
-        addrs = self._smtclient._get_active_cpu_addrs('TESTUID')
+        addrs = self._smtclient.get_active_cpu_addrs('TESTUID')
         exec_cmd.assert_called_once_with('TESTUID', "lscpu --parse=ADDRESS")
         addrs.sort()
         self.assertListEqual(addrs, ['00', '03', '0A', '13'])
@@ -3859,7 +3859,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus(self, get_active, resize, get_avail,
                               exec_cmd, request):
         userid = 'testuid'
@@ -3885,7 +3885,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_equal_active(self, get_active, resize, get_avail,
                                            exec_cmd, request):
         userid = 'testuid'
@@ -3903,7 +3903,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_less_active(self, get_active, resize, get_avail,
                                            exec_cmd, request):
         userid = 'testuid'
@@ -3921,7 +3921,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_definition_equal(self, get_active,
                                                         resize, get_avail,
                                                         exec_cmd, request):
@@ -3948,7 +3948,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_added_cpus(self, get_active,
                                                 resize, get_avail,
                                                 exec_cmd, request):
@@ -3976,7 +3976,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_deleted_cpus(self, get_active,
                                                   resize, get_avail,
                                                   exec_cmd, request):
@@ -4004,7 +4004,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_failed(self, get_active,
                                             resize, get_avail,
                                             exec_cmd, request):
@@ -4033,7 +4033,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_rescan_failed(self, get_active,
                                             resize, get_avail,
                                             exec_cmd, request):
@@ -4062,7 +4062,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_redhat(self, get_active, resize, get_avail,
                               exec_cmd, request):
         userid = 'testuid'
@@ -4095,7 +4095,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
-    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_ubuntu(self, get_active, resize, get_avail,
                               exec_cmd, request):
         userid = 'testuid'
