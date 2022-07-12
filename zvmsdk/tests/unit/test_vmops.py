@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -104,23 +104,36 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info(self, gps, gipi):
+    def test_get_info(self, gps, gipi, gaca, ggov, ggki):
         gps.return_value = 'on'
         gipi.return_value = {'used_memory': u'4872872 KB',
                              'used_cpu_time': u'6911844399 uS',
                              'guest_cpus': u'2',
                              'userid': u'CMABVT',
                              'max_memory': u'8388608 KB'}
+        gaca.return_value = [0, 1, 2]
+        ggov.return_value = 'RHEL8.4'
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
         vm_info = self.vmops.get_info('fakeid')
         gps.assert_called_once_with('fakeid')
         gipi.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
         self.assertEqual(vm_info['power_state'], 'on')
         self.assertEqual(vm_info['max_mem_kb'], 8388608)
         self.assertEqual(vm_info['mem_kb'], 4872872)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 6911844399)
+        self.assertEqual(vm_info['online_cpu_num'], 3)
+        self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
+        self.assertEqual(vm_info['kernel_info'], kernel_info)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
@@ -131,10 +144,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_shutdown(self, gps, gipi, gud):
+    def test_get_info_shutdown(self, gps, gipi, gud, gaca, ggov, ggki):
         gps.return_value = 'off'
         gipi.return_value = None
         gud.return_value = [
@@ -145,19 +161,32 @@ class SDKVMOpsTestCase(base.SDKTestCase):
             u'IPL 0100',
             u'NICDEF 1000 TYPE QDIO LAN SYSTEM VSW2 MACID 0E4E8E',
             u'MDISK 0100 3390 34269 3338 OMB1A9 MR', u'']
+        gaca.return_value = [0, 1, 2]
+        ggov.return_value = 'RHEL8.4'
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
         vm_info = self.vmops.get_info('fakeid')
         gps.assert_called_once_with('fakeid')
         gud.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
         self.assertEqual(vm_info['power_state'], 'off')
         self.assertEqual(vm_info['max_mem_kb'], 2097152)
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 0)
+        self.assertEqual(vm_info['online_cpu_num'], 3)
+        self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
+        self.assertEqual(vm_info['kernel_info'], kernel_info)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_get_uid_failed(self, gps, gipi, gud):
+    def test_get_info_get_uid_failed(self, gps, gipi, gud, gaca, ggov, ggki):
         gps.return_value = 'off'
         gipi.return_value = None
         gud.side_effect = exception.ZVMVirtualMachineNotExist(userid='fakeid',
