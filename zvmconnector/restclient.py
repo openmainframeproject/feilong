@@ -437,12 +437,12 @@ def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     reserve = kwargs.get('reserve', False)
     fcp_template_id = kwargs.get('fcp_template_id', None)
-    sp_name = kwargs.get('sp_name', None)
+    sp_name = kwargs.get('storage_provider', None)
     body = {'info':
         {
             "reserve": reserve,
             "fcp_template_id": fcp_template_id,
-            "sp_name": sp_name
+            "storage_provider": sp_name
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
@@ -453,7 +453,7 @@ def req_get_fcp_templates(start_index, *args, **kwargs):
     url = '/volumes/fcptemplates'
     template_id_list = kwargs.get('template_id_list', None)
     assigner_id = kwargs.get('assigner_id', None)
-    default_sp_list = kwargs.get('default_sp_list', None)
+    default_sp_list = kwargs.get('storage_providers', None)
     host_default = kwargs.get('host_default', False)
 
     if template_id_list:
@@ -461,7 +461,7 @@ def req_get_fcp_templates(start_index, *args, **kwargs):
     elif assigner_id:
         url += "?assigner_id=%s" % assigner_id
     elif default_sp_list:
-        url += "?default_sp_list=%s" % default_sp_list
+        url += "?storage_providers=%s" % default_sp_list
     elif host_default:
         url += "?host_default=%s" % host_default
     body = None
@@ -951,7 +951,7 @@ DATABASE = {
         # refer to 'def _check_arguments' for details.
         # In total,
         #   1 args: fcp_template_id
-        #   5 kwargs: name, desc, fcp_devices, host_default, default_sp_list
+        #   5 kwargs: name, desc, fcp_devices, host_default, storage_providers
         # args_required : 1
         #   fcp_template_id
         'args_required': 1,
