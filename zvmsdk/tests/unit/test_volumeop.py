@@ -864,22 +864,22 @@ class TestFCPManager(base.SDKTestCase):
                 "id": "fakehos1-1111-1111-1111-111111111111",
                 "name": "name1",
                 "description": "desc1",
-                "is_default": False,
-                "sp_name": []
+                "host_default": False,
+                "storage_providers": []
             },
             'fakehos2-1111-1111-1111-111111111111': {
                 "id": "fakehos2-1111-1111-1111-111111111111",
                 "name": "name2",
                 "description": "desc2",
-                "is_default": False,
-                "sp_name": []
+                "host_default": False,
+                "storage_providers": []
             },
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c': {
                 "id": "ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c",
                 "name": "test template",
                 "description": "test create_fcp_template",
-                "is_default": True,
-                "sp_name": ['sp1', 'sp2']
+                "host_default": True,
+                "storage_providers": ['sp1', 'sp2']
             },
         }
         try:
@@ -890,8 +890,8 @@ class TestFCPManager(base.SDKTestCase):
                                                   default_sp_list)
             self.assertEqual(ret['fcp_template']['name'], name)
             self.assertEqual(ret['fcp_template']['description'], description)
-            self.assertEqual(ret['fcp_template']['is_default'], host_default)
-            self.assertEqual(ret['fcp_template']['sp_name'], default_sp_list)
+            self.assertEqual(ret['fcp_template']['host_default'], host_default)
+            self.assertEqual(ret['fcp_template']['storage_providers'], default_sp_list)
             # check content in database
             all_templates_info = self.fcpops.get_fcp_templates(
                 template_id_list)
@@ -959,8 +959,8 @@ class TestFCPManager(base.SDKTestCase):
                     "id": template_id_1,
                     "name": "name1",
                     "description": "desc1",
-                    "is_default": True,
-                    "sp_name": ["sp1"]
+                    "host_default": True,
+                    "storage_providers": ["sp1"]
                     }]}
             self.assertDictEqual(result_1, expected_1)
 
@@ -971,8 +971,8 @@ class TestFCPManager(base.SDKTestCase):
                     "id": template_id_2,
                     "name": "name2",
                     "description": "desc2",
-                    "is_default": False,
-                    "sp_name": ["sp2"]
+                    "host_default": False,
+                    "storage_providers": ["sp2"]
                     }]}
             result_2 = self.fcpops.get_fcp_templates(assigner_id='user2')
             self.assertDictEqual(result_2, expected_2)
@@ -996,15 +996,15 @@ class TestFCPManager(base.SDKTestCase):
                         "id": template_id_1,
                         "name": "name1",
                         "description": "desc1",
-                        "is_default": True,
-                        "sp_name": ["sp1"]
+                        "host_default": True,
+                        "storage_providers": ["sp1"]
                     },
                     {
                         "id": template_id_2,
                         "name": "name2",
                         "description": "desc2",
-                        "is_default": False,
-                        "sp_name": ["sp2"]
+                        "host_default": False,
+                        "storage_providers": ["sp2"]
                     }]}
             result_6 = self.fcpops.get_fcp_templates(default_sp_list=['all'])
             self.assertDictEqual(result_6, expected_all)
@@ -1069,8 +1069,8 @@ class TestFCPManager(base.SDKTestCase):
                 "id": template_id_1,
                 "name": "name1",
                 "description": "desc1",
-                "is_default": True,
-                "sp_name": ["sp1"],
+                "host_default": True,
+                "storage_providers": ["sp1"],
                 "statistics": {
                     0: {
                             "total": "1A00",
@@ -1108,8 +1108,8 @@ class TestFCPManager(base.SDKTestCase):
                 "id": template_id_2,
                 "name": "name2",
                 "description": "desc2",
-                "is_default": False,
-                "sp_name": ["sp2"],
+                "host_default": False,
+                "storage_providers": ["sp2"],
                 "statistics": {
                     0: {
                             "total": "1B00",

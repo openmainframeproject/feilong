@@ -918,11 +918,11 @@ class FCPManager(object):
         the created template, for example:
         {
             'fcp_template': {
-                'name': 'bjcb-test-template',
-                'id': '36439338-db14-11ec-bb41-0201018b1dd2',
-                'description': 'This is Default template',
-                'is_default': True,
-                'sp_name': ['sp4', 'v7k60']
+            'name': 'bjcb-test-template',
+            'id': '36439338-db14-11ec-bb41-0201018b1dd2',
+            'description': 'This is Default template',
+                'host_default': True,
+                'storage_providers': ['sp4', 'v7k60']
             }
         }
         """
@@ -940,10 +940,10 @@ class FCPManager(object):
         # Return template basic info
         LOG.info("A FCP template was created with ID %s." % tmpl_id)
         return {'fcp_template': {'name': name,
-                                 'id': tmpl_id,
-                                 'description': description,
-                                 'is_default': host_default,
-                                 'sp_name': default_sp_list}}
+                'id': tmpl_id,
+                'description': description,
+                'host_default': host_default,
+                'storage_providers': default_sp_list}}
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
@@ -978,8 +978,8 @@ class FCPManager(object):
                 'name': 'bjcb-test-template',
                 'id': '36439338-db14-11ec-bb41-0201018b1dd2',
                 'description': 'This is Default template',
-                'is_default': True,
-                'sp_name': ['sp4', 'v7k60']
+                'host_default': True,
+                'storage_providers': ['sp4', 'v7k60']
               }
             }
         """
@@ -1037,8 +1037,8 @@ class FCPManager(object):
                 "id": id,
                 "name": name,
                 "description": description,
-                "is_default": is_default,
-                "sp_name": [sp_name]
+                "host_default": is_default,
+                "storage_providers": [sp_name]
             }
         }
         """
@@ -1049,11 +1049,11 @@ class FCPManager(object):
                 template_dict[id] = {"id": id,
                                      "name": name,
                                      "description": description,
-                                     "is_default": bool(is_default),
-                                     "sp_name": []}
+                                     "host_default": bool(is_default),
+                                     "storage_providers": []}
             # one fcp template can be multiple sp's default template
-            if sp_name and sp_name not in template_dict[id]["sp_name"]:
-                template_dict[id]["sp_name"].append(sp_name)
+            if sp_name and sp_name not in template_dict[id]["storage_providers"]:
+                template_dict[id]["storage_providers"].append(sp_name)
         return template_dict
 
     def _update_template_fcp_statistics_usage(self, statistics_usage,
@@ -1293,8 +1293,8 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd2",
                 "name": "default_template",
                 "description": "This is Default template",
-                "is_default": True,
-                "sp_name": [
+                "host_default": True,
+                "storage_providers": [
                     "v7k60",
                     "sp4"
                 ]
@@ -1303,8 +1303,8 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
                 "name": "test_template",
                 "description": "just for test",
-                "is_default": False,
-                "sp_name": [
+                "host_default": False,
+                "storage_providers": [
                     "ds8k60c1"
                 ]
                 },
@@ -1312,8 +1312,8 @@ class FCPManager(object):
                 "id": "12345678",
                 "name": "templatet1",
                 "description": "test1",
-                "is_default": False,
-                "sp_name": [
+                "host_default": False,
+                "storage_providers": [
                     "sp3"
                 ]
                 }
@@ -1333,8 +1333,8 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd2",
                 "name": "default_template",
                 "description": "This is Default template",
-                "is_default": True,
-                "sp_name": [
+                "host_default": True,
+                "storage_providers": [
                     "v7k60",
                     "sp4"
                 ]
@@ -1343,8 +1343,8 @@ class FCPManager(object):
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
                 "name": "test_template",
                 "description": "just for test",
-                "is_default": False,
-                "sp_name": [
+                "host_default": False,
+                "storage_providers": [
                     "ds8k60c1"
                 ]
                 }
@@ -1391,8 +1391,8 @@ class FCPManager(object):
                     "id":"36439338-db14-11ec-bb41-0201018b1dd2",
                     "name":"default_template",
                     "description":"This is Default template",
-                    "is_default":True,
-                    "sp_name":[
+                    "host_default":True,
+                    "storage_providers":[
                         "sp4",
                         "v7k60"
                     ],
@@ -1539,7 +1539,7 @@ class FCPManager(object):
         #         "name": name,
         #         "description": description,
         #         "is_default": is_default,
-        #         "sp_name": [sp_name]
+        #         "storage_providers": [sp_name]
         #     }
         # }
         if raw:
@@ -1559,7 +1559,7 @@ class FCPManager(object):
             #         "name": name,
             #         "description": description,
             #         "is_default": is_default,
-            #         "sp_name": [sp_name],
+            #         "storage_providers": [sp_name],
             #          "raw": {
             #              path1: {},
             #              path2: {}}
@@ -1603,8 +1603,8 @@ class FCPManager(object):
             #         "id": id,
             #         "name": name,
             #         "description": description,
-            #         "is_default": is_default,
-            #         "sp_name": [sp_name],
+            #         "host_default": is_default,
+            #         "storage_providers": [sp_name],
             #          "statistics": {
             #              path1: {},
             #              path2: {}}
