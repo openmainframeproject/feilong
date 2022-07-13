@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -436,28 +436,57 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     reserve = kwargs.get('reserve', False)
+    fcp_template_id = kwargs.get('fcp_template_id', None)
+    sp_name = kwargs.get('storage_provider', None)
     body = {'info':
         {
-            "reserve": reserve
+            "reserve": reserve,
+            "fcp_template_id": fcp_template_id,
+            "storage_provider": sp_name
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
     return url, body
 
 
-def req_get_all_fcp_usage(start_index, *args, **kwargs):
-    url = '/volumes/fcp'
-    userid = kwargs.get('userid', None)
+def req_get_fcp_templates(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    template_id_list = kwargs.get('template_id_list', None)
+    assigner_id = kwargs.get('assigner_id', None)
+    default_sp_list = kwargs.get('storage_providers', None)
+    host_default = kwargs.get('host_default', False)
+
+    if template_id_list:
+        url += "?template_id_list=%s" % template_id_list
+    elif assigner_id:
+        url += "?assigner_id=%s" % assigner_id
+    elif default_sp_list:
+        url += "?storage_providers=%s" % default_sp_list
+    elif host_default:
+        url += "?host_default=%s" % host_default
+    body = None
+    return url, body
+
+
+def req_get_fcp_templates_details(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates/detail'
+    template_id_list = kwargs.get('template_id_list', None)
     raw = kwargs.get('raw', False)
     statistics = kwargs.get('statistics', True)
     sync_with_zvm = kwargs.get('sync_with_zvm', False)
-    if userid:
-        url += "?userid=%s&" % userid
+    if template_id_list:
+        url += "?template_id_list=%s&" % template_id_list
     else:
         url += "?"
     url += "raw=%s&" % raw
     url += "statistics=%s&" % statistics
     url += "sync_with_zvm=%s" % sync_with_zvm
+    body = None
+    return url, body
+
+
+def req_delete_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates/%s'
     body = None
     return url, body
 
@@ -472,8 +501,29 @@ def req_set_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp/%s'
     body = {'info': {'userid': args[start_index],
                      'reserved': args[start_index + 1],
-                     'connections': args[start_index + 2]}}
+                     'connections': args[start_index + 2],
+                     'fcp_template_id': args[start_index + 3]}}
     fill_kwargs_in_body(body['info'], **kwargs)
+    return url, body
+
+
+def req_create_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    body = {'name': args[start_index],
+            'description': args[start_index + 1],
+            'fcp_devices': args[start_index + 2]}
+    fill_kwargs_in_body(body, **kwargs)
+    return url, body
+
+
+def req_edit_fcp_template(start_index, *args, **kwargs):
+    # the function is called by _get_url_body_headers()
+    url = '/volumes/fcptemplates/%s'
+    body = dict()
+    # no other args except fcp_templated_id in url path,
+    # param in url path is set by _get_url_body_headers().
+    # hence, only save kwargs in body
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
@@ -864,11 +914,22 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_get_volume_connector},
-    'get_all_fcp_usage': {
+    'get_fcp_templates': {
+        'method': 'GET',
+        'args_required': 0,
+        'args_optional': 1,
+        'params_path': 0,
+        'request': req_get_fcp_templates},
+    'get_fcp_templates_details': {
         'method': 'GET',
         'args_required': 0,
         'params_path': 0,
-        'request': req_get_all_fcp_usage},
+        'request': req_get_fcp_templates_details},
+    'delete_fcp_template': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_delete_fcp_template},
     'get_fcp_usage': {
         'method': 'GET',
         'args_required': 1,
@@ -876,9 +937,30 @@ DATABASE = {
         'request': req_get_fcp_usage},
     'set_fcp_usage': {
         'method': 'PUT',
-        'args_required': 4,
+        'args_required': 5,
         'params_path': 1,
         'request': req_set_fcp_usage},
+    'create_fcp_template': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 0,
+        'request': req_create_fcp_template},
+    'edit_fcp_template': {
+        'method': 'PUT',
+        # args_required and args_optional are used for args rather than kwargs,
+        # refer to 'def _check_arguments' for details.
+        # In total,
+        #   1 args: fcp_template_id
+        #   5 kwargs: name, desc, fcp_devices, host_default, storage_providers
+        # args_required : 1
+        #   fcp_template_id
+        'args_required': 1,
+        # params_path is the count of params in url path,
+        # url path is '/volumes/fcptemplates/%s'
+        #   %s is for fcp_template_id
+        #   %s is from args
+        'params_path': 1,
+        'request': req_edit_fcp_template},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,
@@ -1021,10 +1103,10 @@ class RESTClient(object):
         if 'args_optional' in DATABASE[api_name].keys():
             optional = DATABASE[api_name]['args_optional']
         if len(args) < count:
-            msg = "Missing some args,please check:%s." % args
+            msg = "Missing some args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
         if len(args) > count + optional:
-            msg = "Too many args,please check:%s." % args
+            msg = "Too many args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
 
     def _get_admin_token(self, path):
@@ -1136,7 +1218,7 @@ class RESTClient(object):
 
             # get url,body with api_name and method
             url, body, headers = self._get_url_body_headers(api_name,
-                                                        *args, **kwargs)
+                                                            *args, **kwargs)
             response = self.api_request(url, method, body=body,
                                         headers=headers)
 

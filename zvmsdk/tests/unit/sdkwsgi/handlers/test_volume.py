@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -108,3 +108,25 @@ class HandlersVolumeTest(unittest.TestCase):
         mock_detach.assert_called_once_with(
             'volume_refresh_bootmap',
             fcpchannels, wwpns, lun, wwid, '', [])
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_edit_fcp_template(self, mock_send_request):
+        mock_send_request.return_value = {'overallRC': 0}
+        body_str = {
+            'storage_providers': ['sp8', 'sp9'],
+            'host_default': True,
+            'name': 'fake_name'}
+        request_args = {
+            'default_sp_list': ['sp8', 'sp9'],
+            'host_default': True,
+            'name': 'fake_name'}
+        self.req.body = json.dumps(body_str)
+        # tmpl_id lenght must be 36 defined in
+        # zvmsdk/sdkwsgi/validation/parameter_types.py
+        tmpl_id = 'fake_template_id' + '0' * 20
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'template_id': tmpl_id})
+        volume.edit_fcp_template(self.req)
+        mock_send_request.assert_called_once_with(
+            'edit_fcp_template', tmpl_id,
+            description=None, fcp_devices=None, **request_args)

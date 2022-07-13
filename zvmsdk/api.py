@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -15,6 +15,7 @@
 
 import netaddr
 import six
+import ast
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -69,7 +70,7 @@ def check_guest_exist(check_index=0):
 def check_fcp_exist(check_index=0):
     """Check FCP exist in database.
 
-    :param check_index: The parameter index of fcp, default as 1
+    :param check_index: The parameter index of fcp, default as 0
 
     """
 
@@ -1582,7 +1583,8 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid, reserve=False):
+    def get_volume_connector(self, userid, reserve=False,
+                             fcp_template_id=None, sp_name=None):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1594,36 +1596,183 @@ class SDKAPI(object):
                 'wwpns': [wwpn]
                 'host': host
                 'phy_to_virt_initiators': {},
-                'fcp_paths': 0
+                'fcp_paths': 0,
+                'fcp_template_id': fcp_template_id
             }
         This information will be used by IBM storwize FC driver in Cinder.
 
         :param str userid: the user id of the guest
         :param boolean reserve: the flag to reserve FCP device
+        :param str fcp_template_id: the fcp template id
+               which FCP devices are allocated by
+        :param str sp_name: the storage provider name
         """
-        return self._volumeop.get_volume_connector(userid, reserve)
+        return self._volumeop.get_volume_connector(
+            userid, reserve, fcp_template_id, sp_name)
 
-    def get_all_fcp_usage(self, userid=None, raw=False, statistics=True,
-                          sync_with_zvm=False):
-        """API for getting all the FCP usage for specified userid.
-
-        :param str userid: the user id of the guest. if userid is None,
-                           will return all the fcp usage in database.
-
-        :returns: dict describing reserved,connections values of the FCP
-                  in database. For example:
-                  {
-                      '1a11': ['userid', 0, 1],
-                      '1b11': ['fakeid', 1, 3],
-                      '1c11': ['fakeid', 1, 2],
-                      '1d11': ['fakeid', 1, 0]
-                  }
-                  the keys are the fcp IDs, the value is a list contains
-                  [userid, reserved, connections] values.
+    def get_fcp_templates(self, template_id_list=None, assigner_id=None,
+                         default_sp_list= None, host_default=False):
+        """Get template base info
+        :param template_id_list: (list) a list of template id,
+        if it is None, get fcp templates with other parameter
+        :param assigner_id: (str) a string of VM userid
+        :param host_default: (boolean) whether or not get host default fcp
+        template
+        :param default_sp_list: (list) a list of storage provider, to get the
+        list of storage provider's default fcp templates
+        :return: (dict) the base info of template
+        example:
+        {
+            templates: [
+                {
+                    name: t1,
+                    id: template1_id,
+                    description: description,
+                    host_default: 0,
+                    sp_default: [sp1]
+                },
+                {
+                    name: t2,
+                    id: template2_id,
+                    description: description,
+                    host_default: 1,
+                    sp_default: [sp1, sp2]
+                }
+            ]
+        }
         """
-        return self._volumeop.get_all_fcp_usage(userid, raw=raw,
-                                                statistics=statistics,
-                                                sync_with_zvm=sync_with_zvm)
+        # pass in template_id_list and default_sp_list is string:
+        # "['36439338-db14-11ec-bb41-0201018b1dd2']"
+        # convert to list
+        if template_id_list and not isinstance(template_id_list, list):
+            template_id_list = ast.literal_eval(template_id_list)
+        if default_sp_list and not isinstance(default_sp_list, list):
+            default_sp_list = ast.literal_eval(default_sp_list)
+
+        return self._volumeop.get_fcp_templates(
+            template_id_list=template_id_list, assigner_id=assigner_id,
+            default_sp_list=default_sp_list, host_default=host_default)
+
+    def get_fcp_templates_details(self, template_id_list=None,
+                                  raw=False, statistics=True,
+                                  sync_with_zvm=False):
+        """Get fcp templates detail info.
+        :param template_list: (list) if is None,
+                              will get all the templates on the host
+        :return: (dict) the raw and/or statistic data
+                        of temlate_list FCP devices
+        if sync_with_zvm:
+            self.fcp_mgr._sync_db_with_zvm()
+        if FCP DB is NOT empty and raw=True statistics=True
+        {
+            "fcp_templates":[
+                {
+                    "id":"36439338-db14-11ec-bb41-0201018b1dd2",
+                    "name":"default_template",
+                    "description":"This is Default template",
+                    "is_default":True,
+                    "sp_name":[
+                        "sp4",
+                        "v7k60"
+                    ],
+                    "raw":{
+                        # (fcp_id, template_id, assigner_id, connections,
+                        #  reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
+                        #  tmpl_id)
+                        "0":[
+                            [
+                                "1a0f",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "HLP0000B",
+                                0,
+                                0,
+                                "c05076de3300038b",
+                                "c05076de33002e41",
+                                "27",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ],
+                            [
+                                "1a0e",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "",
+                                0,
+                                0,
+                                "c05076de330003a2",
+                                "c05076de33002e41",
+                                "27",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ]
+                        ],
+                        "1":[
+                            [
+                                "1c0d",
+                                "36439338-db14-11ec-bb41-0201018b1dd2",
+                                "",
+                                0,
+                                0,
+                                "c05076de33000353",
+                                "c05076de33002641",
+                                "32",
+                                "free",
+                                "none",
+                                "36439338-db14-11ec-bb41-0201018b1dd2"
+                            ]
+                        ]
+                    },
+                    "statistics":{
+                        "0":{
+                            "total":"1A0E - 1A0F",
+                            "available":"1A0E - 1A0F",
+                            "allocated":"",
+                            "reserve_only":"",
+                            "connection_only":"",
+                            "unallocated_but_active":[
+
+                            ],
+                            "allocated_but_free":"",
+                            "notfound":"",
+                            "offline":"",
+                            "CHPIDs":{
+                                "27":"1A0E - 1A0F"
+                            }
+                        },
+                        "1":{
+                            "total":"1C0D",
+                            "available":"1C0D",
+                            "allocated":"",
+                            "reserve_only":"",
+                            "connection_only":"",
+                            "unallocated_but_active":[
+
+                            ],
+                            "allocated_but_free":"",
+                            "notfound":"",
+                            "offline":"",
+                            "CHPIDs":{
+                                "32":"1C0D"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        """
+        # pass in template_id_list is string:
+        # "['36439338-db14-11ec-bb41-0201018b1dd2']"
+        # convert to list
+        if template_id_list and not isinstance(template_id_list, list):
+            template_id_list = ast.literal_eval(template_id_list)
+
+        return self._volumeop.get_fcp_templates_details(
+            template_id_list=template_id_list, raw=raw,
+            statistics=statistics, sync_with_zvm=sync_with_zvm)
+
+    def delete_fcp_template(self, template_id):
+        return self._volumeop.delete_fcp_template(template_id)
 
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
@@ -1633,13 +1782,16 @@ class SDKAPI(object):
         :param str fcp: the fcp ID of FCP device
 
         :returns: list describing reserved,connections values of the FCP
-                  in database. For example, ['fakeid', 1, 3] means the
-                  userid is fakeid, reserved value is 1, and connections is 3.
+                  in database. For example,
+                  ['fakeid', 1, 3, 'b7ad5cba-f225-11ec-a5cf-02553600000f'] means
+                  the userid is fakeid, reserved value is 1, connections is 3,
+                  fcp_template_id is 'b7ad5cba-f225-11ec-a5cf-02553600000f'.
         """
         return self._volumeop.get_fcp_usage(fcp)
 
     @check_fcp_exist()
-    def set_fcp_usage(self, fcp, userid, reserved, connections):
+    def set_fcp_usage(self, fcp, userid, reserved, connections,
+                      fcp_template_id):
         """API for setting FCP usage in database manually.
 
         :param str userid: the user id of the guest
@@ -1647,9 +1799,72 @@ class SDKAPI(object):
         :param int reserved: the value set to reserved value of FCP database
         :param int connections: the value set to connections value of
                                 FCP database
+        :param str fcp_template_id: the ID of the FCP template.
         """
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
-                                            connections)
+                                            connections, fcp_template_id)
+
+    def create_fcp_template(self, name, description, fcp_devices,
+                            host_default: bool = False,
+                            default_sp_list: list = []):
+        """API for creating a FCP template in database.
+
+        :param str name: the name of the template
+        :param str description: the description for the template
+        :param str fcp_devices: a fcp list is composed of fcp device IDs,
+            range indicator '-', and split indicator ';'.
+        :param bool host_default: this template is default to this
+            host or not
+        :param list default_sp_list: the list of storage providers that will
+            use this FCP template as default FCP template. If None, it means
+            no storage provider would use this FCP template as default.
+        """
+        return self._volumeop.create_fcp_template(
+            name, description, fcp_devices,
+            host_default=host_default, default_sp_list=default_sp_list)
+
+    def edit_fcp_template(self, fcp_template_id, name=None,
+                          description=None, fcp_devices=None,
+                          host_default=None, default_sp_list=None):
+        """ Edit a FCP device template
+
+        The kwargs values are pre-validated in two places:
+          validate kwargs types
+            in zvmsdk/sdkwsgi/schemas/volume.py
+          set a kwarg as None if not passed by user
+            in zvmsdk/sdkwsgi/handlers/volume.py
+
+        If any kwarg is None, the kwarg will not be updated.
+
+        :param fcp_template_id: template id
+        :param name:            template name
+        :param description:     template desc
+        :param fcp_devices:     FCP devices divided into
+                                different paths by semicolon
+          Format:
+            "fcp-devices-from-path0;fcp-devices-from-path1;..."
+          Example:
+            "0011-0013;0015;0017-0018",
+        :param host_default: (bool)
+        :param default_sp_list: (list)
+          Example:
+            ["SP1", "SP2"]
+        :return:
+          Example
+            {
+              'fcp_template': {
+                'name': 'bjcb-test-template',
+                'id': '36439338-db14-11ec-bb41-0201018b1dd2',
+                'description': 'This is Default template',
+                'is_default': True,
+                'sp_name': ['sp4', 'v7k60']
+            }
+            }
+        """
+        return self._volumeop.edit_fcp_template(
+            fcp_template_id, name=name, description=description,
+            fcp_devices=fcp_devices, host_default=host_default,
+            default_sp_list=default_sp_list)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath

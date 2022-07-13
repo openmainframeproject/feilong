@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -57,8 +57,16 @@ ROUTE_LIST = (
     ('/volumes/conn/{userid}', {
         'GET': volume.get_volume_connector,
     }),
-     ('/volumes/fcp', {
-        'GET': volume.get_all_fcp_usage,
+    ('/volumes/fcptemplates', {
+        'POST': volume.create_fcp_template,
+        'GET': volume.get_fcp_templates,
+    }),
+    ('/volumes/fcptemplates/detail', {
+        'GET': volume.get_fcp_templates_details,
+    }),
+    ('/volumes/fcptemplates/{template_id}', {
+        'DELETE': volume.delete_fcp_template,
+        'PUT': volume.edit_fcp_template
     }),
      ('/volumes/fcp/{fcp_id}', {
         'GET': volume.get_fcp_usage,

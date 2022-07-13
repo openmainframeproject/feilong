@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -940,6 +940,104 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guest_grow_root_volume", self.fake_userid,
                          'RHEL7.8')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_edit_fcp_template(self, get_token, request):
+        method = 'PUT'
+        fake_tmpl_id = 'fake_template_id' + '0' * 20
+        url = '/volumes/fcptemplates/%s' % fake_tmpl_id
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'name': 'fake_name', 'description': 'desc'}
+        self.client.call("edit_fcp_template",
+                         fake_tmpl_id, **kwargs)
+        body = json.dumps(kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_get_fcp_templates(self, get_token, request):
+        method = 'GET'
+        template_list = ['fake_template_id' + '0' * 20]
+        url = '/volumes/fcptemplates?template_id_list=%s' % template_list
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'template_id_list': template_list}
+        args = []
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        body = None
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        assigner_id = 'assigner_id'
+        kwargs = {'assigner_id': assigner_id}
+        url = '/volumes/fcptemplates?assigner_id=%s' % assigner_id
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        default_sp_list = 'default_sp_list'
+        kwargs = {'storage_providers': default_sp_list}
+        url = '/volumes/fcptemplates?storage_providers=%s' % default_sp_list
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        host_default = 'host_default'
+        kwargs = {'host_default': host_default}
+        url = '/volumes/fcptemplates?host_default=%s' % host_default
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_get_fcp_templates_details(self, get_token, request):
+        method = 'GET'
+        template_list = ['fake_template_id' + '0' * 20]
+        url = '/volumes/fcptemplates/detail?template_id_list=%s&' % template_list
+        url += 'raw=False&statistics=True&sync_with_zvm=False'
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'template_id_list': template_list}
+        args = []
+        self.client.call("get_fcp_templates_details",
+                         *args, **kwargs)
+        body = None
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        kwargs = {}
+        url = '/volumes/fcptemplates/detail?'
+        url += 'raw=False&statistics=True&sync_with_zvm=False'
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates_details",
+                         *args, **kwargs)
+        body = None
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

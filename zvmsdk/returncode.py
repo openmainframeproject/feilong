@@ -281,6 +281,9 @@ errors = {
                       "deleted out of z/VM Cloud Connector.")},
                  "The operated object does not exist"
                  ],
+    'alreadyExist': [{'overallRC': 409, 'modID': None, 'rc': 409},
+                 {1: "%(obj_desc)s already exist."}
+                 ],
 # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
                  {1: "Guest '%(userid)s' is not in active status.",
@@ -331,6 +334,8 @@ errors = {
                       "error: the memory size to be increased: '%(inc)im' "
                       "is greater than the maximum reserved memory size: "
                       "'%(max)im'."),
+                  22: ("Failed to delete FCP device template, "
+                      "error: %(msg)s"),
                   },
                  "The operated object status conflict"
                  ],

@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from zvmsdk.sdkwsgi.validation import parameter_types
 
 
@@ -61,10 +60,24 @@ get_fcp_usage = {
 }
 
 
-get_all_fcp_usage = {
+get_fcp_templates = {
     'type': 'object',
     'properties': {
-        'userid': parameter_types.userid_list_array,
+        'template_id_list': parameter_types.fcp_template_id_list,
+        'assigner_id': parameter_types.single_param(parameter_types.userid),
+        'host_default': parameter_types.single_param(parameter_types.boolean),
+        'storage_providers': {
+            'type': 'array'
+        }
+    },
+    'additionalProperties': False,
+}
+
+
+get_fcp_templates_details = {
+    'type': 'object',
+    'properties': {
+        'template_id_list': parameter_types.fcp_template_id_list,
         'raw': parameter_types.single_param(parameter_types.boolean),
         'statistics': parameter_types.single_param(parameter_types.boolean),
         'sync_with_zvm': parameter_types.single_param(parameter_types.boolean),
@@ -88,6 +101,7 @@ set_fcp_usage = {
                 'connections': {
                     'type': ['integer'],
                 },
+                'fcp_template_id': parameter_types.fcp_template_id,
             },
             'required': ['reserved', 'connections'],
             'additionalProperties': False,
@@ -106,6 +120,8 @@ get_volume_connector = {
             'type': 'object',
             'properties': {
                 'reserve': parameter_types.boolean,
+                'fcp_template_id': parameter_types.fcp_template_id,
+                'storage_provider': parameter_types.name
             },
             'required': ['info'],
             'additionalProperties': False,
@@ -114,4 +130,45 @@ get_volume_connector = {
     },
     'additionalProperties': False,
 
+}
+
+
+create_fcp_template = {
+    'type': 'object',
+    'properties': {
+        'name': parameter_types.name,
+        'description': {
+            'type': 'string'
+        },
+        'fcp_devices': {
+            'type': 'string'
+        },
+        'host_default': parameter_types.boolean,
+        'storage_providers': {
+            'type': 'array'
+        }
+    },
+    'required': ['name', 'description', 'fcp_devices'],
+    'additionalProperties': False,
+}
+
+
+edit_fcp_template = {
+    'type': 'object',
+    'properties': {
+        'fcp_template_id': parameter_types.fcp_template_id,
+        'name': parameter_types.name,
+        'description': {
+            'type': 'string'
+        },
+        'fcp_devices': {
+            'type': 'string'
+        },
+        'host_default': parameter_types.boolean,
+        'storage_providers': {
+            'type': 'array'
+        }
+    },
+    'required': ['fcp_template_id'],
+    'additionalProperties': False
 }
