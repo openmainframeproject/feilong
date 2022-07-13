@@ -1395,8 +1395,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'id': tmpl_id,
                 'name': kwargs['name'],
                 'description': kwargs['description'],
-                'is_default': kwargs['host_default'],
-                'sp_name': kwargs['default_sp_list']
+                'host_default': kwargs['host_default'],
+                'storage_providers': kwargs['default_sp_list']
             }}
             self.assertEqual(expected, tmpl_basic)
         finally:
@@ -1488,7 +1488,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 utils.expand_fcp_list(kwargs2['fcp_devices']),
                 host_default=kwargs2['host_default'],
                 default_sp_list=kwargs2['default_sp_list'])
-            
+
             # get by host_default=True
             info_1 = self.db_op.get_host_default_fcp_template()[0]
             expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', True, None)
@@ -1496,7 +1496,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
             self.assertEqual(expected_1, result_1)
         finally:
-            self._purge_fcp_db()        
+            self._purge_fcp_db()
 
     def test_get_sp_default_fcp_template(self):
         """test get_sp_default_fcp_template"""
@@ -1548,7 +1548,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(expected_1, result_1)
             self.assertEqual(expected_2, result_2)
         finally:
-            self._purge_fcp_db() 
+            self._purge_fcp_db()
 
     def test_get_fcp_template_by_assigner_id(self):
         """test get_fcp_template_by_assigner_id"""
@@ -1603,7 +1603,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 tmpl_id_1, kwargs1['name'], kwargs1['description'],
                 utils.expand_fcp_list(kwargs1['fcp_devices']),
                 host_default=kwargs1['host_default'],
-                default_sp_list=kwargs1['default_sp_list'])            
+                default_sp_list=kwargs1['default_sp_list'])
             self.db_op.create_fcp_template(
                 tmpl_id_2, kwargs2['name'], kwargs2['description'],
                 utils.expand_fcp_list(kwargs2['fcp_devices']),
@@ -1632,14 +1632,14 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
                                         False, None)
-            template_info_1 =(tmpl_result[0][0], tmpl_result[0][1],
+            template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
                               tmpl_result[0][2], bool(tmpl_result[0][3]),
                               tmpl_result[0][4])
             self.assertEqual(template_info_1, expected_template_info_1)
 
             expected_template_info_2 = (tmpl_id_2, 'new_name2', 'new_desc2',
-                                        True, 'fake_sp')            
-            template_info_2 =(tmpl_result[1][0], tmpl_result[1][1],
+                                        True, 'fake_sp')
+            template_info_2 = (tmpl_result[1][0], tmpl_result[1][1],
                               tmpl_result[1][2], bool(tmpl_result[1][3]),
                               tmpl_result[1][4])
             self.assertEqual(template_info_2, expected_template_info_2)
@@ -1653,7 +1653,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(1, len(result[0]))
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
                                         False, None)
-            template_info_1 =(tmpl_result[0][0], tmpl_result[0][1],
+            template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
                               tmpl_result[0][2], bool(tmpl_result[0][3]),
                               tmpl_result[0][4])
             self.assertEqual(template_info_1, expected_template_info_1)
@@ -1676,7 +1676,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertRaises(exception.SDKConflictError,
                               self.db_op.delete_fcp_template,
                               tmpl_id_1)
-            
+
             # case2: normal case
             self.db_op.unreserve_fcps(['1A01', '1B03'])
             self.db_op.delete_fcp_template(tmpl_id_1)

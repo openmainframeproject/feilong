@@ -1215,8 +1215,8 @@ class FCPDbOperator(object):
                 'name': 'bjcb-test-template',
                 'id': '36439338-db14-11ec-bb41-0201018b1dd2',
                 'description': 'This is Default template',
-                'is_default': True,
-                'sp_name': ['sp4', 'v7k60']
+                'host_default': True,
+                'storage_providers': ['sp4', 'v7k60']
               }
             }
         """
@@ -1392,8 +1392,8 @@ class FCPDbOperator(object):
                 'name': tmpl_basic[0]['name'],
                 'id': tmpl_basic[0]['id'],
                 'description': tmpl_basic[0]['description'],
-                'is_default': bool(tmpl_basic[0]['is_default']),
-                'sp_name':
+                'host_default': bool(tmpl_basic[0]['is_default']),
+                'storage_providers':
                     [] if tmpl_basic[0]['sp_name'] is None
                     else [r['sp_name'] for r in tmpl_basic]}}
 

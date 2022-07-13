@@ -113,6 +113,10 @@ class HandlersVolumeTest(unittest.TestCase):
     def test_edit_fcp_template(self, mock_send_request):
         mock_send_request.return_value = {'overallRC': 0}
         body_str = {
+            'storage_providers': ['sp8', 'sp9'],
+            'host_default': True,
+            'name': 'fake_name'}
+        request_args = {
             'default_sp_list': ['sp8', 'sp9'],
             'host_default': True,
             'name': 'fake_name'}
@@ -125,4 +129,4 @@ class HandlersVolumeTest(unittest.TestCase):
         volume.edit_fcp_template(self.req)
         mock_send_request.assert_called_once_with(
             'edit_fcp_template', tmpl_id,
-            description=None, fcp_devices=None, **body_str)
+            description=None, fcp_devices=None, **request_args)

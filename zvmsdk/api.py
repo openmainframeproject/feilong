@@ -1806,7 +1806,7 @@ class SDKAPI(object):
 
     def create_fcp_template(self, name, description, fcp_devices,
                             host_default: bool = False,
-                            default_sp_list: list = None):
+                            default_sp_list: list = []):
         """API for creating a FCP template in database.
 
         :param str name: the name of the template
@@ -1858,7 +1858,7 @@ class SDKAPI(object):
                 'description': 'This is Default template',
                 'is_default': True,
                 'sp_name': ['sp4', 'v7k60']
-              }
+            }
             }
         """
         return self._volumeop.edit_fcp_template(

@@ -121,7 +121,7 @@ class VolumeAction(object):
             host_default = True
         else:
             host_default = False
-        default_sp_list = body.get('default_sp_list', None)
+        default_sp_list = body.get('storage_providers', None)
 
         ret = self.client.send_request('create_fcp_template', name,
                                        description, fcp_devices,
@@ -136,7 +136,7 @@ class VolumeAction(object):
         description = body.get('description', None)
         fcp_devices = body.get('fcp_devices', None)
         host_default = body.get('host_default', None)
-        default_sp_list = body.get('default_sp_list', None)
+        default_sp_list = body.get('storage_providers', None)
 
         ret = self.client.send_request('edit_fcp_template',
                                        fcp_template_id,
@@ -225,7 +225,7 @@ def get_volume_connector(req):
     body = util.extract_json(req.body)
     reserve = body['info']['reserve']
     fcp_template_id = body['info'].get('fcp_template_id', None)
-    sp_name = body['info'].get('sp_name', None)
+    sp_name = body['info'].get('storage_provider', None)
     conn = _get_volume_conn(req, userid, reserve, fcp_template_id, sp_name)
     conn_json = json.dumps(conn)
 
@@ -312,7 +312,7 @@ def get_fcp_templates(req):
 
     template_id_list = req.GET.get('template_id_list', None)
     assigner_id = req.GET.get('assigner_id', None)
-    default_sp_list = req.GET.get('default_sp_list', None)
+    default_sp_list = req.GET.get('storage_providers', None)
     host_default = req.GET.get('host_default', False)
 
     ret = _get_fcp_templates(req, template_id_list, assigner_id,
