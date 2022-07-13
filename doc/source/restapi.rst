@@ -690,6 +690,9 @@ Get running information of guest.
   - cpu_time_us: cpu_time_us_guest
   - power_state: power_status_guest
   - mem_kb: guest_memory_kb
+  - online_cpu_num: online_cpu_num_guest
+  - os_distro: os_distro_guest
+  - kernel_info: kernel_info_guest
 
 * Response sample:
 

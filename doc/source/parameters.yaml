@@ -376,6 +376,24 @@ num_cpu_guest:
   in: body
   required: true
   type: integer
+online_cpu_num_guest:
+  description: |
+    The count of online virtual CPUs for the guest.
+  in: body
+  required: true
+  type: integer
+os_distro_guest:
+  description: |
+    The os distro information for the guest.
+  in: body
+  required: true
+  type: string
+kernel_info_guest:
+  description: |
+    The kernel information for the guest.
+  in: body
+  required: true
+  type: string
 action_start_guest:
   description: |
     Take ``start`` action on guest.
