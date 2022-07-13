@@ -415,7 +415,7 @@ function parseArgs {
   isOption -m --minfcp "      The minimum acceptable FCP count should be defined to the target vm."
   isOption -i --ignitionurl "  (RHCOS only) The URL or local path that points to RHCOS ignition file"
   isOption -n --nicid "        (RHCOS only) The nic ID. Example: 0.0.1000,0.0.1001,0.0.1002"
-  isOption -p --ipconfig "     (RHCOS only) The network configuration info. In format of <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]"
+  isOption -p --ipconfig "     (RHCOS only) The network configuration info. In format of <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>"
 
   if [[ $printHelp ]]; then
     printHelp
@@ -721,9 +721,17 @@ function update_zipl_bootloader_rhcos {
 
     blsfile=$(ls $deviceMountPoint/loader/entries/*.conf)
     #Get zipl config file for parameters
-   
-    nameserver1=$(echo $ipconfig| awk -F: '{print $8}')    
-    nameserver2=$(echo $ipconfig| awk -F: '{print $9}')
+
+    # ipconfig format: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]
+    ipsetting=$(echo ${ipconfig%;*})
+    # mtu format: <mtu> , example, "1500"
+    mtu=$(echo ${ipconfig#*;})
+    # nameserver format: nameserver=<nameserver>
+    nameserver1=$(echo $ipsetting| awk -F: '{print $8}')
+    nameserver2=$(echo $ipsetting| awk -F: '{print $9}')
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none:<mtu>
+    ipsetting=$(echo ${ipsetting/%none:*/none:}${mtu})
     if [ $nameserver1  ]; then 
         nameserver1='nameserver='${nameserver1}
     fi
@@ -731,7 +739,7 @@ function update_zipl_bootloader_rhcos {
         nameserver2='nameserver='${nameserver2}
     fi
 
-    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicid,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipconfig $nameserver1 $nameserver2" > $rhcosTempDir/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicid,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipsetting $nameserver1 $nameserver2" > $rhcosTempDir/zipl_prm
     ziplstr=`cat $rhcosTempDir/zipl_prm`
     inform "zipl param string: $ziplstr"
 
