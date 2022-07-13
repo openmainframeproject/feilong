@@ -1633,15 +1633,15 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
                                         False, None)
             template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
-                              tmpl_result[0][2], bool(tmpl_result[0][3]),
-                              tmpl_result[0][4])
+                               tmpl_result[0][2], bool(tmpl_result[0][3]),
+                               tmpl_result[0][4])
             self.assertEqual(template_info_1, expected_template_info_1)
 
             expected_template_info_2 = (tmpl_id_2, 'new_name2', 'new_desc2',
                                         True, 'fake_sp')
             template_info_2 = (tmpl_result[1][0], tmpl_result[1][1],
-                              tmpl_result[1][2], bool(tmpl_result[1][3]),
-                              tmpl_result[1][4])
+                               tmpl_result[1][2], bool(tmpl_result[1][3]),
+                               tmpl_result[1][4])
             self.assertEqual(template_info_2, expected_template_info_2)
 
             # should include 5 fcps info of the two templates
@@ -1654,8 +1654,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
                                         False, None)
             template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
-                              tmpl_result[0][2], bool(tmpl_result[0][3]),
-                              tmpl_result[0][4])
+                               tmpl_result[0][2], bool(tmpl_result[0][3]),
+                               tmpl_result[0][4])
             self.assertEqual(template_info_1, expected_template_info_1)
             # should include 1 fcp info of the template
             self.assertEqual(1, len(result[1]))
