@@ -86,6 +86,7 @@
 409;None;409;19;Failed to resize memory of guest: '%(userid)s', error: user definition is not in expected format, cann't get the defined/max/reserved storage.
 409;None;409;20;Failed to resize memory of guest: '%(userid)s', error: the requested memory size: '%(req)im' exceeds the maximum memory size defined: '%(max)im'.
 409;None;409;21;Failed to live resize memory of guest: %(userid)s, error: the memory size to be increased: '%(inc)im' is greater than the maximum reserved memory size: '%(max)im'.
+409;None;409;22;Failed to delete FCP device template, error: %(msg)s
 **The operated object is deleted**
 410;None;410;;The operated object is deleted
 **ZVM SDK Internal Error**
