@@ -160,9 +160,21 @@ class HandlersVolumeTest(unittest.TestCase):
                 'storage_providers': []}
         self.req.body = json.dumps(body)
         volume.create_fcp_template(self.req)
-        mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name', 'desc text',
-                                                  '1a00-1a0f;1b00, 1b05-1b0f', host_default=True,
+        mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name',
+                                                  description='desc text',
+                                                  fcp_devices='1a00-1a0f;1b00, 1b05-1b0f',
+                                                  host_default=True,
                                                   default_sp_list=[])
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_create_fcp_template_default_values(self, mock_send_request):
+        """Test the default values was set correctly when create fcp template."""
+        mock_send_request.return_value = {'overallRC': 0}
+        body = {'name': 'tmpl name'}
+        self.req.body = json.dumps(body)
+        volume.create_fcp_template(self.req)
+        mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name', description='',
+                                                  fcp_devices='', host_default=False, default_sp_list=None)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_edit_fcp_template(self, mock_send_request):

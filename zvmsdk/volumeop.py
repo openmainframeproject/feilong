@@ -117,7 +117,8 @@ class VolumeOperatorAPI(object):
                                                   reserved, connections,
                                                   fcp_template_id)
 
-    def create_fcp_template(self, name, description, fcp_devices,
+    def create_fcp_template(self, name, description: str = '',
+                            fcp_devices: str = '',
                             host_default: bool = False,
                             default_sp_list: list = None):
         return self._volume_manager.fcp_mgr.create_fcp_template(
@@ -911,7 +912,8 @@ class FCPManager(object):
         self.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
 
-    def create_fcp_template(self, name, description, fcp_devices,
+    def create_fcp_template(self, name, description: str = '',
+                            fcp_devices: str = '',
                             host_default: bool = False,
                             default_sp_list: list = None):
         """Create a fcp template and return the basic information of

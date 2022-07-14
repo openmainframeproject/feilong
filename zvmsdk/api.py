@@ -1804,7 +1804,8 @@ class SDKAPI(object):
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
                                             connections, fcp_template_id)
 
-    def create_fcp_template(self, name, description, fcp_devices,
+    def create_fcp_template(self, name, description: str = '',
+                            fcp_devices: str = '',
                             host_default: bool = False,
                             default_sp_list: list = []):
         """API for creating a FCP template in database.

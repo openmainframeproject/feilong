@@ -148,7 +148,7 @@ create_fcp_template = {
             'type': 'array'
         }
     },
-    'required': ['name', 'description', 'fcp_devices'],
+    'required': ['name'],
     'additionalProperties': False,
 }
 

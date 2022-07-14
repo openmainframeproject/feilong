@@ -509,9 +509,7 @@ def req_set_fcp_usage(start_index, *args, **kwargs):
 
 def req_create_fcp_template(start_index, *args, **kwargs):
     url = '/volumes/fcptemplates'
-    body = {'name': args[start_index],
-            'description': args[start_index + 1],
-            'fcp_devices': args[start_index + 2]}
+    body = {'name': args[start_index]}
     fill_kwargs_in_body(body, **kwargs)
     return url, body
 
@@ -942,7 +940,7 @@ DATABASE = {
         'request': req_set_fcp_usage},
     'create_fcp_template': {
         'method': 'POST',
-        'args_required': 3,
+        'args_required': 1,
         'params_path': 0,
         'request': req_create_fcp_template},
     'edit_fcp_template': {
