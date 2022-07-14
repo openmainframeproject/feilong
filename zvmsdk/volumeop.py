@@ -1860,11 +1860,11 @@ class FCPVolumeManager(object):
                         LOG.info("Rollback usage of fcp %s on instance %s."
                                  % (fcp, assigner_id))
                         self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
-                        _userid, _reserved, _conns = self.get_fcp_usage(fcp)
+                        _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                         LOG.info("After rollback, fcp usage of %s "
                                  "is (assigner_id: %s, reserved:%s, "
-                                 "connections: %s)."
-                                 % (fcp, _userid, _reserved, _conns))
+                                 "connections: %s, fcp template id: %s)."
+                                 % (fcp, _userid, _reserved, _conns, _tmpl_id))
                 with zvmutils.ignore_errors():
                     self._add_disks(fcp_list, assigner_id,
                                     target_wwpns, target_lun,
