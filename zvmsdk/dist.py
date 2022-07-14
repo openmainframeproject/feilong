@@ -623,11 +623,12 @@ class rhcos(LinuxDist):
                     for dns in vif['dns_addr']:
                         _dns[_index] = dns
                         _index += 1
+            mtu = vif['mtu']
             # transfor network info and hostname into form of
             # ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>
-            # :<interface>:none[:[<dns1>][:<dns2>]]
-            result = "%s::%s:%s:%s:%s:none:%s:%s" % (ip_addr, gateway_addr,
-                        netmask, hostname, nic_name, _dns[0], _dns[1])
+            # :<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+            result = "%s::%s:%s:%s:%s:none:%s:%s;%s" % (ip_addr, gateway_addr,
+                        netmask, hostname, nic_name, _dns[0], _dns[1], mtu)
             return result
         except Exception as err:
             LOG.error("Failed to create coreos parameter for userid '%s',"
