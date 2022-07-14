@@ -863,9 +863,18 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-   
-    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
-    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+
+    # ipConfig format: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]
+    ipsetting=$(echo ${ipConfig%;*})
+    # mtu format: <mtu> , example, "1500"
+    mtu=$(echo ${ipConfig#*;})
+    # nameserver format: nameserver=<nameserver>
+    nameserver1=$(echo $ipsetting| awk -F: '{print $8}')
+    nameserver2=$(echo $ipsetting| awk -F: '{print $9}')
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none:<mtu>
+    ipsetting=$(echo ${ipsetting/%none:*/none:}${mtu})
+
     if [ $nameserver1  ]; then 
         nameserver1='nameserver='${nameserver1}
     fi
@@ -873,7 +882,7 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
 
-    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipsetting $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -928,8 +937,18 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$userID/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
-    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+
+    # ipConfig format: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]
+    ipsetting=$(echo ${ipConfig%;*})
+    # mtu format: <mtu> , example, "1500"
+    mtu=$(echo ${ipConfig#*;})
+    # nameserver format: nameserver=<nameserver>
+    nameserver1=$(echo $ipsetting| awk -F: '{print $8}')
+    nameserver2=$(echo $ipsetting| awk -F: '{print $9}')
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none:<mtu>
+    ipsetting=$(echo ${ipsetting/%none:*/none:}${mtu})
+
     if [ $nameserver1  ]; then 
         nameserver1='nameserver='${nameserver1}
     fi
@@ -937,7 +956,7 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
     
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$userID/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipsetting $nameserver1 $nameserver2" > /tmp/$userID/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$userID/zipl_prm -i $(ls /tmp/$userID/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$userID/boot_partition/ostree/*/*initramfs*) --target /tmp/$userID/boot_partition
     if [[ $? -ne 0 ]]; then

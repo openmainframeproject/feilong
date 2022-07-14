@@ -262,21 +262,31 @@ class RHCOS4TestCase(base.SDKTestCase):
                         'dns_addr': ['10.10.0.250', '10.10.0.51'],
                         'mac_addr': 'fa:16:3e:7a:1b:87',
                         'cidr': '10.10.0.0/24',
-                        'nic_id': 'adca70f3-8509-44d4-92d4-2c1c14b3f25e'}]
+                        'nic_id': 'adca70f3-8509-44d4-92d4-2c1c14b3f25e',
+                        'mtu': '1000'}]
         userid = "FakeID"
         guest_path.return_value = "/tmp/FakeID"
-        res = self.linux_dist.create_coreos_parameter_temp_file(network_info,
-                                                                userid)
-        self.assertEqual(res, True)
+        res = self.linux_dist.create_coreos_parameter(network_info, userid)
+        self.assertEqual(res, "10.10.0.217::10.10.0.1:24:FakeID:enc1000:none:"
+                              "10.10.0.250:10.10.0.51;1000")
 
     @mock.patch.object(smtclient.SMTClient, 'get_guest_path')
     def test_read_coreos_parameter(self, guest_path):
         guest_path.return_value = "/tmp/FakeID"
         userid = "FakeID"
+        network_info = [{'nic_vdev': '1000',
+                        'ip_addr': '10.10.0.217',
+                        'gateway_addr': '10.10.0.1',
+                        'dns_addr': ['10.10.0.250', '10.10.0.51'],
+                        'mac_addr': 'fa:16:3e:7a:1b:87',
+                        'cidr': '10.10.0.0/24',
+                        'nic_id': 'adca70f3-8509-44d4-92d4-2c1c14b3f25e',
+                        'mtu': '1000'}]
+        self.linux_dist.create_coreos_parameter_temp_file(network_info, userid)
         param = self.linux_dist.read_coreos_parameter(userid)
         self.assertEqual(param,
                          '10.10.0.217::10.10.0.1:24:FakeID:'
-                         'enc1000:none:10.10.0.250:10.10.0.51')
+                         'enc1000:none:10.10.0.250:10.10.0.51;1000')
 
 
 class SLESTestCase(base.SDKTestCase):

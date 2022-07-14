@@ -1463,7 +1463,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     def test_root_volume_attach(self, mock_dedicate, mock_add_disk, mock_check,
                                 mock_fcp_info):
-        """
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1473,7 +1472,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_lun': '2222',
                            'zvm_fcp': ['c123', 'd123'],
                            'mount_point': '/dev/sdz',
-                           'assigner_id': 'user1',
+                           'assigner_id': 'user2',
                            'is_root_volume': True}
         fcp_list = ['opnstk1: FCP device number: C123',
                     'opnstk1:   Status: Free',
@@ -1490,20 +1489,31 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005185',
                     'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
-        base.set_conf('volume', 'fcp_list', 'c123;d123')
-        # base.set_conf('volume', 'fcp_list', 'd123')
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('c123', 0)
-        self.db_op.new('d123', 1)
+        fcp_info_list = [('c123', 'user1', 0, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('d123', 'user1', 0, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.attach(connection_info)
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('c123')
+            self.assertEqual(userid, 'USER2')
+            self.assertEqual(reserved, 1)
+            self.assertEqual(conns, 1)
+            self.assertEqual(tmpl_id, '')
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('d123')
+            self.assertEqual(userid, 'USER2')
+            self.assertEqual(reserved, 1)
+            self.assertEqual(conns, 1)
+            self.assertEqual(tmpl_id, '')
             self.assertFalse(mock_dedicate.called)
             self.assertFalse(mock_add_disk.called)
         finally:
-            self.db_op.delete('c123')
-            self.db_op.delete('d123')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1511,7 +1521,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk,
                                 mock_check, mock_fcp_info):
-        """
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1537,21 +1546,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185',
-                    'Owner: UNIT0001']
+                    'Owner: NONE']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076d8500005182', '20076d8500005183']
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('c123', 0)
-        # assign will set connections to 1
-        self.db_op.assign('c123', 'USER1')
-
-        self.db_op.new('d123', 1)
-        self.db_op.assign('d123', 'USER1')
-
-        # set connections to 2
-        self.db_op.increase_usage('c123')
-        self.db_op.increase_usage('d123')
+        fcp_info_list = [('c123', 'user1', 2, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('d123', 'user1', 2, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.attach(connection_info)
@@ -1562,9 +1568,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                       '/dev/sdz')])
 
         finally:
-            self.db_op.delete('c123')
-            self.db_op.delete('d123')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1574,7 +1578,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_attach_rollback(self, mock_fcp_assigner,
                              mock_dedicate, mock_rollback,
                              mock_check, mock_fcp_info):
-        """
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1605,7 +1608,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
                           connection_info)
         calls = [mock.call(['e83c'], 'USER1', all_fcp_list=['e83c'])]
         mock_rollback.assert_has_calls(calls)
-        """
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
@@ -1617,7 +1619,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_detach_rollback(self, mock_decrease, mock_remove_disk,
                              mock_increase, mock_add_disk, mock_check,
                              mock_fcp_info, get_fcp_usage):
-        """
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1635,7 +1636,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
                     'Owner: NONE']
-        get_fcp_usage.return_value = ('user1', 0, 0)
+        get_fcp_usage.return_value = ('user1', 0, 0, '')
         mock_fcp_info.return_value = fcp_list
         # this return does not matter
         mock_check.return_value = True
@@ -1652,7 +1653,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_add_disk.assert_called_once_with(['f83c'], 'USER1',
                                               ['20076d8500005182'], '2222',
                                               False, 'rhel7', '/dev/sdz')
-        """
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
@@ -1662,7 +1662,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_detach_need_rollback(self, mock_remove_disk, mock_add_disk,
                                   mock_check, mock_fcp_info, get_fcp_usage):
         """Test need_rollback dict was set correctly.
-        """
         """
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -1690,13 +1689,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005182',
                     'Owner: NONE']
-        # increase connections of f83c to 1
+        # set connections of f83c to 1
         # left connections of f84c to 0
-        self.db_op.new('f83c', 0)
-        self.db_op.new('f84c', 1)
-        self.db_op.increase_usage('f83c')
+        fcp_info_list = [('f83c', 'user1', 1, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('f84c', 'user1', 0, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            get_fcp_usage.return_value = ('use1', 0, 0)
+            get_fcp_usage.return_value = ('use1', 0, 0, '')
             mock_fcp_info.return_value = fcp_list
             # this return does not matter
             mock_check.return_value = True
@@ -1716,9 +1720,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                    '20076d8500005182'], '2222',
                                                   False, 'rhel7', '/dev/sdz')
         finally:
-            self.db_op.delete('f83c')
-            self.db_op.delete('f84c')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1726,7 +1728,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     def test_detach(self, mock_undedicate, mock_remove_disk, mock_check,
                     mock_fcp_info):
-        """
+        """Test detach API."""
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1755,13 +1757,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076d8500005182', '20076d8500005183']
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('183c', 0)
-        self.db_op.assign('183c', 'USER1')
-
-        self.db_op.new('283c', 1)
-        # assign will set the connections to 1
-        self.db_op.assign('283c', 'USER1')
+        fcp_info_list = [('183c', 'user1', 0, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('283c', 'user1', 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.detach(connection_info)
@@ -1771,14 +1774,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                          'USER1', wwpns,
                                                          '2222', True, 'rhel7',
                                                          '/dev/sdz', 0)])
-            res1 = self.db_op.is_reserved('183c')
-            res2 = self.db_op.is_reserved('283c')
-            self.assertFalse(res1)
-            self.assertFalse(res2)
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('183c')
+            self.assertEqual(userid, 'user1')
+            self.assertEqual(reserved, 1)
+            self.assertEqual(conns, 0)
+            self.assertEqual(tmpl_id, '')
+            userid, reserved, conns, tmpl_id = self.volumeops.get_fcp_usage('283c')
+            self.assertEqual(userid, 'user1')
+            self.assertEqual(reserved, 1)
+            self.assertEqual(conns, 0)
+            self.assertEqual(tmpl_id, '')
         finally:
-            self.db_op.delete('183c')
-            self.db_op.delete('283c')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1786,7 +1793,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     def test_root_volume_detach(self, mock_undedicate, mock_remove_disk,
                                 mock_check, mock_fcp_info):
-        """
+        """Test detach root volume."""
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1814,24 +1821,21 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        base.set_conf('volume', 'fcp_list', '183c')
-        base.set_conf('volume', 'fcp_list', '283c')
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('183c', 0)
-        self.db_op.assign('183c', 'USER1')
-
-        self.db_op.new('283c', 1)
-        # assign will set the connections to 1
-        self.db_op.assign('283c', 'USER1')
+        fcp_info_list = [('183c', 'user1', 0, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('283c', 'user1', 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.detach(connection_info)
             self.assertFalse(mock_undedicate.called)
             self.assertFalse(mock_remove_disk.called)
         finally:
-            self.db_op.delete('183c')
-            self.db_op.delete('283c')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1839,7 +1843,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     def test_update_connections_only_detach(self, mock_undedicate,
             mock_remove_disk, mock_check, mock_fcp_info):
-        """
+        """Test only update connections when detach volume."""
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1867,31 +1871,28 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        base.set_conf('volume', 'fcp_list', '183c')
-        base.set_conf('volume', 'fcp_list', '283c')
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('183c', 0)
-        self.db_op.assign('183c', 'USER1')
-
-        self.db_op.new('283c', 1)
-        # assign will set the connections to 1
-        self.db_op.assign('283c', 'USER1')
+        fcp_info_list = [('183c', 'user1', 0, 1, 'c05076de3300011c',
+                          'c05076de33002641', '27', 'active', 'owner1',
+                          ''),
+                         ('283c', 'user1', 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.detach(connection_info)
             self.assertFalse(mock_undedicate.called)
             self.assertFalse(mock_remove_disk.called)
         finally:
-            self.db_op.delete('183c')
-            self.db_op.delete('283c')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disks")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk,
                                   mock_check):
-        """
+        """Test no undedidicate action is called when detach."""
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1902,10 +1903,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         mock_check.return_value = True
-        self.db_op = database.FCPDbOperator()
-        self.db_op.new('283c', 0)
-        self.db_op.assign('283c', 'user1')
-        self.db_op.increase_usage('283c')
+        fcp_info_list = [('283c', 'user1', 2, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
 
         try:
             self.volumeops.detach(connection_info)
@@ -1915,8 +1917,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                      False, 'rhel7',
                                                      '/dev/sdz', 1)
         finally:
-            self.db_op.delete('283c')
-        """
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     def test_update_statistics_usage(self):
         """ Test for _update_statistics_usage()
