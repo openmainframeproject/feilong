@@ -53,6 +53,39 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.edit_fcp_template(tmpl_id, **kwargs)
         mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_fcp_templates")
+    def test_get_fcp_templates(self, mock_get_tmpl):
+        """ Test get_fcp_templates """
+        tmpl_list = ['fake_id']
+        assigner_id = 'fake_user'
+        host_default = True
+        default_sp_list = ['fake_sp']
+        self.api.get_fcp_templates(template_id_list=tmpl_list,
+                                   assigner_id=assigner_id,
+                                   default_sp_list=default_sp_list,
+                                   host_default=host_default)
+        mock_get_tmpl.assert_called_once_with(template_id_list=tmpl_list,
+                                              assigner_id=assigner_id,
+                                              default_sp_list=default_sp_list,
+                                              host_default=host_default)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_fcp_templates_details")
+    def test_get_fcp_templates_details(self, mock_get_tmpl_details):
+        """ Test get_fcp_templates_details """
+        tmpl_list = ['fake_id']
+        self.api.get_fcp_templates_details(template_id_list=tmpl_list,
+                                           raw=True, statistics=True,
+                                           sync_with_zvm=False)
+        mock_get_tmpl_details.assert_called_once_with(template_id_list=['fake_id'],
+                                                      raw=True,
+                                                      statistics=True,
+                                                      sync_with_zvm=False)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.delete_fcp_template")
+    def test_delete_fcp_template(self, mock_del_tmpl):
+        self.api.delete_fcp_template('fake_id')
+        mock_del_tmpl.assert_called_once_with('fake_id')
+
     @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
     def test_guest_get_power_state_real(self, gstate):
         self.api.guest_get_power_state_real(self.userid)
