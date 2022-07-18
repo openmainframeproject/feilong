@@ -1280,8 +1280,20 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_create_fcp_template(self):
-        pass
+    def test_create_fcp_template_with_name_and_desc(self):
+        """Create fcp template only with name and description, other parameters are all default values"""
+        fcp_template_id = 'fake_tmpl_id'
+        name = 'tmpl_1'
+        description = 'this is the description.'
+        fcp_devices_by_path = []
+        host_default = False
+        default_sp_list = None
+        self.db_op.create_fcp_template(fcp_template_id, name, description,
+                                       fcp_devices_by_path, host_default,
+                                       default_sp_list)
+        actual_tmpl = self.db_op.get_fcp_templates([fcp_template_id])
+        self.assertEqual(actual_tmpl[0]['id'], fcp_template_id)
+        self.db_op.delete_fcp_template(fcp_template_id)
 
     def test_edit_fcp_template(self):
         """ Test edit_fcp_template()

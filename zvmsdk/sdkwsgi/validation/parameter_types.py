@@ -352,8 +352,7 @@ fcp_template_id = {
 
 fcp_template_id_list = {
     'items': {
-        'type': 'string',
-        'maxLength': 36,
+        'type': 'string'
     },
     'type': 'array'
 }

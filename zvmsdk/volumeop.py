@@ -943,7 +943,7 @@ class FCPManager(object):
                 'id': tmpl_id,
                 'description': description,
                 'host_default': host_default,
-                'storage_providers': default_sp_list}}
+                'storage_providers': default_sp_list if default_sp_list else []}}
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
