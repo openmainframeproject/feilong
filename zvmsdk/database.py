@@ -1145,6 +1145,8 @@ class FCPDbOperator(object):
         # if not exist, will insert new records
         sp_mapping_to_add = list()
         sp_mapping_to_update = list()
+        if not default_sp_list:
+            default_sp_list = []
         for sp_name in default_sp_list:
             record = (fcp_template_id, sp_name)
             if self.sp_name_exist_in_db(sp_name):
