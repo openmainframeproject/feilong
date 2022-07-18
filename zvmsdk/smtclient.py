@@ -851,15 +851,20 @@ class SMTClient(object):
             self._pathutils.clean_temp_folder(iucv_path)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, wwid='',
-                               transportfiles=None, guest_networks=None):
+                               transportfiles=None, guest_networks=None, min_fcp_paths_count=None):
         guest_networks = guest_networks or []
+        # User can set min_fcp_paths_count when creating or editing fcp template. If user doesn't set it,
+        # it is the FCP devices path count of the current FCP template by default. But if no FCP devices
+        # are added to the template, it will be set to 999.
+        if not min_fcp_paths_count:
+            min_fcp_paths_count = 999
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
         fcs = "--fcpchannel=%s" % fcps
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
         wwid = "--wwid=%s" % wwid
-        paths = "--minfcp=%s" % CONF.volume.min_fcp_paths_count
+        paths = "--minfcp=%s" % min_fcp_paths_count
         cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns,
                lun, wwid, paths]
 

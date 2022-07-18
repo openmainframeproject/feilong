@@ -419,6 +419,7 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     wwid = kwargs.get('wwid', '')
     transportfiles = kwargs.get('transportfiles', '')
     guest_networks = kwargs.get('guest_networks', [])
+    min_fcp_paths_count = kwargs.get('min_fcp_paths_count', None)
     body = {'info':
         {
             "fcpchannel": fcpchannel,
@@ -427,6 +428,7 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
             "wwid": wwid,
             "transportfiles": transportfiles,
             "guest_networks": guest_networks,
+            "min_fcp_paths_count": min_fcp_paths_count
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
