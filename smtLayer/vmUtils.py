@@ -20,6 +20,7 @@ from subprocess import CalledProcessError
 import time
 
 from smtLayer import msgs
+from smtLayer import vmStatus
 
 modId = 'VMU'
 version = '1.0.0'         # Version of this script
@@ -716,6 +717,8 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
     cmd.append(api)
     cmd.append('--addRCheader')
 
+    status = vmStatus.GetSMAPIStatus()
+
     try:
         smcliResp = subprocess.check_output(cmd + parms,
             close_fds=True)
@@ -727,7 +730,11 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
         results['overallRC'] = 0
         results['rc'] = 0
 
+        status.RecordSuccess()
+
     except CalledProcessError as e:
+        status.RecordFail()
+
         strCmd = " ".join(cmd + parms)
 
         # Break up the RC header into its component parts.

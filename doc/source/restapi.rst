@@ -88,6 +88,38 @@ you can think as a combination of username and password.
 
   Please refer to :ref:`TokenUsage` to get more details.
 
+SMAPI Healthy
+=============
+
+Report healthy of SMAPI
+-----------------------
+
+**GET /smapi-healthy**
+
+Get healthy of the SMAPI status.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - X-Admin-Token: token_admin
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - smapi_healthy: smapi_healthy
+  - totalSuccess: totalSuccess
+  - totalFail: totalFail
+  - lastSuccess: lastSuccess
+  - lastFail: lastFail
+  - continueousFail: continueousFail
+  - healthy: healthy
+
 Guest(s)
 ========
 

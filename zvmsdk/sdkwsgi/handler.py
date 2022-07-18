@@ -20,6 +20,7 @@ from zvmsdk import log
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import file
 from zvmsdk.sdkwsgi.handlers import guest
+from zvmsdk.sdkwsgi.handlers import healthy
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -112,6 +113,9 @@ ROUTE_LIST = (
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,
         'PUT': guest.guest_config_disks,
+    }),
+    ('/smapi-healthy', {
+        'GET': healthy.healthy,
     }),
     ('/host', {
         'GET': host.host_get_info,
