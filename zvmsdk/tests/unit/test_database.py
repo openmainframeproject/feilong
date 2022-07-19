@@ -1507,6 +1507,12 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             result_1 = (
                 info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
             self.assertEqual(expected_1, result_1)
+            # get by host_default=False
+            info_2 = self.db_op.get_host_default_fcp_template(False)[0]
+            expected_2 = (tmpl_id_2, 'new_name2', 'new_desc2', False, 'fake_sp')
+            result_2 = (
+                info_2[0], info_2[1], info_2[2], bool(info_2[3]), info_2[4])
+            self.assertEqual(expected_2, result_2)
         finally:
             self._purge_fcp_db()
 

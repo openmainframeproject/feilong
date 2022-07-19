@@ -982,8 +982,8 @@ class TestFCPManager(base.SDKTestCase):
             self.assertDictEqual(result_3, expected_1)
 
             # # case4: get by host_default=False
-            # result_4 = self.fcpops.get_fcp_templates(host_default=False)
-            # self.assertDictEqual(result_4, expected_2)
+            result_4 = self.fcpops.get_fcp_templates(host_default=False)
+            self.assertDictEqual(result_4, expected_2)
 
             # case5: get by default_sp_list=['sp1']
             result_5 = self.fcpops.get_fcp_templates(default_sp_list=['sp1'])

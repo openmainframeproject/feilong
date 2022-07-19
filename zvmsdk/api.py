@@ -1611,7 +1611,7 @@ class SDKAPI(object):
             userid, reserve, fcp_template_id, sp_name)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
-                         default_sp_list= None, host_default=False):
+                         default_sp_list= None, host_default=None):
         """Get template base info
         :param template_id_list: (list) a list of template id,
         if it is None, get fcp templates with other parameter

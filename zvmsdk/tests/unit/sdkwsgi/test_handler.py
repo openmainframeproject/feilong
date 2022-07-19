@@ -816,10 +816,10 @@ class VolumeHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
                    'get_fcp_templates'
-        with mock.patch(function) as create_fcp_templates:
-            create_fcp_templates.return_value = {'overallRC': 0}
+        with mock.patch(function) as get_fcp_templates:
+            get_fcp_templates.return_value = {'overallRC': 0}
             h(self.env, dummy)
-            create_fcp_templates.assert_called_once_with(mock.ANY, None, None, None, False)
+            get_fcp_templates.assert_called_once_with(mock.ANY, None, None, None, None)
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
