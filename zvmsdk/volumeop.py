@@ -132,7 +132,7 @@ class VolumeOperatorAPI(object):
             default_sp_list=default_sp_list)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
-                          default_sp_list=None, host_default=False):
+                          default_sp_list=None, host_default=None):
         return self._volume_manager.fcp_mgr.get_fcp_templates(
             template_id_list, assigner_id, default_sp_list, host_default)
 
@@ -1275,7 +1275,7 @@ class FCPManager(object):
                 template_statistics[path]['single_fcp'] = ', '.join(single_fcp)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
-                          default_sp_list=None, host_default=False):
+                          default_sp_list=None, host_default=None):
         """Get template base info by template_id_list or filters
         :param template_id_list: (list) a list of template id,
         if it is None, get fcp templates with other parameter
@@ -1362,8 +1362,8 @@ class FCPManager(object):
             raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
         elif default_sp_list:
             raw = self.db.get_sp_default_fcp_template(default_sp_list)
-        elif host_default:
-            raw = self.db.get_host_default_fcp_template()
+        elif host_default is not None:
+            raw = self.db.get_host_default_fcp_template(host_default)
         else:
             # if no parameter, will get all fcp templates
             raw = self.db.get_fcp_templates(template_id_list)

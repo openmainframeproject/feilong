@@ -1425,7 +1425,7 @@ class FCPDbOperator(object):
             raw = result.fetchall()
         return raw
 
-    def get_host_default_fcp_template(self):
+    def get_host_default_fcp_template(self, host_default=True):
         """Get the host default fcp template base info.
         return format: (id|name|description|is_default|sp_name)
 
@@ -1433,13 +1433,22 @@ class FCPDbOperator(object):
         then it will show up several times in the result.
         """
         with get_fcp_conn() as conn:
-            result = conn.execute(
-                "SELECT t.id, t.name, t.description, t.is_default, "
-                "ts.sp_name "
-                "FROM template AS t "
-                "LEFT OUTER JOIN template_sp_mapping AS ts "
-                "ON t.id=ts.tmpl_id "
-                "WHERE t.is_default=1")
+            if host_default:
+                result = conn.execute(
+                    "SELECT t.id, t.name, t.description, t.is_default, "
+                    "ts.sp_name "
+                    "FROM template AS t "
+                    "LEFT OUTER JOIN template_sp_mapping AS ts "
+                    "ON t.id=ts.tmpl_id "
+                    "WHERE t.is_default=1")
+            else:
+                result = conn.execute(
+                    "SELECT t.id, t.name, t.description, t.is_default, "
+                    "ts.sp_name "
+                    "FROM template AS t "
+                    "LEFT OUTER JOIN template_sp_mapping AS ts "
+                    "ON t.id=ts.tmpl_id "
+                    "WHERE t.is_default=0")
             raw = result.fetchall()
         return raw
 

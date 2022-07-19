@@ -197,7 +197,7 @@ class HandlersVolumeTest(unittest.TestCase):
                         'storage_providers': ['v7k']}
         volume.get_fcp_templates(self.req)
         mock_send_request.assert_called_once_with('get_fcp_templates', ['id1', 'id2'],
-                                                  'fakeuser', ['v7k'], False)
+                                                  'fakeuser', ['v7k'], None)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_get_fcp_templates_details(self, mock_send_request):
