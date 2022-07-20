@@ -1226,8 +1226,15 @@ class FCPManager(object):
         return statistics_usage
 
     def _shrink_fcp_list_in_statistics_usage(self, statistics_usage):
+        """shrink fcp list in statistics sections to range fcp
+        for example, before shrink:
+            template_statistics[path]["total"] = "1A0A, 1A0B, 1A0C, 1A0E"
+        after shink:
+            template_statistics[path]["total"] = "1A0A - 1A0C, 1A0E"
+        """
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
+                # count total and available fcp before shrink
                 if template_statistics[path]["total"]:
                     template_statistics[path][
                         "total_count"] = len(template_statistics[path][
@@ -1236,6 +1243,7 @@ class FCPManager(object):
                     template_statistics[path][
                         "available_count"] = len(template_statistics[path][
                                                     "available"])
+                # only below sections in statistics need to shrink
                 need_shrink_sections = ["total",
                                         "available",
                                         "allocated",
@@ -1261,6 +1269,12 @@ class FCPManager(object):
                         utils.shrink_fcp_list(fcp_list))
 
     def _split_singe_range_fcp_list(self, statistics_usage):
+        # after shrink, total fcps can have both range and singe fcps,
+        # for example: template_statistics[path]['total'] = "1A0A - 1A0C, 1A0E"
+        # UI needs 'range_fcp' and 'singe_fcp' to input in different areas
+        # so split the total fcps to 'range_fcp' and 'singe_fcp' as below:
+        # template_statistics[path]['range_fcp'] = "1A0A - 1A0C"
+        # template_statistics[path]['single_fcp'] = "1A0E"
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
                 range_fcp = []

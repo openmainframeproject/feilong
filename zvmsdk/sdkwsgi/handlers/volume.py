@@ -315,8 +315,10 @@ def get_fcp_templates(req):
     default_sp_list = req.GET.get('storage_providers', None)
     host_default = req.GET.get('host_default', None)
 
+    valid_true_values = [True, 'True', 'TRUE', 'true', '1',
+                        'ON', 'On', 'on', 'YES', 'Yes', 'yes']
     if host_default:
-        if host_default.lower() == 'true':
+        if host_default in valid_true_values:
             host_default = True
         else:
             host_default = False
