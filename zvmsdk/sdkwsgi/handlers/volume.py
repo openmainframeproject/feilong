@@ -313,7 +313,15 @@ def get_fcp_templates(req):
     template_id_list = req.GET.get('template_id_list', None)
     assigner_id = req.GET.get('assigner_id', None)
     default_sp_list = req.GET.get('storage_providers', None)
-    host_default = req.GET.get('host_default', False)
+    host_default = req.GET.get('host_default', None)
+
+    valid_true_values = [True, 'True', 'TRUE', 'true', '1',
+                        'ON', 'On', 'on', 'YES', 'Yes', 'yes']
+    if host_default:
+        if host_default in valid_true_values:
+            host_default = True
+        else:
+            host_default = False
 
     ret = _get_fcp_templates(req, template_id_list, assigner_id,
                              default_sp_list, host_default)

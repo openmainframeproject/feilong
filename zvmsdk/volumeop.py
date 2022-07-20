@@ -132,7 +132,7 @@ class VolumeOperatorAPI(object):
             default_sp_list=default_sp_list)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
-                          default_sp_list=None, host_default=False):
+                          default_sp_list=None, host_default=None):
         return self._volume_manager.fcp_mgr.get_fcp_templates(
             template_id_list, assigner_id, default_sp_list, host_default)
 
@@ -1226,8 +1226,15 @@ class FCPManager(object):
         return statistics_usage
 
     def _shrink_fcp_list_in_statistics_usage(self, statistics_usage):
+        """shrink fcp list in statistics sections to range fcp
+        for example, before shrink:
+            template_statistics[path]["total"] = "1A0A, 1A0B, 1A0C, 1A0E"
+        after shink:
+            template_statistics[path]["total"] = "1A0A - 1A0C, 1A0E"
+        """
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
+                # count total and available fcp before shrink
                 if template_statistics[path]["total"]:
                     template_statistics[path][
                         "total_count"] = len(template_statistics[path][
@@ -1236,6 +1243,7 @@ class FCPManager(object):
                     template_statistics[path][
                         "available_count"] = len(template_statistics[path][
                                                     "available"])
+                # only below sections in statistics need to shrink
                 need_shrink_sections = ["total",
                                         "available",
                                         "allocated",
@@ -1261,6 +1269,12 @@ class FCPManager(object):
                         utils.shrink_fcp_list(fcp_list))
 
     def _split_singe_range_fcp_list(self, statistics_usage):
+        # after shrink, total fcps can have both range and singe fcps,
+        # for example: template_statistics[path]['total'] = "1A0A - 1A0C, 1A0E"
+        # UI needs 'range_fcp' and 'singe_fcp' to input in different areas
+        # so split the total fcps to 'range_fcp' and 'singe_fcp' as below:
+        # template_statistics[path]['range_fcp'] = "1A0A - 1A0C"
+        # template_statistics[path]['single_fcp'] = "1A0E"
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
                 range_fcp = []
@@ -1275,7 +1289,7 @@ class FCPManager(object):
                 template_statistics[path]['single_fcp'] = ', '.join(single_fcp)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
-                          default_sp_list=None, host_default=False):
+                          default_sp_list=None, host_default=None):
         """Get template base info by template_id_list or filters
         :param template_id_list: (list) a list of template id,
         if it is None, get fcp templates with other parameter
@@ -1362,8 +1376,8 @@ class FCPManager(object):
             raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
         elif default_sp_list:
             raw = self.db.get_sp_default_fcp_template(default_sp_list)
-        elif host_default:
-            raw = self.db.get_host_default_fcp_template()
+        elif host_default is not None:
+            raw = self.db.get_host_default_fcp_template(host_default)
         else:
             # if no parameter, will get all fcp templates
             raw = self.db.get_fcp_templates(template_id_list)
