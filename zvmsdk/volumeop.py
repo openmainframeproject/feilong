@@ -93,12 +93,12 @@ class VolumeOperatorAPI(object):
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
                                wwid='',
-                               transportfiles='', guest_networks=None, min_fcp_paths_count=None):
+                               transportfiles='', guest_networks=None, fcp_template_id=None):
         return self._volume_manager.volume_refresh_bootmap(fcpchannel, wwpn,
                                             lun, wwid=wwid,
                                             transportfiles=transportfiles,
                                             guest_networks=guest_networks,
-                                            min_fcp_paths_count=min_fcp_paths_count)
+                                            fcp_template_id=fcp_template_id)
 
     def get_volume_connector(self, assigner_id, reserve,
                              fcp_template_id=None, sp_name=None):
@@ -935,19 +935,21 @@ class FCPManager(object):
         }
         """
         LOG.info("Try to create a FCP template with name:%s,"
-                 "description:%s and fcp devices: %s."
-                 % (name, description, fcp_devices))
+                 "description:%s, fcp devices: %s, host_default: %s,"
+                 "storage_providers: %s, min_fcp_paths_count: %s."
+                 % (name, description, fcp_devices, host_default,
+                    default_sp_list, min_fcp_paths_count))
         # Generate a template id for this new template
         tmpl_id = str(uuid.uuid1())
         # Get fcp devices info index by path
         fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
         # If min_fcp_paths_count is not None,need validate the value
-        # self.validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count)
         if min_fcp_paths_count and min_fcp_paths_count > len(fcp_devices_by_path):
-            msg = "min_fcp_paths_count %s is larger than fcp device path count %s " \
-                  "which is not allowed." % (min_fcp_paths_count, len(fcp_devices_by_path))
+            msg = "min_fcp_paths_count %s is larger than fcp device path count %s, " \
+                  "please adjust fcp_devices or min_fcp_paths_count." \
+                  % (min_fcp_paths_count, len(fcp_devices_by_path))
             LOG.error(msg)
-            raise exception.ValidationError(msg)
+            raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
@@ -1753,8 +1755,17 @@ class FCPVolumeManager(object):
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
                                transportfiles=None, guest_networks=None,
-                               min_fcp_paths_count=None):
+                               fcp_template_id=None):
         ret = None
+        if not fcp_template_id:
+            min_fcp_paths_count = len(fcpchannels)
+        else:
+            min_fcp_paths_count = self.db.get_min_fcp_paths_count(fcp_template_id)
+            if min_fcp_paths_count == 0:
+                errmsg = "No FCP devices were found in the FCP template %s," \
+                         "stop refreshing bootmap." % fcp_template_id
+                LOG.error(errmsg)
+                raise exception.SDKBaseException(msg=errmsg)
         with zvmutils.acquire_lock(self._lock):
             LOG.debug('Enter lock scope of volume_refresh_bootmap.')
             ret = self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns,

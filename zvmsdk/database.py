@@ -795,13 +795,13 @@ class FCPDbOperator(object):
         else:
             return False
 
-    def get_min_fcp_paths_count(self, fcp_template_id):
+    def get_min_fcp_paths_count_from_db(self, fcp_template_id):
         with get_fcp_conn() as conn:
             query_sql = conn.execute("SELECT min_fcp_paths_count FROM template "
                                      "WHERE id=?", (fcp_template_id,))
-            min_fcp_paths_count = query_sql.fetchall()
+            min_fcp_paths_count = query_sql.fetchone()
             if min_fcp_paths_count:
-                return min_fcp_paths_count[0][0]
+                return min_fcp_paths_count['min_fcp_paths_count']
             else:
                 return None
 
@@ -812,7 +812,7 @@ class FCPDbOperator(object):
 
             :param record (tuple)
                 example:
-                (name, description, host_default, fcp_template_id)
+                (name, description, host_default, min_fcp_paths_count, fcp_template_id)
 
             :return NULL
         """
@@ -1180,7 +1180,7 @@ class FCPDbOperator(object):
             if host_default is True:
                 conn.execute("UPDATE template SET is_default=?", (False,))
             # 2. insert a new record in template table
-            #    if min_fccp_paths_count is None or less than 1, will not insert it to db
+            #    if min_fcp_paths_count is None or less than 1, will not insert it to db
             if not min_fcp_paths_count or min_fcp_paths_count < 1:
                 tmpl_basics = (fcp_template_id, name, description, host_default)
                 sql = "INSERT INTO template (id, name, description, " \
@@ -1219,14 +1219,22 @@ class FCPDbOperator(object):
                 fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
                 fcp_devices_path_count = len(fcp_devices_by_path)
             if not min_fcp_paths_count:
-                min_fcp_paths_count = self.get_min_fcp_paths_count(fcp_template_id)
+                min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
 
             if min_fcp_paths_count > fcp_devices_path_count:
                 msg = "min_fcp_paths_count %s is larger than fcp device path count %s " \
-                      "which is not allowed. Please change the fcp_devices setting or " \
+                      "and it is not allowed. Please adjust the fcp_devices setting or " \
                       "min_fcp_paths_count." % (min_fcp_paths_count, fcp_devices_path_count)
                 LOG.error(msg)
-                raise exception.ValidationError(msg)
+                raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
+
+    def get_min_fcp_paths_count(self, fcp_template_id):
+        """ Get min_fcp_paths_count, query template table first, if it is -1, then return the
+        value of fcp devices path count from template_fcp_mapping table."""
+        min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
+        if min_fcp_paths_count < 0:
+            min_fcp_paths_count = self.get_path_count(fcp_template_id)
+        return min_fcp_paths_count
 
     def edit_fcp_template(self, fcp_template_id, name=None, description=None,
                           fcp_devices=None, host_default=None,
