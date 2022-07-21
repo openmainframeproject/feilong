@@ -1068,8 +1068,9 @@ class FCPManager(object):
         """
         template_dict = {}
         for item in raw_data:
-            id, name, description, is_default, sp_name = item
-            min_fcp_paths_count = self.db.get_min_fcp_paths_count(id)
+            id, name, description, is_default, min_fcp_paths_count, sp_name = item
+            if min_fcp_paths_count < 0:
+                min_fcp_paths_count = self.db.get_path_count(id)
             if not template_dict.get(id, None):
                 template_dict[id] = {"id": id,
                                      "name": name,
