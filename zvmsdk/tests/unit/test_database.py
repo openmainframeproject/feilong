@@ -326,8 +326,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # insert data into all columns of template table
         with database.get_fcp_conn() as conn:
             conn.executemany("INSERT INTO template "
-                             "(id, name, description, is_default) "
-                             "VALUES (?, ?, ?, ?)", templates_info)
+                             "(id, name, description, is_default, min_fcp_paths_count) "
+                             "VALUES (?, ?, ?, ?, ?)", templates_info)
 
     def _insert_data_into_template_fcp_mapping_table(self,
                                                      template_fcp_mapping):
@@ -380,7 +380,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             tmpl_id, kwargs['name'], kwargs['description'],
             utils.expand_fcp_list(kwargs['fcp_devices']),
             host_default=kwargs['host_default'],
-            default_sp_list=kwargs['default_sp_list'])
+            default_sp_list=kwargs['default_sp_list'],
+            min_fcp_paths_count=2)
         fcp_info = [
             ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
             ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
@@ -889,34 +890,34 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             tmpl_id_2 = self._prepare_fcp_info_for_a_test_fcp_template()
             # case1:
             # set tmpl_id_1 is_default as True
-            expected_1 = ('name1', 'desc1', True, tmpl_id_1)
+            expected_1 = ('name1', 'desc1', True, 2, tmpl_id_1)
             self.db_op.update_basic_info_of_fcp_template(expected_1)
             # verify
             info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
             result_1 = (
                 info_1['name'], info_1['description'],
-                bool(info_1['is_default']), tmpl_id_1)
+                bool(info_1['is_default']), info_1['min_fcp_paths_count'], tmpl_id_1)
             self.assertEqual(expected_1, result_1)
             info_2 = self.db_op.get_fcp_templates_details([tmpl_id_2])[0][0]
             self.assertEqual(False, bool(info_2['is_default']))
 
             # case2:
             # set tmpl_id_2 is_default as True
-            expected_2 = ('name2', 'desc2', True, tmpl_id_2)
+            expected_2 = ('name2', 'desc2', True, 2, tmpl_id_2)
             self.db_op.update_basic_info_of_fcp_template(expected_2)
             # verify
             info_2 = self.db_op.get_fcp_templates_details([tmpl_id_2])[0][0]
             result_2 = (
                 info_2['name'], info_2['description'],
-                bool(info_2['is_default']), tmpl_id_2)
+                bool(info_2['is_default']), info_2['min_fcp_paths_count'], tmpl_id_2)
             self.assertEqual(expected_2, result_2)
             info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
             self.assertEqual(False, bool(info_1['is_default']))
 
             # case3:
             # set both tmpl_id_1 and tmpl_id_2 as False for is_default
-            expected_1 = ('name1', 'desc1', False, tmpl_id_1)
-            expected_2 = ('name2', 'desc2', False, tmpl_id_2)
+            expected_1 = ('name1', 'desc1', False, 2, tmpl_id_1)
+            expected_2 = ('name2', 'desc2', False, 4, tmpl_id_2)
             self.db_op.update_basic_info_of_fcp_template(expected_1)
             self.db_op.update_basic_info_of_fcp_template(expected_2)
             info_1 = self.db_op.get_fcp_templates_details([tmpl_id_1])[0][0]
@@ -1269,7 +1270,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 fcp_list = self.db_op.get_fcp_devices(template_id)
                 self.assertEqual(fcp_list, [])
             # test case3: min_fcp_paths_count was set to 1
-            CONF.volume.min_fcp_paths_count = 1
+            # set min_fcp_paths_count to 1
+            template_info = [(template_id, 'name-1', 'description-1', False, 1)]
+            self._insert_data_into_template_table(template_info)
             all_possible_pairs = {('1b01',), ('1b03',)}
             result = set()
             for i in range(10):
@@ -1279,6 +1282,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+            self.db_op.delete_fcp_template(template_id)
 
     def test_create_fcp_template_with_name_and_desc(self):
         """Create fcp template only with name and description, other parameters are all default values"""
@@ -1294,6 +1298,49 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         actual_tmpl = self.db_op.get_fcp_templates([fcp_template_id])
         self.assertEqual(actual_tmpl[0]['id'], fcp_template_id)
         self.db_op.delete_fcp_template(fcp_template_id)
+
+    def test_validate_min_fcp_paths_count_with_fcp_and_minCount_no_err(self):
+        fcp_devices = '1a10;1b10;1c10;1d10'
+        min_fcp_paths_count = 4
+        fcp_template_id = 'fcp_tmpl_1'
+        self.db_op._validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count, fcp_template_id)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    def test_validate_min_fcp_paths_count_only_with_fcp_error(self, get_min_fcp_paths_count_from_db):
+        fcp_devices = '1a10;1b10'
+        fcp_template_id = 'fcc_tmpl_1'
+        get_min_fcp_paths_count_from_db.return_value = 4
+        self.assertRaisesRegex(exception.SDKConflictError,
+                               'min_fcp_paths_count 4 is larger than fcp device path count 2',
+                               self.db_op._validate_min_fcp_paths_count,
+                               fcp_devices, None, fcp_template_id)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    def test_validate_min_fcp_paths_count_only_with_minCount_error(self, get_path_count):
+        fcp_devices = None
+        min_fcp_paths_count = 4
+        fcp_template_id = 'fcc_tmpl_1'
+        get_path_count.return_value = 2
+        self.assertRaisesRegex(exception.SDKConflictError,
+                               'min_fcp_paths_count 4 is larger than fcp device path count 2',
+                               self.db_op._validate_min_fcp_paths_count,
+                               fcp_devices, min_fcp_paths_count, fcp_template_id)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    def test_get_min_fcp_paths_count_not_set_minCount(self, get_min_fcp_paths_count_from_db, get_path_count):
+        get_path_count.return_value = 2
+        get_min_fcp_paths_count_from_db.return_value = -1
+        ret = self.db_op.get_min_fcp_paths_count('template_id')
+        self.assertEqual(2, ret)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    def test_get_min_fcp_paths_count_with_minCount(self, get_min_fcp_paths_count_from_db, get_path_count):
+        get_path_count.return_value = 2
+        get_min_fcp_paths_count_from_db.return_value = 4
+        ret = self.db_op.get_min_fcp_paths_count('template_id')
+        self.assertEqual(4, ret)
 
     def test_edit_fcp_template(self):
         """ Test edit_fcp_template()
@@ -1408,7 +1455,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'name': kwargs['name'],
                 'description': kwargs['description'],
                 'host_default': kwargs['host_default'],
-                'storage_providers': kwargs['default_sp_list']
+                'storage_providers': kwargs['default_sp_list'],
+                'min_fcp_paths_count': 2
             }}
             self.assertEqual(expected, tmpl_basic)
         finally:
@@ -1451,7 +1499,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', False, None)
             info_1 = self.db_op.get_fcp_templates([tmpl_id_1])[0]
             result_1 = (
-                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[5])
             self.assertEqual(expected_1, result_1)
 
             # case2: get_fcp_templates without parameter, will get all
@@ -1461,10 +1509,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(2, len(info_all))
             result_1 = (
                 info_all[0][0], info_all[0][1], info_all[0][2],
-                bool(info_all[0][3]), info_all[0][4])
+                bool(info_all[0][3]), info_all[0][5])
             result_2 = (
                 info_all[1][0], info_all[1][1], info_all[1][2],
-                bool(info_all[1][3]), info_all[1][4])
+                bool(info_all[1][3]), info_all[1][5])
             self.assertEqual(expected_1, result_1)
             self.assertEqual(expected_2, result_2)
         finally:
@@ -1503,15 +1551,15 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
             # get by host_default=True
             info_1 = self.db_op.get_host_default_fcp_template()[0]
-            expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', True, None)
+            expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', True, -1, None)
             result_1 = (
-                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4], info_1[5])
             self.assertEqual(expected_1, result_1)
             # get by host_default=False
             info_2 = self.db_op.get_host_default_fcp_template(False)[0]
             expected_2 = (tmpl_id_2, 'new_name2', 'new_desc2', False, 'fake_sp')
             result_2 = (
-                info_2[0], info_2[1], info_2[2], bool(info_2[3]), info_2[4])
+                info_2[0], info_2[1], info_2[2], bool(info_2[3]), info_2[5])
             self.assertEqual(expected_2, result_2)
         finally:
             self._purge_fcp_db()
@@ -1540,17 +1588,19 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 tmpl_id_1, kwargs1['name'], kwargs1['description'],
                 utils.expand_fcp_list(kwargs1['fcp_devices']),
                 host_default=kwargs1['host_default'],
-                default_sp_list=kwargs1['default_sp_list'])
+                default_sp_list=kwargs1['default_sp_list'],
+                min_fcp_paths_count=2)
             self.db_op.create_fcp_template(
                 tmpl_id_2, kwargs2['name'], kwargs2['description'],
                 utils.expand_fcp_list(kwargs2['fcp_devices']),
                 host_default=kwargs2['host_default'],
-                default_sp_list=kwargs2['default_sp_list'])
+                default_sp_list=kwargs2['default_sp_list'],
+                min_fcp_paths_count=2)
             # case1: get by one sp
             info_1 = self.db_op.get_sp_default_fcp_template(['v7k60'])[0]
             expected_1 = (tmpl_id_1, 'new_name1', 'new_desc1', False, 'v7k60')
             result_1 = (
-                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[5])
             self.assertEqual(expected_1, result_1)
 
             # case2: get by 'all' sp
@@ -1559,10 +1609,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(2, len(info_all))
             result_1 = (
                 info_all[0][0], info_all[0][1], info_all[0][2],
-                bool(info_all[0][3]), info_all[0][4])
+                bool(info_all[0][3]), info_all[0][5])
             result_2 = (
                 info_all[1][0], info_all[1][1], info_all[1][2],
-                bool(info_all[1][3]), info_all[1][4])
+                bool(info_all[1][3]), info_all[1][5])
             self.assertEqual(expected_1, result_1)
             self.assertEqual(expected_2, result_2)
         finally:
@@ -1589,9 +1639,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 default_sp_list=kwargs2['default_sp_list'])
 
             info_1 = self.db_op.get_fcp_template_by_assigner_id('user1')[0]
-            expected_1 = (tmpl_id_1, 'new_name', 'new_desc', False, None)
+            expected_1 = (tmpl_id_1, 'new_name', 'new_desc', False, 2, None)
             result_1 = (
-                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4])
+                info_1[0], info_1[1], info_1[2], bool(info_1[3]), info_1[4], info_1[5])
             self.assertEqual(expected_1, result_1)
         finally:
             self._purge_fcp_db()
@@ -1649,14 +1699,14 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(2, len(tmpl_result))
 
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
-                                        False, None)
+                                        False, -1)
             template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
                                tmpl_result[0][2], bool(tmpl_result[0][3]),
                                tmpl_result[0][4])
             self.assertEqual(template_info_1, expected_template_info_1)
 
             expected_template_info_2 = (tmpl_id_2, 'new_name2', 'new_desc2',
-                                        True, 'fake_sp')
+                                        True, -1)
             template_info_2 = (tmpl_result[1][0], tmpl_result[1][1],
                                tmpl_result[1][2], bool(tmpl_result[1][3]),
                                tmpl_result[1][4])
@@ -1670,10 +1720,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # should include 1 template info
             self.assertEqual(1, len(result[0]))
             expected_template_info_1 = (tmpl_id_1, 'new_name1', 'new_desc1',
-                                        False, None)
+                                        False, -1, None)
             template_info_1 = (tmpl_result[0][0], tmpl_result[0][1],
                                tmpl_result[0][2], bool(tmpl_result[0][3]),
-                               tmpl_result[0][4])
+                               tmpl_result[0][4], tmpl_result[0][5])
             self.assertEqual(template_info_1, expected_template_info_1)
             # should include 1 fcp info of the template
             self.assertEqual(1, len(result[1]))

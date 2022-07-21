@@ -1126,7 +1126,7 @@ class FCPDbOperator(object):
 
     def create_fcp_template(self, fcp_template_id, name, description,
                             fcp_devices_by_path, host_default,
-                            default_sp_list, min_fcp_paths_count):
+                            default_sp_list, min_fcp_paths_count=None):
         """ Insert records of new fcp template in fcp DB
 
         :param fcp_template_id: fcp template id
@@ -1143,7 +1143,7 @@ class FCPDbOperator(object):
             }
         :param host_default: (bool)
         :param default_sp_list: (list)
-        :param min_fcp_paths_count: (int)
+        :param min_fcp_paths_count: (int) by default, it is -1
         :return: NULL
         """
         # first check the template exist or not
@@ -1204,7 +1204,7 @@ class FCPDbOperator(object):
                                      "tmpl_id=? WHERE sp_name=?",
                                      sp_mapping_to_update)
 
-    def _validate_min_fcp_paths_count(self, fcp_devices, min_fcp_paths_count, fcp_template_id=None):
+    def _validate_min_fcp_paths_count(self, fcp_devices, min_fcp_paths_count, fcp_template_id):
         """
         When to edit FCP template, if min_fcp_paths_count is not None or
         fcp_devices is not None, need to validate the values.
@@ -1222,8 +1222,8 @@ class FCPDbOperator(object):
                 min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
 
             if min_fcp_paths_count > fcp_devices_path_count:
-                msg = "min_fcp_paths_count %s is larger than fcp device path count %s " \
-                      "and it is not allowed. Please adjust the fcp_devices setting or " \
+                msg = "min_fcp_paths_count %s is larger than fcp device path count %s. " \
+                      "Please adjust the fcp_devices setting or " \
                       "min_fcp_paths_count." % (min_fcp_paths_count, fcp_devices_path_count)
                 LOG.error(msg)
                 raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
@@ -1232,7 +1232,7 @@ class FCPDbOperator(object):
         """ Get min_fcp_paths_count, query template table first, if it is -1, then return the
         value of fcp devices path count from template_fcp_mapping table."""
         min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
-        if min_fcp_paths_count < 0:
+        if not min_fcp_paths_count or min_fcp_paths_count < 0:
             min_fcp_paths_count = self.get_path_count(fcp_template_id)
         return min_fcp_paths_count
 
@@ -1457,7 +1457,7 @@ class FCPDbOperator(object):
                 'storage_providers':
                     [] if tmpl_basic[0]['sp_name'] is None
                     else [r['sp_name'] for r in tmpl_basic],
-                'min_fcp_paths_count': tmpl_basic[0]['min_fcp_paths_count']
+                'min_fcp_paths_count': self.get_min_fcp_paths_count(fcp_template_id)
             }}
 
     def get_fcp_templates(self, template_id_list=None):
@@ -1465,10 +1465,10 @@ class FCPDbOperator(object):
         If template_id_list is None, will get all the fcp templates in db.
 
         return format:
-        [(id|name|description|is_default|sp_name)]
+        [(id|name|description|is_default|min_fcp_paths_count|sp_name)]
         """
         cmd = ("SELECT template.id, template.name, template.description, "
-               "template.is_default, template_sp_mapping.sp_name "
+               "template.is_default, template.min_fcp_paths_count, template_sp_mapping.sp_name "
                "FROM template "
                "LEFT OUTER JOIN template_sp_mapping "
                "ON template.id=template_sp_mapping.tmpl_id")
@@ -1497,7 +1497,7 @@ class FCPDbOperator(object):
             if host_default:
                 result = conn.execute(
                     "SELECT t.id, t.name, t.description, t.is_default, "
-                    "ts.sp_name "
+                    "t.min_fcp_paths_count, ts.sp_name "
                     "FROM template AS t "
                     "LEFT OUTER JOIN template_sp_mapping AS ts "
                     "ON t.id=ts.tmpl_id "
@@ -1505,7 +1505,7 @@ class FCPDbOperator(object):
             else:
                 result = conn.execute(
                     "SELECT t.id, t.name, t.description, t.is_default, "
-                    "ts.sp_name "
+                    "t.min_fcp_paths_count, ts.sp_name "
                     "FROM template AS t "
                     "LEFT OUTER JOIN template_sp_mapping AS ts "
                     "ON t.id=ts.tmpl_id "
@@ -1517,7 +1517,7 @@ class FCPDbOperator(object):
         """Get the sp_host_list default fcp template.
         """
         cmd = ("SELECT t.id, t.name, t.description, t.is_default, "
-               "ts.sp_name "
+               "t.min_fcp_paths_count, ts.sp_name "
                "FROM template_sp_mapping AS ts "
                "INNER JOIN template AS t "
                "ON ts.tmpl_id=t.id")
@@ -1540,7 +1540,7 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             result = conn.execute(
                 "SELECT t.id, t.name, t.description, t.is_default, "
-                "ts.sp_name "
+                "t.min_fcp_paths_count, ts.sp_name "
                 "FROM fcp "
                 "INNER JOIN template AS t "
                 "ON fcp.tmpl_id=t.id "
@@ -1548,7 +1548,7 @@ class FCPDbOperator(object):
                 "ON fcp.tmpl_id=ts.tmpl_id "
                 "WHERE fcp.assigner_id=?", (assigner_id,))
             raw = result.fetchall()
-            # id|name|description|is_default|sp_name
+            # id|name|description|is_default|min_fcp_paths_count|sp_name
         return raw
 
     def get_fcp_templates_details(self, template_id_list=None):
