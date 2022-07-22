@@ -1067,8 +1067,8 @@ class FCPManager(object):
 
         raw_item format:
 
-        [(fcp_id|tmpl_id|path|assigner_id|connections|reserved|
-        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)]
+        (fcp_id|tmpl_id|path|assigner_id|connections|reserved|
+        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)
 
         the first three properties are from template_fcp_mapping table,
         and the others are from fcp table. These three properties will
@@ -1118,7 +1118,7 @@ class FCPManager(object):
                 "allocated": [],
                 "reserve_only": [],
                 "connection_only": [],
-                "unallocated_but_active": [],
+                "unallocated_but_active": {},
                 "allocated_but_free": [],
                 "notfound": [],
                 "offline": [],
@@ -1168,7 +1168,7 @@ class FCPManager(object):
                     if state == "active":
                         statistics_usage[
                             template_id][path_id]["unallocated_but_active"].\
-                            append((fcp_id, owner))
+                            update({fcp_id: owner})
                         LOG.warning("When getting statistics, found a FCP "
                                     "record %s available in database but its "
                                     "state is active, it may be occupied by "
@@ -1214,7 +1214,7 @@ class FCPManager(object):
                 if not statistics_usage[
                     template_id][path_id]["CHPIDs"].get(chpid, None):
                     statistics_usage[
-                        template_id][path_id]["CHPIDs"] = {chpid: []}
+                        template_id][path_id]["CHPIDs"].update({chpid: []})
                 statistics_usage[
                     template_id][path_id]["CHPIDs"][chpid].append(fcp_id)
         # this FCP in template_fcp_mapping table but not found in z/VM
@@ -1476,8 +1476,8 @@ class FCPManager(object):
                         "connection_only": ('1C00', '1C05', ...)
                         # case E: (reserve = 0, conn = 0, state = active)
                         # FCP occupied out-of-band
-                        'unallocated_but_active': [('1B04','owner1'),
-                                                ('1B05','owner2')]
+                        'unallocated_but_active': {'1B04': 'owner1',
+                                                   '1B05': 'owner2'}
                         # case F: (conn != 0, state = free)
                         # we allocated it in db but the FCP status is free
                         # this is an situation not expected
@@ -1498,9 +1498,7 @@ class FCPManager(object):
                             "allocated":"",
                             "reserve_only":"",
                             "connection_only":"",
-                            "unallocated_but_active":[
-
-                            ],
+                            "unallocated_but_active":{},
                             "allocated_but_free":"",
                             "notfound":"",
                             "offline":"",
@@ -1514,9 +1512,7 @@ class FCPManager(object):
                             "allocated":"",
                             "reserve_only":"",
                             "connection_only":"",
-                            "unallocated_but_active":[
-
-                            ],
+                            "unallocated_but_active":{},
                             "allocated_but_free":"",
                             "notfound":"",
                             "offline":"",
