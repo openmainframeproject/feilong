@@ -1082,7 +1082,7 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated": "",
                             "reserve_only": "",
                             "connection_only": "",
-                            "unallocated_but_active": [],
+                            "unallocated_but_active": {},
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
@@ -1097,7 +1097,7 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated": "",
                             "reserve_only": "",
                             "connection_only": "",
-                            "unallocated_but_active": [],
+                            "unallocated_but_active": {},
                             "allocated_but_free": "",
                             "notfound": "1X00",
                             "offline": "",
@@ -1121,7 +1121,7 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated": "1B00",
                             "reserve_only": "",
                             "connection_only": "",
-                            "unallocated_but_active": [],
+                            "unallocated_but_active": {},
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
@@ -1136,8 +1136,7 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated": "",
                             "reserve_only": "",
                             "connection_only": "",
-                            "unallocated_but_active": [
-                                ("1B01", "owner2")],
+                            "unallocated_but_active": {"1B01": "owner2"},
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
@@ -1174,6 +1173,133 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
             self._delete_from_template_table([template_id_1, template_id_2])
+
+    def test_update_template_fcp_statistics_usage(self):
+        self.maxDiff = None
+        statistics_usage = {}
+        # raw_item format
+        # (fcp_id|tmpl_id|path|assigner_id|connections|
+        # reserved|wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)
+        raw_items = [('1a01', 'tmpl_id_1', '0', '', 2,
+                    1, 'wwpn_npiv', 'wwpn_phy', '27', 'active',
+                    'owner1', 'tmpl_id_1'),
+                    ('1a02', 'tmpl_id_1', '0', '', 0,
+                    0, 'wwpn_npiv', 'wwpn_phy', '32', 'free',
+                    '', ''),
+                    ('1b01', 'tmpl_id_1', '1', '', 0,
+                    0, 'wwpn_npiv', 'wwpn_phy', '27', 'active',
+                    'assigner_id_1', ''),
+                    ('1b02', 'tmpl_id_1', '1', '', 0,
+                    0, 'wwpn_npiv', 'wwpn_phy', '32', 'active',
+                    'assigner_id_2', ''),
+                    ('1c03', 'tmpl_id_2', '0', '', 0,
+                    1, 'wwpn_npiv', 'wwpn_phy', '25', 'free',
+                    '', ''),
+                    ('1c05', 'tmpl_id_2', '0', '', 1,
+                    0, 'wwpn_npiv', 'wwpn_phy', '25', 'free',
+                    '', ''),
+                    ('1c06', 'tmpl_id_2', '0', '', 1,
+                    1, 'wwpn_npiv', 'wwpn_phy', '26', 'free',
+                    '', ''),
+                    ('1d05', 'tmpl_id_2', '1', '', None,
+                    '', '', '', '', '', '', ''),
+                    ('1d06', 'tmpl_id_2', '1', '', 0,
+                    0, 'wwpn_npiv', 'wwpn_phy', '', 'notfound',
+                    '', ''),
+                    ('1e09', 'tmpl_id_3', '0', '', 0,
+                    0, 'wwpn_npiv', 'wwpn_phy', '30', 'offline',
+                    '', '')]
+        for raw in raw_items:
+            self.fcpops._update_template_fcp_statistics_usage(
+                statistics_usage, raw)
+        expected = {
+            'tmpl_id_1': {
+                '0': {
+                    "total": ['1A01', '1A02'],
+                    "total_count": 0,
+                    "single_fcp": [],
+                    "range_fcp": [],
+                    "available": ['1A02'],
+                    "available_count": 0,
+                    "allocated": ['1A01'],
+                    "reserve_only": [],
+                    "connection_only": [],
+                    "unallocated_but_active": {},
+                    "allocated_but_free": [],
+                    "notfound": [],
+                    "offline": [],
+                    "CHPIDs": {'27': ['1A01'],
+                               '32': ['1A02']}},
+                '1': {
+                    "total": ['1B01', '1B02'],
+                    "total_count": 0,
+                    "single_fcp": [],
+                    "range_fcp": [],
+                    "available": [],
+                    "available_count": 0,
+                    "allocated": [],
+                    "reserve_only": [],
+                    "connection_only": [],
+                    "unallocated_but_active": {
+                        '1B01': 'assigner_id_1',
+                        '1B02': 'assigner_id_2'},
+                    "allocated_but_free": [],
+                    "notfound": [],
+                    "offline": [],
+                    "CHPIDs": {'27': ['1B01'],
+                               '32': ['1B02']}}
+                               },
+            'tmpl_id_2': {
+                '0': {
+                    "total": ['1C03', '1C05', '1C06'],
+                    "total_count": 0,
+                    "single_fcp": [],
+                    "range_fcp": [],
+                    "available": [],
+                    "available_count": 0,
+                    "allocated": ['1C06'],
+                    "reserve_only": ['1C03'],
+                    "connection_only": ['1C05'],
+                    "unallocated_but_active": {},
+                    "allocated_but_free": ['1C05', '1C06'],
+                    "notfound": [],
+                    "offline": [],
+                    "CHPIDs": {'25': ['1C03', '1C05'],
+                               '26': ['1C06']}},
+                '1': {
+                    "total": ['1D05', '1D06'],
+                    "total_count": 0,
+                    "single_fcp": [],
+                    "range_fcp": [],
+                    "available": [],
+                    "available_count": 0,
+                    "allocated": [],
+                    "reserve_only": [],
+                    "connection_only": [],
+                    "unallocated_but_active": {},
+                    "allocated_but_free": [],
+                    "notfound": ['1D05', '1D06'],
+                    "offline": [],
+                    "CHPIDs": {}}
+                    },
+            'tmpl_id_3': {
+                '0': {
+                    "total": ['1E09'],
+                    "total_count": 0,
+                    "single_fcp": [],
+                    "range_fcp": [],
+                    "available": [],
+                    "available_count": 0,
+                    "allocated": [],
+                    "reserve_only": [],
+                    "connection_only": [],
+                    "unallocated_but_active": {},
+                    "allocated_but_free": [],
+                    "notfound": [],
+                    "offline": ['1E09'],
+                    "CHPIDs": {'30': ['1E09']}}}
+                    }
+        self.assertDictEqual(statistics_usage, expected)
 
     @mock.patch("zvmsdk.database.FCPDbOperator.delete_fcp_template")
     def test_delete_fcp_template(self, mock_db_delete_tmpl):
