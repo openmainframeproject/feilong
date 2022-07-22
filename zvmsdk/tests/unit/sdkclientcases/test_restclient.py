@@ -943,7 +943,9 @@ class RESTClientTestCase(unittest.TestCase):
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
-        self.client.call("create_fcp_template", 'tmpl name', 'desc text', '1a00,1a03-1a04;1b00-1b05',
+        self.client.call("create_fcp_template", 'tmpl name',
+                         description='desc text',
+                         fcp_devices='1a00,1a03-1a04;1b00-1b05',
                          host_default=True, default_sp_list=['v5k', 'v7k', 'd8k'])
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
@@ -953,7 +955,9 @@ class RESTClientTestCase(unittest.TestCase):
                 'description': 'desc text',
                 'fcp_devices': '1a00,1a03-1a04;1b00-1b05'}
         body = json.dumps(body)
-        self.client.call("create_fcp_template", 'tmpl name', 'desc text', '1a00,1a03-1a04;1b00-1b05')
+        self.client.call("create_fcp_template", 'tmpl name',
+                         description='desc text',
+                         fcp_devices='1a00,1a03-1a04;1b00-1b05')
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
