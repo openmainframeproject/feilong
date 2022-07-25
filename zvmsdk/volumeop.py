@@ -946,7 +946,7 @@ class FCPManager(object):
         # If min_fcp_paths_count is not None,need validate the value
         if min_fcp_paths_count and min_fcp_paths_count > len(fcp_devices_by_path):
             msg = "min_fcp_paths_count %s is larger than fcp device path count %s, " \
-                  "please adjust fcp_devices or min_fcp_paths_count." \
+                  "adjust fcp_devices or min_fcp_paths_count." \
                   % (min_fcp_paths_count, len(fcp_devices_by_path))
             LOG.error(msg)
             raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
