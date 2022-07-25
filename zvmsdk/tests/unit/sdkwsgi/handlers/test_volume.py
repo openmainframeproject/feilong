@@ -177,7 +177,8 @@ class HandlersVolumeTest(unittest.TestCase):
         self.req.body = json.dumps(body)
         volume.create_fcp_template(self.req)
         mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name', description='',
-                                                  fcp_devices='', host_default=False, default_sp_list=None)
+                                                  fcp_devices='', host_default=False, default_sp_list=[],
+                                                  min_fcp_paths_count=None)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_edit_fcp_template(self, mock_send_request):

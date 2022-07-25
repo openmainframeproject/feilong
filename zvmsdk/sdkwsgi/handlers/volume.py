@@ -101,10 +101,10 @@ class VolumeAction(object):
                                         connections, fcp_template_id)
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, wwid,
-                               transportfiles, guest_networks, min_fcp_paths_count):
+                               transportfiles, guest_networks, fcp_template_id):
         info = self.client.send_request('volume_refresh_bootmap',
                                         fcpchannel, wwpn, lun, wwid,
-                                        transportfiles, guest_networks, min_fcp_paths_count)
+                                        transportfiles, guest_networks, fcp_template_id)
         return info
 
     @validation.schema(volume.create_fcp_template)
@@ -200,10 +200,10 @@ def volume_detach(req):
 def volume_refresh_bootmap(req):
 
     def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, wwid,
-                                transportfiles, guest_networks, min_fcp_paths_count):
+                                transportfiles, guest_networks, fcp_template_id):
         action = get_action()
         return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid,
-                                             transportfiles, guest_networks, min_fcp_paths_count)
+                                             transportfiles, guest_networks, fcp_template_id)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
@@ -211,7 +211,7 @@ def volume_refresh_bootmap(req):
                                    body['info'].get('wwid', ""),
                                    body['info'].get('transportfiles', ""),
                                    body['info'].get('guest_networks', []),
-                                   body['info'].get('min_fcp_paths_count', None))
+                                   body['info'].get('fcp_template_id', None))
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

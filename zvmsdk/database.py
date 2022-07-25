@@ -1207,7 +1207,8 @@ class FCPDbOperator(object):
     def _validate_min_fcp_paths_count(self, fcp_devices, min_fcp_paths_count, fcp_template_id):
         """
         When to edit FCP template, if min_fcp_paths_count is not None or
-        fcp_devices is not None, need to validate the values.
+        fcp_devices is not None (None means no need to update this field, but keep the original value),
+        need to validate the values.
         min_fcp_paths_count should not be larger than fcp_device_path_count.
         If min_fcp_paths_count is None, get the value from template table.
         If fcp_devices is None, get the fcp_device_path_count from template_fcp_mapping table.
@@ -1223,17 +1224,24 @@ class FCPDbOperator(object):
 
             if min_fcp_paths_count > fcp_devices_path_count:
                 msg = "min_fcp_paths_count %s is larger than fcp device path count %s. " \
-                      "Please adjust the fcp_devices setting or " \
+                      "Adjust the fcp_devices setting or " \
                       "min_fcp_paths_count." % (min_fcp_paths_count, fcp_devices_path_count)
                 LOG.error(msg)
                 raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
 
     def get_min_fcp_paths_count(self, fcp_template_id):
         """ Get min_fcp_paths_count, query template table first, if it is -1, then return the
-        value of fcp devices path count from template_fcp_mapping table."""
-        min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
-        if not min_fcp_paths_count or min_fcp_paths_count < 0:
-            min_fcp_paths_count = self.get_path_count(fcp_template_id)
+            value of fcp devices path count from template_fcp_mapping table. If it is None, raise error.
+        """
+        if not fcp_template_id:
+            min_fcp_paths_count = None
+        else:
+            min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
+            if min_fcp_paths_count == -1:
+                min_fcp_paths_count = self.get_path_count(fcp_template_id)
+        if min_fcp_paths_count is None:
+            obj_desc = "min_fcp_paths_count from fcp_template_id %s" % fcp_template_id
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
         return min_fcp_paths_count
 
     def edit_fcp_template(self, fcp_template_id, name=None, description=None,

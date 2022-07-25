@@ -1247,6 +1247,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
         # insert new test data
         self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert date to template table
+        template_info = [(template_id, 'name', 'desc', False, -1)]
+        self._insert_data_into_template_table(template_info)
         try:
             # expected result
             all_possible_pairs = {
@@ -1271,8 +1274,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 self.assertEqual(fcp_list, [])
             # test case3: min_fcp_paths_count was set to 1
             # set min_fcp_paths_count to 1
-            template_info = [(template_id, 'name-1', 'description-1', False, 1)]
-            self._insert_data_into_template_table(template_info)
+            self.db_op.edit_fcp_template(template_id, min_fcp_paths_count=1)
             all_possible_pairs = {('1b01',), ('1b03',)}
             result = set()
             for i in range(10):
@@ -1341,6 +1343,18 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         get_min_fcp_paths_count_from_db.return_value = 4
         ret = self.db_op.get_min_fcp_paths_count('template_id')
         self.assertEqual(4, ret)
+
+    def test_get_min_fcp_paths_count_with_non_template(self):
+        self.assertRaisesRegex(exception.SDKObjectNotExistError,
+                               'min_fcp_paths_count from fcp_template_id',
+                               self.db_op.get_min_fcp_paths_count, None)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    def test_get_min_fcp_paths_count_with_none_mincount(self, get_min_fcp_paths_count_from_db):
+        get_min_fcp_paths_count_from_db.return_value = None
+        self.assertRaisesRegex(exception.SDKObjectNotExistError,
+                               'min_fcp_paths_count from fcp_template_id',
+                               self.db_op.get_min_fcp_paths_count, 'fake_fcp_template_id')
 
     def test_edit_fcp_template(self):
         """ Test edit_fcp_template()

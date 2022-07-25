@@ -1807,7 +1807,7 @@ class SDKAPI(object):
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
                             host_default: bool = False,
-                            default_sp_list: list = None,
+                            default_sp_list: list = [],
                             min_fcp_paths_count: int = None):
         """API for creating a FCP template in database.
 
@@ -1899,7 +1899,7 @@ class SDKAPI(object):
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
-                               transportfiles=None, guest_networks=None, min_fcp_paths_count=None):
+                               transportfiles=None, guest_networks=None, fcp_template_id=None):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
@@ -1935,13 +1935,13 @@ class SDKAPI(object):
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
                'nic_vdev': '1003}],
-        :param min_fcp_paths_count
+        :param fcp_template_id
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
                                                 wwid=wwid,
                                                 transportfiles=transportfiles,
                                                 guest_networks=guest_networks,
-                                                min_fcp_paths_count=min_fcp_paths_count)
+                                                fcp_template_id=fcp_template_id)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
