@@ -596,9 +596,9 @@ class FCPManager(object):
                                                         userid=assigner_id,
                                                         msg=errmsg)
 
+        global _LOCK_RESERVE_FCP
+        _LOCK_RESERVE_FCP.acquire()
         try:
-            global _LOCK_RESERVE_FCP
-            _LOCK_RESERVE_FCP.acquire()
             # go here, means try to attach volumes
             # first check whether this userid already has a FCP device
             # get the FCP devices belongs to assigner_id
@@ -1668,10 +1668,9 @@ class FCPVolumeManager(object):
                     self._undedicate_fcp(fcp, assigner_id)
         # If attach volume fails, we need to unreserve all FCP devices.
         if all_fcp_list:
-            for fcp in all_fcp_list:
-                if not self.db.get_connections_from_fcp(fcp):
-                    LOG.info("Unreserve the fcp device %s", fcp)
-                    self.db.unreserve(fcp)
+            no_connection_fcps = [fcp for fcp in all_fcp_list if not self.db.get_connections_from_fcp(fcp)]
+            LOG.info("Unreserve the fcp devices %s", no_connection_fcps)
+            self.db.unreserve_fcps(no_connection_fcps)
 
     def _attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,

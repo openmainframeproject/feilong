@@ -2103,3 +2103,38 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(new_tmpl_id, tmpl_id)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
+    def test_rollback_dedicated_fcp(self, mock_decrease_fcp_usage):
+        fcp_list = ['1a10', '1b10']
+        assigner_id = 'test_assigner'
+        all_fcp_list = ['1a10', '1a11', '1b10', '1b11']
+        mock_decrease_fcp_usage.return_value = 2
+
+        fcp_info_list = [('1a10', assigner_id, 1, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1a11', assigner_id, 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1b10', assigner_id, 1, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1b11', assigner_id, 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            self.volumeops._rollback_dedicated_fcp(fcp_list, assigner_id, all_fcp_list)
+            assigner_id_1, reserved_1, *_ = self.db_op.get_usage_of_fcp("1a10")
+            assigner_id_2, reserved_2, *_ = self.db_op.get_usage_of_fcp("1a11")
+            assigner_id_3, reserved_3, *_ = self.db_op.get_usage_of_fcp("1b10")
+            assigner_id_4, reserved_4, *_ = self.db_op.get_usage_of_fcp("1b11")
+            self.assertEqual(0, reserved_1)
+            self.assertEqual(1, reserved_2)
+            self.assertEqual(0, reserved_3)
+            self.assertEqual(1, reserved_4)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
