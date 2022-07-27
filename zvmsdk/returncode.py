@@ -336,6 +336,8 @@ errors = {
                       "'%(max)im'."),
                   22: ("Failed to delete FCP device template, "
                       "error: %(msg)s"),
+                  23: ("Failed to create or update FCP device template, "
+                       "error: %(msg)s")
                   },
                  "The operated object status conflict"
                  ],

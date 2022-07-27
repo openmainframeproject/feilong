@@ -1807,7 +1807,8 @@ class SDKAPI(object):
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
                             host_default: bool = False,
-                            default_sp_list: list = []):
+                            default_sp_list: list = [],
+                            min_fcp_paths_count: int = None):
         """API for creating a FCP template in database.
 
         :param str name: the name of the template
@@ -1819,14 +1820,17 @@ class SDKAPI(object):
         :param list default_sp_list: the list of storage providers that will
             use this FCP template as default FCP template. If None, it means
             no storage provider would use this FCP template as default.
+        :param min_fcp_paths_count: The minimum number of FCP paths that
+            should be defined to a vm when attachinga data volume to a vm or
+            BFV (deploying a vm from SCSI image).
         """
         return self._volumeop.create_fcp_template(
             name, description, fcp_devices,
-            host_default=host_default, default_sp_list=default_sp_list)
+            host_default=host_default, default_sp_list=default_sp_list, min_fcp_paths_count=min_fcp_paths_count)
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
-                          host_default=None, default_sp_list=None):
+                          host_default=None, default_sp_list=None, min_fcp_paths_count: int = None):
         """ Edit a FCP device template
 
         The kwargs values are pre-validated in two places:
@@ -1850,6 +1854,7 @@ class SDKAPI(object):
         :param default_sp_list: (list)
           Example:
             ["SP1", "SP2"]
+        :param min_fcp_paths_count: min fcp paths count
         :return:
           Example
             {
@@ -1865,7 +1870,7 @@ class SDKAPI(object):
         return self._volumeop.edit_fcp_template(
             fcp_template_id, name=name, description=description,
             fcp_devices=fcp_devices, host_default=host_default,
-            default_sp_list=default_sp_list)
+            default_sp_list=default_sp_list, min_fcp_paths_count=min_fcp_paths_count)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
@@ -1894,7 +1899,7 @@ class SDKAPI(object):
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
-                               transportfiles=None, guest_networks=None):
+                               transportfiles=None, guest_networks=None, fcp_template_id=None):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
@@ -1929,12 +1934,14 @@ class SDKAPI(object):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003}]
+               'nic_vdev': '1003}],
+        :param fcp_template_id
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
                                                 wwid=wwid,
                                                 transportfiles=transportfiles,
-                                                guest_networks=guest_networks)
+                                                guest_networks=guest_networks,
+                                                fcp_template_id=fcp_template_id)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath

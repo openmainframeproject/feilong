@@ -146,7 +146,8 @@ create_fcp_template = {
         'host_default': parameter_types.boolean,
         'storage_providers': {
             'type': 'array'
-        }
+        },
+        'min_fcp_paths_count': parameter_types.positive_integer
     },
     'required': ['name'],
     'additionalProperties': False,
@@ -167,7 +168,8 @@ edit_fcp_template = {
         'host_default': parameter_types.boolean,
         'storage_providers': {
             'type': 'array'
-        }
+        },
+        'min_fcp_paths_count': parameter_types.positive_integer
     },
     'required': ['fcp_template_id'],
     'additionalProperties': False

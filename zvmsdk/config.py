@@ -524,20 +524,6 @@ The default value is 1800 seconds, if the execution of punch scripts
 reached the timeout, the attach/detach will fail.
 '''
         ),
-    Opt('min_fcp_paths_count',
-        section='volume',
-        default=2,
-        opt_type='int',
-        help='''
-The minimum number of FCP paths that should be defined to a vm when attaching
- a data volume to a vm or BFV (deploying a vm from SCSI image).
-
-The default value would be the path count of the current fcp_list.
-
-If there is no this count of FCP paths available, the attach volume or BFV
- would fail.
-'''
-        ),
     Opt('get_fcp_pair_with_same_index',
         section='volume',
         default='0',
@@ -673,25 +659,6 @@ class ConfigOpts(object):
                 for opt in opts:
                     val = cf.get(sec, opt)
                     configs[sec][opt] = val
-            # Set the min_fcp_paths_count value as the paths count of current
-            # fcp_list.
-            # if fcp_list is not set, we will use a large number as the value
-            # of min_fcp_paths_count
-            min_fcp_paths_count = 999
-            if "volume" in configs:
-                # if min_fcp_paths_count is not set by user, set the value as
-                # paths count of the current fcp_list
-                if "min_fcp_paths_count" not in configs["volume"] or \
-                not configs["volume"]["min_fcp_paths_count"]:
-                    fcp_list_value = configs['volume'].get('fcp_list', "")
-                    if fcp_list_value != "":
-                        min_fcp_paths_count = len(fcp_list_value.split(';'))
-                    configs["volume"]["min_fcp_paths_count"] = \
-                                                        min_fcp_paths_count
-            else:
-                configs["volume"] = {}
-                # make sure the min_fcp_paths_count is always set
-                configs["volume"]["min_fcp_paths_count"] = min_fcp_paths_count
             return configs
 
     def merge(self, defaults, override):
@@ -752,10 +719,6 @@ class ConfigOpts(object):
                 if (k2 == "user_default_max_cpu") and (
                     v2['default'] is not None):
                     self._check_user_default_max_cpu(v2['default'])
-                # check min_fcp_paths_count
-                if (k2 == "min_fcp_paths_count") and (
-                    v2['default'] is not None):
-                    self._check_min_fcp_paths_count(v2['default'])
 
     def _check_zvm_disk_pool(self, value):
         disks = value.split(':')
@@ -781,10 +744,6 @@ class ConfigOpts(object):
     def _check_user_default_max_cpu(self, value):
         if (value < 1) or (value > 64):
             raise OptFormatError("zvm", "user_default_max_cpu", value)
-
-    def _check_min_fcp_paths_count(self, value):
-        if value < 1:
-            raise OptFormatError("volume", "min_fcp_paths_count", value)
 
     def toDict(self, d):
         D = Dict()
