@@ -49,7 +49,8 @@ class SDKAPITestCase(base.SDKTestCase):
             'description': 'new_desc',
             'fcp_devices': '1A00-1A03;1B00-1B03',
             'host_default': False,
-            'default_sp_list': ['sp1']}
+            'default_sp_list': ['sp1'],
+            'min_fcp_paths_count': 2}
         self.api.edit_fcp_template(tmpl_id, **kwargs)
         mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
@@ -566,9 +567,11 @@ class SDKAPITestCase(base.SDKTestCase):
         wwpn = ['5005076802100c1b', '5005076802200c1b']
         lun = '01000000000000'
         wwid = '600507640083826de00000000000605b'
-        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid)
+        fcp_template_id = 'fake_tmpl_id'
+        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid, fcp_template_id=fcp_template_id)
         mock_attach.assert_called_once_with(fcpchannel, wwpn, lun, wwid=wwid,
-                                    transportfiles=None, guest_networks=None)
+                                            transportfiles=None, guest_networks=None,
+                                            fcp_template_id=fcp_template_id)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")

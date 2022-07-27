@@ -101,10 +101,10 @@ class VolumeAction(object):
                                         connections, fcp_template_id)
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, wwid,
-                               transportfiles, guest_networks):
+                               transportfiles, guest_networks, fcp_template_id):
         info = self.client.send_request('volume_refresh_bootmap',
                                         fcpchannel, wwpn, lun, wwid,
-                                        transportfiles, guest_networks)
+                                        transportfiles, guest_networks, fcp_template_id)
         return info
 
     @validation.schema(volume.create_fcp_template)
@@ -113,6 +113,7 @@ class VolumeAction(object):
         description = body.get('description', '')
         fcp_devices = body.get('fcp_devices', '')
         host_default = body.get('host_default', False)
+        min_fcp_paths_count = body.get('min_fcp_paths_count', None)
         # ensure host_default parameter is boolean type
         # because of the database's requirements
         valid_true_values = [True, 'True', 'TRUE', 'true', '1',
@@ -121,13 +122,14 @@ class VolumeAction(object):
             host_default = True
         else:
             host_default = False
-        default_sp_list = body.get('storage_providers', None)
+        default_sp_list = body.get('storage_providers', [])
 
         ret = self.client.send_request('create_fcp_template', name,
                                        description=description,
                                        fcp_devices=fcp_devices,
                                        host_default=host_default,
-                                       default_sp_list=default_sp_list)
+                                       default_sp_list=default_sp_list,
+                                       min_fcp_paths_count=min_fcp_paths_count)
         return ret
 
     @validation.schema(volume.edit_fcp_template)
@@ -138,13 +140,15 @@ class VolumeAction(object):
         fcp_devices = body.get('fcp_devices', None)
         host_default = body.get('host_default', None)
         default_sp_list = body.get('storage_providers', None)
+        min_fcp_paths_count = body.get('min_fcp_paths_count', None)
 
         ret = self.client.send_request('edit_fcp_template',
                                        fcp_template_id,
                                        name=name, description=description,
                                        fcp_devices=fcp_devices,
                                        host_default=host_default,
-                                       default_sp_list=default_sp_list)
+                                       default_sp_list=default_sp_list,
+                                       min_fcp_paths_count=min_fcp_paths_count)
         return ret
 
 
@@ -196,17 +200,18 @@ def volume_detach(req):
 def volume_refresh_bootmap(req):
 
     def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, wwid,
-                                transportfiles, guest_networks):
+                                transportfiles, guest_networks, fcp_template_id):
         action = get_action()
         return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid,
-                                             transportfiles, guest_networks)
+                                             transportfiles, guest_networks, fcp_template_id)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
                                    body['info']['wwpn'], body['info']['lun'],
                                    body['info'].get('wwid', ""),
                                    body['info'].get('transportfiles', ""),
-                                   body['info'].get('guest_networks', []))
+                                   body['info'].get('guest_networks', []),
+                                   body['info'].get('fcp_template_id', None))
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

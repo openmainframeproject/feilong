@@ -1879,7 +1879,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         wwid = '600507640083826de00000000000605b'
         execute.side_effect = [(0, "")]
         self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                               wwid=wwid)
+                                               wwid=wwid, min_fcp_paths_count=2)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
@@ -1890,14 +1890,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value_withskip(self, execute):
-        base.set_conf('volume', 'min_fcp_paths_count', 2)
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
         wwid = '600507640083826de00000000000605b'
         execute.side_effect = [(0, "")]
         self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                               wwid=wwid)
+                                               wwid=wwid, min_fcp_paths_count=2)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',

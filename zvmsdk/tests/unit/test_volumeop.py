@@ -40,7 +40,8 @@ class TestVolumeOperatorAPI(base.SDKTestCase):
             'description': 'new_desc',
             'fcp_devices': '1A00-1A03;1B00-1B03',
             'host_default': False,
-            'default_sp_list': ['sp1']}
+            'default_sp_list': ['sp1'],
+            'min_fcp_paths_count': 2}
         self.operator.edit_fcp_template(tmpl_id, **kwargs)
         mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
@@ -865,21 +866,24 @@ class TestFCPManager(base.SDKTestCase):
                 "name": "name1",
                 "description": "desc1",
                 "host_default": False,
-                "storage_providers": []
+                "storage_providers": [],
+                'min_fcp_paths_count': 0
             },
             'fakehos2-1111-1111-1111-111111111111': {
                 "id": "fakehos2-1111-1111-1111-111111111111",
                 "name": "name2",
                 "description": "desc2",
                 "host_default": False,
-                "storage_providers": []
+                "storage_providers": [],
+                'min_fcp_paths_count': 0
             },
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c': {
                 "id": "ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c",
                 "name": "test template",
                 "description": "test create_fcp_template",
                 "host_default": True,
-                "storage_providers": ['sp1', 'sp2']
+                "storage_providers": ['sp1', 'sp2'],
+                'min_fcp_paths_count': 2,
             },
         }
         try:
@@ -903,6 +907,17 @@ class TestFCPManager(base.SDKTestCase):
                                                      new_template_id)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
+    def test_create_fcp_template_with_error(self):
+        name = 'test_fcp_tmpl'
+        description = 'test-desc'
+        fcp_devices = '1a10;1b10'
+        min_fcp_paths_count = 4
+        self.assertRaisesRegex(exception.SDKConflictError,
+                               'min_fcp_paths_count 4 is larger than fcp device path count 2',
+                               self.fcpops.create_fcp_template,
+                               name, description, fcp_devices,
+                               min_fcp_paths_count=min_fcp_paths_count)
+
     @mock.patch("zvmsdk.database.FCPDbOperator.edit_fcp_template")
     def test_edit_fcp_template(self, mock_db_edit_tmpl):
         """ Test edit_fcp_template """
@@ -912,7 +927,8 @@ class TestFCPManager(base.SDKTestCase):
             'description': 'new_desc',
             'fcp_devices': '1A00-1A03;1B00-1B03',
             'host_default': False,
-            'default_sp_list': ['sp1']}
+            'default_sp_list': ['sp1'],
+            'min_fcp_paths_count': 2}
         self.fcpops.edit_fcp_template(tmpl_id, **kwargs)
         mock_db_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
 
@@ -933,7 +949,7 @@ class TestFCPManager(base.SDKTestCase):
             template_id_1 = 'template_id_1'
             template_id_2 = 'template_id_2'
             templates = [(template_id_1, 'name1', 'desc1', 1),
-                        (template_id_2, 'name2', 'desc2', 0)]
+                         (template_id_2, 'name2', 'desc2', 0)]
             self._delete_from_template_table([template_id_1, template_id_2])
             self._insert_data_into_template_table(templates)
             template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
@@ -960,7 +976,8 @@ class TestFCPManager(base.SDKTestCase):
                     "name": "name1",
                     "description": "desc1",
                     "host_default": True,
-                    "storage_providers": ["sp1"]
+                    "storage_providers": ["sp1"],
+                    'min_fcp_paths_count': 0
                     }]}
             self.assertDictEqual(result_1, expected_1)
 
@@ -972,7 +989,8 @@ class TestFCPManager(base.SDKTestCase):
                     "name": "name2",
                     "description": "desc2",
                     "host_default": False,
-                    "storage_providers": ["sp2"]
+                    "storage_providers": ["sp2"],
+                    'min_fcp_paths_count': 0
                     }]}
             result_2 = self.fcpops.get_fcp_templates(assigner_id='user2')
             self.assertDictEqual(result_2, expected_2)
@@ -997,14 +1015,16 @@ class TestFCPManager(base.SDKTestCase):
                         "name": "name1",
                         "description": "desc1",
                         "host_default": True,
-                        "storage_providers": ["sp1"]
+                        "storage_providers": ["sp1"],
+                        'min_fcp_paths_count': 0
                     },
                     {
                         "id": template_id_2,
                         "name": "name2",
                         "description": "desc2",
                         "host_default": False,
-                        "storage_providers": ["sp2"]
+                        "storage_providers": ["sp2"],
+                        'min_fcp_paths_count': 0
                     }]}
             result_6 = self.fcpops.get_fcp_templates(default_sp_list=['all'])
             self.assertDictEqual(result_6, expected_all)
@@ -1028,7 +1048,7 @@ class TestFCPManager(base.SDKTestCase):
             template_id_1 = 'template_id_1'
             template_id_2 = 'template_id_2'
             templates = [(template_id_1, 'name1', 'desc1', 1),
-                        (template_id_2, 'name2', 'desc2', 0)]
+                         (template_id_2, 'name2', 'desc2', 0)]
             self._delete_from_template_table([template_id_1, template_id_2])
             self._insert_data_into_template_table(templates)
             template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
@@ -1071,6 +1091,7 @@ class TestFCPManager(base.SDKTestCase):
                 "description": "desc1",
                 "host_default": True,
                 "storage_providers": ["sp1"],
+                'min_fcp_paths_count': 2,
                 "statistics": {
                     0: {
                             "total": "1A00",
@@ -1110,6 +1131,7 @@ class TestFCPManager(base.SDKTestCase):
                 "description": "desc2",
                 "host_default": False,
                 "storage_providers": ["sp2"],
+                'min_fcp_paths_count': 2,
                 "statistics": {
                     0: {
                             "total": "1B00",
@@ -2101,5 +2123,40 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(reserved, 0)
             self.assertEqual(conns, 3)
             self.assertEqual(new_tmpl_id, tmpl_id)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
+    def test_rollback_dedicated_fcp(self, mock_decrease_fcp_usage):
+        fcp_list = ['1a10', '1b10']
+        assigner_id = 'test_assigner'
+        all_fcp_list = ['1a10', '1a11', '1b10', '1b11']
+        mock_decrease_fcp_usage.return_value = 2
+
+        fcp_info_list = [('1a10', assigner_id, 1, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1a11', assigner_id, 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1b10', assigner_id, 1, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ('1b11', assigner_id, 1, 1, 'c05076de3300011d',
+                          'c05076de33002641', '27', 'active', 'owner2',
+                          ''),
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            self.volumeops._rollback_dedicated_fcp(fcp_list, assigner_id, all_fcp_list)
+            assigner_id_1, reserved_1, *_ = self.db_op.get_usage_of_fcp("1a10")
+            assigner_id_2, reserved_2, *_ = self.db_op.get_usage_of_fcp("1a11")
+            assigner_id_3, reserved_3, *_ = self.db_op.get_usage_of_fcp("1b10")
+            assigner_id_4, reserved_4, *_ = self.db_op.get_usage_of_fcp("1b11")
+            self.assertEqual(0, reserved_1)
+            self.assertEqual(1, reserved_2)
+            self.assertEqual(0, reserved_3)
+            self.assertEqual(1, reserved_4)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)

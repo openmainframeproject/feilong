@@ -851,7 +851,7 @@ class SMTClient(object):
             self._pathutils.clean_temp_folder(iucv_path)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, wwid='',
-                               transportfiles=None, guest_networks=None):
+                               transportfiles=None, guest_networks=None, min_fcp_paths_count=0):
         guest_networks = guest_networks or []
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
@@ -859,7 +859,7 @@ class SMTClient(object):
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
         wwid = "--wwid=%s" % wwid
-        paths = "--minfcp=%s" % CONF.volume.min_fcp_paths_count
+        paths = "--minfcp=%s" % min_fcp_paths_count
         cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns,
                lun, wwid, paths]
 

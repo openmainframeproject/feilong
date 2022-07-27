@@ -93,11 +93,12 @@ class VolumeOperatorAPI(object):
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
                                wwid='',
-                               transportfiles='', guest_networks=None):
+                               transportfiles='', guest_networks=None, fcp_template_id=None):
         return self._volume_manager.volume_refresh_bootmap(fcpchannel, wwpn,
                                             lun, wwid=wwid,
                                             transportfiles=transportfiles,
-                                            guest_networks=guest_networks)
+                                            guest_networks=guest_networks,
+                                            fcp_template_id=fcp_template_id)
 
     def get_volume_connector(self, assigner_id, reserve,
                              fcp_template_id=None, sp_name=None):
@@ -120,17 +121,20 @@ class VolumeOperatorAPI(object):
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
                             host_default: bool = False,
-                            default_sp_list: list = None):
+                            default_sp_list: list = [],
+                            min_fcp_paths_count: int = None):
         return self._volume_manager.fcp_mgr.create_fcp_template(
-            name, description, fcp_devices, host_default, default_sp_list)
+            name, description, fcp_devices, host_default, default_sp_list,
+            min_fcp_paths_count)
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
-                          host_default=None, default_sp_list=None):
+                          host_default=None, default_sp_list=None,
+                          min_fcp_paths_count=None):
         return self._volume_manager.fcp_mgr.edit_fcp_template(
             fcp_template_id, name=name, description=description,
             fcp_devices=fcp_devices, host_default=host_default,
-            default_sp_list=default_sp_list)
+            default_sp_list=default_sp_list, min_fcp_paths_count=min_fcp_paths_count)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                           default_sp_list=None, host_default=None):
@@ -596,9 +600,9 @@ class FCPManager(object):
                                                         userid=assigner_id,
                                                         msg=errmsg)
 
+        global _LOCK_RESERVE_FCP
+        _LOCK_RESERVE_FCP.acquire()
         try:
-            global _LOCK_RESERVE_FCP
-            _LOCK_RESERVE_FCP.acquire()
             # go here, means try to attach volumes
             # first check whether this userid already has a FCP device
             # get the FCP devices belongs to assigner_id
@@ -915,7 +919,8 @@ class FCPManager(object):
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
                             host_default: bool = False,
-                            default_sp_list: list = None):
+                            default_sp_list: list = None,
+                            min_fcp_paths_count: int = None):
         """Create a fcp template and return the basic information of
         the created template, for example:
         {
@@ -923,33 +928,46 @@ class FCPManager(object):
             'name': 'bjcb-test-template',
             'id': '36439338-db14-11ec-bb41-0201018b1dd2',
             'description': 'This is Default template',
-                'host_default': True,
-                'storage_providers': ['sp4', 'v7k60']
+            'host_default': True,
+            'storage_providers': ['sp4', 'v7k60'],
+            'min_fcp_paths_count': 2
             }
         }
         """
         LOG.info("Try to create a FCP template with name:%s,"
-                 "description:%s and fcp devices: %s."
-                 % (name, description, fcp_devices))
+                 "description:%s, fcp devices: %s, host_default: %s,"
+                 "storage_providers: %s, min_fcp_paths_count: %s."
+                 % (name, description, fcp_devices, host_default,
+                    default_sp_list, min_fcp_paths_count))
         # Generate a template id for this new template
         tmpl_id = str(uuid.uuid1())
         # Get fcp devices info index by path
         fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
+        # If min_fcp_paths_count is not None,need validate the value
+        if min_fcp_paths_count and min_fcp_paths_count > len(fcp_devices_by_path):
+            msg = "min_fcp_paths_count %s is larger than fcp device path count %s, " \
+                  "adjust fcp_devices or min_fcp_paths_count." \
+                  % (min_fcp_paths_count, len(fcp_devices_by_path))
+            LOG.error(msg)
+            raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
-                                    default_sp_list)
+                                    default_sp_list, min_fcp_paths_count)
+        min_fcp_paths_count_db = self.db.get_min_fcp_paths_count(tmpl_id)
         # Return template basic info
         LOG.info("A FCP template was created with ID %s." % tmpl_id)
         return {'fcp_template': {'name': name,
                 'id': tmpl_id,
                 'description': description,
                 'host_default': host_default,
-                'storage_providers': default_sp_list if default_sp_list else []}}
+                'storage_providers': default_sp_list if default_sp_list else [],
+                'min_fcp_paths_count': min_fcp_paths_count_db}}
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
-                          host_default=None, default_sp_list=None):
+                          host_default=None, default_sp_list=None,
+                          min_fcp_paths_count=None):
         """ Edit a FCP device template
 
         The kwargs values are pre-validated in two places:
@@ -973,6 +991,8 @@ class FCPManager(object):
         :param default_sp_list: (list)
           Example:
             ["SP1", "SP2"]
+        :param min_fcp_paths_count  the min fcp paths count, if it is None,
+                                    will not update this field in db.
         :return:
           Example
             {
@@ -981,19 +1001,21 @@ class FCPManager(object):
                 'id': '36439338-db14-11ec-bb41-0201018b1dd2',
                 'description': 'This is Default template',
                 'host_default': True,
-                'storage_providers': ['sp4', 'v7k60']
+                'storage_providers': ['sp4', 'v7k60'],
+                'min_fcp_paths_count': 2
               }
             }
         """
         LOG.info("Enter: edit_fcp_template with args {}".format(
             (fcp_template_id, name, description, fcp_devices,
-             host_default, default_sp_list)))
+             host_default, default_sp_list, min_fcp_paths_count)))
         # DML in FCP database
         result = self.db.edit_fcp_template(fcp_template_id, name=name,
                                            description=description,
                                            fcp_devices=fcp_devices,
                                            host_default=host_default,
-                                           default_sp_list=default_sp_list)
+                                           default_sp_list=default_sp_list,
+                                           min_fcp_paths_count=min_fcp_paths_count)
         LOG.info("Exit: edit_fcp_template")
         return result
 
@@ -1046,13 +1068,16 @@ class FCPManager(object):
         """
         template_dict = {}
         for item in raw_data:
-            id, name, description, is_default, sp_name = item
+            id, name, description, is_default, min_fcp_paths_count, sp_name = item
+            if min_fcp_paths_count < 0:
+                min_fcp_paths_count = self.db.get_path_count(id)
             if not template_dict.get(id, None):
                 template_dict[id] = {"id": id,
                                      "name": name,
                                      "description": description,
                                      "host_default": bool(is_default),
-                                     "storage_providers": []}
+                                     "storage_providers": [],
+                                     "min_fcp_paths_count": min_fcp_paths_count}
             # one fcp template can be multiple sp's default template
             if sp_name and sp_name not in template_dict[id]["storage_providers"]:
                 template_dict[id]["storage_providers"].append(sp_name)
@@ -1668,10 +1693,9 @@ class FCPVolumeManager(object):
                     self._undedicate_fcp(fcp, assigner_id)
         # If attach volume fails, we need to unreserve all FCP devices.
         if all_fcp_list:
-            for fcp in all_fcp_list:
-                if not self.db.get_connections_from_fcp(fcp):
-                    LOG.info("Unreserve the fcp device %s", fcp)
-                    self.db.unreserve(fcp)
+            no_connection_fcps = [fcp for fcp in all_fcp_list if not self.db.get_connections_from_fcp(fcp)]
+            LOG.info("Unreserve the fcp devices %s", no_connection_fcps)
+            self.db.unreserve_fcps(no_connection_fcps)
 
     def _attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,
@@ -1730,14 +1754,25 @@ class FCPVolumeManager(object):
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
-                               transportfiles=None, guest_networks=None):
+                               transportfiles=None, guest_networks=None,
+                               fcp_template_id=None):
         ret = None
+        if not fcp_template_id:
+            min_fcp_paths_count = len(fcpchannels)
+        else:
+            min_fcp_paths_count = self.db.get_min_fcp_paths_count(fcp_template_id)
+            if min_fcp_paths_count == 0:
+                errmsg = "No FCP devices were found in the FCP template %s," \
+                         "stop refreshing bootmap." % fcp_template_id
+                LOG.error(errmsg)
+                raise exception.SDKBaseException(msg=errmsg)
         with zvmutils.acquire_lock(self._lock):
             LOG.debug('Enter lock scope of volume_refresh_bootmap.')
             ret = self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns,
                                         lun, wwid=wwid,
                                         transportfiles=transportfiles,
-                                        guest_networks=guest_networks)
+                                        guest_networks=guest_networks,
+                                        min_fcp_paths_count=min_fcp_paths_count)
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
         return ret
 
