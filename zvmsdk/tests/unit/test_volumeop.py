@@ -817,13 +817,13 @@ class TestFCPManager(base.SDKTestCase):
                      '20076d8500005181', '27', 'free', 'none',
                      template_id),
             '1b01': ('1b01', 'user2', 1, 1, 'c05076de33000003',
-                     '20076d8500005181', '27', 'active', 'owner1',
+                     'c05076de3300264b', '27', 'active', 'owner1',
                      template_id),
             '1b02': ('1b02', '', 0, 0, 'c05076de33000b02',
                      '20076d8500005181', '27', 'free', 'none',
                      template_id),
             '1b03': ('1b03', 'unit0001', 2, 1, 'c05076de33000004',
-                     '20076d8500005185', '30', 'active', 'unit0001',
+                     'c05076de3300264b', '30', 'active', 'unit0001',
                      template_id)
         }
         try:
