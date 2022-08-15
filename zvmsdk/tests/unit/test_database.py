@@ -1413,17 +1413,17 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.increase_usage('1b03')
             # add path
             kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03;1c00'
-            detail = "Adding or deleting path.*from template {}".format(
+            detail = "Adding or deleting.*from template {}".format(
                 tmpl_id)
-            self.assertRaisesRegex(exception.ValidationError,
+            self.assertRaisesRegex(exception.SDKConflictError,
                                    detail,
                                    self.db_op.edit_fcp_template,
                                    tmpl_id, **kwargs)
             # delete path
             kwargs['fcp_devices'] = '1A00-1A03'
-            detail = "Adding or deleting path.*from template {}".format(
+            detail = "Adding or deleting.*from template {}".format(
                 tmpl_id)
-            self.assertRaisesRegex(exception.ValidationError,
+            self.assertRaisesRegex(exception.SDKConflictError,
                                    detail,
                                    self.db_op.edit_fcp_template,
                                    tmpl_id, **kwargs)
@@ -1432,9 +1432,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # validate: not allowed to remove inuse FCP ('1a01', '1b03')
             kwargs['fcp_devices'] = '1A00;1B00'
             not_allow_for_del = {f[0] for f in fcp_info}
-            detail = ("The FCP devices ({}) are missing from the input."
+            detail = ("The FCP devices ({}) are missing from the FCP device list."
                       .format(utils.shrink_fcp_list(list(not_allow_for_del))))
-            with self.assertRaises(exception.ValidationError) as cm:
+            with self.assertRaises(exception.SDKConflictError) as cm:
                 self.db_op.edit_fcp_template(tmpl_id, **kwargs)
             self.assertIn(detail, str(cm.exception))
 
