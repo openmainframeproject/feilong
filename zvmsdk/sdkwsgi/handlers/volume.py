@@ -115,7 +115,7 @@ class VolumeAction(object):
         host_default = body.get('host_default', False)
         min_fcp_paths_count = body.get('min_fcp_paths_count', None)
         # ensure host_default parameter is boolean type
-        # because of the database's requirements
+        # because of the sqlite FCP database's requirements
         valid_true_values = [True, 'True', 'TRUE', 'true', '1',
                              'ON', 'On', 'on', 'YES', 'Yes', 'yes']
         if host_default in valid_true_values:
@@ -138,10 +138,20 @@ class VolumeAction(object):
         name = body.get('name', None)
         description = body.get('description', None)
         fcp_devices = body.get('fcp_devices', None)
-        host_default = body.get('host_default', None)
         default_sp_list = body.get('storage_providers', None)
         min_fcp_paths_count = body.get('min_fcp_paths_count', None)
-
+        # Due to the pre-validation in schemas/volume.py,
+        # host_default only has 2 possible value types:
+        # i.e. None or a value defined in parameter_types.boolean
+        host_default = body.get('host_default', None)
+        # ensure host_default parameter is boolean type
+        # because of the sqlite FCP database's requirements
+        valid_true_values = [True, 'True', 'TRUE', 'true', '1',
+                             'ON', 'On', 'on', 'YES', 'Yes', 'yes']
+        if host_default in valid_true_values:
+            host_default = True
+        elif host_default is not None:
+            host_default = False
         ret = self.client.send_request('edit_fcp_template',
                                        fcp_template_id,
                                        name=name, description=description,
