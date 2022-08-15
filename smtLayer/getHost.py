@@ -404,11 +404,11 @@ def getCPUCount(rh):
                         flag = 1
                     if flag == 1:
                         status_row = line_value.split(' ')[0]
-                        if(status_row.find('MASTER') != -1 or
+                        if (status_row.find('MASTER') != -1 or
                             status_row == 'ALTERNATE' or
                             status_row == 'PARKED'):
                             cpu_use = cpu_use + 1
-                        if(type_row == 'CP' or type_row == 'IFL'):
+                        if (type_row == 'CP' or type_row == 'IFL'):
                             cpu_total = cpu_total + 1
     return cpu_total, cpu_use
 
@@ -483,9 +483,9 @@ def getGeneralInfo(rh):
     cpu_total = 0
     cpu_used = 0
     cpu_total, cpu_used = getCPUCount(rh)
-    if(cpu_total != 0):
+    if (cpu_total != 0):
         lparCpuTotal = str(cpu_total)
-    if(cpu_used != 0):
+    if (cpu_used != 0):
         lparCpuUsed = str(cpu_used)
     if lparCpuTotal == "no info":
         msg = msgs.msg['0405'][1] % (modId, "LPAR CPUs Total",
