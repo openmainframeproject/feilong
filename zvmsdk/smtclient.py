@@ -737,7 +737,7 @@ class SMTClient(object):
                 result = "Profile '%s'" % profile
                 raise exception.SDKObjectNotExistError(obj_desc=result,
                                                        modID='guest')
-            elif((err.results['rc'] == 596) and (err.results['rs'] == 3658)):
+            elif ((err.results['rc'] == 596) and (err.results['rs'] == 3658)):
                 # internal issue 9939
                 # That is because a previous definition of CIC may have
                 # caused it to be defined. I would log it somewhere.
@@ -1573,7 +1573,7 @@ class SMTClient(object):
                 # when there is only one userid queried and this userid is
                 # in 'off'state, the smcli will only returns the queried
                 # userid number, no valid performance info returned.
-                if(emsg.__contains__("No value matched with keywords.")):
+                if (emsg.__contains__("No value matched with keywords.")):
                     continue
                 else:
                     raise err
@@ -1623,7 +1623,7 @@ class SMTClient(object):
                 # when there is only one userid queried and this userid is
                 # in 'off'state, the smcli will only returns the queried
                 # userid number, no valid performance info returned.
-                if(emsg.__contains__("No value matched with keywords.")):
+                if (emsg.__contains__("No value matched with keywords.")):
                     continue
                 else:
                     raise err
@@ -2997,7 +2997,7 @@ class SMTClient(object):
             # ignore user_vlan_id part and jump to the vswitch basic info
             idx_end = len(rd_list)
             idx = 0
-            while((idx < idx_end) and
+            while ((idx < idx_end) and
                   not rd_list[idx].__contains__('switch_name')):
                 idx = idx + 1
 
@@ -3008,7 +3008,7 @@ class SMTClient(object):
                 vsw_info[rd[0].strip()] = rd[1].strip()
             idx = idx + 21
             # Skip the vepa_status
-            while((idx < idx_end) and
+            while ((idx < idx_end) and
                   not rd_list[idx].__contains__('real_device_address') and
                   not rd_list[idx].__contains__('port_num') and
                   not rd_list[idx].__contains__('adapter_owner')):
@@ -3034,7 +3034,7 @@ class SMTClient(object):
 
             # Start to analyse the real devices info
             vsw_info['real_devices'] = {}
-            while((idx < idx_end) and
+            while ((idx < idx_end) and
                   rd_list[idx].__contains__('real_device_address')):
                 # each rdev has 6 lines' info
                 idx, rdev_addr = _parse_value(rd_list, idx,
@@ -3066,7 +3066,7 @@ class SMTClient(object):
 
             # Start to get the authorized userids
             vsw_info['authorized_users'] = {}
-            while((idx < idx_end) and rd_list[idx].__contains__('port_num')):
+            while ((idx < idx_end) and rd_list[idx].__contains__('port_num')):
                 # each authorized userid has 6 lines' info at least
                 idx, port_num = _parse_value(rd_list, idx,
                                               'port_num: ')
@@ -3098,7 +3098,7 @@ class SMTClient(object):
             # Start to get the connected adapters info
             # OWNER_VDEV would be used as the dict key for each adapter
             vsw_info['adapters'] = {}
-            while((idx < idx_end) and
+            while ((idx < idx_end) and
                   rd_list[idx].__contains__('adapter_owner')):
                 # each adapter has four line info: owner, vdev, macaddr, type
                 idx, owner = _parse_value(rd_list, idx,
@@ -3192,7 +3192,7 @@ class SMTClient(object):
                 return idx + offset, value
 
             # Start to analyse the osa devices info
-            while((idx < idx_end) and
+            while ((idx < idx_end) and
                   rd_list[idx].__contains__('OSA Address')):
                 idx, osa_addr = _parse_value(rd_list, idx,
                                               'OSA Address: ')

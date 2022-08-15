@@ -201,7 +201,7 @@ class MeteringCache(object):
     def get(self, ctype, key):
         with zvmutils.acquire_lock(self._lock):
             target_cache = self._get_ctype_cache(ctype)
-            if(time.time() > target_cache['expiration']):
+            if (time.time() > target_cache['expiration']):
                 return None
             else:
                 return target_cache['data'].get(key, None)
