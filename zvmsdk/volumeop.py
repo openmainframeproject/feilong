@@ -945,9 +945,9 @@ class FCPManager(object):
         fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
         # If min_fcp_paths_count is not None,need validate the value
         if min_fcp_paths_count and min_fcp_paths_count > len(fcp_devices_by_path):
-            msg = "min_fcp_paths_count %s is larger than fcp device path count %s, " \
-                  "adjust fcp_devices or min_fcp_paths_count." \
-                  % (min_fcp_paths_count, len(fcp_devices_by_path))
+            msg = ("min_fcp_paths_count %s is larger than fcp device path count %s, "
+                   "adjust fcp_devices or min_fcp_paths_count."
+                   % (min_fcp_paths_count, len(fcp_devices_by_path)))
             LOG.error(msg)
             raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
         # Insert related records in FCP database
@@ -1762,8 +1762,8 @@ class FCPVolumeManager(object):
         else:
             min_fcp_paths_count = self.db.get_min_fcp_paths_count(fcp_template_id)
             if min_fcp_paths_count == 0:
-                errmsg = "No FCP devices were found in the FCP template %s," \
-                         "stop refreshing bootmap." % fcp_template_id
+                errmsg = ("No FCP devices were found in the FCP template %s,"
+                          "stop refreshing bootmap." % fcp_template_id)
                 LOG.error(errmsg)
                 raise exception.SDKBaseException(msg=errmsg)
         with zvmutils.acquire_lock(self._lock):
