@@ -1075,6 +1075,7 @@ class FCPDbOperator(object):
         """
         fcp_list = []
         with get_fcp_conn() as conn:
+            min_fcp_paths_count = self.get_min_fcp_paths_count(fcp_template_id)
             # Get distinct path list in DB
             result = conn.execute("SELECT DISTINCT path "
                                   "FROM template_fcp_mapping "
@@ -1106,7 +1107,6 @@ class FCPDbOperator(object):
         # Start to check whether the available count >= min_fcp_paths_count
         allocated_paths = len(fcp_list)
         total_paths = len(path_list)
-        min_fcp_paths_count = self.get_min_fcp_paths_count(fcp_template_id)
         if allocated_paths < total_paths:
             LOG.info("Not all paths have available FCP devices. "
                      "The count of paths having available FCP: %d is less "
@@ -1146,34 +1146,42 @@ class FCPDbOperator(object):
         :param min_fcp_paths_count: (int) by default, it is -1
         :return: NULL
         """
-        # first check the template exist or not
-        # if already exist, raise exception
-        if self.fcp_template_exist_in_db(fcp_template_id):
-            raise exception.SDKObjectAlreadyExistError(
-                    obj_desc=("FCP template '%s' already "
-                              "exist" % fcp_template_id),
-                    modID=self._module_id)
-        # then check the SP records exist in template_sp_mapping or not
-        # if already exist, will update the tmpl_id
-        # if not exist, will insert new records
-        sp_mapping_to_add = list()
-        sp_mapping_to_update = list()
-        if not default_sp_list:
-            default_sp_list = []
-        for sp_name in default_sp_list:
-            record = (fcp_template_id, sp_name)
-            if self.sp_name_exist_in_db(sp_name):
-                sp_mapping_to_update.append(record)
-            else:
-                sp_mapping_to_add.append(record)
-        # Prepare records include (fcp_id, tmpl_id, path)
-        # to be inserted into table template_fcp_mapping
-        fcp_mapping = list()
-        for path in fcp_devices_by_path:
-            for fcp_id in fcp_devices_by_path[path]:
-                new_record = [fcp_id, fcp_template_id, path]
-                fcp_mapping.append(new_record)
+        # The following multiple DQLs(Database query)
+        # are put into the with-block with DMLs
+        # because the consequent DMLs(Database modification)
+        # depend on the result of the DQLs.
+        # So that, other threads can NOT begin a sqlite transacation
+        # util current thread exits the with-block.
+        # Refer to 'def get_fcp_conn' for thread lock
         with get_fcp_conn() as conn:
+            # first check the template exist or not
+            # if already exist, raise exception
+            if self.fcp_template_exist_in_db(fcp_template_id):
+                raise exception.SDKObjectAlreadyExistError(
+                        obj_desc=("FCP template '%s' already "
+                                  "exist" % fcp_template_id),
+                        modID=self._module_id)
+            # then check the SP records exist in template_sp_mapping or not
+            # if already exist, will update the tmpl_id
+            # if not exist, will insert new records
+            sp_mapping_to_add = list()
+            sp_mapping_to_update = list()
+            if not default_sp_list:
+                default_sp_list = []
+            for sp_name in default_sp_list:
+                record = (fcp_template_id, sp_name)
+                if self.sp_name_exist_in_db(sp_name):
+                    sp_mapping_to_update.append(record)
+                else:
+                    sp_mapping_to_add.append(record)
+            # Prepare records include (fcp_id, tmpl_id, path)
+            # to be inserted into table template_fcp_mapping
+            fcp_mapping = list()
+            for path in fcp_devices_by_path:
+                for fcp_id in fcp_devices_by_path[path]:
+                    new_record = [fcp_id, fcp_template_id, path]
+                    fcp_mapping.append(new_record)
+
             # 1. change the is_default of existing templates to False,
             #    if the is_default of the being-created template is True,
             #    because only one default template per host is allowed
@@ -1214,14 +1222,15 @@ class FCPDbOperator(object):
         If fcp_devices is None, get the fcp_device_path_count from template_fcp_mapping table.
         """
         if min_fcp_paths_count or fcp_devices:
-            if not fcp_devices:
-                fcp_devices_path_count = self.get_path_count(fcp_template_id)
-            else:
-                fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
-                fcp_devices_path_count = len(fcp_devices_by_path)
-            if not min_fcp_paths_count:
-                min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
-
+            with get_fcp_conn():
+                if not fcp_devices:
+                    fcp_devices_path_count = self.get_path_count(fcp_template_id)
+                else:
+                    fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
+                    fcp_devices_path_count = len(fcp_devices_by_path)
+                if not min_fcp_paths_count:
+                    min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
+            # raise exception
             if min_fcp_paths_count > fcp_devices_path_count:
                 msg = "min_fcp_paths_count %s is larger than fcp device path count %s. " \
                       "Adjust the fcp_devices setting or " \
@@ -1236,9 +1245,10 @@ class FCPDbOperator(object):
         if not fcp_template_id:
             min_fcp_paths_count = None
         else:
-            min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
-            if min_fcp_paths_count == -1:
-                min_fcp_paths_count = self.get_path_count(fcp_template_id)
+            with get_fcp_conn():
+                min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
+                if min_fcp_paths_count == -1:
+                    min_fcp_paths_count = self.get_path_count(fcp_template_id)
         if min_fcp_paths_count is None:
             obj_desc = "min_fcp_paths_count from fcp_template_id %s" % fcp_template_id
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
@@ -1284,15 +1294,14 @@ class FCPDbOperator(object):
               }
             }
         """
+        # The following multiple DQLs(Database query)
+        # are put into the with-block with DMLs
+        # because the consequent DMLs(Database modification)
+        # depend on the result of the DQLs.
+        # So that, other threads can NOT begin a sqlite transacation
+        # util current thread exits the with-block.
+        # Refer to 'def get_fcp_conn' for thread lock
         with get_fcp_conn():
-            # The following multiple DQLs(Database query)
-            # are put into the with-block with DMLs
-            # because the consequent DMLs(Database modification)
-            # depend on the result of the DQLs.
-            # So that, other threads can NOT begin a sqlite transacation
-            # util current thread exits the with-block.
-            # Refer to 'def get_fcp_conn' for thread lock
-
             # DQL: validate: FCP device template
             if not self.fcp_template_exist_in_db(fcp_template_id):
                 obj_desc = ("FCP device template {}".format(fcp_template_id))
