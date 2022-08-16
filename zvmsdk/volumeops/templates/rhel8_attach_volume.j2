@@ -7,6 +7,30 @@ target_filename="{{ target_filename }}"
 
 echo "Enter RHEL8 attach script with parameters: FCP list:${fcp_list[@]}, INPUT WWPNS:${input_wwpns[@]}, LUN:$lun, target_filename:$target_filename"
 
+# ensure multipathd service is up
+echo "Begin to enable dm-multipath mode ..."
+enable_multipath_mod=`lsmod | grep dm_multipath`
+if [ -z "$enable_multipath_mod" ];then
+    modprobe dm-multipath
+    echo -e "#blacklist {
+    #	devnode \"*\"
+    #}
+    " > /etc/multipath.conf
+    mpathconf
+    systemctl restart multipathd.service
+    echo "dm-multipath mode enabled successfully"
+else
+    echo "dm-multipath mode is already enabled"
+fi
+
+echo "Checking status of multipathd service ..."
+check_multipathd_service=`systemctl is-active --quiet multipathd`
+exit_code=$?
+if [[ $exit_code != 0 ]]; then
+    echo "Attach script terminated because multipathd service is not active!"
+    exit $exit_code
+fi
+
 # because jinja2's problem, we can not use # to count the array_size
 fcp_count=0
 for fcp in ${fcp_list[@]}
@@ -196,22 +220,6 @@ if [ $FoundDiskPath -eq 1 ]; then
 else
     echo "Error happens during attachment because the device file of $fcp not found, will exit with code 1."
     exit 1
-fi
-
-# ensure multipathd service is up
-echo "Begin to enable dm-multipath mode ..."
-enable_multipath_mod=`lsmod | grep dm_multipath`
-if [ -z "$enable_multipath_mod" ];then
-    modprobe dm-multipath
-    echo -e "#blacklist {
-    #	devnode \"*\"
-    #}
-    " > /etc/multipath.conf
-    mpathconf
-    systemctl restart multipathd.service
-    echo "dm-multipath mode enabled successfully"
-else
-    echo "dm-multipath mode is already enabled"
 fi
 
 # read the WWN from page 0x83 value for a SCSI device
