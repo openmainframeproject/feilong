@@ -280,6 +280,9 @@ class VMOps(object):
 
     def guest_grow_root_volume(self, userid, os_version):
         """ Punch the grow partition script to the target guest. """
+        # firstly check if user wants to extend the volume
+        if CONF.guest.extend_partition_fs.lower() != 'true':
+            return
         LOG.debug('Begin to punch grow partition commands to guest: %s',
                   userid)
         linuxdist = self._dist_manager.get_linux_dist(os_version)()

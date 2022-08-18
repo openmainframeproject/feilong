@@ -442,6 +442,9 @@ class FCP(object):
     def set_npiv_port(self, new_npiv_port: str):
         self._npiv_port = new_npiv_port
 
+    def set_physical_port(self, new_phy_port: str):
+        self._physical_port = new_phy_port
+
     def get_physical_port(self):
         return self._physical_port
 
@@ -861,39 +864,49 @@ class FCPManager(object):
             (fcp_id, userid, connections, reserved, wwpn_npiv_db,
              wwpn_phy_db, chpid_db, fcp_state_db,
              fcp_owner_db, tmpl_id) = fcp_dict_in_db[fcp]
-            # Check WWPNs changed or not
+            # Get physical WWPN and NPIV WWPN queried from z/VM
             wwpn_phy_zvm = fcp_dict_in_zvm[fcp].get_physical_port()
             wwpn_npiv_zvm = fcp_dict_in_zvm[fcp].get_npiv_port()
-            # For an in-used FCP device,
-            # if its npiv_wwpn_zvm is changed in zvm,
-            # we will not update the npiv_wwpn_db in FCP DB;
-            # because the npiv_wwpn_db is need when detaching volumes,
-            # so as to delete the host-mapping from storage provider backend.
-            # Hence, we use npiv_wwpn_db to override npiv_wwpn_zvm
-            # in fcp_dict_in_zvm[fcp]
-            if (wwpn_npiv_zvm != wwpn_npiv_db and
-                    (0 != connections or 0 != reserved)):
-                fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
-            # Check chpid changed or not
+            # Get CHPID queried from z/VM
             chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
-            # Check state changed or not
+            # Get FCP device state queried from z/VM
             # Possible state returned by ZVM:
             # 'active', 'free' or 'offline'
             fcp_state_zvm = fcp_dict_in_zvm[fcp].get_dev_status()
-            # Check owner changed or not
-            # Possbile FCP owner returned by ZVM:
+            # Get owner of FCP device queried from z/VM
+            # Possible FCP owner returned by ZVM:
             # VM userid: if the FCP is attached to a VM
             # A String "NONE": if the FCP is not attached
             fcp_owner_zvm = fcp_dict_in_zvm[fcp].get_owner()
-            if wwpn_phy_db != wwpn_phy_zvm:
-                fcp_ids_need_update.add(fcp)
-            elif wwpn_npiv_db != wwpn_npiv_zvm:
-                fcp_ids_need_update.add(fcp)
-            elif chpid_db != chpid_zvm:
+            # Check WWPNs need update or not
+            if wwpn_npiv_db == '' or (connections == 0 and reserved == 0):
+                # The WWPNs are secure to be updated when:
+                # case1(wwpn_npiv_db == ''): the wwpn_npiv_db is empty, for example, upgraded from 114.
+                # case2(connections == 0 and reserved == 0): the FCP device is not in use.
+                if wwpn_npiv_db != wwpn_npiv_zvm or wwpn_phy_db != wwpn_phy_zvm:
+                    # only need to update wwpns when they are different
+                    fcp_ids_need_update.add(fcp)
+            else:
+                # For an in-used FCP device, even its WWPNs(wwpn_npiv_zvm, wwpn_phy_zvm) are changed in z/VM,
+                # we can NOT update the wwpn_npiv, wwpn_phy columns in FCP DB because the host mapping from
+                # storage provider backend is still using the old WWPNs recorded in FCP DB.
+                # To detach the volume and delete the host mapping successfully, we need make sure the WWPNs records
+                # in FCP DB unchanged in this case.
+                # Because we will copy all properties in fcp_dict_in_zvm[fcp] to DB when update an FCP property (for
+                # example, state, owner, etc), we overwrite the (wwpn_npiv_zvm, wwpn_phy_zvm) in fcp_dict_in_zvm[fcp]
+                # to old (wwpn_npiv_db, wwpn_phy_db), so that their values will not be changed when update other
+                # properties.
+                fcp_dict_in_zvm[fcp].set_npiv_port(wwpn_npiv_db)
+                fcp_dict_in_zvm[fcp].set_physical_port(wwpn_phy_db)
+            # Other cases need to update FCP record in DB
+            if chpid_db != chpid_zvm:
+                # Check chpid changed or not
                 fcp_ids_need_update.add(fcp)
             elif fcp_state_db != fcp_state_zvm:
+                # Check state changed or not
                 fcp_ids_need_update.add(fcp)
             elif fcp_owner_db != fcp_owner_zvm:
+                # Check owner changed or not
                 fcp_ids_need_update.add(fcp)
             else:
                 LOG.debug("No need to update record of FCP "
@@ -945,9 +958,9 @@ class FCPManager(object):
         fcp_devices_by_path = utils.expand_fcp_list(fcp_devices)
         # If min_fcp_paths_count is not None,need validate the value
         if min_fcp_paths_count and min_fcp_paths_count > len(fcp_devices_by_path):
-            msg = "min_fcp_paths_count %s is larger than fcp device path count %s, " \
-                  "adjust fcp_devices or min_fcp_paths_count." \
-                  % (min_fcp_paths_count, len(fcp_devices_by_path))
+            msg = ("min_fcp_paths_count %s is larger than fcp device path count %s, "
+                   "adjust fcp_devices or min_fcp_paths_count."
+                   % (min_fcp_paths_count, len(fcp_devices_by_path)))
             LOG.error(msg)
             raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
         # Insert related records in FCP database
@@ -1762,8 +1775,8 @@ class FCPVolumeManager(object):
         else:
             min_fcp_paths_count = self.db.get_min_fcp_paths_count(fcp_template_id)
             if min_fcp_paths_count == 0:
-                errmsg = "No FCP devices were found in the FCP template %s," \
-                         "stop refreshing bootmap." % fcp_template_id
+                errmsg = ("No FCP devices were found in the FCP template %s,"
+                          "stop refreshing bootmap." % fcp_template_id)
                 LOG.error(errmsg)
                 raise exception.SDKBaseException(msg=errmsg)
         with zvmutils.acquire_lock(self._lock):

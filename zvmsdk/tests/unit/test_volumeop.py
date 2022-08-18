@@ -767,16 +767,17 @@ class TestFCPManager(base.SDKTestCase):
         # remove dirty data from other test cases
         self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
         self._insert_data_into_fcp_table(fcp_info_list)
-        # fcp info in zvm
-        # 1a01: is in zvm, but wwpns,state,owner are changed
-        #       should update these columns
-        # 1a02: is not found in zvm, should be remove from db
-        # 1b01: is in zvm, wwpn is changed, but in use(connections != 0)
-        #       so should not update its NPIV wwpns
-        #       physical WWPN will change
-        # 1b02: is new in zvm, should add to db
-        # 1b03: is in zvm, owner and chpid are changed
-        #       should be updated
+        # FCP devices info in z/VM
+        # 1a01: is in z/VM, but WWPNs, state, owner are changed,
+        #       should update these columns.
+        # 1a02: is not found in z/VM, should be removed from db.
+        # 1b01: is in z/VM, WWPNs are changed, but it is in use
+        #       (reserved != 0 or connections != 0), so should not update
+        #       its NPIV and physical WWPNs.
+        # 1b02: is new in z/VM, should add to db.
+        # 1b03: is in z/VM, WWPNs, owner and CHPID changed,
+        #       should update values for owner and CHPID, but should NOT
+        #       update WWPNs because the FCP device is in use.
         fcp_info_in_zvm = [
             'opnstk1: FCP device number: 1A01',
             'opnstk1:   Status: Free',
@@ -817,13 +818,13 @@ class TestFCPManager(base.SDKTestCase):
                      '20076d8500005181', '27', 'free', 'none',
                      template_id),
             '1b01': ('1b01', 'user2', 1, 1, 'c05076de33000003',
-                     '20076d8500005181', '27', 'active', 'owner1',
+                     'c05076de3300264b', '27', 'active', 'owner1',
                      template_id),
             '1b02': ('1b02', '', 0, 0, 'c05076de33000b02',
                      '20076d8500005181', '27', 'free', 'none',
                      template_id),
             '1b03': ('1b03', 'unit0001', 2, 1, 'c05076de33000004',
-                     '20076d8500005185', '30', 'active', 'unit0001',
+                     'c05076de3300264b', '30', 'active', 'unit0001',
                      template_id)
         }
         try:
