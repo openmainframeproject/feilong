@@ -314,6 +314,19 @@ Console logs might be transferred to sdk user, this option controls how
 large each file can be. A smaller size may mean more calls will be needed
 to transfer large consoles, which may not be desirable for performance reasons.
     '''),
+    Opt('extend_partition_fs',
+        section='guest',
+        default='True',
+        help='''
+Whether to automatically extend the partition and filesystem of guest.
+
+If set to True, when deploying an image to a larger disk, zvmsdk
+automatically extends the last partition and the file system to
+use up the whole disk.
+
+If do not want to do the extend action automaictly, you must set this option
+to be False.
+    '''),
     Opt('reachable_timeout',
         section='guest',
         default=180,
