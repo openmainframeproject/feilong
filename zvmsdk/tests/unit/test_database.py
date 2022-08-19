@@ -1413,30 +1413,49 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.increase_usage('1b03')
             # add path
             kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03;1c00'
-            detail = "Adding or deleting.*from template {}".format(
-                tmpl_id)
+            detail = "Adding or deleting a FCP device path"
             self.assertRaisesRegex(exception.SDKConflictError,
                                    detail,
                                    self.db_op.edit_fcp_template,
                                    tmpl_id, **kwargs)
             # delete path
             kwargs['fcp_devices'] = '1A00-1A03'
-            detail = "Adding or deleting.*from template {}".format(
-                tmpl_id)
             self.assertRaisesRegex(exception.SDKConflictError,
                                    detail,
                                    self.db_op.edit_fcp_template,
                                    tmpl_id, **kwargs)
 
             # case3
-            # validate: not allowed to remove inuse FCP ('1a01', '1b03')
-            kwargs['fcp_devices'] = '1A00;1B00'
-            not_allow_for_del = {f[0] for f in fcp_info}
+            # validate: not allowed to remove inuse FCP
+
+            # Prepare 2 templates with the same FCP devices
+            # 1a01, 1b03 are allocated from template 'fake_id_0000'
+            # 1a02, 1b02 are allocated from template 'fake_id_1111'
+            self.db_op.create_fcp_template(
+                'fake_id_1111', "fake_name", 'fake_desc',
+                utils.expand_fcp_list('1A00-1A03;1B00-1B03'),
+                host_default=False,
+                default_sp_list=[])
+            fcp_info = [
+                ('1a02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
+                ('1b02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+            self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
+            reserve_info = (('1a02', '1b02'), 'user1', 'fake_id_1111')
+            self.db_op.reserve_fcps(*reserve_info)
+            self.db_op.increase_usage('1a02')
+            self.db_op.increase_usage('1b02')
+            # case-3.1:
+            # delete (1a01,1b03) from 'fake_id_0000' must fail
+            fcp_device_list = '1A00,1A02-1A03;1B00-1B02'
+            not_allow_for_del = {'1a01', '1b03'}
             detail = ("The FCP devices ({}) are missing from the FCP device list."
                       .format(utils.shrink_fcp_list(list(not_allow_for_del))))
             with self.assertRaises(exception.SDKConflictError) as cm:
-                self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+                self.db_op.edit_fcp_template('fake_id_0000', fcp_devices=fcp_device_list)
             self.assertIn(detail, str(cm.exception))
+            # case-3.2:
+            # delete (1a01,1b03) from 'fake_id_1111' must success
+            self.db_op.edit_fcp_template('fake_id_1111', fcp_devices=fcp_device_list)
 
             # case4
             # DML: table template_fcp_mapping
