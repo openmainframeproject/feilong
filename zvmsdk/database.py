@@ -1322,11 +1322,12 @@ class FCPDbOperator(object):
                     if inuse_fcp:
                         inuse_fcp = utils.shrink_fcp_list(
                             [fcp['fcp_id'] for fcp in inuse_fcp])
-                        detail = ("Adding or deleting a FCP device path from a FCP "
-                                  "device template is not allowed if "
-                                  "there is any FCP device allocated "
-                                  "from the template. The FCP devices "
-                                  "({}) are allocated from template {}."
+                        detail = ("The FCP devices ({}) are allocated to virtual machines "
+                                  "by the FCP device template (id={}). "
+                                  "Adding or deleting a FCP device path from a FCP device template "
+                                  "is not allowed if there is any FCP device allocated from the template. "
+                                  "You must deallocate those FCP devices "
+                                  "before adding or deleting a path from the template."
                                   .format(inuse_fcp, fcp_template_id))
                         raise exception.SDKConflictError(modID=self._module_id, rs=24, msg=detail)
             # If min_fcp_paths_count is not None or fcp_devices is not None, need to validate the value.
@@ -1374,11 +1375,11 @@ class FCPDbOperator(object):
                 del_set = set(fcp_in_db) - set(fcp_from_input)
                 # only unused FCP devices can be
                 # deleted from a FCP device template.
-                # Note:
-                #  connections == None:
+                # Two types of unused FCP devices:
+                # 1. connections/reserved == None:
                 #   the fcp only exists in table(template_fcp_mapping),
                 #   rather than table(fcp)
-                #  connections == 0:
+                # 2. connections/reserved == 0:
                 #   the fcp exists in both tables
                 #   and it is not allocated from FCP DB
                 not_allow_for_del = set()
@@ -1386,18 +1387,22 @@ class FCPDbOperator(object):
                     if (fcp_in_db[fcp]['connections'] not in (None, 0) or
                             fcp_in_db[fcp]['reserved'] not in (None, 0)):
                         not_allow_for_del.add(fcp)
+                # For a FCP device included in multiple FCP device templates,
+                # the FCP device is allowed to be deleted from the current template
+                # only if it is allocated from another template rather than the current one
+                inuse_fcp_devices = self.get_inuse_fcp_device_by_fcp_template(fcp_template_id)
+                inuse_fcp_by_current_template = set(fcp['fcp_id'] for fcp in inuse_fcp_devices)
+                not_allow_for_del &= inuse_fcp_by_current_template
                 # validate: not allowed to remove inuse FCP devices
                 if not_allow_for_del:
                     not_allow_for_del = utils.shrink_fcp_list(
                         list(not_allow_for_del))
-                    detail = ("Deleting the allocated FCP devices "
-                              "from a FCP device template is not allowed. "
-                              "The FCP devices ({}) are missing "
-                              "from the FCP device list. These FCP devices "
-                              "are allocated to virtual machines, "
-                              "you must ensure they are included in the "
-                              "FCP device list."
-                              .format(not_allow_for_del))
+                    detail = ("The FCP devices ({}) are missing from the FCP device list. "
+                              "These FCP devices are allocated to virtual machines "
+                              "from the FCP device template (id={}). "
+                              "Deleting the allocated FCP devices from this template is not allowed. "
+                              "You must ensure those FCP devices are included in the FCP device list."
+                              .format(not_allow_for_del, fcp_template_id))
                     raise exception.SDKConflictError(modID=self._module_id, rs=24, msg=detail)
 
                 # DML: table template_fcp_mapping
@@ -1669,10 +1674,11 @@ class FCPDbOperator(object):
             if inuse_fcp_devices:
                 inuse_fcp_devices = utils.shrink_fcp_list(
                     [fcp['fcp_id'] for fcp in inuse_fcp_devices])
-                detail = ("Deleting a FCP device template "
-                          "is not allowed if there is any FCP device allocated "
-                          "from the template. The FCP devices ({}) are "
-                          "allocated from template {}"
+                detail = ("The FCP devices ({}) are allocated to virtual machines "
+                          "by the FCP device template (id={}). "
+                          "Deleting a FCP device template is not allowed "
+                          "if there is any FCP device allocated from the template. "
+                          "You must deallocate those FCP devices before deleting the template."
                           .format(inuse_fcp_devices, template_id))
                 raise exception.SDKConflictError(modID=self._module_id, rs=22,
                                                  msg=detail)
@@ -1682,9 +1688,9 @@ class FCPDbOperator(object):
                          (template_id,))
             conn.execute("DELETE FROM template_fcp_mapping WHERE tmpl_id=?",
                          (template_id,))
-            LOG.debug("Template record %s is removed from "
-                      "template, template_sp_mapping and "
-                      "template_fcp_mapping tables" % template_id)
+            LOG.info("FCP device template with id %s is removed from "
+                     "template, template_sp_mapping and "
+                     "template_fcp_mapping tables" % template_id)
 
 
 class ImageDbOperator(object):
