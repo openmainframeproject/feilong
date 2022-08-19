@@ -1143,7 +1143,8 @@ class FCPDbOperator(object):
             }
         :param host_default: (bool)
         :param default_sp_list: (list)
-        :param min_fcp_paths_count: (int) by default, it is -1
+        :param min_fcp_paths_count: (int) if it is None, -1 will be saved
+                                    to template table as default value.
         :return: NULL
         """
         # The following multiple DQLs(Database query)
@@ -1188,15 +1189,15 @@ class FCPDbOperator(object):
             if host_default is True:
                 conn.execute("UPDATE template SET is_default=?", (False,))
             # 2. insert a new record in template table
-            #    if min_fcp_paths_count is None or less than 1, will not insert it to db
-            if not min_fcp_paths_count or min_fcp_paths_count < 1:
+            #    if min_fcp_paths_count is None, will not insert it to db
+            if not min_fcp_paths_count:
                 tmpl_basics = (fcp_template_id, name, description, host_default)
-                sql = "INSERT INTO template (id, name, description, " \
-                      "is_default) VALUES (?, ?, ?, ?)"
+                sql = ("INSERT INTO template (id, name, description, "
+                       "is_default) VALUES (?, ?, ?, ?)")
             else:
                 tmpl_basics = (fcp_template_id, name, description, host_default, min_fcp_paths_count)
-                sql = "INSERT INTO template (id, name, description, " \
-                      "is_default, min_fcp_paths_count) VALUES (?, ?, ?, ?, ?)"
+                sql = ("INSERT INTO template (id, name, description, "
+                       "is_default, min_fcp_paths_count) VALUES (?, ?, ?, ?, ?)")
             conn.execute(sql, tmpl_basics)
             # 3. insert new records in template_fcp_mapping
             conn.executemany("INSERT INTO template_fcp_mapping (fcp_id, "
@@ -1232,9 +1233,9 @@ class FCPDbOperator(object):
                     min_fcp_paths_count = self.get_min_fcp_paths_count_from_db(fcp_template_id)
             # raise exception
             if min_fcp_paths_count > fcp_devices_path_count:
-                msg = "min_fcp_paths_count %s is larger than fcp device path count %s. " \
-                      "Adjust the fcp_devices setting or " \
-                      "min_fcp_paths_count." % (min_fcp_paths_count, fcp_devices_path_count)
+                msg = ("min_fcp_paths_count %s is larger than fcp device path count %s. "
+                       "Adjust the fcp_devices setting or "
+                       "min_fcp_paths_count." % (min_fcp_paths_count, fcp_devices_path_count))
                 LOG.error(msg)
                 raise exception.SDKConflictError(modID=self._module_id, rs=23, msg=msg)
 
@@ -1280,7 +1281,7 @@ class FCPDbOperator(object):
         :param default_sp_list: (list)
           Example:
             ["SP1", "SP2"]
-        :param min_fcp_paths_count: if it is -1 or None, then will not update this field in db.
+        :param min_fcp_paths_count: if it is None, then will not update this field in db.
         :return:
           Example
             {

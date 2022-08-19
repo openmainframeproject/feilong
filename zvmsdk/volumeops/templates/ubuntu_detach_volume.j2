@@ -19,6 +19,15 @@ is_last_volume="{{ is_last_volume }}"
 
 echo "Enter UBUNTU detach script with parameters: FCP:${fcp_list[@]}, INPUT WWPNS:${input_wwpns[@]}, LUN:$lun, LUN ID: $lun_id, target_filename:$target_filename, is_last_volume: $is_last_volume."
 
+# ensure multipathd service is up
+echo "Checking status of multipathd service ..."
+check_multipathd_service=`systemctl is-active --quiet multipathd`
+exit_code=$?
+if [[ $exit_code != 0 ]]; then
+    echo "Detach script terminated because multipathd service is not active!"
+    exit $exit_code
+fi
+
 # Print info of each FCP
 for fcp in ${fcp_list[@]}
 do
@@ -141,7 +150,7 @@ if [ "$output" ]; then
         exit_code=2
     fi
 fi
-echo "Exit code for multipath -f: $exit_code"
+echo "Flushing a multipath device map $map_name exit with code: $exit_code"
 #if above code didn't succeed, exit now.
 if [[ $exit_code != 0 ]]; then
     exit $exit_code
