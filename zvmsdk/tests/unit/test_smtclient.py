@@ -202,7 +202,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby lbyuser1:lbyuser2 --ipl 0100')
+              '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
                                   [])
@@ -229,6 +229,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
@@ -261,6 +262,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
@@ -287,6 +289,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:512M')
@@ -315,6 +318,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:1G')
@@ -344,6 +348,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2048M')
@@ -372,6 +377,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2G')
@@ -400,6 +406,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smtclient.create_vm, user_id, cpu, memory,
                           disk_list, profile, max_cpu, max_mem,
@@ -422,6 +429,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smtclient.create_vm, user_id, cpu, memory,
                           disk_list, profile, max_cpu, max_mem,
@@ -443,6 +451,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2')
@@ -468,6 +477,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2')
@@ -495,6 +505,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms')
@@ -523,6 +534,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
@@ -553,6 +565,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
@@ -583,6 +596,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
@@ -675,6 +689,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
@@ -705,6 +720,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
@@ -735,6 +751,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smtclient.create_vm, user_id, cpu, memory,
                           disk_list, profile, max_cpu, max_mem, 'cms', '',
@@ -758,6 +775,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smtclient.create_vm, user_id, cpu, memory,
                           disk_list, profile, max_cpu, max_mem, 'cms', '',
@@ -779,6 +797,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 100)
         ipl_from = '5c71'
         dedicate_vdevs = ['5c71', '5d71']
         loaddev = {'portname': '5005076802400c1b',
@@ -786,8 +805,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
-              '--dedicate "5c71 5d71" --loadportname 5005076802400c1b '
-              '--loadlun 0000000000000000')
+              '--dedicate "5c71 5d71" --commandSetShare "RELATIVE 200" '
+              '--loadportname 5005076802400c1b --loadlun 0000000000000000')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, ipl_from, '', '',
                                    dedicate_vdevs, loaddev, '', [])
@@ -810,6 +829,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         ipl_from = '5c71'
         dedicate_vdevs = ['5c71', '5d71']
         loaddev = {'portname': '5005076802400c1b',
@@ -817,8 +837,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
-              '--dedicate "5c71 5d71" --loadportname 5005076802400c1b '
-              '--loadlun 0000000000000000')
+              '--dedicate "5c71 5d71" '
+              '--loadportname 5005076802400c1b --loadlun 0000000000000000')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, ipl_from, '', '',
                                    dedicate_vdevs, loaddev, '', [])
@@ -845,6 +865,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms --iplParam dummy '
@@ -3953,6 +3974,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                 exec_cmd, request):
         userid = 'testuid'
         count = 4
+        base.set_conf('zvm', 'user_default_share_unit', 100)
         get_active.return_value = ['00', '01']
         resize.return_value = (1, ['01', '02', '03'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
@@ -3969,7 +3991,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
               "-k CPU=CPUADDR=01 -k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
-        request.assert_called_once_with(rd)
+        rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k SHARE=RELATIVE=200")
+        calls = [call(rd), call(rd2)]
+        request.assert_has_calls(calls)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
@@ -3997,7 +4022,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
         rd = ("SMAPI testuid API Image_Definition_Create_DM --operands "
               "-k CPU=CPUADDR=04 -k CPU=CPUADDR=0A")
-        request.assert_called_once_with(rd)
+        rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k SHARE=RELATIVE=200")
+        calls = [call(rd), call(rd2)]
+        request.assert_has_calls(calls)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
@@ -4159,7 +4187,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_defined.assert_called_once_with(userid)
         get_avail.assert_called_once_with(['00', '01'], 32)
         rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03 -k SHARE=RELATIVE=400")
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -4176,7 +4204,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.assert_not_called()
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
               "-k CPU=CPUADDR=11 -k CPU=CPUADDR=1A")
-        request.assert_called_once_with(rd)
+        rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k SHARE=RELATIVE=400")
+        calls = [call(rd), call(rd2)]
+        request.assert_has_calls(calls)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4225,7 +4256,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_defined.assert_called_once_with(userid)
         get_avail.assert_called_once_with(['00', '01'], 32)
         rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03 -k SHARE=RELATIVE=400")
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_request')

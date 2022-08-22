@@ -88,7 +88,7 @@ Sample NIC definitions in the z/VM user directory:
     Opt('user_default_share_unit',
         section='zvm',
         opt_type='int',
-        default=0,
+        default=100,
         help='''
 The default SHARE settings configuration.
 
@@ -100,10 +100,11 @@ So the mechanism currently is:
 
 1) If a share is given, set SHARE value to the VM
 2) If no SHARE is given during creation, check user_default_share_unit
-3) If user_default_share_unit is 0 (current default), do nothing
-4) If user_default_share_unit it not 0, then insert statement
-`SHARE user_default_share_unit*vCPU` into user direct, for example,
-with user_default_share_unit=100, 4 vCPU will create `SHARE 400`.
+3) If user_default_share_unit is 0, do nothing
+4) If user_default_share_unit it not 0(current default is 100),
+then insert statement `SHARE RELATIVE user_default_share_unit*vCPU`
+into user direct, for example, with user_default_share_unit=100,
+4 vCPU will create `SHARE RELATIVE 400`.
 
 This align the best practice of z/VM recommendation.
 '''),

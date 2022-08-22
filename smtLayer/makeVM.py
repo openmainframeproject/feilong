@@ -135,7 +135,7 @@ def createVM(rh):
 
     if 'commandSetShare' in rh.parms:
         v = rh.parms['commandSetShare']
-        dirLines.append("COMMAND SET SHARE &USERID %s" % v)
+        dirLines.append("SHARE %s" % v)
 
     if 'commandRDomain' in rh.parms:
         v = rh.parms['commandRDomain']
