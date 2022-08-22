@@ -544,6 +544,8 @@ function setupDisk {
       fi
     elif [[ $os == sles* ]]; then
       /sbin/dasd_configure 0.0.$xcat_vaddr 1
+    elif [[ $os == ubuntu22* ]]; then
+      chzdev -e dasd 0.0.$xcat_vaddr
     elif [[ $os == ubuntu20* ]]; then
       chzdev -e dasd 0.0.$xcat_vaddr
     elif [[ $os == ubuntu16* ]]; then
