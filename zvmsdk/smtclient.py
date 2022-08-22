@@ -3631,6 +3631,12 @@ class SMTClient(object):
             updated_addrs = available_addrs[0:count - defined_count]
             for addr in updated_addrs:
                 rd += (" -k CPU=CPUADDR=%s" % addr)
+
+            # Add resize support for share of CPU
+            if CONF.zvm.user_default_share_unit > 0:
+                total = CONF.zvm.user_default_share_unit * count
+                rd += (" -k SHARE=RELATIVE=%s" % total)
+
             try:
                 self._request(rd)
             except exception.SDKSMTRequestFailed as e:
@@ -3662,6 +3668,21 @@ class SMTClient(object):
                                                        err=e.format_message())
             LOG.info("CPUs '%s' deleted from user directory for '%s' "
                      "successfully" % (str(updated_addrs), userid))
+            # Add resize support for share of CPU
+            if CONF.zvm.user_default_share_unit > 0:
+                total = CONF.zvm.user_default_share_unit * count
+                rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                          "--operands -k SHARE=RELATIVE=%s" % total))
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as e:
+                    msg = ("Update share statement in user directory for '%s' failed with"
+                           " SMT error: %s" % (userid, e.format_message()))
+                    LOG.error(msg)
+                    raise exception.SDKGuestOperationError(rs=6, userid=userid,
+                                                           err=e.format_message())
+                LOG.info("Update share statment in user directory for '%s' "
+                     "successfully" % userid)
             return (action, updated_addrs, max_cpus)
 
     def live_resize_cpus(self, userid, count):
@@ -3734,8 +3755,23 @@ class SMTClient(object):
                                                         err2.format_message()))
                         LOG.error(msg)
                     else:
-                        LOG.info("Revert user directory change for '%s' "
-                                 "successfully." % userid)
+                        # revert change for share statement
+                        if CONF.zvm.user_default_share_unit > 0:
+                            old = CONF.zvm.user_default_share_unit * active_count
+                            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                                     "--operands -k SHARE=RELATIVE=%s" % old))
+                            try:
+                                self._request(rd)
+                            except exception.SDKSMTRequestFailed as e:
+                                msg = ("Failed to revert user directory change of share for '"
+                                   "%s', SMT error: %s" % (userid, e.format_message()))
+                                LOG.error(msg)
+                            else:
+                                LOG.info("Revert user directory change for '%s' "
+                                    "successfully." % userid)
+                        else:
+                            LOG.info("Revert user directory change for '%s' "
+                                "successfully." % userid)
                 # Finally raise the exception
                 raise exception.SDKGuestOperationError(
                     rs=7, userid=userid, err=err1.format_message())
