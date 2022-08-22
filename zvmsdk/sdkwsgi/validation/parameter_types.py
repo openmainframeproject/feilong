@@ -452,7 +452,7 @@ os_version = {
 'oneOf': [
 {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(e|E)(l|L))(6|7|8){1}([.][0-9])?$'},
+ '^((r|R)(h|H)(e|E)(l|L))(6|7|8|9){1}([.][0-9])?$'},
 {'type': 'string',
  'pattern':
  '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(6|7){1}([.][0-9])?$'},
