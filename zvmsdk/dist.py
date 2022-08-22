@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -602,6 +602,10 @@ class rhel8(rhel7):
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
+
+
+class rhel9(rhel8):
+    pass
 
 
 class rhcos(LinuxDist):
@@ -1472,7 +1476,7 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7', '8'],
+        supported = {'rhel': ['6', '7', '8', '9'],
                      'sles': ['11', '12', '15'],
                      'ubuntu': ['16', '20', '22'],
                      'rhcos': ['4']}
