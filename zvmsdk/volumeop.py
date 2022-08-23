@@ -802,7 +802,6 @@ class FCPManager(object):
 
     def sync_fcp_table_with_zvm(self, fcp_dict_in_zvm):
         """Update FCP records queried from zVM into FCP table."""
-        LOG.info("Enter: Update FCP dict into FCP table.")
         with database.get_fcp_conn():
             # Get a dict of all FCPs already existed in FCP table
             fcp_dict_in_db = self.get_fcp_dict_in_db()
@@ -820,7 +819,7 @@ class FCPManager(object):
 
             # Delete FCP records from FCP table
             # if it is connections=0 and reserve=0
-            LOG.info("FCP devices exist in database but not in "
+            LOG.info("FCP devices exist in FCP table but not in "
                      "z/VM any more: {}".format(del_fcp_set))
             fcp_ids_secure_to_delete = set()
             fcp_ids_not_found = set()
@@ -850,7 +849,7 @@ class FCPManager(object):
                          "FCPs: {}.".format(fcp_ids_not_found))
 
             # Update status for FCP records already existed in DB
-            LOG.info("FCP devices exist in both database and "
+            LOG.info("FCP devices exist in both FCP table and "
                      "z/VM: {}".format(inter_set))
             fcp_ids_need_update = set()
             for fcp in inter_set:
@@ -912,8 +911,7 @@ class FCPManager(object):
                                     for fcp in fcp_ids_need_update]
             self.db.bulk_update_zvm_fcp_info_in_fcp_table(fcp_info_need_update)
             LOG.info("FCP devices need to update records in "
-                     "fcp table {}".format(fcp_info_need_update))
-            LOG.info("Exits: Update FCP dict into FCP table.")
+                     "fcp table: {}".format(fcp_info_need_update))
 
     def _sync_db_with_zvm(self):
         """Sync FCP DB with the FCP info queried from zVM"""
@@ -1176,7 +1174,7 @@ class FCPManager(object):
             if state == "notfound":
                 statistics_usage[
                     template_id][path_id]["notfound"].append(fcp_id)
-                LOG.warning("When getting statistics, found a FCP "
+                LOG.warning("Found a FCP device "
                             "%s in fcp template %s, but not found in "
                             "z/VM." % (str(fcp_id), str(template_id)))
             # case H: (state = offline)
@@ -1184,8 +1182,8 @@ class FCPManager(object):
             if state == "offline":
                 statistics_usage[template_id][path_id]["offline"].append(
                     fcp_id)
-                LOG.warning("When getting statistics, found state of FCP "
-                            "record %s is offline in database." % str(fcp_id))
+                LOG.warning("Found state of a FCP "
+                            "device %s is offline in database." % str(fcp_id))
             # found this FCP in z/VM
             if connections == 0:
                 if reserved == 0:
@@ -1194,8 +1192,8 @@ class FCPManager(object):
                     if state == "free":
                         statistics_usage[
                             template_id][path_id]["available"].append(fcp_id)
-                        LOG.debug("When getting statistics, found "
-                                  "an available FCP record %s in "
+                        LOG.debug("Found "
+                                  "an available FCP device %s in "
                                   "database." % str(fcp_id))
                     # case E: (conn=0 and reserve=0 and state=active)
                     # this FCP is available in database but its state
@@ -1204,8 +1202,8 @@ class FCPManager(object):
                         statistics_usage[
                             template_id][path_id]["unallocated_but_active"].\
                             update({fcp_id: owner})
-                        LOG.warning("When getting statistics, found a FCP "
-                                    "record %s available in database but its "
+                        LOG.warning("Found a FCP "
+                                    "device %s available in database but its "
                                     "state is active, it may be occupied by "
                                     "a userid outside of this ZCC." % str(
                                     fcp_id))
@@ -1214,8 +1212,8 @@ class FCPManager(object):
                     # the fcp should be in task or a bug happen
                     statistics_usage[
                         template_id][path_id]["reserve_only"].append(fcp_id)
-                    LOG.warning("When getting statistics, found a FCP "
-                                "record %s reserve_only." % str(fcp_id))
+                    LOG.warning("Found a FCP "
+                                "device %s reserve_only." % str(fcp_id))
             else:
                 # connections != 0
                 if reserved == 0:
@@ -1223,31 +1221,30 @@ class FCPManager(object):
                     # must have a bug result in this
                     statistics_usage[template_id][
                         path_id]["connection_only"].append(fcp_id)
-                    LOG.warning("When getting statistics, found a FCP "
-                                "record %s unreserved in database but "
+                    LOG.warning("Found a FCP "
+                                "device %s unreserved in database but "
                                 "its connections is not 0." % str(fcp_id))
                 else:
                     # case B: (reserve=1 and conn!=0)
                     # ZCC allocated this to a userid
                     statistics_usage[
                         template_id][path_id]["allocated"].append(fcp_id)
-                    LOG.debug("When getting statistics, found an allocated "
-                              "FCP record: %s." % str(fcp_id))
+                    LOG.debug("Found an allocated "
+                              "FCP device: %s." % str(fcp_id))
                 # case F: (conn!=0 and state=free)
                 if state == "free":
                     statistics_usage[template_id][
                         path_id]["allocated_but_free"].append(fcp_id)
-                    LOG.warning("When getting statistics, found a FCP "
-                                "record %s allocated by ZCC but its state is "
+                    LOG.warning("Found a FCP "
+                                "device %s allocated by ZCC but its state is "
                                 "free." % str(fcp_id))
                 # case I: ((conn != 0) & assigner_id != owner)
-                elif assigner_id != owner and state != "notfound":
-                    LOG.warning("When getting statistics, found a FCP "
-                                "record %s allocated by ZCC but its assigner "
+                elif assigner_id.lower() != owner.lower() and state != "notfound":
+                    LOG.warning("Found a FCP "
+                                "device %s allocated by ZCC but its assigner "
                                 "differs from owner." % str(fcp_id))
             if chpid:
-                if not statistics_usage[
-                    template_id][path_id]["CHPIDs"].get(chpid, None):
+                if not statistics_usage[template_id][path_id]["CHPIDs"].get(chpid, None):
                     statistics_usage[
                         template_id][path_id]["CHPIDs"].update({chpid: []})
                 statistics_usage[
@@ -1257,7 +1254,7 @@ class FCPManager(object):
             # add into 'total' and 'not_found'
             statistics_usage[template_id][path_id]["total"].append(fcp_id)
             statistics_usage[template_id][path_id]["notfound"].append(fcp_id)
-            LOG.warning("When getting statistics, found a FCP "
+            LOG.warning("Found a FCP device "
                         "%s in fcp template %s, but not found in "
                         "z/VM." % (str(fcp_id), str(template_id)))
         return statistics_usage
