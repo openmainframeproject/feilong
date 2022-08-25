@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# Copyright 2020,2021 IBM Corp.
+# Copyright 2020,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -891,7 +891,7 @@ function refreshZIPL {
   inform "Final rd.zfcp value is: $rd_zfcp."
 
   # Exec zipl command to prepare device for initial program load
-  if [[ ($os == rhel7*) || ($os == rhel8*) ]]; then
+  if [[ ($os == rhel7*) || ($os == rhel8*) || ($os == rhel9*) ]]; then
     inform "Refresh $os zipl."
     if [[ ! -e ${deviceMountPoint}/${zipl_conf} ]]; then
       printError "Exit MSG: Failed to execute zipl on $os due to ${deviceMountPoint}/${zipl_conf} not exist."
@@ -969,7 +969,15 @@ function refreshZIPL {
         # Refresh bootmap without chroot
         # -b <BLS DIRECTORY>: To parse BootLoaderSpec config files.
         #                     If none is supplied, the /boot/loader/entries directory is used.
-        cmd_zipl="${deviceMountPoint}/usr/sbin/zipl -V -c ${deviceMountPoint}/${zipl_conf}${zipl_postfix} -b ${deviceMountPoint}/${BLS_dir}${zipl_postfix} 2>&1"
+        if [[ $os == rhel9* ]]; then
+          # Because our compute node did not support RHEL9 now,
+          # while the zipl required dependencies in RHEL9 image are different with zipl in RHEL7 or RHEL8.
+          # So when booting RHEL9 image, use zipl on compute node to avoid errors
+          cmd_zipl="/usr/sbin/zipl -V -c ${deviceMountPoint}/${zipl_conf}${zipl_postfix} -b ${deviceMountPoint}/${BLS_dir}${zipl_postfix} 2>&1"
+        else
+          # Use zipl in image when booting RHEL7 or RHEL8 images
+          cmd_zipl="${deviceMountPoint}/usr/sbin/zipl -V -c ${deviceMountPoint}/${zipl_conf}${zipl_postfix} -b ${deviceMountPoint}/${BLS_dir}${zipl_postfix} 2>&1"
+        fi
         out_zipl=`eval ${cmd_zipl}`
         rc_zipl=$?
       fi
