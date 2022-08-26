@@ -242,18 +242,42 @@ class VolumeConfiguratorAPI(object):
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
                     assigner_id, get_status_cmd)
+                # Attach script exit code explanation:
+                # 1: failed because multipathd service is not active
+                # 2: failed because input parameters may have problems
+                # 3: failed because can not found intersection between input WWPNs and lszfcp output
+                # 4: failed because no disk file found in the target VM, means no volume shown in the target VM
                 if exit_code == 1:
-                    errmsg = ('attach script execution failed because the '
-                              'volume (WWPN:%s, LUN:%s) did not show up in '
-                              'the target machine %s , please check its '
-                              'connections.' % (target_wwpns, target_lun,
-                                                assigner_id))
+                    errmsg = ('Failed to configure volume because the '
+                              'multipathd service is not active '
+                              'in the target virtual machine'
+                              '(userid:%s).' % assigner_id)
+                elif exit_code == 2:
+                    errmsg = ('Failed to configure volume because the '
+                              'configuration process terminate early with '
+                              'exit code %s, refer to the log messages in '
+                              'target virtual machine(userid:%s) for more '
+                              'details.' % (exit_code, assigner_id))
+                elif exit_code == 3:
+                    errmsg = ('Failed to configure volume because can not '
+                              'find valid target WWPNs for FCP devices %s, '
+                              'refer to the log messages in the target '
+                              'virtual machine(userid:%s) for more '
+                              'details.' % (fcp_list, assigner_id))
+                elif exit_code == 4:
+                    errmsg = ('Failed to configure volume because the '
+                              'volume(WWPN:%s, LUN:%s) did not show up in '
+                              'the target virtual machine(userid:%s), please '
+                              'check its connectivity.' % (target_wwpns,
+                                                           target_lun,
+                                                           assigner_id))
                 else:
-                    errmsg = ('attach script execution in the target machine '
-                              '%s for volume (WWPN:%s, LUN:%s) '
-                              'failed with unknown reason, exit code is: %s.'
+                    errmsg = ('Failed to configure volume in the target '
+                              'virtual machine(userid:%s) for volume'
+                              '(WWPN:%s, LUN:%s) on FCP devices %s with '
+                              'exit code: %s.'
                               % (assigner_id, target_wwpns, target_lun,
-                                 exit_code))
+                                 fcp_list, exit_code))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=8,
                                                         userid=assigner_id,
@@ -295,15 +319,42 @@ class VolumeConfiguratorAPI(object):
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
                     assigner_id, get_status_cmd)
+                # Detach script exit code explanation:
+                # 1: failed because multipathd service is not active
+                # 3: failed because can not found intersection between input WWPNs and lszfcp output
+                # 4: failed because no disk file found in the target VM, means no volume shown in the target VM
+                # 5: failed to flush a multipath device map
                 if exit_code == 1:
-                    errmsg = ('detach scripts execution failed because the '
-                              'device %s in the target virtual machine %s '
-                              'is in use.' % (fcp_list, assigner_id))
+                    errmsg = ('Failed to deconfigure volume because the '
+                              'multipathd service is not active '
+                              'in the target virtual machine'
+                              '(userid:%s).' % assigner_id)
+                elif exit_code == 3:
+                    errmsg = ('Failed to deconfigure volume because can not '
+                              'find valid target WWPNs for FCP devices %s, '
+                              'refer to the log messages in the target '
+                              'virtual machine(userid:%s) for more '
+                              'details.' % (fcp_list, assigner_id))
+                elif exit_code == 4:
+                    errmsg = ('Failed to deconfigure volume because the '
+                              'volume(WWPN:%s, LUN:%s) did not show up in '
+                              'the target virtual machine(userid:%s), please '
+                              'check its connectivity.' % (target_wwpns,
+                                                           target_lun,
+                                                           assigner_id))
+                elif exit_code == 5:
+                    errmsg = ('Failed to deconfigure volume because '
+                              'getting error when flushing the multipath '
+                              'device maps, refer to the log messages in '
+                              'the target virtual machine(userid:%s) for '
+                              'more details.' % assigner_id)
                 else:
-                    errmsg = ('detach scripts execution on fcp %s in the '
-                              'target virtual machine %s failed '
-                              'with unknow reason, exit code is: %s'
-                              % (fcp_list, assigner_id, exit_code))
+                    errmsg = ('Failed to deconfigure volume in the target '
+                              'virtual machine(userid:%s) for volume'
+                              '(WWPN:%s, LUN:%s) on FCP devices %s with '
+                              'exit code: %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 fcp_list, exit_code))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=9,
                                                         userid=assigner_id,
@@ -1768,12 +1819,11 @@ class FCPVolumeManager(object):
                                 target_lun, multipath, os_version,
                                 mount_point)
             except exception.SDKBaseException as err:
-                errmsg = ("Attach volume failed with "
-                          "error:" + err.format_message())
+                errmsg = err.format_message()
                 LOG.error(errmsg)
                 self._rollback_dedicated_fcp(fcp_list, assigner_id,
                                              all_fcp_list=fcp_list)
-                raise exception.SDKBaseException(msg=errmsg)
+                raise
             LOG.info("Attaching volume to FCP devices %s on machine %s is "
                      "done." % (fcp_list, assigner_id))
 
@@ -1924,7 +1974,7 @@ class FCPVolumeManager(object):
                     # We ignore the already undedicate FCP device exception.
                     LOG.warning("The FCP device %s has already undedicdated", fcp)
                 else:
-                    errmsg = "detach failed with error:" + err.format_message()
+                    errmsg = err.format_message()
                     LOG.error(errmsg)
                     for fcp in fcp_list:
                         if need_rollback.get(fcp, True):
@@ -1941,7 +1991,7 @@ class FCPVolumeManager(object):
                         self._add_disks(fcp_list, assigner_id,
                                         target_wwpns, target_lun,
                                         multipath, os_version, mount_point)
-                    raise exception.SDKBaseException(msg=errmsg)
+                    raise
             LOG.info("Detaching volume on machine %s from FCP devices %s is "
                      "done." % (assigner_id, fcp_list))
 
