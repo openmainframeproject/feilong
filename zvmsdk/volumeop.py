@@ -1456,6 +1456,13 @@ class FCPManager(object):
         ret = []
 
         if template_id_list:
+            not_exist = []
+            for template_id in template_id_list:
+                if not self.db.fcp_template_exist_in_db(template_id):
+                    not_exist.append(template_id)
+            if not_exist:
+                obj_desc = ("FCP device templates {} ".format(not_exist))
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
             raw = self.db.get_fcp_templates(template_id_list)
         elif assigner_id:
             raw = self.db.get_fcp_template_by_assigner_id(assigner_id)
@@ -1608,6 +1615,15 @@ class FCPManager(object):
             ]
         }
         """
+        not_exist = []
+        if template_id_list:
+            for template_id in template_id_list:
+                if not self.db.fcp_template_exist_in_db(template_id):
+                    not_exist.append(template_id)
+        if not_exist:
+            obj_desc = ("FCP device templates {} ".format(not_exist))
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
+
         if sync_with_zvm:
             self._sync_db_with_zvm()
         statistics_usage = {}

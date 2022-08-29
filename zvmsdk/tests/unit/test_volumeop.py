@@ -1038,6 +1038,13 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
             self._delete_from_template_table([template_id_1, template_id_2])
 
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates")
+    def test_get_fcp_templates_exception(self, mock_get):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.fcpops.get_fcp_templates,
+                          ['fake_id_1', 'fake_id_2'])
+        mock_get.assert_not_called()
+
     @mock.patch(
         "zvmsdk.volumeop.FCPManager._update_template_fcp_raw_usage")
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
@@ -1196,6 +1203,18 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
             self._delete_from_template_table([template_id_1, template_id_2])
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates_details")
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_get_fcp_templates_details_exception(self, mock_sync, mock_get):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.fcpops.get_fcp_templates_details,
+                          template_id_list=['fake_id_1', 'fake_id_2'],
+                          raw=False,
+                          statistics=True,
+                          sync_with_zvm=True)
+        mock_sync.assert_not_called()
+        mock_get.assert_not_called()
 
     def test_update_template_fcp_statistics_usage(self):
         self.maxDiff = None

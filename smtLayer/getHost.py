@@ -21,6 +21,8 @@ from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
 
+from zvmsdk import config
+
 modId = 'GHO'
 version = "1.0.0"
 # maximum I knew is 60019, so make it double
@@ -550,13 +552,18 @@ def getGeneralInfo(rh):
                 lparMemUsed = line.split("=")[1]
                 lparMemUsed = generalUtils.getSizeFromPage(rh, lparMemUsed)
     else:
-        # SMAPI API failed, so we put out messages
-        # 300 and 405 for consistency
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-        msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
-            "(see message 300)", results['response'])
-        rh.printLn("ES", msg)
+        if config.CONF.zvm.bypass_smapiout:
+            # we bypass the check of SMAPIOUT and use 0G directly
+            # This currently used for test when SMAPIOUT is not ready
+            lparMemUsed = '0G'
+        else:
+            # SMAPI API failed, so we put out messages
+            # 300 and 405 for consistency
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
+                "(see message 300)", results['response'])
+            rh.printLn("ES", msg)
 
     # Get IPL Time
     ipl = ""
