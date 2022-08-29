@@ -37,17 +37,20 @@
 # This param is optional
 #console_log_size=100
 
-#
+
+# 
 # Whether to automatically extend the partition and filesystem of guest.
-#
+# 
 # If set to True, when deploying an image to a larger disk, zvmsdk
 # automatically extends the last partition and the file system to
 # use up the whole disk.
-
+# 
 # If do not want to do the extend action automaictly, you must set this option
 # to be False.
+#     
+# This param is optional
+#extend_partition_fs=True
 
-# extend_partition_fs=True
 
 # 
 # The maximum time waiting until the guest reachable after started.
@@ -331,6 +334,13 @@
 
 
 [zvm]
+
+# 
+# Only used for SMAPIOUT is not ready.
+# 
+# This param is optional
+#bypass_smapiout=False
+
 
 # 
 # Default LOGONBY userid(s) for the cloud.

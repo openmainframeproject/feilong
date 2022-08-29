@@ -261,6 +261,12 @@ VDISK will not be used and in turn it will fail check.
         help='''
 The port number of remotehost sshd.
 '''),
+    Opt('bypass_smapiout',
+        section='zvm',
+        default=False,
+        help='''
+Only used for SMAPIOUT is not ready.
+'''),
     # image options
     Opt('default_compress_level',
         section='image',
