@@ -1159,8 +1159,8 @@ class FCPDbOperator(object):
             # if already exist, raise exception
             if self.fcp_template_exist_in_db(fcp_template_id):
                 raise exception.SDKObjectAlreadyExistError(
-                        obj_desc=("FCP template '%s' already "
-                                  "exist" % fcp_template_id),
+                        obj_desc=("FCP device template "
+                        "(id: %s) " % fcp_template_id),
                         modID=self._module_id)
             # then check the SP records exist in template_sp_mapping or not
             # if already exist, will update the tmpl_id
