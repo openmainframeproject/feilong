@@ -282,7 +282,7 @@ errors = {
                  "The operated object does not exist"
                  ],
     'alreadyExist': [{'overallRC': 409, 'modID': None, 'rc': 409},
-                     {1: "%(obj_desc)s already exist."}
+                     {1: "%(obj_desc)s already exists."}
                      ],
     # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
