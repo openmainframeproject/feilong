@@ -197,14 +197,14 @@ class SDKObjectNotExistError(SDKBaseException):
 
 
 class SDKObjectAlreadyExistError(SDKBaseException):
-    """The object to create or add is already exist in ZCC.s"""
+    """The object to create or add is already exist in ZCC."""
     def __init__(self, obj_desc, modID='zvmsdk', rs=1):
         rc = returncode.errors['alreadyExist']
         results = rc[0]
         results['modID'] = returncode.ModRCs[modID]
         results['rs'] = rs
         errormsg = rc[1][rs] % {'obj_desc': obj_desc}
-        super(SDKObjectNotExistError, self).__init__(results=results,
+        super(SDKObjectAlreadyExistError, self).__init__(results=results,
                                                      message=errormsg)
 
 
