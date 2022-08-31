@@ -366,7 +366,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         #   c. reserve_fcps
         #       set assigner_id and tmpl_id
         #       ('1a01', '1b03')
-        #   d. increase_usage
+        #   d. increase_connections
         #       set connections
         #       ('1a01', '1b03')
         tmpl_id = 'fake_id_' + str(random.randint(100000, 999999))
@@ -395,9 +395,32 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 raise
         reserve_info = (('1a01', '1b03'), 'user1', tmpl_id)
         self.db_op.reserve_fcps(*reserve_info)
-        self.db_op.increase_usage('1a01')
-        self.db_op.increase_usage('1b03')
+        self.increase_connections('1a01')
+        self.increase_connections('1b03')
         return tmpl_id
+
+    @staticmethod
+    def increase_connections(fcp_id):
+        """Increase the connections by 1 of a given FCP device"""
+        with database.get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "fcp_id=?", (fcp_id,))
+            fcp_info = result.fetchone()
+            if not fcp_info:
+                msg = 'FCP device %s does not exist in FCP DB.' % fcp_id
+                LOG.error(msg)
+                obj_desc = "FCP device %s" % fcp_id
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID='volume')
+            connections = fcp_info['connections'] + 1
+
+            conn.execute("UPDATE fcp SET connections=? "
+                         "WHERE fcp_id=?", (connections, fcp_id))
+            # check the result
+            result = conn.execute("SELECT connections FROM fcp "
+                                  "WHERE fcp_id=?", (fcp_id,))
+            connections = result.fetchone()['connections']
+            return connections
 
     @staticmethod
     def _purge_fcp_db():
@@ -603,80 +626,13 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_increase_usage(self):
-        """Test API increase_usage"""
-        # pre create data in FCP DB for test
-        template_id = 'fakehost-1111-1111-1111-111111111111'
-        fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
-                          template_id)]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-        # insert new test data
-        self._insert_data_into_fcp_table(fcp_info_list)
-        try:
-            self.db_op.increase_usage('1111')
-            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
-            self.assertEqual('', userid)
-            self.assertEqual(3, conn)
-            self.assertEqual(1, reserved)
-            self.assertEqual(template_id, tmpl_id)
-        finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-
-    def test_increase_usage_of_not_exist_fcp(self):
-        """Test API increase_usage when fcp id not exist"""
+    def test_decrease_connections_of_not_exist_fcp(self):
+        """Test API decrease_connections when fcp_id not exist"""
         self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.increase_usage, 'xxxx')
+                          self.db_op.decrease_connections, 'xxxx')
 
-    def test_increase_usage_by_assigner(self):
-        """Test API increase_usage_by_assigner"""
-        # pre create data in FCP DB for test
-        template_id = 'fakehost-1111-1111-1111-111111111111'
-        fcp_info_list = [('1111', 'user1', 1, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner',
-                          template_id)]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-        # insert new test data
-        self._insert_data_into_fcp_table(fcp_info_list)
-        try:
-            self.db_op.increase_usage_by_assigner('1111', 'user1')
-            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
-            self.assertEqual('user1', userid)
-            self.assertEqual(2, conn)
-            self.assertEqual(1, reserved)
-            self.assertEqual(template_id, tmpl_id)
-        finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-
-    def test_increase_usage_by_not_exist_assigner(self):
-        """Test API increase_usage_by_assigner when assigner_id not exist"""
-        # pre create data in FCP DB for test
-        template_id = 'fakehost-1111-1111-1111-111111111111'
-        fcp_info_list = [('1111', '', 1, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner',
-                          template_id)]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-        # insert new test data
-        self._insert_data_into_fcp_table(fcp_info_list)
-        # record belonging to user2 does not exist
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.increase_usage_by_assigner,
-                          '1111', 'fakeuser')
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-
-    def test_decrease_usage_of_not_exist_fcp(self):
-        """Test API decrease_usage when fcp_id not exist"""
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.decrease_usage, 'xxxx')
-
-    def test_decrease_usage_no_connections(self):
-        """Test API decrease_usage when connections is 0"""
+    def test_decrease_connections_no_connections(self):
+        """Test API decrease_connections when connections is 0"""
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 0, 1, 'c05076de33000111',
                           'c05076de33002641', '27', 'active', 'user1',
@@ -688,11 +644,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_fcp_table(fcp_info_list)
         # decrease when connections == 0
         self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.decrease_usage, '1111')
+                          self.db_op.decrease_connections, '1111')
         self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
-    def test_decrease_usage(self):
-        """Test API decrease_usage"""
+    def test_decrease_connections(self):
+        """Test API decrease_connections"""
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
@@ -704,7 +660,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # insert new test data
         self._insert_data_into_fcp_table(fcp_info_list)
         try:
-            self.db_op.decrease_usage('1111')
+            self.db_op.decrease_connections('1111')
             userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('1111')
             self.assertEqual('', userid)
             self.assertEqual(1, conn)
@@ -990,7 +946,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(0, len(fcp_list))
             # case2: reserved == 0 and connections != 0
             #   increase connections to 1
-            self.db_op.increase_usage('1111')
+            self.increase_connections('1111')
             fcp_list = self.db_op.get_allocated_fcps_from_assigner(
                 'user1', template_id)
             self.assertEqual(1, len(fcp_list))
@@ -1037,7 +993,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(0, len(fcp_list))
             # case2: reserved == 0 and connections != 0
             #   increase connections to 1
-            self.db_op.increase_usage('1111')
+            self.increase_connections('1111')
             fcp_list = self.db_op.get_reserved_fcps_from_assigner(
                 'user1', template_id)
             self.assertEqual(0, len(fcp_list))
@@ -1393,7 +1349,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             #   c. reserve_fcps
             #       set assigner_id and tmpl_id
             #       ('1a01', '1b03')
-            #   d. increase_usage
+            #   d. increase_connections
             #       set connections
             #       ('1a01', '1b03')
             kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03'
@@ -1409,8 +1365,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
             reserve_info = (('1a01', '1b03'), 'user1', tmpl_id)
             self.db_op.reserve_fcps(*reserve_info)
-            self.db_op.increase_usage('1a01')
-            self.db_op.increase_usage('1b03')
+            self.increase_connections('1a01')
+            self.increase_connections('1b03')
             # add path
             kwargs['fcp_devices'] = '1A00-1A03;1B00-1B03;1c00'
             detail = "Adding or deleting a FCP device path"
@@ -1442,8 +1398,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
             reserve_info = (('1a02', '1b02'), 'user1', 'fake_id_1111')
             self.db_op.reserve_fcps(*reserve_info)
-            self.db_op.increase_usage('1a02')
-            self.db_op.increase_usage('1b02')
+            self.increase_connections('1a02')
+            self.increase_connections('1b02')
             # case-3.1:
             # delete (1a01,1b03) from 'fake_id_0000' must fail
             fcp_device_list = '1A00,1A02-1A03;1B00-1B02'
