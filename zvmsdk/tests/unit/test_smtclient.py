@@ -2373,12 +2373,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_delete_userid_too_slow(self, request):
-        rd = 'deletevm fuser1 directory'
+        rd1 = 'deletevm fuser1 directory'
+        rd2 = 'PowerVM fuser1 off --maxwait 30 --poll 10'
         results = {'rc': 596, 'rs': 6831, 'logEntries': ''}
         request.side_effect = exception.SDKSMTRequestFailed(results,
                                                                "fake error")
         self._smtclient.delete_userid('fuser1')
-        request.assert_called_once_with(rd)
+        request.assert_has_calls([mock.call(rd1), mock.call(rd2),
+                                  mock.call(rd1)])
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_delete_userid_with_vdisk_warning(self, request):
