@@ -553,24 +553,13 @@ class FCPDbOperator(object):
                          (assigner_id, reserved, connections,
                           fcp_template_id, fcp))
 
-    def increase_usage(self, fcp_id):
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "fcp_id=?", (fcp_id,))
-            fcp_info = result.fetchone()
-            if not fcp_info:
-                msg = 'FCP with id: %s does not exist in DB.' % fcp_id
-                LOG.error(msg)
-                obj_desc = "FCP with id: %s" % fcp_id
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
-            connections = fcp_info['connections'] + 1
+    def increase_connections_by_assigner(self, fcp, assigner_id):
+        """Increase connections of the given FCP device
 
-            conn.execute("UPDATE fcp SET connections=? "
-                         "WHERE fcp_id=?", (connections, fcp_id))
-            return connections
-
-    def increase_usage_by_assigner(self, fcp, assigner_id):
+        :param fcp: (str) a FCP device
+        :param assigner_id: (str) the userid of the virtual machine
+        :return connections: (dict) the connections of the FCP device
+        """
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp WHERE fcp_id=? "
                                   "AND assigner_id=?", (fcp, assigner_id))
@@ -585,9 +574,18 @@ class FCPDbOperator(object):
 
             conn.execute("UPDATE fcp SET connections=? WHERE fcp_id=? "
                          "AND assigner_id=?", (connections, fcp, assigner_id))
+            # check the result
+            result = conn.execute("SELECT connections FROM fcp "
+                                  "WHERE fcp_id=?", (fcp,))
+            connections = result.fetchone()['connections']
             return connections
 
-    def decrease_usage(self, fcp):
+    def decrease_connections(self, fcp):
+        """Decrease connections of the given FCP device
+
+        :param fcp: (str) a FCP device
+        :return connections: (dict) the connections of the FCP device
+        """
         with get_fcp_conn() as conn:
 
             result = conn.execute("SELECT * FROM fcp WHERE "
@@ -612,10 +610,14 @@ class FCPDbOperator(object):
                 connections = 0
                 LOG.warning("Warning: connections of fcp is negative",
                             fcp)
-
+            # decrease connections by 1
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?",
                          (connections, fcp))
+            # check the result
+            result = conn.execute("SELECT connections FROM fcp "
+                                  "WHERE fcp_id=?", (fcp, ))
+            connections = result.fetchone()['connections']
             return connections
 
     def get_connections_from_assigner(self, assigner_id):
@@ -1159,9 +1161,9 @@ class FCPDbOperator(object):
             # if already exist, raise exception
             if self.fcp_template_exist_in_db(fcp_template_id):
                 raise exception.SDKObjectAlreadyExistError(
-                        obj_desc=("FCP device template "
-                        "(id: %s) " % fcp_template_id),
-                        modID=self._module_id)
+                    obj_desc=("FCP device template "
+                              "(id: %s) " % fcp_template_id),
+                    modID=self._module_id)
             # then check the SP records exist in template_sp_mapping or not
             # if already exist, will update the tmpl_id
             # if not exist, will insert new records
