@@ -2389,6 +2389,25 @@ class SMTClient(object):
                   nic_vdev, msg)
         self._uncouple_nic(userid, nic_vdev, active=active)
 
+    def _delete_uesrid_again(self, rd, userid):
+        # ok, this is ugly, as we never know when this will happen
+        # so we try the stop again and ignore any exception here
+
+        try:
+            self.guest_stop(userid, timeout=30, poll_interval=10)
+        except Exception as err:
+            msg = "SMT error: %s" % err.format_message()
+            LOG.info("guest force stop when 596/6831: %s" % msg)
+
+        # wait some time to let guest shutoff and cleanup
+        time.sleep(2)
+
+        try:
+            self._request(rd)
+        except Exception as err:
+            msg = "SMT error: %s" % err.format_message()
+            LOG.info("guest force delete when 596/6831: %s" % msg)
+
     def delete_userid(self, userid):
         rd = ' '.join(('deletevm', userid, 'directory'))
         try:
@@ -2403,6 +2422,8 @@ class SMTClient(object):
             if err.results['rc'] == 596 and err.results['rs'] == 6831:
                 # 596/6831 means delete VM not finished yet
                 LOG.warning("The guest %s deleted with 596/6831" % userid)
+
+                self._delete_uesrid_again(rd, userid)
                 return
 
             # ignore delete VM with VDISK format error
