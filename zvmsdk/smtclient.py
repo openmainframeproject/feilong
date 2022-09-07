@@ -2234,7 +2234,7 @@ class SMTClient(object):
 
         user_direct = self.get_user_direct(userid)
         new_user_direct = []
-        nicdef = "NICDEF %s" % nic_vdev
+        nicdef = "NICDEF %s" % nic_vdev.upper()
         for ent in user_direct:
             if len(ent) > 0:
                 new_user_direct.append(ent)

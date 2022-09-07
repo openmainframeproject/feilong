@@ -2258,6 +2258,28 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                       "VS1",
                                       active=True)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_nic_in_lowercase(self, couple_nic, replace,
+                                   lock, get_user):
+        replace_data = ["USER ABC", "NICDEF 1E00 DEVICE 3",
+                        "NICDEF 1E00 LAN SYSTEM VS1 VLAN 8 PORTTYPE TRUNK"]
+        get_user.return_value = ["USER ABC", "NICDEF 1E00 DEVICE 3"]
+        self._smtclient.couple_nic_to_vswitch("fake_userid",
+                                               "1e00",
+                                               "VS1",
+                                               active=True,
+                                               vlan_id=8,
+                                               port_type='TRUNK')
+        lock.assert_called_with("fake_userid")
+        replace.assert_called_with("fake_userid", replace_data)
+        couple_nic.assert_called_with("fake_userid",
+                                      "1e00",
+                                      "VS1",
+                                      active=True)
+
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
         self._smtclient.uncouple_nic_from_vswitch("fake_userid",
