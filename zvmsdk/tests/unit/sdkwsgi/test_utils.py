@@ -57,3 +57,31 @@ class SDKWsgiUtilsTestCase(unittest.TestCase):
         ret = util.get_http_code_from_sdk_return(msg,
             additional_handler=util.handle_already_exists)
         self.assertEqual(500, ret)
+
+    def test_mask_tuple_password(self):
+        source = [
+            ('Content-Type', 'text/html; charset=UTF-8'),
+            ('Content-Length', '0'),
+            ('X-Auth-Token', 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAi'
+                             'OjE2NTgyODEwODR9.LiUjn4yK7SNdsdArrgFBRr0wk9L_C'
+                             'la7QQFxW94o3aw'),
+            ('cache-control', 'no-cache')]
+        target = [
+            ('Content-Type', 'text/html; charset=UTF-8'),
+            ('Content-Length', '0'),
+            ('X-Auth-Token', '***'),
+            ('cache-control', 'no-cache')]
+        ret = util.mask_tuple_password(source)
+        self.assertEqual(ret, target)
+        source = [
+            ('Content-Type', 'text/html; charset=UTF-8'),
+            ('Content-Length', '0'),
+            ('X-Auth-Token', ''),
+            ('cache-control', 'no-cache')]
+        target = [
+            ('Content-Type', 'text/html; charset=UTF-8'),
+            ('Content-Length', '0'),
+            ('X-Auth-Token', '***'),
+            ('cache-control', 'no-cache')]
+        ret = util.mask_tuple_password(source)
+        self.assertEqual(ret, target)
