@@ -20,6 +20,12 @@ import tempfile
 import threading
 import uuid
 
+from zvmsdk import config
+
+
+CONF = config.CONF
+
+
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_LOCK = threading.Lock()
 CHUNKSIZE = 4096
@@ -1193,7 +1199,7 @@ class RESTClient(object):
                 # if data is a file-like object
                 body = body
 
-        if self.token_path is not None:
+        if CONF.wsgi.auth.lower() == 'auth' and self.token_path is not None:
             _headers['X-Auth-Token'] = self._get_token()
 
         content_type = headers['Content-Type']
