@@ -78,7 +78,7 @@ class RequestLog(object):
                 'REQUEST_URI': req_uri,
                 'status': status.split(None, 1)[0],
                 'bytes': size,
-                'headers': headers,
+                'headers': util.mask_tuple_password(headers),
                 'exc_info': exc_info
         }
 
