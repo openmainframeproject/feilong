@@ -1084,7 +1084,7 @@ class RESTClient(object):
 
     def __init__(self, ip='127.0.0.1', port=8888,
                  ssl_enabled=False, verify=False,
-                 token_path=None):
+                 token_path=None, auth=None):
         # SSL enable or not
         if ssl_enabled:
             self.base_url = "https://" + ip + ":" + str(port)
@@ -1097,6 +1097,9 @@ class RESTClient(object):
                 raise CACertNotFound('CA certificate file not found.')
         self.verify = verify
         self.token_path = token_path
+        # need send token to validate
+        # This is client, so must NOT use zvmsdk.conf file setting
+        self.auth = auth
 
     def _check_arguments(self, api_name, *args, **kwargs):
         # check api_name exist or not
@@ -1199,7 +1202,7 @@ class RESTClient(object):
                 # if data is a file-like object
                 body = body
 
-        if CONF.wsgi.auth.lower() == 'auth' and self.token_path is not None:
+        if self.auth == 'token' and self.token_path is not None:
             _headers['X-Auth-Token'] = self._get_token()
 
         content_type = headers['Content-Type']
