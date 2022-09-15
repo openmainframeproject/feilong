@@ -1891,9 +1891,10 @@ class FCPVolumeManager(object):
                 # 1. Operation on VM OS done by _add_disks()
                 # 2. operations on z/VM done by _dedicate_fcp()
                 # 3. operations on FCP DB done by get_volume_connector()
-                LOG.info("Starting rollback: _rollback_do_attach")
+                LOG.info("Enter rollback: _rollback_do_attach")
                 self._rollback_do_attach(fcp_list, assigner_id, target_wwpns, target_lun,
                                          multipath, os_version, mount_point)
+                LOG.info("Exit rollback: _rollback_do_attach")
                 raise
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
@@ -2009,8 +2010,8 @@ class FCPVolumeManager(object):
             # when detaching volumes, if userid not exist, no need to
             # raise exception. we stop here after the database operations done.
             if not zvmutils.check_userid_exist(assigner_id):
-                LOG.warning("Virtual machine %s not exists when trying to detach "
-                            "volumes from it. skip the remain steps of volume "
+                LOG.warning("Virtual machine %s does not exist when trying to detach "
+                            "volume from it. skip the remain steps of volume "
                             "detachment", assigner_id)
                 return
 
