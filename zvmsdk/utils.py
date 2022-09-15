@@ -434,7 +434,7 @@ def ignore_errors():
     try:
         yield
     except Exception as err:
-        LOG.error(str(err))
+        LOG.error('ignore an error: ' + str(err))
         pass
 
 
