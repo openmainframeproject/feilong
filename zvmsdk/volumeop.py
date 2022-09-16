@@ -1766,10 +1766,12 @@ class FCPVolumeManager(object):
                             multipath, os_version, mount_point):
         """
         Rollback for the following completed operations:
-        1. operations on z/VM done by _dedicate_fcp()
-           i.e. undedicate FCP device from assigner_id
-        2. operations on FCP DB done by get_volume_connector()
-           i.e. unreserve FCP device and cleanup tmpl_id from FCP DB
+        1. oeration on VM operating system done by _add_disks()
+           i.e. online FCP devices and the volume from VM OS
+        2. operations on z/VM done by _dedicate_fcp()
+           i.e. dedicate FCP device from assigner_id
+        3. operations on FCP DB done by get_volume_connector()
+           i.e. reserve FCP device and set FCP device template id from FCP DB
 
         :param fcp_list: (list) a list of FCP devices
         :param assigner_id: (str) the userid of the virtual machine
@@ -1785,13 +1787,14 @@ class FCPVolumeManager(object):
             total_connections = sum(fcp_connections.values())
             self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
                                multipath, os_version, mount_point, total_connections)
+            LOG.info("Rollback on VM OS: offline the volume from VM OS")
         # Operation on z/VM:
         # undedicate FCP device from assigner_id
         for fcp in fcp_list:
             with zvmutils.ignore_errors():
                 if fcp_connections[fcp] == 0:
                     self._undedicate_fcp(fcp, assigner_id)
-                    LOG.info("Rollback on z/VM: undedicate FCP devices: %s" % fcp)
+                    LOG.info("Rollback on z/VM: undedicate FCP device: %s" % fcp)
         # Operation on FCP DB:
         # if connections is 0,
         # then unreserve the FCP device and cleanup tmpl_id
@@ -1897,6 +1900,40 @@ class FCPVolumeManager(object):
                                          multipath, os_version, mount_point)
                 LOG.info("Exit rollback: _rollback_do_attach")
                 raise
+
+    def _rollback_do_detach(self, fcp_connections, assigner_id, target_wwpns, target_lun,
+                            multipath, os_version, mount_point):
+        """
+        Rollback for the following completed operations:
+        1. oeration on VM operating system done by _remove_disks()
+           i.e. remove FCP devices and the volume from VM OS
+        2. operations on z/VM done by _undedicate_fcp()
+           i.e. undedicate FCP device from assigner_id
+
+        :param fcp_list: (list) a list of FCP devices
+        :param assigner_id: (str) the userid of the virtual machine
+        :return: None
+        """
+        # Operation on z/VM:
+        # dedicate FCP devices to the virtual machine
+        for fcp in fcp_connections:
+            with zvmutils.ignore_errors():
+                # _undedicate_fcp() has been done in _do_detach() if fcp_connections[fcp] == 0,
+                # so we do _dedicate_fcp() as rollback with the same if-condition
+                if fcp_connections[fcp] == 0:
+                    # dedicate the FCP to the assigner in z/VM
+                    self._dedicate_fcp(fcp, assigner_id)
+                    LOG.info("Rollback on z/VM: dedicate FCP device: %s" % fcp)
+        # Operation on VM operating system:
+        # online the volume in the virtual machine
+        with zvmutils.ignore_errors():
+            fcp_list = [f for f in fcp_connections]
+            self._add_disks(fcp_list, assigner_id,
+                            target_wwpns, target_lun,
+                            multipath, os_version, mount_point)
+            LOG.info("Rollback on VM operating system: "
+                     "online volume for virtual machine %s"
+                     % assigner_id)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
@@ -2016,7 +2053,6 @@ class FCPVolumeManager(object):
                             "detachment", assigner_id)
                 return
 
-            # The try-except block only catch exception raised by _remove_disks()
             try:
                 LOG.info("Start to remove volume in the operating "
                          "system of %s." % assigner_id)
@@ -2051,12 +2087,41 @@ class FCPVolumeManager(object):
                     if fcp_connections[fcp] == 0:
                         # As _remove_disks() has been run successfully,
                         # we need to try our best to undedicate every FCP device
-                        with zvmutils.ignore_errors():
+                        try:
                             LOG.info("Start to undedicate FCP %s from "
                                      "%s on z/VM." % (fcp, assigner_id))
                             self._undedicate_fcp(fcp, assigner_id)
                             LOG.info("FCP %s undedicated from %s on z/VM is "
                                  "done." % (fcp, assigner_id))
+                        except exception.SDKSMTRequestFailed as err:
+                            rc = err.results['rc']
+                            rs = err.results['rs']
+                            if (rc == 404 or rc == 204) and rs == 8:
+                                # We ignore the two exceptions raised when FCP device is already undedicated.
+                                # Example of exception when rc == 404:
+                                #   zvmsdk.exception.SDKSMTRequestFailed:
+                                #   Failed to undedicate device from userid 'JACK0003'.
+                                #   RequestData: 'changevm JACK0003 undedicate 1d1a',
+                                #   Results: '{'overallRC': 8,
+                                #       'rc': 404, 'rs': 8, 'errno': 0,
+                                #       'strError': 'ULGSMC5404E Image device not defined',
+                                #       'response': ['(Error) ULTVMU0300E
+                                #           SMAPI API failed: Image_Device_Undedicate_DM,
+                                # Example of exception when rc == 204:
+                                #   zvmsdk.exception.SDKSMTRequestFailed:
+                                #   Failed to undedicate device from userid 'JACK0003'.
+                                #   RequestData: 'changevm JACK0003 undedicate 1b17',
+                                #   Results: '{'overallRC': 8,
+                                #       'rc': 204, 'rs': 8, 'errno': 0,
+                                #       'response': ['(Error) ULTVMU0300E
+                                #           SMAPI API failed: Image_Device_Undedicate,
+                                msg = ('ignore an exception because the FCP device {} '
+                                       'has already been undedicdated on z/VM: {}'
+                                       ).format(fcp, err.format_message())
+                                LOG.warn(msg)
+                            else:
+                                # raise to do _rollback_do_detach()
+                                raise
                     else:
                         LOG.info("The connections of FCP device %s is not 0, "
                                  "skip undedicating the FCP device on z/VM." % fcp)
@@ -2064,15 +2129,13 @@ class FCPVolumeManager(object):
                          "done." % (assigner_id, fcp_list))
             except Exception as err:
                 LOG.error(str(err))
-                # Operation on VM operating system:
-                # online the volume in the virtual machine
-                with zvmutils.ignore_errors():
-                    self._add_disks(fcp_list, assigner_id,
-                                    target_wwpns, target_lun,
-                                    multipath, os_version, mount_point)
-                    LOG.info("Rollback on VM operating system: "
-                             "online volume for virtual machine %s"
-                             % assigner_id)
+                # Rollback for the following completed operations:
+                # 1. Operation on VM OS done by _remove_disks()
+                # 2. operations on z/VM done by _udedicate_fcp()
+                LOG.info("Enter rollback: _rollback_do_detach")
+                self._rollback_do_detach(fcp_connections, assigner_id, target_wwpns, target_lun,
+                                         multipath, os_version, mount_point)
+                LOG.info("Exit rollback: _rollback_do_detach")
                 raise
 
     def detach(self, connection_info):
