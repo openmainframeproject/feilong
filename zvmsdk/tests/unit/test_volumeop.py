@@ -1754,7 +1754,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     @mock.patch("zvmsdk.utils.check_userid_exist")
-    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._rollback_dedicated_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._rollback_do_attach")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_connections")
     def test_do_attach_with_rollback_due_to_dedicate_fcp_failure(self, mock_increase_conn,
@@ -1780,7 +1780,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.attach,
                           connection_info)
-        mock_rollback.assert_called_once_with(['e83c'], 'USER1')
+        mock_rollback.assert_called_once_with(['e83c'], 'USER1',
+                                              ['20076d8500005182'],
+                                              '2222', False, 'rhel7', '/dev/sdz')
         self.assertEqual(mock_get_fcp_usage.call_args_list, [call('e83c')])
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
@@ -2150,27 +2152,38 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disks")
     @mock.patch("zvmsdk.database.FCPDbOperator.unreserve_fcps")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     @mock.patch("zvmsdk.database.FCPDbOperator.get_connections_from_fcp")
-    def test_rollback_dedicated_fcp(self, mock_get_conn,
-                                    mock_undedicate, mock_unreserve):
-        """Test _rollback_dedicated_fcp"""
+    def test_rollback_do_attach(self, mock_get_conn, mock_undedicate,
+                                mock_unreserve, mock_rm_disk):
+        """Test _rollback_do_attach"""
+        mock_rm_disk.side_effect = Exception()
         mock_undedicate.side_effect = [
             None, exception.SDKSMTRequestFailed({}, 'msg'), None]
         mock_get_conn.side_effect = [1, 0, 0, 0]
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
         assigner_id = 'fake_id'
-        self.volumeops._rollback_dedicated_fcp(fcp_list, assigner_id)
+        target_wwpns = 'tgt_wwpn'
+        target_lun = '1'
+        multipath = True
+        os_version = 'os'
+        mount_point = '/dev/sda'
+        total_connections = 1
+        self.volumeops._rollback_do_attach(fcp_list, assigner_id,
+                                           target_wwpns, target_lun,
+                                           multipath, os_version, mount_point)
         # verify
         self.assertEqual(mock_get_conn.call_args_list,
                          [call(fcp_list[0]), call(fcp_list[1]),
                           call(fcp_list[2]), call(fcp_list[3])])
+        self.assertRaises(Exception,
+                          mock_rm_disk,
+                          fcp_list, assigner_id, target_wwpns, target_lun,
+                          multipath, os_version, mount_point, total_connections)
         self.assertEqual(mock_undedicate.call_args_list,
                          [call(fcp_list[1], assigner_id),
                           call(fcp_list[2], assigner_id),
                           call(fcp_list[3], assigner_id)])
-        self.assertEqual(mock_get_conn.call_args_list,
-                         [call(fcp_list[0]), call(fcp_list[1]),
-                          call(fcp_list[2]), call(fcp_list[3])])
         mock_unreserve.assert_called_once_with(fcp_list[1:])

@@ -1040,18 +1040,25 @@ class FCPDbOperator(object):
         allocated_paths = len(fcp_list)
         total_paths = len(path_list)
         if allocated_paths < total_paths:
-            LOG.info("Not all paths have available FCP devices. "
-                     "The count of paths having available FCP: %d is less "
-                     "than total paths: %d. "
-                     "The configured minimum FCP paths count is: %d." %
-                     (allocated_paths, total_paths,
-                      min_fcp_paths_count))
+            LOG.info("Not all paths of FCP device template(id={}) "
+                     "have available FCP devices. "
+                     "The count of minimum FCP device path is {}. "
+                     "The count of total paths is {}. "
+                     "The count of paths with available FCP devices is {}, "
+                     "which is less than the total path count."
+                     .format(fcp_template_id, min_fcp_paths_count,
+                             total_paths, allocated_paths))
             if allocated_paths >= min_fcp_paths_count:
-                LOG.warning("Return the FCPs from the available paths to "
-                            "continue.")
+                LOG.warning("The count of paths with available FCP devices "
+                            "is less than that of total path, but not less "
+                            "than that of minimum FCP device path. "
+                            "Return the FCP devices {} from the available "
+                            "paths to continue.".format(fcp_list))
                 return fcp_list
             else:
-                LOG.error("Not enough FCPs available, return empty list.")
+                LOG.error("The count of paths with available FCP devices "
+                          "must not be less than that of minimum FCP device "
+                          "path, return empty list to abort the volume attachment.")
                 return []
         else:
             return fcp_list
