@@ -670,8 +670,8 @@ class FCPManager(object):
                     # so that allocating new FCPs is based on the latest FCP state
                     self._sync_db_with_zvm()
                     # allocate new ones if fcp_list is empty
-                    LOG.info("There is no allocated fcps for %s, will allocate "
-                             "new ones." % assigner_id)
+                    LOG.info("There is no allocated FCP devices for virtual machine %s, "
+                             "allocating new ones." % assigner_id)
                     if CONF.volume.get_fcp_pair_with_same_index:
                         '''
                         If use get_fcp_pair_with_same_index,
@@ -1997,8 +1997,8 @@ class FCPVolumeManager(object):
                                 mount_point,
                                 is_root_volume)
             except Exception:
-                with zvmutils.ignore_errors():
-                    for fcp in fcp_list:
+                for fcp in fcp_list:
+                    with zvmutils.ignore_errors():
                         _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                         LOG.info("After rollback, property of FCP device %s "
                                  "is (assigner_id: %s, reserved:%s, "
@@ -2164,8 +2164,8 @@ class FCPVolumeManager(object):
                             multipath, os_version, mount_point,
                             is_root_volume, update_connections_only)
         except Exception:
-            with zvmutils.ignore_errors():
-                for fcp in fcp_list:
+            for fcp in fcp_list:
+                with zvmutils.ignore_errors():
                     _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                     LOG.info("After rollback, property of FCP device %s "
                              "is (assigner_id: %s, reserved:%s, "
@@ -2215,6 +2215,7 @@ class FCPVolumeManager(object):
             according to assigner id and FCP template id.
             """
             if reserve:
+                LOG.info("get_volume_connector: Enter reserve_fcp_devices.")
                 # The data structure of fcp_list is:
                 # [(fcp_id, wwpn_npiv, wwpn_phy)]
                 fcp_list, fcp_template_id = self.fcp_mgr.reserve_fcp_devices(
@@ -2222,6 +2223,7 @@ class FCPVolumeManager(object):
                 LOG.info("get_volume_connector: Exit reserve_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
             else:
+                LOG.info("get_volume_connector: Enter unreserve_fcp_devices.")
                 # The data structure of fcp_list is:
                 # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
                 # An example of fcp_list:
@@ -2239,9 +2241,8 @@ class FCPVolumeManager(object):
                            'fcp_paths': 0,
                            'fcp_template_id': fcp_template_id}
         if not fcp_list:
-            errmsg = ("No available FCP device found "
-                      "for %s and FCP template %s."
-                      % (assigner_id, fcp_template_id))
+            errmsg = ("Not enough available FCP devices found from "
+                      "FCP device template(id={})".format(fcp_template_id))
             LOG.error(errmsg)
             return empty_connector
 
