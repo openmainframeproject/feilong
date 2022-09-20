@@ -1800,8 +1800,9 @@ class FCPVolumeManager(object):
         no_connection_fcps = [fcp for fcp in fcp_connections
                               if fcp_connections[fcp] == 0]
         if no_connection_fcps:
-            self.db.unreserve_fcps(no_connection_fcps)
-            LOG.info("Rollback on FCP DB: Unreserve FCP devices %s", no_connection_fcps)
+            with zvmutils.ignore_errors():
+                self.db.unreserve_fcps(no_connection_fcps)
+                LOG.info("Rollback on FCP DB: Unreserve FCP devices %s", no_connection_fcps)
 
     def _do_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                    multipath, os_version, mount_point, is_root_volume):
