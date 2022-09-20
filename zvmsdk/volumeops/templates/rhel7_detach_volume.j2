@@ -26,7 +26,7 @@ echo "Checking status of multipathd service ..."
 check_multipathd_service=`systemctl is-active --quiet multipathd`
 exit_code=$?
 if [[ $exit_code != 0 ]]; then
-    echo "Detach script terminated because multipathd service is not active, exit with code 1."
+    echo "Detach script terminated because multipathd service is not active, exit with code $MULTIPATH_SERVICE_NOT_ACTIVE."
     exit $MULTIPATH_SERVICE_NOT_ACTIVE
 fi
 
@@ -54,21 +54,40 @@ echo "lszfcp -P output port info: $lszfcp_output ."
 declare -A valid_dict
 for fcp in ${fcp_list[@]}
 do
-    wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
-    echo -e "WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
-    for wwpn in ${input_wwpns[@]}
+    # Retry each FCP device to make sure there are matched WWPNs for it
+    Timeout=10
+    while [[ $Timeout -gt 0 ]]
     do
-        fcp_wwpn_str="0.0.${fcp} ${wwpn}"
-        if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
-            echo "$fcp_wwpn_str matched with content in ouput of lszfcp"
-            # add this combination into valid_dict
-            if [[ -z ${valid_dict[$fcp]} ]]; then
-                valid_dict+=([$fcp]="$wwpn")
-            else
-                old_value=${valid_dict[$fcp]}
-                new_value=${old_value}" "$wwpn
-                valid_dict[$fcp]=$new_value
+        # Get WWPNs under /sys/bus/ccw/drivers/zfcp/.
+        wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
+        echo -e "Target WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
+        # Try to find match between system WWPNs(from lszfcp output or under /sys) and input WWPNs
+        found_match=0
+        for wwpn in ${input_wwpns[@]}
+        do
+            fcp_wwpn_str="0.0.${fcp} ${wwpn}"
+            if [[ $lszfcp_output =~ $fcp_wwpn_str || $wwpns_shown_in_sys =~ $wwpn ]]; then
+                found_match=1
+                echo "$fcp_wwpn_str matched with the ouput of lszfcp or WWPNs shown under /sys/bus/ccw/drivers/zfcp/."
+                # Add this combination into valid_dict
+                if [[ -z ${valid_dict[$fcp]} ]]; then
+                    valid_dict+=([$fcp]="$wwpn")
+                else
+                    old_value=${valid_dict[$fcp]}
+                    new_value=${old_value}" "$wwpn
+                    valid_dict[$fcp]=$new_value
+                fi
             fi
+        done
+        # If no matched wwpn found, need retry
+        if [[ $found_match -eq 0 ]]; then
+            sleep 1
+            Timeout=$((Timeout-1))
+            echo "Retrying to get the target WWPNs for FCP device $fcp, $Timeout seconds left..."
+            lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
+        else
+            echo "Found target WWPNs ${valid_dict[$fcp]} for FCP device $fcp."
+            break
         fi
     done
 done
@@ -80,7 +99,7 @@ do
     valid_fcp_count=$((valid_fcp_count+=1))
 done
 if [[ $valid_fcp_count -eq 0 ]]; then
-    echo "Can not find the intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output, exit with code 3."
+    echo "Can not find the intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output, exit with code $INVALID_WWPNS."
     exit $INVALID_WWPNS
 fi
 
@@ -114,7 +133,7 @@ do
 done
 # if no disk path found, exit with code 4
 if [[ -z $diskPath ]]; then
-    echo "No valid paths found between FCP devices: ${fcp_list[@]} and WWPNS: ${input_wwpns}, exit with code 4."
+    echo "No valid paths found between FCP devices: ${fcp_list[@]} and WWPNS: ${input_wwpns}, exit with code $DEVICE_PATH_NOT_FOUND."
     exit $DEVICE_PATH_NOT_FOUND
 fi
 

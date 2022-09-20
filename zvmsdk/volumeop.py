@@ -538,7 +538,8 @@ class FCPManager(object):
 
     def sync_db(self):
         """Sync FCP DB with the FCP info queried from zVM"""
-        self._sync_db_with_zvm()
+        with zvmutils.ignore_errors():
+            self._sync_db_with_zvm()
 
     def _get_all_fcp_info(self, assigner_id, status=None):
         fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
