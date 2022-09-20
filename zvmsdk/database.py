@@ -478,17 +478,6 @@ class FCPDbOperator(object):
             conn.executemany("UPDATE fcp set state=? "
                              "WHERE fcp_id=?", data_to_update)
 
-    def assign(self, fcp, assigner_id, update_connections=True):
-        with get_fcp_conn() as conn:
-            if update_connections:
-                conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
-                             "WHERE fcp_id=?",
-                             (assigner_id, 1, fcp))
-            else:
-                conn.execute("UPDATE fcp SET assigner_id=? "
-                             "WHERE fcp_id=?",
-                             (assigner_id, fcp))
-
     def get_all_fcps_of_assigner(self, assigner_id=None):
         """Get dict of all fcp records of specified assigner.
         If assigner is None, will get all fcp records.
@@ -620,20 +609,6 @@ class FCPDbOperator(object):
             connections = result.fetchone()['connections']
             return connections
 
-    def get_connections_from_assigner(self, assigner_id):
-        """Get sum connections count belongs to assigner_id"""
-        connections = 0
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "assigner_id=?", (assigner_id,))
-            fcp_list = result.fetchall()
-            if not fcp_list:
-                connections = 0
-            else:
-                for fcp in fcp_list:
-                    connections = connections + fcp['connections']
-        return connections
-
     def get_connections_from_fcp(self, fcp):
         connections = 0
         with get_fcp_conn() as conn:
@@ -658,35 +633,6 @@ class FCPDbOperator(object):
 
         return fcp_list
 
-    def get_from_fcp(self, fcp):
-        with get_fcp_conn() as conn:
-
-            result = conn.execute("SELECT * FROM fcp WHERE fcp_id=?", (fcp,))
-            fcp_list = result.fetchall()
-
-        return fcp_list
-
-    def get_wwpns_of_fcp(self, fcp):
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT wwpn_npiv, wwpn_phy FROM fcp "
-                                  "WHERE fcp_id=?", (fcp,))
-            wwpns_info = result.fetchall()
-            if not wwpns_info:
-                msg = 'WWPNs of fcp %s does not exist in DB.' % fcp
-                LOG.error(msg)
-                obj_desc = "WWPNs of FCP %s" % fcp
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
-            wwpn_npiv = wwpns_info[0][0]
-            wwpn_phy = wwpns_info[0][1]
-        return wwpn_npiv, wwpn_phy
-
-    def update_wwpns_of_fcp(self, fcp, wwpn_npiv, wwpn_phy):
-        with get_fcp_conn() as conn:
-            conn.execute("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=? "
-                         "WHERE fcp_id=?",
-                         (wwpn_npiv, wwpn_phy, fcp))
-
     @staticmethod
     def get_inuse_fcp_device_by_fcp_template(fcp_template_id):
         """ Get the FCP devices allocated from the template """
@@ -704,22 +650,6 @@ class FCPDbOperator(object):
     #########################################################
     #          DML for Table template_fcp_mapping           #
     #########################################################
-    def get_path_of_fcp(self, fcp_id, fcp_template_id):
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT path FROM template_fcp_mapping "
-                                  "WHERE fcp_id=? and tmpl_id=?",
-                                  (fcp_id, fcp_template_id))
-            path_info = result.fetchone()
-            if not path_info:
-                msg = ("path of fcp %s in template %s does not exist in "
-                       "table template_fcp_mapping." % (fcp_id,
-                                                        fcp_template_id))
-                LOG.error(msg)
-                obj_desc = "path of FCP %s" % fcp_id
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
-            return path_info['path']
-
     @staticmethod
     def update_path_of_fcp_device(record):
         """ update path of single fcp device
@@ -1110,18 +1040,25 @@ class FCPDbOperator(object):
         allocated_paths = len(fcp_list)
         total_paths = len(path_list)
         if allocated_paths < total_paths:
-            LOG.info("Not all paths have available FCP devices. "
-                     "The count of paths having available FCP: %d is less "
-                     "than total paths: %d. "
-                     "The configured minimum FCP paths count is: %d." %
-                     (allocated_paths, total_paths,
-                      min_fcp_paths_count))
+            LOG.info("Not all paths of FCP device template(id={}) "
+                     "have available FCP devices. "
+                     "The count of minimum FCP device path is {}. "
+                     "The count of total paths is {}. "
+                     "The count of paths with available FCP devices is {}, "
+                     "which is less than the total path count."
+                     .format(fcp_template_id, min_fcp_paths_count,
+                             total_paths, allocated_paths))
             if allocated_paths >= min_fcp_paths_count:
-                LOG.warning("Return the FCPs from the available paths to "
-                            "continue.")
+                LOG.warning("The count of paths with available FCP devices "
+                            "is less than that of total path, but not less "
+                            "than that of minimum FCP device path. "
+                            "Return the FCP devices {} from the available "
+                            "paths to continue.".format(fcp_list))
                 return fcp_list
             else:
-                LOG.error("Not enough FCPs available, return empty list.")
+                LOG.error("The count of paths with available FCP devices "
+                          "must not be less than that of minimum FCP device "
+                          "path, return empty list to abort the volume attachment.")
                 return []
         else:
             return fcp_list

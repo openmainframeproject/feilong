@@ -220,12 +220,13 @@ class VolumeConfiguratorAPI(object):
                                      mount_point, linuxdist)
         iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
         if iucv_is_ready:
-            # active mode should restart zvmguestconfigure to run reader file
+            # If VM is active rather than shutdown, then restart zvmguestconfigure
+            # to run punch script(i.e. reader file) in the VM operating system
             active_cmds = linuxdist.create_active_net_interf_cmd()
             ret = self._smtclient.execute_cmd_direct(
                 assigner_id, active_cmds,
                 timeout=CONF.volume.punch_script_execution_timeout)
-            LOG.debug('attach scripts return values: %s' % ret)
+            LOG.info('attach scripts return values: %s' % ret)
             if ret['rc'] != 0:
                 # if return code is 64 means timeout
                 # no need to check the exist code of systemctl and return
@@ -238,7 +239,8 @@ class VolumeConfiguratorAPI(object):
                     LOG.error(errmsg)
                     raise exception.SDKVolumeOperationError(
                         rs=8, userid=assigner_id, msg=errmsg)
-                # get exit code by systemctl status
+                # get exit code of zvmguestconfigure.service from VM OS,
+                # the exit code reflects the result of running punch script
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
                     assigner_id, get_status_cmd)
@@ -255,27 +257,28 @@ class VolumeConfiguratorAPI(object):
                 elif exit_code == 2:
                     errmsg = ('Failed to configure volume because the '
                               'configuration process terminate early with '
-                              'exit code %s, refer to the log messages in '
+                              'exit code %s, refer to the /var/log/messages in '
                               'target virtual machine(userid:%s) for more '
                               'details.' % (exit_code, assigner_id))
                 elif exit_code == 3:
                     errmsg = ('Failed to configure volume because can not '
                               'find valid target WWPNs for FCP devices %s, '
-                              'refer to the log messages in the target '
+                              'refer to the /var/log/messages in the target '
                               'virtual machine(userid:%s) for more '
                               'details.' % (fcp_list, assigner_id))
                 elif exit_code == 4:
                     errmsg = ('Failed to configure volume because the '
-                              'volume(WWPN:%s, LUN:%s) did not show up in '
+                              'volume(target WWPN:%s, LUN:%s) did not show up in '
                               'the target virtual machine(userid:%s), please '
-                              'check its connectivity.' % (target_wwpns,
-                                                           target_lun,
-                                                           assigner_id))
+                              'check Fibre Channel connectivity between '
+                              'the FCP devices(%s) and target WWPN.'
+                              % (target_wwpns, target_lun, assigner_id, fcp_list))
                 else:
                     errmsg = ('Failed to configure volume in the target '
                               'virtual machine(userid:%s) for volume'
-                              '(WWPN:%s, LUN:%s) on FCP devices %s with '
-                              'exit code: %s.'
+                              '(target WWPN:%s, LUN:%s) on FCP devices %s with '
+                              'exit code: %s, refer to the /var/log/messages '
+                              'in the target virtual machine for more details.'
                               % (assigner_id, target_wwpns, target_lun,
                                  fcp_list, exit_code))
                 LOG.error(errmsg)
@@ -298,12 +301,13 @@ class VolumeConfiguratorAPI(object):
                                      mount_point, linuxdist, connections)
         iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
         if iucv_is_ready:
-            # active mode should restart zvmguestconfigure to run reader file
+            # If VM is active rather than shutdown, then restart zvmguestconfigure
+            # to run punch script(i.e. reader file) in the VM operating system
             active_cmds = linuxdist.create_active_net_interf_cmd()
             ret = self._smtclient.execute_cmd_direct(
                 assigner_id, active_cmds,
                 timeout=CONF.volume.punch_script_execution_timeout)
-            LOG.debug('detach scripts return values: %s' % ret)
+            LOG.info('detach scripts return values: %s' % ret)
             if ret['rc'] != 0:
                 # if return code is 64 means timeout
                 # no need to check the exist code of systemctl and return
@@ -332,27 +336,28 @@ class VolumeConfiguratorAPI(object):
                 elif exit_code == 3:
                     errmsg = ('Failed to deconfigure volume because can not '
                               'find valid target WWPNs for FCP devices %s, '
-                              'refer to the log messages in the target '
+                              'refer to the /var/log/messages in the target '
                               'virtual machine(userid:%s) for more '
                               'details.' % (fcp_list, assigner_id))
                 elif exit_code == 4:
                     errmsg = ('Failed to deconfigure volume because the '
-                              'volume(WWPN:%s, LUN:%s) did not show up in '
+                              'volume(target WWPN:%s, LUN:%s) did not show up in '
                               'the target virtual machine(userid:%s), please '
-                              'check its connectivity.' % (target_wwpns,
-                                                           target_lun,
-                                                           assigner_id))
+                              'check Fibre Channel connectivity between '
+                              'the FCP devices(%s) and target WWPN.'
+                              % (target_wwpns, target_lun, assigner_id, fcp_list))
                 elif exit_code == 5:
                     errmsg = ('Failed to deconfigure volume because '
                               'getting error when flushing the multipath '
-                              'device maps, refer to the log messages in '
+                              'device maps, refer to the /var/log/messages in '
                               'the target virtual machine(userid:%s) for '
                               'more details.' % assigner_id)
                 else:
                     errmsg = ('Failed to deconfigure volume in the target '
                               'virtual machine(userid:%s) for volume'
-                              '(WWPN:%s, LUN:%s) on FCP devices %s with '
-                              'exit code: %s.'
+                              '(target WWPN:%s, LUN:%s) on FCP devices %s with '
+                              'exit code: %s, refer to the /var/log/messages '
+                              'in the target virtual machine for more details.'
                               % (assigner_id, target_wwpns, target_lun,
                                  fcp_list, exit_code))
                 LOG.error(errmsg)
@@ -666,8 +671,8 @@ class FCPManager(object):
                     # so that allocating new FCPs is based on the latest FCP state
                     self._sync_db_with_zvm()
                     # allocate new ones if fcp_list is empty
-                    LOG.info("There is no allocated fcps for %s, will allocate "
-                             "new ones." % assigner_id)
+                    LOG.info("There is no allocated FCP devices for virtual machine %s, "
+                             "allocating new ones." % assigner_id)
                     if CONF.volume.get_fcp_pair_with_same_index:
                         '''
                         If use get_fcp_pair_with_same_index,
@@ -758,11 +763,13 @@ class FCPManager(object):
                     # the data structure of fcp_list is
                     # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
                     # only unreserve the fcp with connections=0
-                    fcp_ids = [fcp[0] for fcp in fcp_list if fcp[3] == 0]
-                    LOG.info("Unreserve fcp device %s from "
-                             "instance %s and FCP template %s."
-                             % (fcp_ids, assigner_id, fcp_template_id))
-                    self.db.unreserve_fcps(fcp_ids)
+                    fcp_ids = [fcp['fcp_id'] for fcp in fcp_list
+                               if fcp['connections'] == 0]
+                    if fcp_ids:
+                        self.db.unreserve_fcps(fcp_ids)
+                        LOG.info("Unreserve fcp device %s from "
+                                 "instance %s and FCP template %s."
+                                 % (fcp_ids, assigner_id, fcp_template_id))
                     return fcp_list
                 return []
             except Exception as err:
@@ -1755,39 +1762,51 @@ class FCPVolumeManager(object):
                                       target_lun, multipath, os_version,
                                       mount_point)
 
-    def _rollback_dedicated_fcp(self, fcp_list, assigner_id):
+    def _rollback_do_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
+                            multipath, os_version, mount_point):
         """
         Rollback for the following completed operations:
-        1. operations on z/VM done by _dedicate_fcp()
-           i.e. undedicate FCP device from assigner_id
-        2. operations on FCP DB done by get_volume_connector()
-           i.e. unreserve FCP device and cleanup tmpl_id from FCP DB
+        1. oeration on VM operating system done by _add_disks()
+           i.e. online FCP devices and the volume from VM OS
+        2. operations on z/VM done by _dedicate_fcp()
+           i.e. dedicate FCP device from assigner_id
+        3. operations on FCP DB done by get_volume_connector()
+           i.e. reserve FCP device and set FCP device template id from FCP DB
 
         :param fcp_list: (list) a list of FCP devices
         :param assigner_id: (str) the userid of the virtual machine
         :return: None
         """
-        with database.get_fcp_conn():
-            # save the FCP device whose connections == 0
-            no_connection_fcps = list()
-            # Operation on z/VM:
-            # undedicate FCP device from assigner_id
-            for fcp in fcp_list:
-                with zvmutils.ignore_errors():
-                    connections = self.db.get_connections_from_fcp(fcp)
-                    if connections == 0:
-                        no_connection_fcps.append(fcp)
-                        self._undedicate_fcp(fcp, assigner_id)
-                        LOG.info("Rollback on z/VM: undedicate FCP devices: %s" % fcp)
-            # Operation on FCP DB:
-            # if connections is 0,
-            # then unreserve the FCP device and cleanup tmpl_id
-            LOG.info("Rollback on FCP DB: Unreserve FCP devices %s", no_connection_fcps)
-            self.db.unreserve_fcps(no_connection_fcps)
+        # Operation on VM OS:
+        # offline volume and FCP devices from VM OS
+        with zvmutils.ignore_errors():
+            fcp_connections = {fcp: self.db.get_connections_from_fcp(fcp)
+                               for fcp in fcp_list}
+            # _remove_disks() offline FCP devices only when total_connections is 0,
+            # i.e. detaching the last volume from the FCP devices
+            total_connections = sum(fcp_connections.values())
+            self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
+                               multipath, os_version, mount_point, total_connections)
+            LOG.info("Rollback on VM OS: offline the volume from VM OS")
+        # Operation on z/VM:
+        # undedicate FCP device from assigner_id
+        for fcp in fcp_list:
+            with zvmutils.ignore_errors():
+                if fcp_connections[fcp] == 0:
+                    self._undedicate_fcp(fcp, assigner_id)
+                    LOG.info("Rollback on z/VM: undedicate FCP device: %s" % fcp)
+        # Operation on FCP DB:
+        # if connections is 0,
+        # then unreserve the FCP device and cleanup tmpl_id
+        no_connection_fcps = [fcp for fcp in fcp_connections
+                              if fcp_connections[fcp] == 0]
+        if no_connection_fcps:
+            with zvmutils.ignore_errors():
+                self.db.unreserve_fcps(no_connection_fcps)
+                LOG.info("Rollback on FCP DB: Unreserve FCP devices %s", no_connection_fcps)
 
     def _do_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point,
-                is_root_volume):
+                   multipath, os_version, mount_point, is_root_volume):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
@@ -1812,14 +1831,14 @@ class FCPVolumeManager(object):
                 # - Operation on FCP DB: increase_fcp_connections()
                 # - Operation on z/VM:   _dedicate_fcp()
                 # - Operation on VM OS:  _add_disks()
-                # So as to auto-rollabck connections
+                # So as to auto-rollabck connections on FCP DB,
                 # if any of the three operations raises exception.
                 with database.get_fcp_conn():
                     # Operation on FCP DB:
                     # increase connections by 1 and set assigner_id.
                     #
                     # Call increase_fcp_connections() within the try-block,
-                    # so that _rollback_dedicated_fcp() can be called to unreserve FCP
+                    # so that _rollback_do_attach() can be called to unreserve FCP
                     # devices if increase_fcp_connections() raise exception.
                     #
                     # fcp_connections examples:
@@ -1828,22 +1847,27 @@ class FCPVolumeManager(object):
                     # {'1a10': 2, '1b10': 1} => connections differ in abnormal case (due to bug)
                     # the values are the connections of the FCP device
                     fcp_connections = self.fcp_mgr.increase_fcp_connections(fcp_list, assigner_id)
+                    LOG.info("The connections of FCP devices before "
+                             "being dedicated to virtual machine %s is: %s."
+                             % (assigner_id, fcp_connections))
 
                     if is_root_volume:
-                        LOG.info("Is root volume, adding FCP records %s to %s is "
-                                 "done." % (fcp_list, assigner_id))
-                        # FCP devices for root volume will be defined in user directory
+                        LOG.info("We are attaching root volume, dedicating FCP devices %s "
+                                 "to virtual machine %s has been done by refresh_bootmap; "
+                                 "skip the remain steps of volume attachment."
+                                 % (fcp_list, assigner_id))
                         return []
-
-                    LOG.debug("The status of fcp devices before "
-                              "dedicating them to %s is: %s." % (assigner_id, fcp_connections))
 
                     # Operation on z/VM:
                     # dedicate FCP devices to the assigner_id in z/VM
                     for fcp in fcp_list:
                         # only dedicate the FCP device on z/VM
-                        # if connections is 1 (i.e. 1st volume attached for the FCP dev)
-                        # because otherwise the FCP device has been dedicated already
+                        #   if connections is 1 (i.e. 1st volume attached for the FCP dev)
+                        #   because otherwise the FCP device has been dedicated already.
+                        # if _dedicate_fcp() raise exception for a FCP device,
+                        #   we must stop the attachment
+                        #   i.e. go to except-block to do _rollback_do_attach()
+                        #   rather than continue to do _dedicate_fcp() for the next FCP device
                         if fcp_connections[fcp] == 1:
                             LOG.info("Start to dedicate FCP %s to "
                                      "%s in z/VM." % (fcp, assigner_id))
@@ -1856,7 +1880,7 @@ class FCPVolumeManager(object):
                                      "attach volume to FCP %s, "
                                      "skip dedicating the FCP device in z/VM." % fcp)
                     # Operation on VM operating system
-                    # online and configure the volume in the virtual machine
+                    # online the volume in the virtual machine
                     LOG.info("Start to configure volume in the operating "
                              "system of %s." % assigner_id)
                     self._add_disks(fcp_list, assigner_id, target_wwpns,
@@ -1864,18 +1888,53 @@ class FCPVolumeManager(object):
                                     mount_point)
                     LOG.info("Configuring volume in the operating "
                              "system of %s is done." % assigner_id)
+                    LOG.info("Attaching volume to FCP devices %s on virtual machine %s is "
+                             "done." % (fcp_list, assigner_id))
             except Exception as err:
-                errmsg = err.format_message()
-                LOG.error(errmsg)
+                LOG.error(str(err))
                 # Rollback for the following completed operations:
-                # 1. operations on z/VM done by _dedicate_fcp()
-                #    i.e. undedicate FCP device from assigner_id
-                # 2. operations on FCP DB done by get_volume_connector()
-                #    i.e. unreserve FCP device and cleanup tmpl_id from FCP DB
-                self._rollback_dedicated_fcp(fcp_list, assigner_id)
+                # 1. Operation on VM OS done by _add_disks()
+                # 2. operations on z/VM done by _dedicate_fcp()
+                # 3. operations on FCP DB done by get_volume_connector()
+                LOG.info("Enter rollback: _rollback_do_attach")
+                self._rollback_do_attach(fcp_list, assigner_id, target_wwpns, target_lun,
+                                         multipath, os_version, mount_point)
+                LOG.info("Exit rollback: _rollback_do_attach")
                 raise
-            LOG.info("Attaching volume to FCP devices %s on virtual machine %s is "
-                     "done." % (fcp_list, assigner_id))
+
+    def _rollback_do_detach(self, fcp_connections, assigner_id, target_wwpns, target_lun,
+                            multipath, os_version, mount_point):
+        """
+        Rollback for the following completed operations:
+        1. oeration on VM operating system done by _remove_disks()
+           i.e. remove FCP devices and the volume from VM OS
+        2. operations on z/VM done by _undedicate_fcp()
+           i.e. undedicate FCP device from assigner_id
+
+        :param fcp_list: (list) a list of FCP devices
+        :param assigner_id: (str) the userid of the virtual machine
+        :return: None
+        """
+        # Operation on z/VM:
+        # dedicate FCP devices to the virtual machine
+        for fcp in fcp_connections:
+            with zvmutils.ignore_errors():
+                # _undedicate_fcp() has been done in _do_detach() if fcp_connections[fcp] == 0,
+                # so we do _dedicate_fcp() as rollback with the same if-condition
+                if fcp_connections[fcp] == 0:
+                    # dedicate the FCP to the assigner in z/VM
+                    self._dedicate_fcp(fcp, assigner_id)
+                    LOG.info("Rollback on z/VM: dedicate FCP device: %s" % fcp)
+        # Operation on VM operating system:
+        # online the volume in the virtual machine
+        with zvmutils.ignore_errors():
+            fcp_list = [f for f in fcp_connections]
+            self._add_disks(fcp_list, assigner_id,
+                            target_wwpns, target_lun,
+                            multipath, os_version, mount_point)
+            LOG.info("Rollback on VM operating system: "
+                     "online volume for virtual machine %s"
+                     % assigner_id)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
                                wwid='',
@@ -1926,7 +1985,7 @@ class FCPVolumeManager(object):
 
         if is_root_volume is False and \
                 not zvmutils.check_userid_exist(assigner_id):
-            LOG.error("User directory '%s' does not exist." % assigner_id)
+            LOG.error("The virtual machine '%s' does not exist on z/VM." % assigner_id)
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
         else:
@@ -1941,15 +2000,12 @@ class FCPVolumeManager(object):
                                 is_root_volume)
             except Exception:
                 for fcp in fcp_list:
-                    try:
+                    with zvmutils.ignore_errors():
                         _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                         LOG.info("After rollback, property of FCP device %s "
                                  "is (assigner_id: %s, reserved:%s, "
                                  "connections: %s, fcp template id: %s)."
                                  % (fcp, _userid, _reserved, _conns, _tmpl_id))
-                    except Exception as err:
-                        LOG.error(err)
-                        pass
                 raise
 
     def _undedicate_fcp(self, fcp, assigner_id):
@@ -1962,8 +2018,8 @@ class FCPVolumeManager(object):
                                       mount_point, connections)
 
     def _do_detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point, is_root_volume,
-                update_connections_only):
+                   multipath, os_version, mount_point, is_root_volume,
+                   update_connections_only):
         """Detach a volume from a guest"""
         LOG.info("Start to detach volume on virtual machine %s from "
                  "FCP devices %s" % (assigner_id, fcp_list))
@@ -1981,18 +2037,21 @@ class FCPVolumeManager(object):
             # the instance, then no need to waste time on undedicate
             if is_root_volume or update_connections_only:
                 if update_connections_only:
-                    LOG.info("Update connections only, deleting FCP records %s "
-                             "from %s is done." % (fcp_list, assigner_id))
+                    LOG.info("Update connections only, undedicating FCP devices %s "
+                             "from virtual machine %s has been done; skip the remain "
+                             "steps of volume detachment" % (fcp_list, assigner_id))
                 else:
-                    LOG.info("Is root volume, deleting FCP records %s from %s is "
-                             "done." % (fcp_list, assigner_id))
+                    LOG.info("We are detaching root volume, undedicating FCP devices %s "
+                             "from virtual machine %s has been done; skip the remain "
+                             "steps of volume detachment" % (fcp_list, assigner_id))
                 return
 
             # when detaching volumes, if userid not exist, no need to
             # raise exception. we stop here after the database operations done.
             if not zvmutils.check_userid_exist(assigner_id):
-                LOG.warning("Found %s not exist when trying to detach volumes "
-                            "from it.", assigner_id)
+                LOG.warning("Virtual machine %s does not exist when trying to detach "
+                            "volume from it. skip the remain steps of volume "
+                            "detachment", assigner_id)
                 return
 
             try:
@@ -2001,62 +2060,84 @@ class FCPVolumeManager(object):
                 # Operation on VM operating system:
                 # offline the volume in the virtual machine
                 #
+                # When detaching the non-last volume from the FCPs in fcp_connections,
+                # normally, the connections of partial FCPs are non-zero, so that
+                #   sum(fcp_connections.values()) > 0
+                #   fcp_connections is like {'1a10': 2, '1b10': 2}
+                #   in this case, _remove_disks() must be called with total_connections > 0,
+                #   so as NOT to offline the FCPs from VM Linux operating system
                 # When detaching the last volume from the FCPs in fcp_connections,
                 # normally, the connections of all FCPs are 0, so that
                 #   sum(fcp_connections.values()) == 0,
                 #   fcp_connections is like {'1a10': 0, '1b10': 0}
-                #   in this case, _remove_disks() must be called with connections as 0,
-                #   so as to remove the FCPs from VM Linux operating system
+                #   in this case, _remove_disks() must be called with total_connections as 0,
+                #   so as to offline the FCPs from VM Linux operating system
                 # abnormally, the connections of partial FCPs are 0, so that
                 #   sum(fcp_connections.values()) > 0
                 #   fcp_connections is like {'1a10': 0, '1b10': 3}
-                #   in this case, _remove_disks() must be called with connections > 0,
-                #   so as NOT to remove the FCPs from VM Linux operating system
-                connections = 0 if sum(fcp_connections.values()) == 0 else 1
+                #   in this case, _remove_disks() must be called with total_connections > 0,
+                #   so as NOT to offline the FCPs from VM Linux operating system
+                total_connections = sum(fcp_connections.values())
                 self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
-                                   multipath, os_version, mount_point, connections)
+                                   multipath, os_version, mount_point, total_connections)
                 LOG.info("Removing volume in the operating "
                          "system of %s is done." % assigner_id)
                 # Operation on z/VM:
                 # undedicate FCP device from the virtual machine
                 for fcp in fcp_list:
                     if fcp_connections[fcp] == 0:
-                        LOG.info("Start to undedicate FCP %s from "
-                                 "%s on z/VM." % (fcp, assigner_id))
-                        self._undedicate_fcp(fcp, assigner_id)
-                        LOG.info("FCP %s undedicated from %s on z/VM is "
+                        # As _remove_disks() has been run successfully,
+                        # we need to try our best to undedicate every FCP device
+                        try:
+                            LOG.info("Start to undedicate FCP %s from "
+                                     "%s on z/VM." % (fcp, assigner_id))
+                            self._undedicate_fcp(fcp, assigner_id)
+                            LOG.info("FCP %s undedicated from %s on z/VM is "
                                  "done." % (fcp, assigner_id))
+                        except exception.SDKSMTRequestFailed as err:
+                            rc = err.results['rc']
+                            rs = err.results['rs']
+                            if (rc == 404 or rc == 204) and rs == 8:
+                                # We ignore the two exceptions raised when FCP device is already undedicated.
+                                # Example of exception when rc == 404:
+                                #   zvmsdk.exception.SDKSMTRequestFailed:
+                                #   Failed to undedicate device from userid 'JACK0003'.
+                                #   RequestData: 'changevm JACK0003 undedicate 1d1a',
+                                #   Results: '{'overallRC': 8,
+                                #       'rc': 404, 'rs': 8, 'errno': 0,
+                                #       'strError': 'ULGSMC5404E Image device not defined',
+                                #       'response': ['(Error) ULTVMU0300E
+                                #           SMAPI API failed: Image_Device_Undedicate_DM,
+                                # Example of exception when rc == 204:
+                                #   zvmsdk.exception.SDKSMTRequestFailed:
+                                #   Failed to undedicate device from userid 'JACK0003'.
+                                #   RequestData: 'changevm JACK0003 undedicate 1b17',
+                                #   Results: '{'overallRC': 8,
+                                #       'rc': 204, 'rs': 8, 'errno': 0,
+                                #       'response': ['(Error) ULTVMU0300E
+                                #           SMAPI API failed: Image_Device_Undedicate,
+                                msg = ('ignore an exception because the FCP device {} '
+                                       'has already been undedicdated on z/VM: {}'
+                                       ).format(fcp, err.format_message())
+                                LOG.warn(msg)
+                            else:
+                                # raise to do _rollback_do_detach()
+                                raise
                     else:
                         LOG.info("The connections of FCP device %s is not 0, "
                                  "skip undedicating the FCP device on z/VM." % fcp)
-            except (exception.SDKBaseException,
-                    exception.SDKSMTRequestFailed) as err:
-                rc = err.results['rc']
-                rs = err.results['rs']
-                if rc == 404 or rc == 204 and rs == 8:
-                    # We ignore the exception for FCP device already undedicated.
-                    # Example of exception when rc == 404:
-                    #   zvmsdk.exception.SDKSMTRequestFailed:
-                    #   Failed to undedicate device from userid 'JACK0003'.
-                    #   SMT error: SMT request failed.
-                    #   RequestData: 'changevm JACK0003 undedicate 1b17',
-                    #   Results: '{
-                    #     'overallRC': 8, 'rc': 404, 'rs': 8, 'errno': 0,
-                    #     'strError': 'ULGSMC5404E Image device not defined',
-                    #     'response': ['(Error) ULTVMU0300E SMAPI API failed ...
-                    LOG.warning("The FCP device %s has already been undedicdated on z/VM", fcp)
-                else:
-                    errmsg = err.format_message()
-                    LOG.error(errmsg)
-                    # Operation on VM operating system:
-                    # online the volume in the virtual machine
-                    with zvmutils.ignore_errors():
-                        self._add_disks(fcp_list, assigner_id,
-                                        target_wwpns, target_lun,
-                                        multipath, os_version, mount_point)
-                    raise
-            LOG.info("Detaching volume on virtual machine %s from FCP devices %s is "
-                     "done." % (assigner_id, fcp_list))
+                LOG.info("Detaching volume on virtual machine %s from FCP devices %s is "
+                         "done." % (assigner_id, fcp_list))
+            except Exception as err:
+                LOG.error(str(err))
+                # Rollback for the following completed operations:
+                # 1. Operation on VM OS done by _remove_disks()
+                # 2. operations on z/VM done by _udedicate_fcp()
+                LOG.info("Enter rollback: _rollback_do_detach")
+                self._rollback_do_detach(fcp_connections, assigner_id, target_wwpns, target_lun,
+                                         multipath, os_version, mount_point)
+                LOG.info("Exit rollback: _rollback_do_detach")
+                raise
 
     def detach(self, connection_info):
         """Detach a volume from a guest
@@ -2086,15 +2167,12 @@ class FCPVolumeManager(object):
                             is_root_volume, update_connections_only)
         except Exception:
             for fcp in fcp_list:
-                try:
+                with zvmutils.ignore_errors():
                     _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                     LOG.info("After rollback, property of FCP device %s "
                              "is (assigner_id: %s, reserved:%s, "
                              "connections: %s, fcp template id: %s)."
                              % (fcp, _userid, _reserved, _conns, _tmpl_id))
-                except Exception as err:
-                    LOG.error(err)
-                    pass
             raise
 
     def get_volume_connector(self, assigner_id, reserve,
@@ -2139,13 +2217,15 @@ class FCPVolumeManager(object):
             according to assigner id and FCP template id.
             """
             if reserve:
+                LOG.info("get_volume_connector: Enter reserve_fcp_devices.")
                 # The data structure of fcp_list is:
                 # [(fcp_id, wwpn_npiv, wwpn_phy)]
                 fcp_list, fcp_template_id = self.fcp_mgr.reserve_fcp_devices(
                     assigner_id, fcp_template_id, sp_name)
-                LOG.info("get_volume_connector: reserve_fcp_devices {}".format(
+                LOG.info("get_volume_connector: Exit reserve_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
             else:
+                LOG.info("get_volume_connector: Enter unreserve_fcp_devices.")
                 # The data structure of fcp_list is:
                 # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
                 # An example of fcp_list:
@@ -2153,7 +2233,7 @@ class FCPVolumeManager(object):
                 #  ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
                 fcp_list = self.fcp_mgr.unreserve_fcp_devices(
                     assigner_id, fcp_template_id)
-                LOG.info("get_volume_connector: unreserve_fcp_devices {}".format(
+                LOG.info("get_volume_connector: Exit unreserve_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
 
         empty_connector = {'zvm_fcp': [],
@@ -2163,9 +2243,8 @@ class FCPVolumeManager(object):
                            'fcp_paths': 0,
                            'fcp_template_id': fcp_template_id}
         if not fcp_list:
-            errmsg = ("No available FCP device found "
-                      "for %s and FCP template %s."
-                      % (assigner_id, fcp_template_id))
+            errmsg = ("Not enough available FCP devices found from "
+                      "FCP device template(id={})".format(fcp_template_id))
             LOG.error(errmsg)
             return empty_connector
 
