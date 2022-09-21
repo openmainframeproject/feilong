@@ -355,7 +355,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     def _prepare_fcp_info_for_a_test_fcp_template(self):
         """ Prepare FCP device info for test
-        1. create a fcp template with fcp_devices
+        1. create a FCP Multipath Template with fcp_devices
         2. set some of the fcp_devices as inuse
 
         Note: Remember to do cleanup after using the func
@@ -825,7 +825,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     #########################################################
     def test_get_allocated_fcps_from_assigner(self):
         """Test API get_allocated_fcps_from_assigner"""
-        # prepare data for fcp template "1111;2222"
+        # prepare data for FCP Multipath Template "1111;2222"
         # insert test data into table template_fcp_mapping
         template_id = 'fakehost-1111-1111-1111-111111111111'
         template_fcp = [('1111', template_id, 0),
@@ -870,7 +870,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
     def test_get_reserved_fcps_from_assigner(self):
-        # prepare data for fcp template "1111;2222"
+        # prepare data for FCP Multipath Template "1111;2222"
         # insert test data into table fcp
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
@@ -938,7 +938,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
            an empty list(i.e. [])
            if no expected pair found
         '''
-        # prepare data for fcp template "1111;2222"
+        # prepare data for FCP Multipath Template "1111;2222"
         template_id = 'fakehost-1111-1111-1111-111111111111'
         # insert test data into table fcp
         # Usage in test data:
@@ -1043,7 +1043,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
            an empty list(i.e. [])
            if no expected pair found
         '''
-        # prepare data for fcp template "1a00-1a04;1b00-1b04"
+        # prepare data for FCP Multipath Template "1a00-1a04;1b00-1b04"
         template_id = 'fakehost-1111-1111-1111-111111111111'
         # insert test data into table fcp
         # Usage in test data:
@@ -1147,7 +1147,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete_fcp_template(template_id)
 
     def test_create_fcp_template_with_name_and_desc(self):
-        """Create fcp template only with name and description, other parameters are all default values"""
+        """Create a FCP Multipath Template only with name and description, other parameters are all default values"""
         fcp_template_id = 'fake_tmpl_id'
         name = 'tmpl_1'
         description = 'this is the description.'
@@ -1230,13 +1230,13 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         }
         try:
             # case1:
-            # validate: FCP device template
-            obj_desc = ("FCP device template {}".format(tmpl_id))
+            # validate: FCP Multipath Template
+            obj_desc = ("FCP Multipath Template {}".format(tmpl_id))
             with self.assertRaises(exception.SDKObjectNotExistError) as cm:
                 self.db_op.edit_fcp_template(tmpl_id, **kwargs)
             # The following 3 assertions are the same
             # (Pdb) pp str(cm.exception)
-            # 'FCP device template fake_id_0000 does not exist.'
+            # 'FCP Multipath Template fake_id_0000 does not exist.'
             self.assertIn(obj_desc, cm.exception.message)
             self.assertIn(obj_desc, str(cm.exception))
             self.assertRaisesRegex(exception.SDKObjectNotExistError,
@@ -1245,7 +1245,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                    tmpl_id, **kwargs)
 
             # case2:
-            # validate: add or delete path from FCP template
+            # validate: add or delete path from FCP Multipath Template
             # preparation:
             #   a. create_fcp_template
             #   b. bulk_insert_zvm_fcp_info_into_fcp_table
@@ -1643,11 +1643,11 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete_fcp_template(tmpl_id_1)
 
             # case3: delete a non-exist template
-            obj_desc = ("FCP device template {}".format(tmpl_id_1))
+            obj_desc = ("FCP Multipath Template {}".format(tmpl_id_1))
             with self.assertRaises(exception.SDKObjectNotExistError) as cm:
                 self.db_op.delete_fcp_template(tmpl_id_1)
             # The following 3 assertions are the same
-            # 'FCP device template fake_id_0000 does not exist.'
+            # 'FCP Multipath Template fake_id_0000 does not exist.'
             self.assertIn(obj_desc, cm.exception.message)
             self.assertIn(obj_desc, str(cm.exception))
             self.assertRaisesRegex(exception.SDKObjectNotExistError,

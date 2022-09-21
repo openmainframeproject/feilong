@@ -1603,7 +1603,7 @@ class SDKAPI(object):
 
         :param str userid: the user id of the guest
         :param boolean reserve: the flag to reserve FCP device
-        :param str fcp_template_id: the fcp template id
+        :param str fcp_template_id: the FCP Multipath Template id
                which FCP devices are allocated by
         :param str sp_name: the storage provider name
         """
@@ -1614,12 +1614,12 @@ class SDKAPI(object):
                          default_sp_list= None, host_default=None):
         """Get template base info
         :param template_id_list: (list) a list of template id,
-        if it is None, get fcp templates with other parameter
+        if it is None, get FCP Multipath Templates with other parameter
         :param assigner_id: (str) a string of VM userid
         :param host_default: (boolean) whether or not get host default fcp
         template
         :param default_sp_list: (list) a list of storage provider, to get the
-        list of storage provider's default fcp templates
+        list of storage provider's default FCP Multipath Templates
         :return: (dict) the base info of template
         example:
         {
@@ -1656,7 +1656,7 @@ class SDKAPI(object):
     def get_fcp_templates_details(self, template_id_list=None,
                                   raw=False, statistics=True,
                                   sync_with_zvm=False):
-        """Get fcp templates detail info.
+        """Get FCP Multipath Templates detail info.
         :param template_list: (list) if is None,
                               will get all the templates on the host
         :return: (dict) the raw and/or statistic data
@@ -1799,7 +1799,7 @@ class SDKAPI(object):
         :param int reserved: the value set to reserved value of FCP database
         :param int connections: the value set to connections value of
                                 FCP database
-        :param str fcp_template_id: the ID of the FCP template.
+        :param str fcp_template_id: the ID of the FCP Multipath Template.
         """
         return self._volumeop.set_fcp_usage(userid, fcp, reserved,
                                             connections, fcp_template_id)
@@ -1809,7 +1809,7 @@ class SDKAPI(object):
                             host_default: bool = False,
                             default_sp_list: list = [],
                             min_fcp_paths_count: int = None):
-        """API for creating a FCP template in database.
+        """API for creating a FCP Multipath Template in database.
 
         :param str name: the name of the template
         :param str description: the description for the template
@@ -1818,8 +1818,8 @@ class SDKAPI(object):
         :param bool host_default: this template is default to this
             host or not
         :param list default_sp_list: the list of storage providers that will
-            use this FCP template as default FCP template. If None, it means
-            no storage provider would use this FCP template as default.
+            use this FCP Multipath Template as default FCP Multipath Template. If None, it means
+            no storage provider would use this FCP Multipath Template as default.
         :param min_fcp_paths_count: The minimum number of FCP paths that
             should be defined to a vm when attachinga data volume to a vm or
             BFV (deploying a vm from SCSI image).
@@ -1831,7 +1831,7 @@ class SDKAPI(object):
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
                           host_default=None, default_sp_list=None, min_fcp_paths_count: int = None):
-        """ Edit a FCP device template
+        """ Edit a FCP Multipath Template.
 
         The kwargs values are pre-validated in two places:
           validate kwargs types

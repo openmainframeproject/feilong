@@ -320,10 +320,10 @@ class FCPDbOperator(object):
         #   owner: VM userid representing an unique VM,
         #          it is read from z/VM hypervisor and
         #          may differ with assigner_id
-        #   tmpl_id: indicate from which FCP template this FCP device was
-        #             allocated, not to which FCP template this FCP
+        #   tmpl_id: indicate from which FCP Multipath Template this FCP device was
+        #             allocated, not to which FCP Multipath Template this FCP
         #             device belong. because a FCP device may belong
-        #             to multiple FCP templates.
+        #             to multiple FCP Multipath Templates.
         fcp_info_tables['fcp'] = (
             "CREATE TABLE IF NOT EXISTS fcp("
             "fcp_id         char(4)     NOT NULL COLLATE NOCASE,"
@@ -338,7 +338,7 @@ class FCPDbOperator(object):
             "tmpl_id        varchar(32) NOT NULL DEFAULT '' COLLATE NOCASE,"
             "PRIMARY KEY (fcp_id))")
 
-        # table for FCP templates:
+        # table for FCP Multipath Templates:
         #   id: template id, the primary key
         #   name: the name of the template
         #   description: the description for this template
@@ -739,7 +739,7 @@ class FCPDbOperator(object):
 
     @staticmethod
     def update_basic_info_of_fcp_template(record):
-        """ update basic info of a fcp template
+        """ update basic info of a FCP Multipath Template
             in table template
 
             :param record (tuple)
@@ -778,12 +778,12 @@ class FCPDbOperator(object):
     @staticmethod
     def bulk_set_sp_default_by_fcp_template(template_id,
                                             sp_name_list):
-        """ Set a default FCP template
+        """ Set a default FCP Multipath Template
             for multiple storage providers
 
             The function only manipulate table(template_fcp_mapping)
 
-            :param template_id: the FCP device template id
+            :param template_id: the FCP Multipath Template ID
             :param sp_name_list: a list of storage provider hostname
 
             :return NULL
@@ -1040,7 +1040,7 @@ class FCPDbOperator(object):
         allocated_paths = len(fcp_list)
         total_paths = len(path_list)
         if allocated_paths < total_paths:
-            LOG.info("Not all paths of FCP device template(id={}) "
+            LOG.info("Not all paths of FCP Multipath Template (id={}) "
                      "have available FCP devices. "
                      "The count of minimum FCP device path is {}. "
                      "The count of total paths is {}. "
@@ -1066,10 +1066,10 @@ class FCPDbOperator(object):
     def create_fcp_template(self, fcp_template_id, name, description,
                             fcp_devices_by_path, host_default,
                             default_sp_list, min_fcp_paths_count=None):
-        """ Insert records of new fcp template in fcp DB
+        """ Insert records of new FCP Multipath Template in fcp DB
 
-        :param fcp_template_id: fcp template id
-        :param name: fcp template name
+        :param fcp_template_id: FCP Multipath Template ID
+        :param name: FCP Multipath Template name
         :param description: description
         :param fcp_devices_by_path:
             Example:
@@ -1098,7 +1098,7 @@ class FCPDbOperator(object):
             # if already exist, raise exception
             if self.fcp_template_exist_in_db(fcp_template_id):
                 raise exception.SDKObjectAlreadyExistError(
-                    obj_desc=("FCP device template "
+                    obj_desc=("FCP Multipath Template "
                               "(id: %s) " % fcp_template_id),
                     modID=self._module_id)
             # then check the SP records exist in template_sp_mapping or not
@@ -1154,7 +1154,7 @@ class FCPDbOperator(object):
 
     def _validate_min_fcp_paths_count(self, fcp_devices, min_fcp_paths_count, fcp_template_id):
         """
-        When to edit FCP template, if min_fcp_paths_count is not None or
+        When to edit FCP Multipath Template, if min_fcp_paths_count is not None or
         fcp_devices is not None (None means no need to update this field, but keep the original value),
         need to validate the values.
         min_fcp_paths_count should not be larger than fcp_device_path_count.
@@ -1197,7 +1197,7 @@ class FCPDbOperator(object):
     def edit_fcp_template(self, fcp_template_id, name=None, description=None,
                           fcp_devices=None, host_default=None,
                           default_sp_list=None, min_fcp_paths_count=None):
-        """ Edit a FCP device template
+        """ Edit a FCP Multipath Template.
 
         The kwargs values are pre-validated in two places:
           validate kwargs types
@@ -1242,12 +1242,12 @@ class FCPDbOperator(object):
         # util current thread exits the with-block.
         # Refer to 'def get_fcp_conn' for thread lock
         with get_fcp_conn():
-            # DQL: validate: FCP device template
+            # DQL: validate: FCP Multipath Template
             if not self.fcp_template_exist_in_db(fcp_template_id):
-                obj_desc = ("FCP device template {}".format(fcp_template_id))
+                obj_desc = ("FCP Multipath Template {}".format(fcp_template_id))
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
 
-            # DQL: validate: add or delete path from FCP template.
+            # DQL: validate: add or delete path from FCP Multipath Template.
             # If fcp_devices is None, it means user do not want to
             # modify fcp_devices, so skip the validation;
             # otherwise, perform the validation.
@@ -1262,8 +1262,8 @@ class FCPDbOperator(object):
                         inuse_fcp = utils.shrink_fcp_list(
                             [fcp['fcp_id'] for fcp in inuse_fcp])
                         detail = ("The FCP devices ({}) are allocated to virtual machines "
-                                  "by the FCP device template (id={}). "
-                                  "Adding or deleting a FCP device path from a FCP device template "
+                                  "by the FCP Multipath Template (id={}). "
+                                  "Adding or deleting a FCP device path from a FCP Multipath Template "
                                   "is not allowed if there is any FCP device allocated from the template. "
                                   "You must deallocate those FCP devices "
                                   "before adding or deleting a path from the template."
@@ -1313,7 +1313,7 @@ class FCPDbOperator(object):
                 inter_set = set(fcp_from_input) & set(fcp_in_db)
                 del_set = set(fcp_in_db) - set(fcp_from_input)
                 # only unused FCP devices can be
-                # deleted from a FCP device template.
+                # deleted from a FCP Multipath Template.
                 # Two types of unused FCP devices:
                 # 1. connections/reserved == None:
                 #   the fcp only exists in table(template_fcp_mapping),
@@ -1326,7 +1326,7 @@ class FCPDbOperator(object):
                     if (fcp_in_db[fcp]['connections'] not in (None, 0) or
                             fcp_in_db[fcp]['reserved'] not in (None, 0)):
                         not_allow_for_del.add(fcp)
-                # For a FCP device included in multiple FCP device templates,
+                # For a FCP device included in multiple FCP Multipath Templates,
                 # the FCP device is allowed to be deleted from the current template
                 # only if it is allocated from another template rather than the current one
                 inuse_fcp_devices = self.get_inuse_fcp_device_by_fcp_template(fcp_template_id)
@@ -1338,7 +1338,7 @@ class FCPDbOperator(object):
                         list(not_allow_for_del))
                     detail = ("The FCP devices ({}) are missing from the FCP device list. "
                               "These FCP devices are allocated to virtual machines "
-                              "from the FCP device template (id={}). "
+                              "from the FCP Multipath Template (id={}). "
                               "Deleting the allocated FCP devices from this template is not allowed. "
                               "You must ensure those FCP devices are included in the FCP device list."
                               .format(not_allow_for_del, fcp_template_id))
@@ -1352,7 +1352,7 @@ class FCPDbOperator(object):
                     for fcp_id in del_set]
                 self.bulk_delete_fcp_device_from_fcp_template(
                     records_to_delete)
-                LOG.info("FCP devices ({}) removed from FCP template {}."
+                LOG.info("FCP devices ({}) removed from FCP Multipath Template {}."
                          .format(utils.shrink_fcp_list(list(del_set)),
                                  fcp_template_id))
                 # 2. insert into table template_fcp_mapping
@@ -1361,7 +1361,7 @@ class FCPDbOperator(object):
                     for fcp_id in add_set]
                 self.bulk_insert_fcp_device_into_fcp_template(
                     records_to_insert)
-                LOG.info("FCP devices ({}) added into FCP template {}."
+                LOG.info("FCP devices ({}) added into FCP Multipath Template {}."
                          .format(utils.shrink_fcp_list(list(add_set)),
                                  fcp_template_id))
                 # 3. update table template_fcp_mapping
@@ -1374,7 +1374,7 @@ class FCPDbOperator(object):
                             fcp_from_input[fcp], fcp, fcp_template_id)
                         self.update_path_of_fcp_device(record_to_update)
                         LOG.info("FCP device ({}) updated into "
-                                 "FCP template {} from path {} to path {}."
+                                 "FCP Multipath Template {} from path {} to path {}."
                                  .format(fcp, fcp_template_id,
                                          fcp_in_db[fcp]['path'],
                                          fcp_from_input[fcp]))
@@ -1393,7 +1393,7 @@ class FCPDbOperator(object):
                     else tmpl_basic[0]['min_fcp_paths_count'],
                     fcp_template_id)
                 self.update_basic_info_of_fcp_template(record_to_update)
-                LOG.info("FCP template basic info updated.")
+                LOG.info("FCP Multipath Template basic info updated.")
 
             # DML: table template_sp_mapping
             if default_sp_list is not None:
@@ -1425,8 +1425,8 @@ class FCPDbOperator(object):
             }}
 
     def get_fcp_templates(self, template_id_list=None):
-        """Get fcp templates base info by template_id_list.
-        If template_id_list is None, will get all the fcp templates in db.
+        """Get FCP Multipath Templates base info by template_id_list.
+        If template_id_list is None, will get all the FCP Multipath Templates in db.
 
         return format:
         [(id|name|description|is_default|min_fcp_paths_count|sp_name)]
@@ -1451,7 +1451,7 @@ class FCPDbOperator(object):
         return raw
 
     def get_host_default_fcp_template(self, host_default=True):
-        """Get the host default fcp template base info.
+        """Get the host default FCP Multipath Template base info.
         return format: (id|name|description|is_default|sp_name)
 
         when the  template is more than one SP's default,
@@ -1478,7 +1478,7 @@ class FCPDbOperator(object):
         return raw
 
     def get_sp_default_fcp_template(self, sp_host_list):
-        """Get the sp_host_list default fcp template.
+        """Get the sp_host_list default FCP Multipath Template.
         """
         cmd = ("SELECT t.id, t.name, t.description, t.is_default, "
                "t.min_fcp_paths_count, ts.sp_name "
@@ -1589,7 +1589,7 @@ class FCPDbOperator(object):
 
     def bulk_delete_fcp_from_template(self, fcp_id_list, fcp_template_id):
         """Delete multiple FCP records from the table template_fcp_mapping in the
-        specified fcp template only if the FCP devices are available."""
+        specified FCP Multipath Template only if the FCP devices are available."""
         records_to_delete = [(fcp_template_id, fcp_id)
                              for fcp_id in fcp_id_list]
         with get_fcp_conn() as conn:
@@ -1602,11 +1602,11 @@ class FCPDbOperator(object):
                 records_to_delete)
 
     def delete_fcp_template(self, template_id):
-        """Remove fcp template record from template, template_sp_mapping,
+        """Remove FCP Multipath Template record from template, template_sp_mapping,
         template_fcp_mapping and fcp tables."""
         with get_fcp_conn() as conn:
             if not self.fcp_template_exist_in_db(template_id):
-                obj_desc = ("FCP device template {} ".format(template_id))
+                obj_desc = ("FCP Multipath Template {} ".format(template_id))
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
             inuse_fcp_devices = self.get_inuse_fcp_device_by_fcp_template(
                 template_id)
@@ -1614,8 +1614,8 @@ class FCPDbOperator(object):
                 inuse_fcp_devices = utils.shrink_fcp_list(
                     [fcp['fcp_id'] for fcp in inuse_fcp_devices])
                 detail = ("The FCP devices ({}) are allocated to virtual machines "
-                          "by the FCP device template (id={}). "
-                          "Deleting a FCP device template is not allowed "
+                          "by the FCP Multipath Template (id={}). "
+                          "Deleting a FCP Multipath Template is not allowed "
                           "if there is any FCP device allocated from the template. "
                           "You must deallocate those FCP devices before deleting the template."
                           .format(inuse_fcp_devices, template_id))
@@ -1627,7 +1627,7 @@ class FCPDbOperator(object):
                          (template_id,))
             conn.execute("DELETE FROM template_fcp_mapping WHERE tmpl_id=?",
                          (template_id,))
-            LOG.info("FCP device template with id %s is removed from "
+            LOG.info("FCP Multipath Template with id %s is removed from "
                      "template, template_sp_mapping and "
                      "template_fcp_mapping tables" % template_id)
 
