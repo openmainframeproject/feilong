@@ -241,7 +241,7 @@ class HandlersVolumeTest(unittest.TestCase):
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_create_fcp_template_default_values(self, mock_send_request):
-        """Test the default values was set correctly when create fcp template."""
+        """Test the default values was set correctly when create a FCP Multipath Template."""
         mock_send_request.return_value = {'overallRC': 0}
         body = {'name': 'tmpl name'}
         self.req.body = json.dumps(body)
