@@ -576,8 +576,8 @@ class TestFCPManager(base.SDKTestCase):
         self._insert_data_into_template_table(templates)
         try:
             self.assertRaisesRegex(exception.SDKVolumeOperationError,
-                                   "No FCP template is specified and no "
-                                   "default FCP template is found.",
+                                   "No FCP Multipath Template is specified and no "
+                                   "default FCP Multipath Template is found.",
                                    self.fcpops.reserve_fcp_devices,
                                    assinger_id, template_id, sp_name)
         finally:
@@ -1536,7 +1536,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self._delete_from_template_table(template_id_list)
 
     def test_get_volume_connector_reserve_with_error(self):
-        """The specified FCP template doesn't exist, should raise error."""
+        """The specified FCP Multipath Template doesn't exist, should raise error."""
         assigner_id = 'fakeuser'
         fcp_template_id = '0001'
         sp_name = 'v7k60'

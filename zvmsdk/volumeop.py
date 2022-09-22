@@ -614,8 +614,8 @@ class FCPManager(object):
         """
         Reserve FCP devices by assigner_id and fcp_template_id. In this method:
         1. If fcp_template_id is specified, then use it. If not, get the sp
-           default FCP template, if no sp default template, use host default
-           FCP template.
+           default FCP Multipath Template, if no sp default template, use host default
+           FCP Multipath Template.
            If host default template is not found, then raise error.
         2. Get FCP list from db by assigner and fcp_template whose reserve=1
         3. If fcp_list is not empty, just to use them.
@@ -631,24 +631,24 @@ class FCPManager(object):
         with database.get_fcp_conn():
             fcp_tmpl_id = fcp_template_id
             if not fcp_tmpl_id:
-                LOG.info("FCP template id is not specified when reserving FCP "
+                LOG.info("FCP Multipath Template id is not specified when reserving FCP "
                          "devices for assigner %s." % assigner_id)
                 if sp_name:
-                    LOG.info("Get the default FCP template id for Storage "
+                    LOG.info("Get the default FCP Multipath Template id for Storage "
                              "Provider %s " % sp_name)
                     default_tmpl = self.db.get_sp_default_fcp_template([sp_name])
                 if not sp_name or not default_tmpl:
-                    LOG.info("Can not find the default FCP template id for "
+                    LOG.info("Can not find the default FCP Multipath Template id for "
                              "storage provider %s. Get the host default FCP "
                              "template id for assigner %s" % (sp_name,
                                                               assigner_id))
                     default_tmpl = self.db.get_host_default_fcp_template()
                 if default_tmpl:
                     fcp_tmpl_id = default_tmpl[0][0]
-                    LOG.info("The default FCP template id is %s." % fcp_tmpl_id)
+                    LOG.info("The default FCP Multipath Template id is %s." % fcp_tmpl_id)
                 else:
-                    errmsg = ("No FCP template is specified and "
-                              "no default FCP template is found.")
+                    errmsg = ("No FCP Multipath Template is specified and "
+                              "no default FCP Multipath Template is found.")
                     LOG.error(errmsg)
                     raise exception.SDKVolumeOperationError(rs=11,
                                                             userid=assigner_id,
@@ -663,7 +663,7 @@ class FCPManager(object):
                 fcp_list = self.db.get_allocated_fcps_from_assigner(
                     assigner_id, fcp_tmpl_id)
                 LOG.info("Previously allocated records %s for "
-                         "instance %s in fcp template %s." %
+                         "instance %s in FCP Multipath Template %s." %
                          ([f['fcp_id'] for f in fcp_list],
                           assigner_id, fcp_tmpl_id))
                 if not fcp_list:
@@ -701,11 +701,11 @@ class FCPManager(object):
                     assigner_id = assigner_id.upper()
                     self.db.reserve_fcps(fcp_ids, assigner_id, fcp_tmpl_id)
                     LOG.info("Newly allocated %s fcp for %s assigner "
-                             "and FCP template %s" %
+                             "and FCP Multipath Template %s" %
                              (fcp_ids, assigner_id, fcp_tmpl_id))
                 else:
                     # reuse the old ones if fcp_list is not empty
-                    LOG.info("Found allocated fcps %s for %s in FCP template %s, "
+                    LOG.info("Found allocated fcps %s for %s in FCP Multipath Template %s, "
                              "will reuse them."
                              % ([f['fcp_id'] for f in fcp_list],
                                 assigner_id, fcp_tmpl_id))
@@ -720,7 +720,7 @@ class FCPManager(object):
                 return available_list, fcp_tmpl_id
             except Exception as err:
                 errmsg = ("Failed to reserve FCP devices "
-                          "for assigner %s by FCP template %s error: %s"
+                          "for assigner %s by FCP Multipath Template %s error: %s"
                           % (assigner_id, fcp_template_id, err.message))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=11,
@@ -768,13 +768,13 @@ class FCPManager(object):
                     if fcp_ids:
                         self.db.unreserve_fcps(fcp_ids)
                         LOG.info("Unreserve fcp device %s from "
-                                 "instance %s and FCP template %s."
+                                 "instance %s and FCP Multipath Template %s."
                                  % (fcp_ids, assigner_id, fcp_template_id))
                     return fcp_list
                 return []
             except Exception as err:
                 errmsg = ("Failed to unreserve FCP devices for "
-                          "assigner %s by FCP template %s. Error: %s"
+                          "assigner %s by FCP Multipath Template %s. Error: %s"
                           % (assigner_id, fcp_template_id, err.message))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=11,
@@ -945,7 +945,7 @@ class FCPManager(object):
                     # storage provider backend is still using the old WWPNs recorded in FCP DB.
                     # To detach the volume and delete the host mapping successfully, we need make sure the WWPNs records
                     # in FCP DB unchanged in this case.
-                    # Because we will copy all properties in fcp_dict_in_zvm[fcp] to DB when update an FCP property
+                    # Because we will copy all properties in fcp_dict_in_zvm[fcp] to DB when update a FCP property
                     # (for example, state, owner, etc),
                     # we overwrite the (wwpn_npiv_zvm, wwpn_phy_zvm) in fcp_dict_in_zvm[fcp]
                     # to old (wwpn_npiv_db, wwpn_phy_db), so that their values will not be changed when update other
@@ -987,7 +987,7 @@ class FCPManager(object):
                             host_default: bool = False,
                             default_sp_list: list = None,
                             min_fcp_paths_count: int = None):
-        """Create a fcp template and return the basic information of
+        """Create a FCP Multipath Template and return the basic information of
         the created template, for example:
         {
             'fcp_template': {
@@ -1000,7 +1000,8 @@ class FCPManager(object):
             }
         }
         """
-        LOG.info("Try to create a FCP template with name:%s,"
+        LOG.info("Try to create a"
+                 " FCP Multipath Template with name:%s,"
                  "description:%s, fcp devices: %s, host_default: %s,"
                  "storage_providers: %s, min_fcp_paths_count: %s."
                  % (name, description, fcp_devices, host_default,
@@ -1022,7 +1023,7 @@ class FCPManager(object):
                                     default_sp_list, min_fcp_paths_count)
         min_fcp_paths_count_db = self.db.get_min_fcp_paths_count(tmpl_id)
         # Return template basic info
-        LOG.info("A FCP template was created with ID %s." % tmpl_id)
+        LOG.info("A FCP Multipath Template was created with ID %s." % tmpl_id)
         return {'fcp_template': {'name': name,
                 'id': tmpl_id,
                 'description': description,
@@ -1034,7 +1035,7 @@ class FCPManager(object):
                           description=None, fcp_devices=None,
                           host_default=None, default_sp_list=None,
                           min_fcp_paths_count=None):
-        """ Edit a FCP device template
+        """ Edit a FCP Multipath Template
 
         The kwargs values are pre-validated in two places:
           validate kwargs types
@@ -1144,7 +1145,7 @@ class FCPManager(object):
                                      "host_default": bool(is_default),
                                      "storage_providers": [],
                                      "min_fcp_paths_count": min_fcp_paths_count}
-            # one fcp template can be multiple sp's default template
+            # one FCP Multipath Template can be multiple sp's default template
             if sp_name and sp_name not in template_dict[id]["storage_providers"]:
                 template_dict[id]["storage_providers"].append(sp_name)
         return template_dict
@@ -1191,8 +1192,8 @@ class FCPManager(object):
          reserved, _, _, chpid, state, owner, _) = raw_item
 
         # The raw_item is for each fcp device, so there are multiple
-        # items for each single fcp template.
-        # But the return result needs to group all the items by fcp template,
+        # items for each single FCP Multipath Template.
+        # But the return result needs to group all the items by FCP Multipath Template,
         # so construct a dict statistics_usage[template_id]
         # with template_id as key to group the info.
         # template_id key also will be used to join with template base info
@@ -1233,7 +1234,7 @@ class FCPManager(object):
                 statistics_usage[
                     template_id][path_id]["notfound"].append(fcp_id)
                 LOG.warning("Found a FCP device "
-                            "%s in fcp template %s, but not found in "
+                            "%s in FCP Multipath Template %s, but not found in "
                             "z/VM." % (str(fcp_id), str(template_id)))
             # case H: (state = offline)
             # this FCP in database but offline in z/VM
@@ -1313,7 +1314,7 @@ class FCPManager(object):
             statistics_usage[template_id][path_id]["total"].append(fcp_id)
             statistics_usage[template_id][path_id]["notfound"].append(fcp_id)
             LOG.warning("Found a FCP device "
-                        "%s in fcp template %s, but not found in "
+                        "%s in FCP Multipath Template %s, but not found in "
                         "z/VM." % (str(fcp_id), str(template_id)))
         return statistics_usage
 
@@ -1384,14 +1385,14 @@ class FCPManager(object):
                           default_sp_list=None, host_default=None):
         """Get template base info by template_id_list or filters
         :param template_id_list: (list) a list of template id,
-        if it is None, get fcp templates with other parameter
+        if it is None, get FCP Multipath Templates with other parameter
         :param assigner_id: (str) a string of VM userid
         :param default_sp_list: (list) a list of storage provider or 'all',
-        to get storage provider's default fcp templates
+        to get storage provider's default FCP Multipath Templates
 
         when sp_host_list = ['all'], will get all storage providers' default
-        fcp templates. For example, there are 3 fcp templates are set as
-        storage providers' default template, then all these 3 fcp templates
+        FCP Multipath Templates. For example, there are 3 FCP Multipath Templates are set as
+        storage providers' default template, then all these 3 FCP Multipath Templates
         will return as below:
         {
             "fcp_templates": [
@@ -1427,7 +1428,7 @@ class FCPManager(object):
         }
 
         when sp_host_list is a storage provider name list, will return these
-        providers' default fcp templates.
+        providers' default FCP Multipath Templates.
 
         Example:
         sp_host_list = ['v7k60', 'ds8k60c1']
@@ -1468,7 +1469,7 @@ class FCPManager(object):
                 if not self.db.fcp_template_exist_in_db(template_id):
                     not_exist.append(template_id)
             if not_exist:
-                obj_desc = ("FCP device templates {} ".format(not_exist))
+                obj_desc = ("FCP Multipath Templates {} ".format(not_exist))
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
             raw = self.db.get_fcp_templates(template_id_list)
         elif assigner_id:
@@ -1478,7 +1479,7 @@ class FCPManager(object):
         elif host_default is not None:
             raw = self.db.get_host_default_fcp_template(host_default)
         else:
-            # if no parameter, will get all fcp templates
+            # if no parameter, will get all FCP Multipath Templates
             raw = self.db.get_fcp_templates(template_id_list)
 
         template_list = self.extract_template_info_from_raw_data(raw)
@@ -1489,7 +1490,7 @@ class FCPManager(object):
 
     def get_fcp_templates_details(self, template_id_list=None, raw=False,
                                   statistics=True, sync_with_zvm=False):
-        """Get fcp templates detail info.
+        """Get FCP Multipath Templates detail info.
         :param template_list: (list) if is None, will get all the templates on
         the host
         :return: (dict) the raw and/or statistic data of temlate_list FCP
@@ -1628,7 +1629,7 @@ class FCPManager(object):
                 if not self.db.fcp_template_exist_in_db(template_id):
                     not_exist.append(template_id)
         if not_exist:
-            obj_desc = ("FCP device templates {} ".format(not_exist))
+            obj_desc = ("FCP Multipath Templates {} ".format(not_exist))
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc)
 
         if sync_with_zvm:
@@ -1706,7 +1707,7 @@ class FCPManager(object):
             #         path2: {}}
             # }
             for template_id, base_info in template_info.items():
-                # only the fcp template which has fcp in zvm has
+                # only the FCP Multipath Template which has fcp in zvm has
                 # statistics_usage data
                 if template_id in statistics_usage:
                     base_info.update(
@@ -1734,7 +1735,7 @@ class FCPManager(object):
         return {"fcp_templates": ret}
 
     def delete_fcp_template(self, template_id):
-        """Delete fcp template by id.
+        """Delete FCP Multipath Template by id.
         :param template_id: (str)
         :return: no return result
         """
@@ -1771,7 +1772,7 @@ class FCPVolumeManager(object):
         2. operations on z/VM done by _dedicate_fcp()
            i.e. dedicate FCP device from assigner_id
         3. operations on FCP DB done by get_volume_connector()
-           i.e. reserve FCP device and set FCP device template id from FCP DB
+           i.e. reserve FCP device and set FCP Multipath Template id from FCP DB
 
         :param fcp_list: (list) a list of FCP devices
         :param assigner_id: (str) the userid of the virtual machine
@@ -1945,7 +1946,7 @@ class FCPVolumeManager(object):
         else:
             min_fcp_paths_count = self.db.get_min_fcp_paths_count(fcp_template_id)
             if min_fcp_paths_count == 0:
-                errmsg = ("No FCP devices were found in the FCP template %s,"
+                errmsg = ("No FCP devices were found in the FCP Multipath Template %s,"
                           "stop refreshing bootmap." % fcp_template_id)
                 LOG.error(errmsg)
                 raise exception.SDKBaseException(msg=errmsg)
@@ -2004,7 +2005,7 @@ class FCPVolumeManager(object):
                         _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                         LOG.info("After rollback, property of FCP device %s "
                                  "is (assigner_id: %s, reserved:%s, "
-                                 "connections: %s, fcp template id: %s)."
+                                 "connections: %s, FCP Multipath Template id: %s)."
                                  % (fcp, _userid, _reserved, _conns, _tmpl_id))
                 raise
 
@@ -2171,7 +2172,7 @@ class FCPVolumeManager(object):
                     _userid, _reserved, _conns, _tmpl_id = self.get_fcp_usage(fcp)
                     LOG.info("After rollback, property of FCP device %s "
                              "is (assigner_id: %s, reserved:%s, "
-                             "connections: %s, fcp template id: %s)."
+                             "connections: %s, FCP Multipath Template id: %s)."
                              % (fcp, _userid, _reserved, _conns, _tmpl_id))
             raise
 
@@ -2214,7 +2215,7 @@ class FCPVolumeManager(object):
                     rs=11, userid=assigner_id, msg=errmsg)
             """
             Reserve or unreserve FCP device
-            according to assigner id and FCP template id.
+            according to assigner id and FCP Multipath Template id.
             """
             if reserve:
                 LOG.info("get_volume_connector: Enter reserve_fcp_devices.")
@@ -2244,7 +2245,7 @@ class FCPVolumeManager(object):
                            'fcp_template_id': fcp_template_id}
         if not fcp_list:
             errmsg = ("Not enough available FCP devices found from "
-                      "FCP device template(id={})".format(fcp_template_id))
+                      "FCP Multipath Template(id={})".format(fcp_template_id))
             LOG.error(errmsg)
             return empty_connector
 
@@ -2267,7 +2268,7 @@ class FCPVolumeManager(object):
                      'fcp_paths': len(fcp_list),
                      'fcp_template_id': fcp_template_id}
         LOG.info('get_volume_connector returns %s for '
-                 'assigner %s and fcp template %s'
+                 'assigner %s and FCP Multipath Template %s'
                  % (connector, assigner_id, fcp_template_id))
         return connector
 
