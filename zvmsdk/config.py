@@ -510,17 +510,6 @@ tell SDK where to store the database files, make sure the process
 running SDK is able to read write and execute the directory.
 '''
         ),
-    # volume options
-    Opt('fcp_list',
-        section='volume',
-        default='',
-        opt_type='str',
-        help='''
-volume fcp list.
-
-SDK will only use the fcp devices in the scope of this value.
-'''
-        ),
     Opt('refresh_bootmap_timeout',
         section='volume',
         default=1200,
