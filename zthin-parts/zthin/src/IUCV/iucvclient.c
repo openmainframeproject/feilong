@@ -64,7 +64,7 @@ int pre_checks(char *argv[])
         printAndLogIUCVserverReturnCodeReasonCodeoutput(IUCV_FILE_NOT_EXIST, errno, buffer, 1);
         return IUCV_FILE_NOT_EXIST;
     }
-    close(fp);
+    fclose(fp);
     fp = NULL;
     /* if command is transport file, need to check whether the source path is valid*/
     if (strcmp(argv[2], FILE_TRANSPORT)==0)
@@ -75,9 +75,9 @@ int pre_checks(char *argv[])
             printAndLogIUCVserverReturnCodeReasonCodeoutput(FILE_TRANSPORT_ERROR, errno, buffer, 1);
             return FILE_TRANSPORT_ERROR;
         }
+        fclose(fp);
+        fp = NULL;
     }
-    close(fp);
-    fp = NULL;
     return 0;
 }
 
@@ -138,12 +138,16 @@ int prepare_commands(char* buffer, int argc, char *argv[])
        upgrade is needed.
     */
     /* Check whether the IUCV server exist */
-    if (fopen(FILE_PATH_IUCV_SERVER,"r") == NULL)
+    fp = fopen(FILE_PATH_IUCV_SERVER,"r");
+    if (fp == NULL)
     {
         sprintf(err_buf, "ERROR: can't find IUCV server in path %s, please copy file to the path and try again.", FILE_PATH_IUCV_SERVER);
         printAndLogIUCVserverReturnCodeReasonCodeoutput(IUCV_FILE_NOT_EXIST, errno, err_buf, 1);
         return IUCV_FILE_NOT_EXIST;
     }
+    fclose(fp);
+    fp = NULL;
+
     char tmp_buf[BUFFER_SIZE];
     sprintf(tmp_buf, "%s --version", FILE_PATH_IUCV_SERVER);
     fp = popen(tmp_buf, "r");
