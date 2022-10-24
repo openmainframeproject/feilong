@@ -12,9 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import fcntl
+from datetime import datetime
+
+from zvmsdk import log
 
 from zvmconnector import socketclient
 from zvmconnector import restclient
+
+
+LOG = log.LOG
 
 
 CONN_TYPE_SOCKET = 'socket'
@@ -93,4 +100,94 @@ class ZVMConnector(object):
         :param *api_args:      SDK API sequence parameters
         :param **api_kwargs:   SDK API keyword parameters
         """
-        return self.conn.request(api_name, *api_args, **api_kwargs)
+        info = self.conn.request(api_name, *api_args, **api_kwargs)
+
+        # {'overallRC': 101, 'modID': 110, 'rc': 101, 'rs': 2, 'errmsg':
+        # 'Failed to connect SDK server 127.0.0.1:2000, error: [Errno 111]
+        # Connection refused', 'output': ''}
+
+        if info.get('overallRC') == 101 and info.get('rc') == 101 and \
+            info.get("rs") == 2 and \
+            info.get("errmsg").__contains__('Failed to connect SDK server'):
+
+            # handle retry again
+            _handle_retry_with_lock()
+
+            info = self.conn.request(api_name, *api_args, **api_kwargs)
+
+        return info
+
+
+# command that gonna restart sdkserver, it must be systemctl
+# as we ask for SUDO for such command and ask for SELinux
+COMMAND = "sudo systemctl restart sdkserver"
+
+
+# retry the command to get a chance to redo the command
+def _handle_retry():
+    import subprocess
+    import time
+
+    try:
+        p = subprocess.Popen(COMMAND, stdout=subprocess.PIPE, shell=True)
+        out = p.communicate()
+        LOG.info("executed command: %s, result is: %s", COMMAND, out)
+    except Exception as err:
+        LOG.info(err)
+
+    # try after sleep to give time of sdkserver startup functional
+    time.sleep(1)
+
+
+LOCKFILE = "/etc/zvmsdk/sdkserver_retry.lck"
+RETRYFILE = "/etc/zvmsdk/sdkserver_retry.last"
+
+
+def _handle_retry_with_lock():
+    # we need handle following situation
+    # 2+ zvmsdk httpd service running and all found sdkserver not running
+    # we need make sure there is one restart and only one
+    dt = datetime.now()
+    ts = datetime.timestamp(dt)
+
+    # we need get time to try get lock time first
+    with Locker():
+        # if we get lock, read the time that did action
+        try:
+            f = open(RETRYFILE, "r")
+            told = f.read()
+            f.close()
+        except Exception as err:
+            LOG.info("failed to operate: %s", err)
+            told = ""
+
+        LOG.info("old/new ts is %s/%s", told, ts)
+        # if it's updated during we try to get lock
+        try:
+            if len(told) == 0 or float(told) < float(ts):
+                # retry
+                _handle_retry()
+
+                # write current timestamp
+                f = open(RETRYFILE, "w+")
+                dt = datetime.now()
+                ts = datetime.timestamp(dt)
+                f.write(str(ts))
+                f.close()
+        except Exception as err:
+            LOG.info("failed to retry: %s", err)
+
+
+class Locker:
+
+    def __enter__(self):
+        try:
+            self.fp = open(LOCKFILE, "w+")
+            fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+        except Exception as err:
+            LOG.debug("failed to operate: %s", err)
+            self.fp = None
+
+    def __exit__(self, _type, value, tb):
+        if self.fp:
+            fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
