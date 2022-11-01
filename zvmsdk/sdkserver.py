@@ -265,9 +265,12 @@ def start_daemon():
     try:
         server.setup()
         server.run()
+    except Exception as err:
+        LOG.error("sdkserver caught exception: %s", err)
     finally:
         # This finally won't catch exceptions from child thread, so
         # the close here is safe.
+        LOG.error("SDK server now stop running unexpectedly")
         if server.server_socket is not None:
             server.log_info("Closing the server socket.")
             server.server_socket.close()
