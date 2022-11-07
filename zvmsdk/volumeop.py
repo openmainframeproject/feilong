@@ -326,7 +326,7 @@ class VolumeConfiguratorAPI(object):
                 # Detach script exit code explanation:
                 # 1: failed because multipathd service is not active
                 # 3: failed because can not found intersection between input WWPNs and lszfcp output
-                # 4: failed because no disk file found in the target VM, means no volume shown in the target VM
+                # 4: failed because no valid WWID found for the disk file of the volume, so can not continue to detach
                 # 5: failed to flush a multipath device map
                 if exit_code == 1:
                     errmsg = ('Failed to deconfigure volume because the '
@@ -340,12 +340,12 @@ class VolumeConfiguratorAPI(object):
                               'virtual machine(userid:%s) for more '
                               'details.' % (fcp_list, assigner_id))
                 elif exit_code == 4:
-                    errmsg = ('Failed to deconfigure volume because the '
-                              'volume(target WWPN:%s, LUN:%s) did not show up in '
-                              'the target virtual machine(userid:%s), please '
-                              'check Fibre Channel connectivity between '
-                              'the FCP devices(%s) and target WWPN.'
-                              % (target_wwpns, target_lun, assigner_id, fcp_list))
+                    errmsg = ('Failed to deconfigure volume because no '
+                              'valid WWID found for the disk file of the '
+                              'volume(target WWPN:%s, LUN:%s), refer to the '
+                              '/var/log/messages in the target virtual '
+                              'machine (userid:%s) for more details.'
+                              % (target_wwpns, target_lun, assigner_id))
                 elif exit_code == 5:
                     errmsg = ('Failed to deconfigure volume because '
                               'getting error when flushing the multipath '
