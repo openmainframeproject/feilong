@@ -25,6 +25,7 @@ setuptools.setup(
     author='IBM',
     description='z/VM cloud management library in Python',
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     url='https://github.com/openmainframeproject/python-zvm-sdk',
     keywords='zvm cloud library',
     install_requires=open('requirements.txt').read(),
