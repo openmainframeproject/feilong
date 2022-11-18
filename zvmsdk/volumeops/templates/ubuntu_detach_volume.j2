@@ -25,8 +25,8 @@ OK=0
 MULTIPATH_SERVICE_NOT_ACTIVE=1
 # INVALID_WWPNS(3): failed because can not found intersection between input WWPNs and lszfcp output
 INVALID_WWPNS=3
-# DEVICE_PATH_NOT_FOUND(4): failed because no disk file found in the target VM, means no volume shown in the target VM
-DEVICE_PATH_NOT_FOUND=4
+# INVALID_WWID(4): failed to get WWID of a device
+INVALID_WWID=4
 # CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP(5): failed to flush a multipath device map
 CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP=5
 
@@ -58,147 +58,96 @@ do
     fi
 done
 
-# we need to get the intersection between input wwpns and lszfcp output
-# we need execute this from beginning because if paths were flushed, we get nothing
+# Print lszfcp -P output for debug.
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-echo "lszfcp -P output port info: $lszfcp_output ."
-declare -A valid_dict
-for fcp in ${fcp_list[@]}
-do
-    # Retry each FCP device to make sure there are matched WWPNs for it
-    Timeout=10
-    while [[ $Timeout -gt 0 ]]
-    do
-        # Get WWPNs under /sys/bus/ccw/drivers/zfcp/.
-        wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
-        echo -e "Target WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
-        # Try to find match between system WWPNs(from lszfcp output or under /sys) and input WWPNs
-        found_match=0
-        for wwpn in ${input_wwpns[@]}
-        do
-            fcp_wwpn_str="0.0.${fcp} ${wwpn}"
-            if [[ $lszfcp_output =~ $fcp_wwpn_str || $wwpns_shown_in_sys =~ $wwpn ]]; then
-                found_match=1
-                echo "$fcp_wwpn_str matched with the ouput of lszfcp or WWPNs shown under /sys/bus/ccw/drivers/zfcp/."
-                # Add this combination into valid_dict
-                if [[ -z ${valid_dict[$fcp]} ]]; then
-                    valid_dict+=([$fcp]="$wwpn")
-                else
-                    old_value=${valid_dict[$fcp]}
-                    new_value=${old_value}" "$wwpn
-                    valid_dict[$fcp]=$new_value
-                fi
-            fi
-        done
-        # If no matched wwpn found, need retry
-        if [[ $found_match -eq 0 ]]; then
-            sleep 1
-            Timeout=$((Timeout-1))
-            echo "Retrying to get the target WWPNs for FCP device $fcp, $Timeout seconds left..."
-            lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-        else
-            echo "Found target WWPNs ${valid_dict[$fcp]} for FCP device $fcp."
-            break
-        fi
-    done
-done
-echo "Got valid wwpns, list of key is: ${!valid_dict[@]}, list of value is: ${valid_dict[@]} ."
-# check the content of valid_dict, if no content, return error and exit code 3
-valid_fcp_count=0
-for fcp in ${!valid_dict[@]}
-do
-    valid_fcp_count=$((valid_fcp_count+=1))
-done
-if [[ $valid_fcp_count -eq 0 ]]; then
-    echo "Can not find the intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output, exit with code $INVALID_WWPNS."
+echo -e "lszfcp -P output port info:\nFCP No   WWPN              \n-------- ------------------\n$lszfcp_output\n---------------------------"
+
+if [[ -z $input_wwpns ]]; then
+    echo "There is no input WWPNs found, exit with code $INVALID_WWPNS."
     exit $INVALID_WWPNS
 fi
 
-# flag which indicate whether we found a valid and accessable path for the volume
-FoundDiskPath=0
 # wait for the device ready
-for fcp in ${!valid_dict[@]}
+FoundDiskPath=0
+diskPath=""
+for fcp in ${fcp_list[@]}
 do
-    ActiveWWPNs=(${valid_dict[$fcp]})
-    echo "To find active disk path of LUN $lun, got WWPNs: ${ActiveWWPNs[@]} belonging to FCP device: $fcp."
-
-    # loop all the WWPNs to found the alive device
-    for j in ${ActiveWWPNs[@]}
+    for wwpn in ${input_wwpns[@]}
     do
-        x="/dev/disk/by-path/ccw-0.0.$fcp-fc-$j-lun-$lun_id"
+        x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$wwpn:$lun"
         # the x would be like:
         # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
-        echo "Try to detect disk $x"
+        echo "Try to detect disk $x."
         if [ -e $x ]; then
-            echo "Disk $x detected"
+            echo "Disk $x detected."
             diskPath=$x
             FoundDiskPath=1
             break
         fi
     done
-
     if [ $FoundDiskPath -eq 1 ]; then
         echo "Found active disk path: $diskPath ."
         break
     fi
 done
+
 # if no disk path found, exit with code 4
 if [[ -z $diskPath ]]; then
-    echo "No valid paths found between FCP devices: ${fcp_list[@]} and WWPNS: ${input_wwpns}, exit with code $DEVICE_PATH_NOT_FOUND."
-    exit $DEVICE_PATH_NOT_FOUND
-fi
+    echo "Warning: no valid paths found between FCP devices: ${fcp_list[@]} and WWPNS: ${input_wwpns}, will continue to deregister SCSI devices."
+else
+    # get the wwid of device, the WWID are same for same volume
+    WWID=$(/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath)
+    if [[ -z $WWID ]]; then
+        echo "Error: cannot get the WWID of disk $diskPath, exit with code $INVALID_WWID."
+        exit $INVALID_WWID
+    fi
+    echo "scsi_id command get WWID: $WWID for device: $diskPath."
+    # flush IO for devices
+    echo "Begin to flush cache data on $diskPath ..."
+    blockdev --flushbufs $diskPath > /dev/null
+    echo "Flush cache data on $diskPath was done."
 
-# get the wwid of device, the WWID are same for same volume
-WWID=$(/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath)
-echo "scsi_id command get WWID:$WWID for device: $diskPath"
+    # exit code default to 0
+    exit_code=$OK
 
-# flush IO for devices
-echo "Begin to flush cache data on $diskPath ..."
-blockdev --flushbufs $diskPath > /dev/null
-echo "Flush cache data on $diskPath was done"
-
-# exit code default to 0, because WWID may be empty
-exit_code=$OK
-
-# get the map name of the WWID
-# then use multipath -f <map name> to flush the device
-map_name=$(multipath -l $WWID -v 1)
-echo "Got map name: $map_name for WWID: $WWID"
-output=$(multipath -f $map_name 2>&1)
-exit_code=$?
-# error output not empty, means error happened
-# and the error 'in use' and 'must provode a map name'
-# of multipath -f will return same exit code 1
-# so diff them, we will ingore the error of 'must provide a map name'
-if [ "$output" ]; then
-    if [ "$(echo $output | grep -i 'must provide a map name')" ]; then
-        echo "ignore error on WWID $WWID and Lun $lun:$output"
-        exit_code=$OK
-    elif [ "$(echo $output | grep -i 'in use')" ]; then
-        echo "Warning:device $map_name with WWID $WWID and Lun $lun is use, the detachment will continue."
-        exit_code=$OK
-    else
-        echo "Error:when flushing a multipath device map on device with WWID $WWID and Lun $lun failed because:$output"
-        exit_code=$CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP
+    # get the map name of the WWID
+    # then use multipath -f <map name> to flush the device
+    map_name=$(multipath -l $WWID -v 1)
+    echo "Got map name: $map_name for WWID: $WWID ."
+    output=$(multipath -f $map_name 2>&1)
+    exit_code=$?
+    # error output not empty, means error happened
+    # and the error 'in use' and 'must provode a map name'
+    # of multipath -f will return same exit code 1
+    # so diff them, we will ingore the error of 'must provide a map name'
+    if [ "$output" ]; then
+        if [ "$(echo $output | grep -i 'must provide a map name')" ]; then
+            echo "Ignore error on WWID $WWID and Lun $lun:$output."
+            exit_code=$OK
+        elif [ "$(echo $output | grep -i 'in use')" ]; then
+            echo "Warning: device $map_name with WWID $WWID and Lun $lun is use, the detachment will continue."
+            exit_code=$OK
+        else
+            echo "Error:when flushing a multipath device map on device with WWID $WWID and Lun $lun failed because:$output."
+            exit_code=$CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP
+        fi
+    fi
+    echo "Flushing a multipath device map $map_name exit with code: $exit_code."
+    #if above code didn't succeed, report warning.
+    if [[ $exit_code != 0 ]]; then
+        echo "Error: failed to flush a multipath device map $map_name exit with code: $exit_code."
+        exit $exit_code
     fi
 fi
-echo "Flushing a multipath device map $map_name exit with code: $exit_code"
-#if above code didn't succeed, exit now.
-if [[ $exit_code != 0 ]]; then
-    exit $exit_code
-fi
 
-for fcp in ${!valid_dict[@]}
+for fcp in ${fcp_list[@]}
 do
-    ActiveWWPNs=(${valid_dict[$fcp]})
-    echo "To remove LUN $lun from file system, got WWPNs: ${ActiveWWPNs[@]} belonging to FCP device $fcp."
-
-    # remove FCP LUNs and their SCSI devices
-    for WWPN in ${ActiveWWPNs[@]}
+    # remove configuration items in zfcp.conf
+    for wwpn in ${input_wwpns[@]}
     do
-        echo "Begin to deregister SCSI device 0.0.$fcp:$wwpn:$lun ..."
-        /sbin/chzdev -d zfcp-lun 0.0.$fcp:$WWPN:$lun --force
-        echo "Deregistraion of 0.0.$fcp:$wwpn:$lun was done"
+        echo "To remove WWPN $wwpn for $fcp in zfcp.conf."
+        sed -i -e "/0.0.$fcp $wwpn $lun/d" /etc/zfcp.conf
+        echo "WWPN $wwpn for $fcp in zfcp.conf removed."
     done
     
     # if is last volume, then should offline the FCP
