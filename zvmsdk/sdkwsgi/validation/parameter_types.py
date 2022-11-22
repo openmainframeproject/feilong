@@ -583,6 +583,7 @@ connection_info = {
     'properties': {
         'assigner_id': userid,
         'zvm_fcp': fcp,
+        'fcp_template_id': fcp_template_id,
         'target_wwpn': wwpn,
         'target_lun': lun,
         'os_version': os_version,
