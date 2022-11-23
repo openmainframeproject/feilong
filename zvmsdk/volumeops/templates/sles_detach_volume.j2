@@ -14,8 +14,6 @@ OK=0
 MULTIPATH_SERVICE_NOT_ACTIVE=1
 # INVALID_WWPNS(3): failed because can not found intersection between input WWPNs and lszfcp output
 INVALID_WWPNS=3
-# INVALID_WWID(4): failed to get WWID of a device
-INVALID_WWID=4
 # CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP(5): failed to flush a multipath device map
 CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP=5
 
@@ -88,45 +86,45 @@ else
     # get the wwid of device, the WWID are same for same volume
     WWID=$(/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath)
     if [[ -z $WWID ]]; then
-        echo "Error: cannot get the WWID of disk $diskPath, exit with code $INVALID_WWID."
-        exit $INVALID_WWID
-    fi
-    echo "scsi_id command get WWID: $WWID for device: $diskPath."
-    # flush IO for devices
-    echo "Begin to flush cache data on $diskPath ..."
-    blockdev --flushbufs $diskPath > /dev/null
-    echo "Flush cache data on $diskPath was done."
+        echo "Error: cannot get the WWID of disk $diskPath, will continue to deregister SCSI devices."
+    else
+        echo "scsi_id command get WWID: $WWID for device: $diskPath."
+        # flush IO for devices
+        echo "Begin to flush cache data on $diskPath ..."
+        blockdev --flushbufs $diskPath > /dev/null
+        echo "Flush cache data on $diskPath was done."
 
-    # exit code default to 0
-    exit_code=$OK
+        # exit code default to 0
+        exit_code=$OK
 
-    # get the map name of the WWID
-    # then use multipath -f <map name> to flush the device
-    map_name=$(multipath -l $WWID -v 1)
-    echo "Got map name: $map_name for WWID: $WWID ."
-    output=$(multipath -f $map_name 2>&1)
-    exit_code=$?
-    # error output not empty, means error happened
-    # and the error 'in use' and 'must provode a map name'
-    # of multipath -f will return same exit code 1
-    # so diff them, we will ingore the error of 'must provide a map name'
-    if [ "$output" ]; then
-        if [ "$(echo $output | grep -i 'must provide a map name')" ]; then
-            echo "Ignore error on WWID $WWID and Lun $lun:$output."
-            exit_code=$OK
-        elif [ "$(echo $output | grep -i 'in use')" ]; then
-            echo "Warning: device $map_name with WWID $WWID and Lun $lun is use, the detachment will continue."
-            exit_code=$OK
-        else
-            echo "Error:when flushing a multipath device map on device with WWID $WWID and Lun $lun failed because:$output."
-            exit_code=$CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP
+        # get the map name of the WWID
+        # then use multipath -f <map name> to flush the device
+        map_name=$(multipath -l $WWID -v 1)
+        echo "Got map name: $map_name for WWID: $WWID ."
+        output=$(multipath -f $map_name 2>&1)
+        exit_code=$?
+        # error output not empty, means error happened
+        # and the error 'in use' and 'must provode a map name'
+        # of multipath -f will return same exit code 1
+        # so diff them, we will ingore the error of 'must provide a map name'
+        if [ "$output" ]; then
+            if [ "$(echo $output | grep -i 'must provide a map name')" ]; then
+                echo "Ignore error on WWID $WWID and Lun $lun:$output."
+                exit_code=$OK
+            elif [ "$(echo $output | grep -i 'in use')" ]; then
+                echo "Warning: device $map_name with WWID $WWID and Lun $lun is use, the detachment will continue."
+                exit_code=$OK
+            else
+                echo "Error:when flushing a multipath device map on device with WWID $WWID and Lun $lun failed because:$output."
+                exit_code=$CAN_NOT_FLUSH_MULTIPATH_DEVICE_MAP
+            fi
         fi
-    fi
-    echo "Flushing a multipath device map $map_name exit with code: $exit_code."
-    #if above code didn't succeed, report warning.
-    if [[ $exit_code != 0 ]]; then
-        echo "Error: failed to flush a multipath device map $map_name exit with code: $exit_code."
-        exit $exit_code
+        echo "Flushing a multipath device map $map_name exit with code: $exit_code."
+        #if above code didn't succeed, report warning.
+        if [[ $exit_code != 0 ]]; then
+            echo "Error: failed to flush a multipath device map $map_name exit with code: $exit_code."
+            exit $exit_code
+        fi
     fi
 fi
 
