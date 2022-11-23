@@ -959,10 +959,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketran', '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
-        purge_rd = "changevm fakeuser purgerdr"
-        punch_rd = ("changevm fakeuser punchfile "
-                    "/tmp/tmpdir/faketran --class X")
-        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
         guestauth.assert_called_once_with(userid, None)
@@ -1204,8 +1200,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketran', '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
-        purge_rd = "changevm fakeuser purgerdr"
-        request.assert_called_once_with(purge_rd)
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
@@ -1223,9 +1217,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              'overallRC': 3, 'rc': 400, 'logEntries': '',
                              'response': ['(Error) output and error info']}
         execute.side_effect = [(0, ""), (0, ""), (0, "")]
-        request.side_effect = [None,
-                               exception.SDKSMTRequestFailed(
-                                   fake_smt_results, 'fake error')]
+        request.side_effect = exception.SDKSMTRequestFailed(fake_smt_results, 'fake error')
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
@@ -1242,10 +1234,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                    '-o StrictHostKeyChecking=no', 'user@1.1.1.1:/faketran',
                   '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
-        purge_rd = "changevm fakeuser purgerdr"
         punch_rd = ("changevm fakeuser punchfile "
                     "/tmp/tmpdir/faketran --class X")
-        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        request.assert_has_calls([mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
