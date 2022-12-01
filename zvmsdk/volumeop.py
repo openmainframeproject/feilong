@@ -52,8 +52,6 @@ WWPNS = 'wwpns'
 DEDICATE = 'dedicate'
 
 _LOCK_RESERVE_FCP = threading.RLock()
-_LOCK_ATTACH_VOLUME = threading.RLock()
-
 
 def get_volumeop():
     global _VolumeOP
@@ -1877,85 +1875,71 @@ class FCPVolumeManager(object):
         """
         LOG.info("Start to attach volume to FCP devices "
                  "%s on machine %s." % (fcp_list, assigner_id))
-        # _LOCK_ATTACH_VOLUME is used to ensure that the operation of FCP DB
-        # is thread safe for simultaneous volume attachments of one VM.
-        # For example:
-        #     1). 2 threads started to attach 2 volumes to same VM.
-        #     2). Before thread-1 enters _attach(), 2 FCP devices are reserved (fcp1, fcp2)
-        #         by get_volume_connectoer() for this attach.
-        #     3). If thread-1 fails increasing connections for 2nd FCP (fcp2),
-        #         then, thread-2 must wait before thread-1 completes the rollback
-        #         for the state of reserved and connections of both FCPs
-        # More details refer to pull request #668
-        global _LOCK_ATTACH_VOLUME
-        with _LOCK_ATTACH_VOLUME:
-            try:
-                # Operation on FCP DB:
-                # 1. Although the fcp devices in fcp_list were already reserved by get_volume_connector,
-                #    in case some rollback operations release them, reserve FCP devices in DB again.
-                self.fcp_mgr.reserve_fcp_devices(fcp_list, assigner_id, fcp_template_id)
-                # 2. increase connections by 1 and set assigner_id.
-                # fcp_connections examples:
-                # {'1a10': 1, '1b10': 1} => attaching 1st volume
-                # {'1a10': 2, '1b10': 2} => attaching 2nd volume
-                # {'1a10': 2, '1b10': 1} => connections differ in abnormal case (due to bug)
-                # the values are the connections of the FCP device
-                fcp_connections = self.fcp_mgr.increase_fcp_connections(fcp_list, assigner_id)
-                LOG.info("The connections of FCP devices before "
-                         "being dedicated to virtual machine %s is: %s."
-                         % (assigner_id, fcp_connections))
-            except Exception as err:
-                LOG.error("Failed to increase connections of the FCP devices on %s in "
-                          "database because %s." % (assigner_id, str(err)))
-                # Rollback for the following completed operations:
-                # 1. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-                # No need to rollback the connections in FCP DB because
-                # the increase_fcp_connections will rollback them automatically.
-                self._rollback_reserved_fcp_devices(fcp_list)
-                raise
+        try:
+            # Operation on FCP DB:
+            # 1. Although the fcp devices in fcp_list were already reserved by get_volume_connector,
+            #    in case some concurrent thread did _rollback_reserved_fcp_devices later,
+            #    here need to reserve those FCP devices in DB again.
+            self.fcp_mgr.reserve_fcp_devices(fcp_list, assigner_id, fcp_template_id)
+            # 2. increase connections by 1 and set assigner_id.
+            # fcp_connections examples:
+            # {'1a10': 1, '1b10': 1} => attaching 1st volume
+            # {'1a10': 2, '1b10': 2} => attaching 2nd volume
+            # {'1a10': 2, '1b10': 1} => connections differ in abnormal case (due to bug)
+            # the values are the connections of the FCP device
+            fcp_connections = self.fcp_mgr.increase_fcp_connections(fcp_list, assigner_id)
+            LOG.info("The connections of FCP devices before "
+                     "being dedicated to virtual machine %s is: %s."
+                     % (assigner_id, fcp_connections))
+        except Exception as err:
+            LOG.error("Failed to increase connections of the FCP devices on %s in "
+                      "database because %s." % (assigner_id, str(err)))
+            # Rollback for the following completed operations:
+            # 1. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
+            # No need to rollback the connections in FCP DB because
+            # the increase_fcp_connections will rollback them automatically.
+            self._rollback_reserved_fcp_devices(fcp_list)
+            raise
 
-            if is_root_volume:
-                LOG.info("We are attaching root volume, dedicating FCP devices %s "
-                         "to virtual machine %s has been done by refresh_bootmap; "
-                         "skip the remain steps of volume attachment."
-                         % (fcp_list, assigner_id))
-                return []
+        if is_root_volume:
+            LOG.info("We are attaching root volume, dedicating FCP devices %s "
+                     "to virtual machine %s has been done by refresh_bootmap; "
+                     "skip the remain steps of volume attachment."
+                     % (fcp_list, assigner_id))
+            return []
 
-            # Operation on z/VM: dedicate FCP devices to the assigner_id in z/VM
-            try:
-                for fcp in fcp_list:
-                    # Dedicate the FCP device on z/VM only when connections are 1,
-                    # which means this is 1st volume attached to this FCP device,
-                    # otherwise the FCP device has been dedicated already.
-                    # if _dedicate_fcp() raise exception for an FCP device, we must stop
-                    # the whole attachment to go to except-block to do rollback operations.
-                    if fcp_connections[fcp] == 1:
-                        LOG.info("Start to dedicate FCP %s to "
-                                 "%s in z/VM." % (fcp, assigner_id))
-                        # dedicate the FCP to the assigner in z/VM
-                        self._dedicate_fcp(fcp, assigner_id)
-                        LOG.info("Dedicating FCP %s to %s in z/VM is "
-                                 "done." % (fcp, assigner_id))
-                    else:
-                        LOG.info("This is not the first time to "
-                                 "attach volume to FCP %s, "
-                                 "skip dedicating the FCP device in z/VM." % fcp)
-            except Exception as err:
-                LOG.error("Failed to dedicate FCP devices to %s in "
-                          "z/VM because %s." % (assigner_id, str(err)))
-                # Rollback for the following completed operations:
-                # 1. operations on z/VM done by _dedicate_fcp()
-                # 2. operations on FCP DB done by increase_fcp_connections()
-                # 3. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-                self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
-                self._rollback_increased_connections(fcp_list)
-                self._rollback_reserved_fcp_devices(fcp_list)
-                raise
+        # Operation on z/VM: dedicate FCP devices to the assigner_id in z/VM
+        try:
+            for fcp in fcp_list:
+                # Dedicate the FCP device on z/VM only when connections are 1,
+                # which means this is 1st volume attached to this FCP device,
+                # otherwise the FCP device has been dedicated already.
+                # if _dedicate_fcp() raise exception for an FCP device, we must stop
+                # the whole attachment to go to except-block to do rollback operations.
+                if fcp_connections[fcp] == 1:
+                    LOG.info("Start to dedicate FCP %s to "
+                             "%s in z/VM." % (fcp, assigner_id))
+                    # dedicate the FCP to the assigner in z/VM
+                    self._dedicate_fcp(fcp, assigner_id)
+                    LOG.info("Dedicating FCP %s to %s in z/VM is "
+                             "done." % (fcp, assigner_id))
+                else:
+                    LOG.info("This is not the first time to "
+                             "attach volume to FCP %s, "
+                             "skip dedicating the FCP device in z/VM." % fcp)
+        except Exception as err:
+            LOG.error("Failed to dedicate FCP devices to %s in "
+                      "z/VM because %s." % (assigner_id, str(err)))
+            # Rollback for the following completed operations:
+            # 1. operations on z/VM done by _dedicate_fcp()
+            # 2. operations on FCP DB done by increase_fcp_connections()
+            # 3. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
+            self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
+            self._rollback_increased_connections(fcp_list)
+            self._rollback_reserved_fcp_devices(fcp_list)
+            raise
 
         # Operation on VM operating system: online the volume in the virtual machine
-        # because sometimes _add_disks takes long time and not impacted by concurrency,
-        # so NOT put this area within the _LOCK_ATTACH_VOLUME lock and not block
-        # other operations.
         try:
             LOG.info("Start to configure volume in the operating "
                      "system of %s." % assigner_id)
@@ -1974,14 +1958,11 @@ class FCPVolumeManager(object):
             # 2. operations on z/VM done by _dedicate_fcp()
             # 3. operations on FCP DB done by increase_fcp_connections()
             # 4. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-            # Because _add_disks might take too much time, so _add_disks is not in the scope of _LOCK_ATTACH_VOLUME.
-            # Then add lock for rollback operations to avoid concurrency problems.
             self._rollback_added_disks(fcp_list, assigner_id, target_wwpns, target_lun,
                                        multipath, os_version, mount_point)
-            with _LOCK_ATTACH_VOLUME:
-                self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
-                self._rollback_increased_connections(fcp_list)
-                self._rollback_reserved_fcp_devices(fcp_list)
+            self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
+            self._rollback_increased_connections(fcp_list)
+            self._rollback_reserved_fcp_devices(fcp_list)
             raise
 
     def _rollback_decreased_connections(self, fcp_list, assigner_id):
@@ -2074,6 +2055,7 @@ class FCPVolumeManager(object):
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
         return ret
 
+    @utils.synchronized('volumeAttachOrDetach-{connection_info[assigner_id]}')
     def attach(self, connection_info):
         """Attach a volume to a guest
 
@@ -2260,6 +2242,7 @@ class FCPVolumeManager(object):
             self._rollback_decreased_connections(fcp_list, assigner_id)
             raise
 
+    @utils.synchronized('volumeAttachOrDetach-{connection_info[assigner_id]}')
     def detach(self, connection_info):
         """Detach a volume from a guest
         """

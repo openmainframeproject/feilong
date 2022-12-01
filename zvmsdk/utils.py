@@ -17,6 +17,7 @@
 import contextlib
 import errno
 import functools
+import inspect
 import netaddr
 import os
 import pwd
@@ -29,6 +30,7 @@ import sys
 import tempfile
 import time
 import traceback
+import threading
 import string
 
 from zvmsdk import config
@@ -36,10 +38,8 @@ from zvmsdk import constants
 from zvmsdk import exception
 from zvmsdk import log
 
-
 CONF = config.CONF
 LOG = log.LOG
-
 
 def execute(cmd, timeout=None):
     """ execute command, return rc and output string.
@@ -335,6 +335,98 @@ def check_input_types(*types, **validkeys):
             return function(*args, **kwargs)
         return wrap_func
     return decorator
+
+
+def synchronized(lock_name):
+    """Synchronization decorator.
+
+    :param lock_name: (str) Lock name.
+
+    Decorating a method like so::
+
+        @synchronized('mylock')
+        def foo(self, *args):
+           ...
+
+    ensures that only one thread will execute the foo method at a time.
+
+    Different methods can share the same lock::
+
+        @synchronized('mylock')
+        def foo(self, *args):
+           ...
+
+        @synchronized('mylock')
+        def bar(self, *args):
+           ...
+
+    This way only one of either foo or bar can be executing at a time.
+
+    Lock name can be formatted using Python format string syntax::
+
+        @synchronized('volumeAttachOrDetach-{connection_info[assigner_id]}')
+        def attach(self, connection_info):
+           ...
+    """
+    # meta_lock: used for serialize threads to access lock_pool
+    meta_lock = vars(synchronized).setdefault(
+        '_meta_lock', threading.RLock())
+    LOG.info('synchronized: meta_lock: {}, thread: {}'.format(
+        meta_lock, threading.current_thread()))
+    # lock_pool: store the locks with lock_name as key
+    lock_pool = vars(synchronized).setdefault(
+        '_lock_pool', dict())
+    LOG.info('synchronized: lock_pool: {}, thread: {}'.format(
+        lock_pool, threading.current_thread()))
+    # lock_counter: count the number of threads that are using the same lock
+    lock_counter = vars(synchronized).setdefault(
+        '_lock_counter', dict())
+
+    def _decorator(func):
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            # Pre-process:
+            # format lock_name
+            call_args = inspect.getcallargs(func, *args, **kwargs)
+            formatted_name = lock_name.format(**call_args)
+            LOG.info('synchronized: lock_name: {}, thread: {}'.format(
+                formatted_name, threading.current_thread()))
+            # create only one lock per formatted_name
+            with meta_lock:
+                if formatted_name not in lock_pool:
+                    lock_pool[formatted_name] = threading.RLock()
+                    lock_counter[formatted_name] = 1
+                else:
+                    lock_counter[formatted_name] += 1
+            the_lock = lock_pool[formatted_name]
+            LOG.info('synchronized: lock_counter before acquiring lock: {}, thread: {}'.format(
+                lock_counter[formatted_name], threading.current_thread()))
+            # acquire the_lock
+            LOG.info('synchronized: acquiring lock {}'.format(formatted_name))
+            the_lock.acquire()
+            LOG.info('synchronized: acquired lock {}'.format(formatted_name))
+            try:
+                # Call decorated function
+                func(*args, **kwargs)
+            finally:
+                # release the_lock
+                LOG.info('synchronized: releasing lock {}'.format(formatted_name))
+                the_lock.release()
+                LOG.info('synchronized: released lock {}'.format(formatted_name))
+                # Post-process:
+                # delete/pop the lock if not used by any thread
+                with meta_lock:
+                    if lock_counter[formatted_name] == 1:
+                        lock_pool.pop(formatted_name)
+                        lock_counter.pop(formatted_name)
+                    else:
+                        lock_counter[formatted_name] -= 1
+                LOG.info('synchronized: lock_counter after releasing lock: {}, thread: {}'.format(
+                    lock_counter.get(formatted_name, 'deleted'), threading.current_thread()))
+        return _wrapper
+    return _decorator
+
+
 
 
 def import_class(import_str):
