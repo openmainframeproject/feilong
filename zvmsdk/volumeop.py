@@ -53,6 +53,7 @@ DEDICATE = 'dedicate'
 
 _LOCK_RESERVE_FCP = threading.RLock()
 
+
 def get_volumeop():
     global _VolumeOP
     if not _VolumeOP:
@@ -2279,6 +2280,7 @@ class FCPVolumeManager(object):
                              % (fcp, _userid, _reserved, _conns, _tmpl_id))
             raise
 
+    @utils.synchronized('volumeAttachOrDetach-{assigner_id}')
     def get_volume_connector(self, assigner_id, reserve,
                              fcp_template_id=None, sp_name=None):
         """Get connector information of the instance for attaching to volumes.

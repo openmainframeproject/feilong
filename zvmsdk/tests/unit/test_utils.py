@@ -14,7 +14,9 @@
 
 import mock
 import subprocess
-from mock import Mock
+import time
+import threading
+from mock import Mock, call
 
 import zvmsdk.utils as zvmutils
 from zvmsdk.tests.unit import base
@@ -178,3 +180,140 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         # case4: FCP(1A0R) not a 4-digit hex
         fcp_list = ['1a00', '1A0F']
         zvmutils.verify_fcp_list_in_hex_format(fcp_list)
+
+    @mock.patch("zvmsdk.log.LOG.info")
+    def test_synchronized(self, mock_info):
+        """Test synchronized()"""
+
+        @zvmutils.synchronized('fakeAction-{fakeObject[fakeKey]}')
+        def fake_func1(fakeObject, sleep, *args, **kwargs):
+            time.sleep(sleep)
+
+        @zvmutils.synchronized('fakeAction-{fakeObject[fakeKey]}')
+        def fake_func2(fakeObject, sleep, *args, **kwargs):
+            time.sleep(sleep)
+
+        @zvmutils.synchronized('fakeAction-{fakeObject[fakeKey2]}')
+        def fake_func3(fakeObject, sleep, *args, **kwargs):
+            time.sleep(sleep)
+
+        # case1: test on @ decoration
+        isinstance(zvmutils.synchronized._meta_lock, type(threading.RLock()))
+        self.assertEqual(vars(zvmutils.synchronized).get('_lock_pool'), dict())
+        concurrent_thread_count = vars(zvmutils.synchronized).get('_concurrent_thread_count')
+        self.assertEqual(concurrent_thread_count, dict())
+
+        # common variables
+        fakeObj = {'fakeKey': 'fakeVal', 'fakeKey2': 'fakeVal2'}
+        formatted_name = 'fakeAction-fakeVal'
+        second_formatted_name = 'fakeAction-fakeVal2'
+
+        # case2:
+        # 2 concurrent threads on one decorated function
+        th1 = threading.Thread(target=fake_func1, args=(fakeObj, 1))
+        th2 = threading.Thread(target=fake_func1, args=(fakeObj, 0))
+        th1.start()
+        th2.start()
+        th1.join()
+        th2.join()
+        th1_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 1, th1.name)
+        th2_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 2, th2.name)
+        th1_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 1, th1.name)
+        th2_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 0, th2.name)
+        expected_calls = [call(th1_acquire_msg),
+                          call(th2_acquire_msg),
+                          call(th1_release_msg),
+                          call(th2_release_msg)]
+        expected_calls_order = [mock_info.mock_calls.index(c) for c in expected_calls]
+        self.assertEqual(expected_calls_order, sorted(expected_calls_order))
+        mock_info.reset_mock()
+
+        # case3:
+        # 2 concurrent threads on two decorated functions
+        # with the same formatted lock name
+        th1 = threading.Thread(target=fake_func1, args=(fakeObj, 1))
+        th2 = threading.Thread(target=fake_func2, args=(fakeObj, 0))
+        th1.start()
+        th2.start()
+        th1.join()
+        th2.join()
+        th1_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 1, th1.name)
+        th2_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 2, th2.name)
+        th1_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 1, th1.name)
+        th2_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 0, th2.name)
+        expected_calls = [call(th1_acquire_msg),
+                          call(th2_acquire_msg),
+                          call(th1_release_msg),
+                          call(th2_release_msg)]
+        expected_calls_order = [mock_info.mock_calls.index(c) for c in expected_calls]
+        self.assertEqual(expected_calls_order, sorted(expected_calls_order))
+        mock_info.reset_mock()
+
+        # case4:
+        # 2 concurrent threads on two decorated functions
+        # with different formatted lock names
+        th1 = threading.Thread(target=fake_func1, args=(fakeObj, 1))
+        th2 = threading.Thread(target=fake_func3, args=(fakeObj, 0))
+        th1.start()
+        th2.start()
+        th1.join()
+        th2.join()
+        th1_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 1, th1.name)
+        th2_acquire_msg = ('synchronized: '
+                           'acquiring lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            second_formatted_name, 1, th2.name)
+        th1_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            formatted_name, 0, th1.name)
+        th2_release_msg = ('synchronized: '
+                           'after releasing lock {}, '
+                           'concurrent thread count {}, '
+                           'current thread: {}').format(
+            second_formatted_name, 0, th2.name)
+        expected_calls = [call(th1_acquire_msg),
+                          call(th2_acquire_msg),
+                          call(th2_release_msg),
+                          call(th1_release_msg)]
+        expected_calls_order = [mock_info.mock_calls.index(c) for c in expected_calls]
+        self.assertEqual(expected_calls_order, sorted(expected_calls_order))
+        mock_info.reset_mock()
