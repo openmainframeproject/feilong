@@ -652,18 +652,33 @@ def fcpinfo(rh):
                           parms,
                           hideInLog=hideList)
 
-    if results['overallRC'] != 0:
-        # SMAPI API failed.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-
     if results['overallRC'] == 0:
         # extract data from smcli return
         ret = extract_fcp_data(rh, results['response'], rh.parms['status'])
         # write the ret into results['response']
         rh.printLn("N", ret)
     else:
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 4 and results['rs'] == 28:
+            # In this case, Return buffer is empty. Means there is no FCP
+            # devices in z/VM, so we will reset results and return empty
+            # content, so that the upper layer can not sense the errors.
+            rh.printSysLog("In changeVM.dedicate, not found fcp "
+                           "devices in z/VM, will return empty.")
+            new_results = dict()
+            # Set overallRC to 0 to let upper layer ignore this error.
+            new_results['overallRC'] = 0
+            # The fcp info is in response, in this case, should be empty.
+            new_results['response'] = ''
+            # In case that the upper layer need to know the return code
+            # and reason code, so return them in results.
+            new_results['rc'] = results['rc']
+            new_results['rs'] = results['rs']
+            new_results['errno'] = results['errno']
+            new_results['strError'] = results['strError']
+            rh.updateResults(new_results)
+        else:
+            rh.printLn("ES", results['response'])
+            # Use results from invokeSMCLI
+            rh.updateResults(results)
 
     return rh.results['overallRC']
