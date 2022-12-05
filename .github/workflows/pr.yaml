@@ -4,11 +4,17 @@ on:
     branches: [ master ]
 jobs:
   python:
-    name: python checks
-    runs-on: ubuntu-latest
+    name: python checks ${{ matrix.python }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [ 3.6 ]
+        os: [ubuntu-18.04, ubuntu-latest]
+        python-version: [3.6, 3.7]
+        exclude:
+        - os: ubuntu-18.04
+          python-version: 3.7
+        - os: ubuntu-latest
+          python-version: 3.6
 
     steps:
     - uses: actions/checkout@v2
