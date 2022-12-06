@@ -51,8 +51,6 @@ FCPS = 'fcps'
 WWPNS = 'wwpns'
 DEDICATE = 'dedicate'
 
-_LOCK_RESERVE_FCP = threading.RLock()
-
 
 def get_volumeop():
     global _VolumeOP
@@ -658,8 +656,6 @@ class FCPManager(object):
                                                             userid=assigner_id,
                                                             msg=errmsg)
 
-            global _LOCK_RESERVE_FCP
-            _LOCK_RESERVE_FCP.acquire()
             try:
                 # go here, means try to attach volumes
                 # first check whether this userid already has a FCP device
@@ -730,8 +726,6 @@ class FCPManager(object):
                 raise exception.SDKVolumeOperationError(rs=11,
                                                         userid=assigner_id,
                                                         msg=errmsg)
-            finally:
-                _LOCK_RESERVE_FCP.release()
 
     def release_fcp_devices(self, assigner_id, fcp_template_id):
         """
