@@ -2299,7 +2299,7 @@ class FCPVolumeManager(object):
         with database.get_fcp_conn():
             if fcp_template_id and \
                     not self.db.fcp_template_exist_in_db(fcp_template_id):
-                errmsg = ("fcp_template_id %s doesn't exist." % fcp_template_id)
+                errmsg = ("FCP Multipath Template (id: %s) does not exist." % fcp_template_id)
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(
                     rs=11, userid=assigner_id, msg=errmsg)
