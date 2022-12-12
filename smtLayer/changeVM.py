@@ -37,6 +37,7 @@ Each subfunction contains a list that has:
   Code for the function call.
 """
 subfuncHandler = {
+    'ADDDEVNO': ['adddevno', lambda rh: adddevno(rh)],
     'ADD3390': ['add3390', lambda rh: add3390(rh)],
     'ADD9336': ['add9336', lambda rh: add9336(rh)],
     'DEDICATE': ['dedicate', lambda rh: dedicate(rh)],
@@ -62,6 +63,9 @@ information for the positional operands:
   - Type of data (1: int, 2: string).
 """
 posOpsList = {
+    'ADDDEVNO': [
+        ['virtual address', 'vaddr', True, 2],
+        ['real device', 'rdev', True, 2]],
     'ADD3390': [
         ['Disk pool name', 'diskPool', True, 2],
         ['Virtual address', 'vaddr', True, 2],
@@ -97,6 +101,13 @@ command as a key.  Each keyword has a dictionary that lists:
   - the type of data for those values (1: int, 2: string)
 """
 keyOpsList = {
+    'ADDDEVNO': {
+        '--filesystem': ['fileSystem', 1, 2],
+        '--mode': ['mode', 1, 2],
+        '--multipw': ['multiPW', 1, 2],
+        '--readpw': ['readPW', 1, 2],
+        '--showparms': ['showParms', 0, 0],
+        '--writepw': ['writePW', 1, 2]},
     'ADD3390': {
         '--filesystem': ['fileSystem', 1, 2],
         '--mode': ['mode', 1, 2],
@@ -135,6 +146,100 @@ keyOpsList = {
     'REMOVEIPL': {'--showparms': ['showParms', 0, 0]},
     'VERSION': {},
 }
+
+
+def adddevno(rh):
+    """
+    Adds a fullpack volume (ECKD) disk to a
+    virtual machine's directory entry.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'CHANGEVM'
+          subfunction - 'ADDDEVNO'
+          userid      - userid of the virtual machine
+          parms['fileSystem'] - Linux filesystem to install on the disk.
+          parms['mode']       - Disk access mode
+          parms['multiPW']    - Multi-write password
+          parms['readPW']     - Read password
+          parms['vaddr']      - Virtual address
+          parms['writePW']    - Write password
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+
+    rh.printSysLog("Enter changeVM.adddevno")
+    parms = [
+        "-T", rh.userid,
+        "-v", rh.parms['vaddr'],
+        "-t", "3390",
+        "-a", "DEVNO",
+        "-r", rh.parms['rdev'],
+        "-u", "1",
+        "-z", "1",
+        "-f", "1"]
+    hideList = []
+
+    if 'mode' in rh.parms:
+        parms.extend(["-m", rh.parms['mode']])
+    else:
+        parms.extend(["-m", 'W'])
+    if 'readPW' in rh.parms:
+        parms.extend(["-R", rh.parms['readPW']])
+        hideList.append(len(parms) - 1)
+    if 'writePW' in rh.parms:
+        parms.extend(["-W", rh.parms['writePW']])
+        hideList.append(len(parms) - 1)
+    if 'multiPW' in rh.parms:
+        parms.extend(["-M", rh.parms['multiPW']])
+        hideList.append(len(parms) - 1)
+
+    results = invokeSMCLI(rh,
+                          "Image_Disk_Create_DM",
+                          parms,
+                          hideInLog=hideList)
+
+    if results['overallRC'] != 0:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)  # Use results returned by invokeSMCLI
+
+    if (results['overallRC'] == 0 and 'fileSystem' in rh.parms):
+        results = installFS(
+            rh,
+            rh.parms['vaddr'],
+            rh.parms['mode'],
+            rh.parms['fileSystem'],
+            "3390")
+
+    if results['overallRC'] == 0:
+        results = isLoggedOn(rh, rh.userid)
+        if results['overallRC'] != 0:
+            # Cannot determine if VM is logged on or off.
+            # We have partially failed.  Pass back the results.
+            rh.updateResults(results)
+        elif results['rs'] == 0:
+            # Add the disk to the active configuration.
+            parms = [
+                "-T", rh.userid,
+                "-v", rh.parms['vaddr'],
+                "-m", rh.parms['mode']]
+
+            results = invokeSMCLI(rh, "Image_Disk_Create", parms)
+            if results['overallRC'] == 0:
+                rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
+                    " to the active configuration.")
+            else:
+                # SMAPI API failed.
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)    # Use results from invokeSMCLI
+
+    rh.printSysLog("Exit changeVM.adddevno, rc: " +
+                   str(rh.results['overallRC']))
+
+    return rh.results['overallRC']
 
 
 def add3390(rh):
