@@ -8,13 +8,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-latest]
-        python-version: [3.6, 3.7]
-        exclude:
-        - os: ubuntu-18.04
-          python-version: 3.7
-        - os: ubuntu-latest
-          python-version: 3.6
+        os: [ubuntu-latest]
+        python-version: [3.7]
 
     steps:
     - uses: actions/checkout@v2
@@ -26,5 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox>=3.23.1
-    - name: PEP8/UT/Doc tests with tox
-      run: tox -v
+    - name: PEP8
+      run: tox -e pep8
+    - name: unit test
+      run: tox -e py37
