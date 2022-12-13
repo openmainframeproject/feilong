@@ -423,27 +423,35 @@ def undedicate(rh):
                           parms,
                           hideInLog=hideList)
 
-    if results['overallRC'] != 0:
+    # Example of exception when rc == 404 and rs == 8:
+    #   results: '{'overallRC': 8,
+    #       'rc': 404, 'rs': 8, 'errno': 0,
+    #       'strError': 'ULGSMC5404E Image device not defined',
+    #       'response': ['(Error) ULTVMU0300E
+    #           SMAPI API failed: Image_Device_Undedicate_DM,
+    if results['overallRC'] != 0 and not (results['rc'] == 404 and results['rs'] == 8):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
-
-    if results['overallRC'] == 0:
-        results = isLoggedOn(rh, rh.userid)
-        if (results['overallRC'] == 0 and results['rs'] == 0):
-            # Dedicate device to active configuration.
+    else:
+        logon_result = isLoggedOn(rh, rh.userid)
+        if logon_result['overallRC'] == 0 and logon_result['rs'] == 0:
+            # UnDedicate device from active configuration.
             parms = [
                 "-T", rh.userid,
                 "-v", rh.parms['vaddr']]
 
             results = invokeSMCLI(rh, "Image_Device_Undedicate", parms)
             if results['overallRC'] == 0:
-                rh.printLn("N", "Dedicated device " + rh.parms['vaddr'] +
-                    " to the active configuration.")
+                rh.printLn("N", "UnDedicated device " + rh.parms['vaddr'] +
+                    " from the active configuration.")
             else:
                 # SMAPI API failed.
                 rh.printLn("ES", results['response'])
                 rh.updateResults(results)    # Use results from invokeSMCLI
+        elif results['rc'] == 404 and results['rs'] == 8:
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)  # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.undedicate, rc: " +
                    str(rh.results['overallRC']))
