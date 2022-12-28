@@ -595,7 +595,23 @@ def extract_fcp_data(rh, raw_data, status):
     data = []
     for i in raw_data:
         i = i.strip(' \n')
-        if i == '':
+        if i == '' or i == '#':
+            """
+            sometimes the SMCLI output:
+            FCP device number: 1B07
+               Status: Free
+               NPIV world wide port number: C05076DE33000B47
+               Channel path ID: 19
+               Physical world wide port number: C05076DE33001981
+               Owner: NONElow
+            #
+
+            we dont know the reason, but in this scenario, we should skip the lines that:
+            1. only contains spaces
+            2. only contains #
+            """
+            msg = ("When extracting fcp data, skip one line: %s" % i)
+            rh.printSysLog(msg)
             continue
         else:
             data.append(i)
@@ -616,8 +632,8 @@ def extract_fcp_data(rh, raw_data, status):
             # which are more than 5 lines
             # we still do not know the reason, but we need handle this
             msg = ("extract_fcp_data interrupt because abnormal formatted "
-                   "output %s.", data)
-            rh.printLn("WS", msg)
+                   "output %s." % data)
+            rh.printSysLog(msg)
             break
         temp = data[i + 1].split(':')[-1].strip()
         # only return results match the status
