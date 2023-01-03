@@ -591,6 +591,7 @@ connection_info = {
         'mount_point': {'type': 'string'},
         'is_root_volume': boolean,
         'update_connections_only': boolean,
+        'do_rollback': boolean
     },
     'required': ['assigner_id', 'zvm_fcp', 'target_wwpn',
                  'target_lun', 'multipath', 'os_version',
