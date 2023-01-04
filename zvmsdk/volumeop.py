@@ -1861,8 +1861,14 @@ class FCPVolumeManager(object):
 
     def _do_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                    multipath, os_version, mount_point, is_root_volume,
-                   fcp_template_id):
+                   fcp_template_id, do_rollback=True):
         """Attach a volume
+
+        :param do_rollback (Bool)
+            The function contains multiple phases;
+            if True (the default), rollback will be done if any phase fails.
+            Otherwise, we try completing as many phases as possible,
+            i.e. no rollback will be done if any phase fails.
 
         First, we need translate fcp into local wwpn, then
         dedicate fcp to the user if it's needed, after that
@@ -1883,18 +1889,18 @@ class FCPVolumeManager(object):
             # {'1a10': 2, '1b10': 1} => connections differ in abnormal case (due to bug)
             # the values are the connections of the FCP device
             fcp_connections = self.fcp_mgr.increase_fcp_connections(fcp_list, assigner_id)
-            LOG.info("The connections of FCP devices before "
-                     "being dedicated to virtual machine %s is: %s."
-                     % (assigner_id, fcp_connections))
+            LOG.info("The connections of FCP devices after "
+                     "being increased is: {}.".format(fcp_connections))
         except Exception as err:
             LOG.error("Failed to increase connections of the FCP devices on %s in "
                       "database because %s." % (assigner_id, str(err)))
-            # Rollback for the following completed operations:
-            # 1. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-            # No need to rollback the connections in FCP DB because
-            # the increase_fcp_connections will rollback them automatically.
-            self._rollback_reserved_fcp_devices(fcp_list)
-            raise
+            if do_rollback:
+                # Rollback for the following completed operations:
+                # 1. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
+                # No need to rollback the connections in FCP DB because
+                # the increase_fcp_connections will rollback them automatically.
+                self._rollback_reserved_fcp_devices(fcp_list)
+                raise
 
         if is_root_volume:
             LOG.info("We are attaching root volume, dedicating FCP devices %s "
@@ -1925,14 +1931,15 @@ class FCPVolumeManager(object):
         except Exception as err:
             LOG.error("Failed to dedicate FCP devices to %s in "
                       "z/VM because %s." % (assigner_id, str(err)))
-            # Rollback for the following completed operations:
-            # 1. operations on z/VM done by _dedicate_fcp()
-            # 2. operations on FCP DB done by increase_fcp_connections()
-            # 3. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-            self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
-            self._rollback_increased_connections(fcp_list)
-            self._rollback_reserved_fcp_devices(fcp_list)
-            raise
+            if do_rollback:
+                # Rollback for the following completed operations:
+                # 1. operations on z/VM done by _dedicate_fcp()
+                # 2. operations on FCP DB done by increase_fcp_connections()
+                # 3. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
+                self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
+                self._rollback_increased_connections(fcp_list)
+                self._rollback_reserved_fcp_devices(fcp_list)
+                raise
 
         # Operation on VM operating system: online the volume in the virtual machine
         try:
@@ -1948,17 +1955,18 @@ class FCPVolumeManager(object):
         except Exception as err:
             LOG.error("Failed to configure volume in the OS of %s "
                       "because %s." % (assigner_id, str(err)))
-            # Rollback for the following completed operations:
-            # 1. operations on VM OS done by _add_disks()
-            # 2. operations on z/VM done by _dedicate_fcp()
-            # 3. operations on FCP DB done by increase_fcp_connections()
-            # 4. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
-            self._rollback_added_disks(fcp_list, assigner_id, target_wwpns, target_lun,
-                                       multipath, os_version, mount_point)
-            self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
-            self._rollback_increased_connections(fcp_list)
-            self._rollback_reserved_fcp_devices(fcp_list)
-            raise
+            if do_rollback:
+                # Rollback for the following completed operations:
+                # 1. operations on VM OS done by _add_disks()
+                # 2. operations on z/VM done by _dedicate_fcp()
+                # 3. operations on FCP DB done by increase_fcp_connections()
+                # 4. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
+                self._rollback_added_disks(fcp_list, assigner_id, target_wwpns, target_lun,
+                                           multipath, os_version, mount_point)
+                self._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
+                self._rollback_increased_connections(fcp_list)
+                self._rollback_reserved_fcp_devices(fcp_list)
+                raise
 
     def _rollback_decreased_connections(self, fcp_list, assigner_id):
         """
@@ -1981,7 +1989,7 @@ class FCPVolumeManager(object):
         LOG.info("After rollback, the usage of the FCP devices is: %s" % fcp_usage)
         LOG.info("Exit rollback function: _rollback_decreased_connections")
 
-    def _rollbck_undedicated_fcp_devices(self, fcp_connections, assigner_id):
+    def _rollback_undedicated_fcp_devices(self, fcp_connections, assigner_id):
         """
         Rollback for the following completed operations:
             operations on z/VM done by _undedicate_fcp()
@@ -1991,7 +1999,7 @@ class FCPVolumeManager(object):
         :param assigner_id: (str) the userid of the virtual machine
         :return: None
         """
-        LOG.info("Enter rollback function: _rollbck_undedicated_fcp_devices")
+        LOG.info("Enter rollback function: _rollback_undedicated_fcp_devices")
         # Operation on z/VM: dedicate FCP devices to the virtual machine
         for fcp in fcp_connections:
             with zvmutils.ignore_errors():
@@ -2001,7 +2009,7 @@ class FCPVolumeManager(object):
                     # dedicate the FCP to the assigner in z/VM
                     self._dedicate_fcp(fcp, assigner_id)
                     LOG.info("Rollback on z/VM: dedicate FCP device: %s" % fcp)
-        LOG.info("Exit rollback function: _rollbck_undedicated_fcp_devices")
+        LOG.info("Exit rollback function: _rollback_undedicated_fcp_devices")
 
     def _rollback_removed_disks(self, fcp_connections, assigner_id, target_wwpns, target_lun,
                                 multipath, os_version, mount_point):
@@ -2075,6 +2083,8 @@ class FCPVolumeManager(object):
         mount_point = connection_info['mount_point']
         is_root_volume = connection_info.get('is_root_volume', False)
         fcp_template_id = connection_info['fcp_template_id']
+        do_rollback = connection_info.get('do_rollback', True)
+        LOG.info("attach with do_rollback as {}".format(do_rollback))
 
         if is_root_volume is False and \
                 not zvmutils.check_userid_exist(assigner_id):
@@ -2090,7 +2100,7 @@ class FCPVolumeManager(object):
                                 target_wwpns, target_lun,
                                 multipath, os_version,
                                 mount_point, is_root_volume,
-                                fcp_template_id)
+                                fcp_template_id, do_rollback=do_rollback)
             except Exception:
                 for fcp in fcp_list:
                     with zvmutils.ignore_errors():
@@ -2142,8 +2152,15 @@ class FCPVolumeManager(object):
 
     def _do_detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                    multipath, os_version, mount_point, is_root_volume,
-                   update_connections_only):
-        """Detach a volume from a guest"""
+                   update_connections_only, do_rollback=True):
+        """Detach a volume from a guest
+
+        :param do_rollback (Bool)
+            The function contains multiple phases;
+            if True (the default), rollback will be done if any phase fails.
+            Otherwise, we try completing as many phases as possible,
+            i.e. no rollback will be done if any phase fails.
+        """
         LOG.info("Start to detach volume on virtual machine %s from "
                  "FCP devices %s" % (assigner_id, fcp_list))
 
@@ -2204,10 +2221,11 @@ class FCPVolumeManager(object):
                      "system of %s is done." % assigner_id)
         except Exception as err:
             LOG.error("Failed to remove disks in the OS of %s because %s." % (assigner_id, str(err)))
-            self._rollback_removed_disks(fcp_connections, assigner_id, target_wwpns, target_lun,
-                                         multipath, os_version, mount_point)
-            self._rollback_decreased_connections(fcp_list, assigner_id)
-            raise
+            if do_rollback:
+                self._rollback_removed_disks(fcp_connections, assigner_id, target_wwpns, target_lun,
+                                             multipath, os_version, mount_point)
+                self._rollback_decreased_connections(fcp_list, assigner_id)
+                raise
 
         # Operation on z/VM: undedicate FCP device from the virtual machine
         try:
@@ -2227,15 +2245,16 @@ class FCPVolumeManager(object):
                      "done." % (assigner_id, fcp_list))
         except Exception as err:
             LOG.error("Failed to undedicate the FCP devices on %s because %s." % (assigner_id, str(err)))
-            # Rollback for the following completed operations:
-            # 1. operations on z/VM done by _udedicate_fcp()
-            # 2. operations on VM OS done by _remove_disks()
-            # 3. operations on FCP DB done by decrease_fcp_connections()
-            self._rollbck_undedicated_fcp_devices(fcp_connections, assigner_id)
-            self._rollback_removed_disks(fcp_connections, assigner_id, target_wwpns, target_lun,
-                                         multipath, os_version, mount_point)
-            self._rollback_decreased_connections(fcp_list, assigner_id)
-            raise
+            if do_rollback:
+                # Rollback for the following completed operations:
+                # 1. operations on z/VM done by _udedicate_fcp()
+                # 2. operations on VM OS done by _remove_disks()
+                # 3. operations on FCP DB done by decrease_fcp_connections()
+                self._rollback_undedicated_fcp_devices(fcp_connections, assigner_id)
+                self._rollback_removed_disks(fcp_connections, assigner_id, target_wwpns, target_lun,
+                                             multipath, os_version, mount_point)
+                self._rollback_decreased_connections(fcp_list, assigner_id)
+                raise
 
     @utils.synchronized('volumeAttachOrDetach-{connection_info[assigner_id]}')
     def detach(self, connection_info):
@@ -2256,6 +2275,8 @@ class FCPVolumeManager(object):
         is_root_volume = connection_info.get('is_root_volume', False)
         update_connections_only = connection_info.get(
                 'update_connections_only', False)
+        do_rollback = connection_info.get('do_rollback', True)
+        LOG.info("detach with do_rollback as {}".format(do_rollback))
         # transfer to lower cases
         fcp_list = [x.lower() for x in fcps]
         target_wwpns = [wwpn.lower() for wwpn in wwpns]
@@ -2263,7 +2284,8 @@ class FCPVolumeManager(object):
             self._do_detach(fcp_list, assigner_id,
                             target_wwpns, target_lun,
                             multipath, os_version, mount_point,
-                            is_root_volume, update_connections_only)
+                            is_root_volume, update_connections_only,
+                            do_rollback=do_rollback)
         except Exception:
             for fcp in fcp_list:
                 with zvmutils.ignore_errors():
