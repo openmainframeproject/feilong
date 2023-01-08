@@ -1830,9 +1830,13 @@ class FCPVolumeManager(object):
         # undedicate FCP device from assigner_id
         for fcp in fcp_list:
             with zvmutils.ignore_errors():
-                if fcp_connections[fcp] == 0:
+                if fcp_connections[fcp] == 1:
                     self._undedicate_fcp(fcp, assigner_id)
-                    LOG.info("Rollback on z/VM: undedicate FCP device: %s" % fcp)
+                    LOG.info("Rollback on z/VM: undedicate FCP device {}, "
+                             "because its connections is 1".format(fcp))
+                else:
+                    LOG.info("Skip undedicate FCP device {},"
+                             "because its connections is greater than 1".format(fcp))
         LOG.info("Exit rollback function: _rollback_dedicated_fcp_devices")
 
     def _rollback_added_disks(self, fcp_list, assigner_id, target_wwpns, target_lun,
@@ -1932,7 +1936,7 @@ class FCPVolumeManager(object):
             LOG.error("Failed to dedicate FCP devices to %s in "
                       "z/VM because %s." % (assigner_id, str(err)))
             if do_rollback:
-                # Rollback for the following completed operations:
+                # Rollback must be done in the following order for the following completed operations:
                 # 1. operations on z/VM done by _dedicate_fcp()
                 # 2. operations on FCP DB done by increase_fcp_connections()
                 # 3. operations on FCP DB done by get_volume_connector() and reserve_fcp_devices()
@@ -1956,7 +1960,7 @@ class FCPVolumeManager(object):
             LOG.error("Failed to configure volume in the OS of %s "
                       "because %s." % (assigner_id, str(err)))
             if do_rollback:
-                # Rollback for the following completed operations:
+                # Rollback must be done in the following order for the following completed operations:
                 # 1. operations on VM OS done by _add_disks()
                 # 2. operations on z/VM done by _dedicate_fcp()
                 # 3. operations on FCP DB done by increase_fcp_connections()
