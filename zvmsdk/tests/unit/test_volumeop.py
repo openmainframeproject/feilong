@@ -1890,13 +1890,21 @@ class TestFCPVolumeManager(base.SDKTestCase):
             results, 'fake error')
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
+        # prepare to test the call orders of multiple methods
+        mock_manager = Mock()
+        mock_manager.attach_mock(mock_rollback_dedicated, 'mock_rollback_dedicated')
+        mock_manager.attach_mock(mock_rollback_increased, 'mock_rollback_increased')
+        mock_manager.attach_mock(mock_rollback_reserved, 'mock_rollback_reserved')
         try:
             self.assertRaises(exception.SDKBaseException,
                               self.volumeops.attach,
                               connection_info)
-            mock_rollback_dedicated.assert_called_once_with(fcp_id_list, 'USER1')
-            mock_rollback_increased.assert_called_once_with(fcp_id_list)
-            mock_rollback_reserved.assert_called_once_with(fcp_id_list)
+            # Test the call orders of multiple methods
+            expected_calls_in_order = [call.mock_rollback_dedicated(fcp_id_list, 'USER1'),
+                                       call.mock_rollback_increased(fcp_id_list),
+                                       call.mock_rollback_reserved(fcp_id_list)]
+            self.assertEqual(expected_calls_in_order,
+                             mock_manager.mock_calls)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -1939,16 +1947,28 @@ class TestFCPVolumeManager(base.SDKTestCase):
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
+        # prepare to test the call orders of multiple methods
+        mock_manager = Mock()
+        mock_manager.attach_mock(mock_rollback_added, 'mock_rollback_added')
+        mock_manager.attach_mock(mock_rollback_dedicated, 'mock_rollback_dedicated')
+        mock_manager.attach_mock(mock_rollback_increased, 'mock_rollback_increased')
+        mock_manager.attach_mock(mock_rollback_reserved, 'mock_rollback_reserved')
         try:
             mock_add_disks.side_effect = exception.SDKSMTRequestFailed(
                 results, 'fake error')
             self.assertRaises(exception.SDKSMTRequestFailed,
                               self.volumeops.attach,
                               connection_info)
-            mock_rollback_added(fcp_id_list)
-            mock_rollback_dedicated.assert_called_once_with(fcp_id_list, 'USER1')
-            mock_rollback_increased.assert_called_once_with(fcp_id_list)
-            mock_rollback_reserved.assert_called_once_with(fcp_id_list)
+            # Test the call orders of multiple methods
+            expected_calls_in_order = [call.mock_rollback_added(fcp_id_list,
+                                                                'USER1',
+                                                                ['20076d8500005182', '20076d8500005183'],
+                                                                '2222', False, 'rhel7', '/dev/sdz'),
+                                       call.mock_rollback_dedicated(fcp_id_list, 'USER1'),
+                                       call.mock_rollback_increased(fcp_id_list),
+                                       call.mock_rollback_reserved(fcp_id_list)]
+            self.assertEqual(expected_calls_in_order,
+                             mock_manager.mock_calls)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -2472,12 +2492,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.get_connections_from_fcp")
     def test_rollback_dedicated_fcp_devices(self, mock_get_conn, mock_undedicate):
         """Test _rollback_dedicated_fcp_devices()."""
-        mock_get_conn.side_effect = [1, 0, 0, 0]
+        mock_get_conn.side_effect = [1, 0, 1, 0]
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
         assigner_id = 'fake_id'
         self.volumeops._rollback_dedicated_fcp_devices(fcp_list, assigner_id)
-        mock_undedicate.assert_has_calls([mock.call('1b01', 'fake_id'), mock.call('1c01', 'fake_id'),
-                                          mock.call('1d01', 'fake_id')])
+        expected_calls_in_order = [call('1a01', 'fake_id'), call('1c01', 'fake_id')]
+        self.assertEqual(mock_undedicate.call_args_list, expected_calls_in_order)
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disks")
     @mock.patch("zvmsdk.database.FCPDbOperator.get_connections_from_fcp")
