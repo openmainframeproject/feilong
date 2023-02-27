@@ -1,4 +1,7 @@
 /**
+ * Copyright Contributors to the Feilong Project.
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
