@@ -1,4 +1,7 @@
 /**
+ * Copyright Contributors to the Feilong Project.
+ * SPDX-License-Identifier: Apache-2.0
+ *
     DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
  * Copyright 2017 IBM Corporation
  *

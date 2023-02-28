@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Daemon for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
