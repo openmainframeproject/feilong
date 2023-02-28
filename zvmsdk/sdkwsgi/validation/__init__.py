@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.

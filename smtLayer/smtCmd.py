@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Command line processor for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.

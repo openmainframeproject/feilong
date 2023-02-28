@@ -1,3 +1,7 @@
+..
+ Copyright Contributors to the Feilong Project.
+ SPDX-License-Identifier: CC-BY-4.0
+
 .. _`Setup web server for running RESTful API`:
 
 Setup web server for running RESTful API
