@@ -105,7 +105,7 @@ done
 # so we need to get them from the filesystem
 # and get the intersection between input wwpns and lszfcp output
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-echo -e "lszfcp -P output port info:\n$lszfcp_output"
+echo -e "lszfcp -P output port info:\nFCP No   WWPN              \n-------- ------------------\n$lszfcp_output\n---------------------------"
 
 declare -A valid_dict
 for fcp in ${fcp_list[@]}
@@ -203,11 +203,11 @@ do
         fi
 
         # loop all the WWPNs to found the alive device
-        for j in ${ActiveWWPNs[@]}
+        for wwpn in ${ActiveWWPNs[@]}
         do
-            x="/dev/disk/by-path/ccw-0.0.$fcp-fc-$j-lun-$lun_id"
+            x="/dev/disk/by-path/ccw-0.0.$fcp-fc-$wwpn-lun-$lun_id"
             # the x would be like:
-            # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
+            # ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000 or ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0
             echo "Try to detect disk $x"
             if [ -e $x ]; then
                 echo "Disk $x detected"
