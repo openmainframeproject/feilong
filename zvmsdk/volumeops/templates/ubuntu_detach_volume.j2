@@ -72,9 +72,9 @@ for fcp in ${fcp_list[@]}
 do
     for wwpn in ${input_wwpns[@]}
     do
-        x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$wwpn:$lun"
+        x="/dev/disk/by-path/ccw-0.0.$fcp-fc-$wwpn-lun-$lun_id"
         # the x would be like:
-        # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
+        # ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000 or ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0
         echo "Try to detect disk $x."
         if [ -e $x ]; then
             echo "Disk $x detected."
@@ -140,14 +140,6 @@ fi
 
 for fcp in ${fcp_list[@]}
 do
-    # remove configuration items in zfcp.conf
-    for wwpn in ${input_wwpns[@]}
-    do
-        echo "To remove WWPN $wwpn for $fcp in zfcp.conf."
-        sed -i -e "/0.0.$fcp $wwpn $lun/d" /etc/zfcp.conf
-        echo "WWPN $wwpn for $fcp in zfcp.conf removed."
-    done
-    
     # if is last volume, then should offline the FCP
     if [ $is_last_volume -eq 1 ]; then
         echo "This is last volume, will offline fcp device $fcp"
