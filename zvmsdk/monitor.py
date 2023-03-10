@@ -77,7 +77,7 @@ class ZVMMonitor(object):
                     'shared_mem_kb': shared_mem
                     }
 
-        return stats_data
+        return [{k: v} for k, v in stats_data.items()]
 
     def inspect_vnics(self, uid_list):
         vnics = self._get_inspect_data('vnics', uid_list)
