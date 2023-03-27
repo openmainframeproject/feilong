@@ -32,7 +32,7 @@ int printAndLogIUCVserverReturnCodeReasonCodeoutput(int returncode, int reasonco
 {
     if (returncode || reasoncode)
     {
-        syslog(LOG_ERR, "ERROR: %s  Return code %d, Reason code %d", message, returncode, reasoncode);
+        // syslog(LOG_ERR, "ERROR: %s  Return code %d, Reason code %d", message, returncode, reasoncode);
         if (reasoncode && with_strerr)
         {
             printf("ERROR: %s\n%s\nReturn code %d, Reason code %d.\n", message, strerror(reasoncode), returncode, reasoncode);
@@ -42,7 +42,7 @@ int printAndLogIUCVserverReturnCodeReasonCodeoutput(int returncode, int reasonco
     }
     else
     {
-        syslog(LOG_INFO,"%s", message);
+        // syslog(LOG_INFO,"%s", message);
         printf("%s", message);
     }
     return returncode;
@@ -178,7 +178,7 @@ int prepare_commands(char* buffer, int argc, char *argv[])
         strcat(buffer, " ");
         strcat(buffer, argv[i]);
     }
-    syslog(LOG_INFO, "command=%s\n",buffer);
+    // syslog(LOG_INFO, "command=%s\n",buffer);
     return 0;
 }
 
@@ -194,7 +194,7 @@ int handle_upgrade(int sockfd, char* signal_buf)
     char src_path[BUFFER_SIZE], recv_buf[BUFFER_SIZE];
     int returncode;
     /* Send the upgrade files to server.*/
-    syslog(LOG_INFO,"Target system service use %s, Send the upgrade files to server.\n", signal_buf);
+    // syslog(LOG_INFO,"Target system service use %s, Send the upgrade files to server.\n", signal_buf);
     // iucvserv
     recv(sockfd, recv_buf, SMALL_BUFFER_SIZE, 0);
     if ((returncode = send_file_to_server(sockfd, FILE_PATH_IUCV_SERVER))!= 0)
@@ -232,7 +232,7 @@ int handle_upgrade(int sockfd, char* signal_buf)
         printf("ERROR: Upgrade failed! Failed to send iucvupgrade.sh file");
         return returncode;
     }
-    syslog(LOG_INFO, "Successfully to send the upgrade files to server.\n");
+    // syslog(LOG_INFO, "Successfully to send the upgrade files to server.\n");
     return 0;
 }
 
@@ -269,7 +269,7 @@ int send_file_to_server(int sockfd, char *src_path)
     size_t len = n_time = n = 0;
 
     //printf("Will send file %s to IUCV server.\n", src_path);
-    syslog(LOG_INFO, "Will send file %s to IUCV server.\n", src_path);
+    // syslog(LOG_INFO, "Will send file %s to IUCV server.\n", src_path);
     file_buf = (char *) malloc(BUFFER_SIZE);
     if ((fp = fopen(src_path, "rb"))==NULL)
     {
@@ -282,7 +282,7 @@ int send_file_to_server(int sockfd, char *src_path)
     else
     {
         //printf("Start to read file\n");
-        syslog(LOG_INFO, "Start to read file\n");
+        // syslog(LOG_INFO, "Start to read file\n");
         while (!feof(fp))
         {
             bzero(file_buf, BUFFER_SIZE);
@@ -299,7 +299,7 @@ int send_file_to_server(int sockfd, char *src_path)
         }
         if (fclose(fp) != 0)
         {
-            syslog(LOG_ERR, "ERROR: Fail to close sent file after reading: %s.\n",strerror(errno));
+            // syslog(LOG_ERR, "ERROR: Fail to close sent file after reading: %s.\n",strerror(errno));
         }
         fp = NULL;
         free(file_buf);
@@ -327,14 +327,14 @@ int send_file_to_server(int sockfd, char *src_path)
         fp = NULL;
         /* After finish sending file, wait for the message from server to get the file transport result */
         //printf("Finish sending file, just need to wait for the server's receive respond\n");
-        syslog(LOG_INFO, "Finish sending file, just need to wait for the server's receive respond\n");
+        // syslog(LOG_INFO, "Finish sending file, just need to wait for the server's receive respond\n");
         bzero(buffer,SMALL_BUFFER_SIZE);
         recv(sockfd, buffer, SMALL_BUFFER_SIZE, 0);
         if (strcmp(buffer, "FILE_RECEIVED_OK")==0)
         {
             sprintf(buffer,"Transport file %s successfully.\n", src_path);
             //printAndLogIUCVserverReturnCodeReasonCodeoutput(0, 0, buffer, 0);
-            syslog(LOG_INFO, buffer);
+            // syslog(LOG_INFO, buffer);
             return 0;
         }
         else
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
     int check_upgrade_version = 0;
 
     /* Print the log to console and /var/log/messages */
-    openlog(NULL, LOG_CONS, 0);
+    // openlog(NULL, LOG_CONS, 0);
     if (argc < 3)
     {
         if (argc==2 && strcmp(argv[1],"--version")==0)
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
             close(sockfd);
             return returncode;
         }
-        syslog(LOG_INFO, "command=%s\n",buffer);
+        // syslog(LOG_INFO, "command=%s\n",buffer);
         /* Send messages to server. */
         n = send(sockfd, buffer, strlen(buffer)+1,0);
         if (n < 0) {
@@ -549,6 +549,6 @@ int main(int argc, char *argv[])
         }
     }
     close(sockfd);
-    closelog();
+    // closelog();
     return 0;
 }
