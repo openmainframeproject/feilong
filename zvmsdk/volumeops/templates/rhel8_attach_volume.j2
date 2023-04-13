@@ -72,7 +72,7 @@ for fcp in ${fcp_list[@]}
 do
     echo "Begin to online FCP $fcp ..."
     /usr/sbin/cio_ignore -r $fcp > /dev/null
-    /usr/sbin/chccwdev -e $fcp > /dev/null
+    /usr/sbin/chzdev -e zfcp-host $fcp > /dev/null
     echo "FCP $fcp is online now"
 done
 
