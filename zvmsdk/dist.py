@@ -91,7 +91,9 @@ class LinuxDist(object):
             clean_cmd = ''
 
         file_name_dns = self._get_dns_filename()
-        for network in guest_networks:
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
             file_name = self._get_device_filename(base_vdev)
             (cfg_str, cmd_str, dns_str,
@@ -132,7 +134,7 @@ class LinuxDist(object):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
+            (network['gateway_addr'] is not None) and network['primary']):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
@@ -1101,7 +1103,9 @@ class ubuntu(LinuxDist):
             clean_cmd = ''
             network_cfg_str = ''
 
-        for network in guest_networks:
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
             network_hw_config_fname = self._get_device_filename(base_vdev)
             network_hw_config_str = self._get_network_hw_config_str(base_vdev)
@@ -1169,7 +1173,7 @@ class ubuntu(LinuxDist):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
+            (network['gateway_addr'] is not None) and network['primary']):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
@@ -1398,7 +1402,9 @@ class ubuntu20(ubuntu):
         else:
             clean_cmd = ''
 
-        for network in guest_networks:
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
             (cfg_str) = self._generate_network_configuration(network,
                                     base_vdev)
@@ -1421,7 +1427,7 @@ class ubuntu20(ubuntu):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
+            (network['gateway_addr'] is not None) and network['primary']):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and

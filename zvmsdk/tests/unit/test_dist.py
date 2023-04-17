@@ -57,6 +57,43 @@ class RHEL7TestCase(base.SDKTestCase):
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
 
+    def test_create_network_configuration_files_multi_nics(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000',
+               'mtu': 1600},
+              {'ip_addr': '192.168.96.11',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003',
+               'mtu': 1500}]
+        file_path = '/etc/sysconfig/network-scripts/'
+        first = False
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
+                             file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        cfg_str = net_conf_files[0][1].split('\n')
+        self.assertEqual('DEVICE="enccw0.0.1000"', cfg_str[0])
+        self.assertEqual('BROADCAST="192.168.95.255"', cfg_str[2])
+        self.assertEqual('GATEWAY="192.168.95.1"', cfg_str[3])
+        self.assertEqual('IPADDR="192.168.95.10"', cfg_str[4])
+        self.assertEqual('MTU="1600"', cfg_str[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
+
+        cfg_str2 = net_conf_files[1][1].split('\n')
+        self.assertEqual('DEVICE="enccw0.0.1003"', cfg_str2[0])
+        self.assertEqual('BROADCAST="192.168.96.255"', cfg_str2[2])
+        self.assertEqual('GATEWAY=""', cfg_str2[3])
+        self.assertEqual('IPADDR="192.168.96.11"', cfg_str2[4])
+        self.assertEqual('MTU="1500"', cfg_str2[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str2[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str2[13])
+
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
     def test_get_volume_attach_configuration_cmds(self, get_template,
@@ -168,6 +205,43 @@ class RHEL8TestCase(base.SDKTestCase):
         self.assertEqual('MTU="8000"', cfg_str[11])
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
+
+    def test_create_network_configuration_files_multi_nics(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000',
+               'mtu': 1600},
+              {'ip_addr': '192.168.96.11',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003',
+               'mtu': 1500}]
+        file_path = '/etc/sysconfig/network-scripts/'
+        first = False
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
+                             file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        cfg_str = net_conf_files[0][1].split('\n')
+        self.assertEqual('DEVICE="enc1000"', cfg_str[0])
+        self.assertEqual('BROADCAST="192.168.95.255"', cfg_str[2])
+        self.assertEqual('GATEWAY="192.168.95.1"', cfg_str[3])
+        self.assertEqual('IPADDR="192.168.95.10"', cfg_str[4])
+        self.assertEqual('MTU="1600"', cfg_str[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str[13])
+
+        cfg_str2 = net_conf_files[1][1].split('\n')
+        self.assertEqual('DEVICE="enc1003"', cfg_str2[0])
+        self.assertEqual('BROADCAST="192.168.96.255"', cfg_str2[2])
+        self.assertEqual('GATEWAY=""', cfg_str2[3])
+        self.assertEqual('IPADDR="192.168.96.11"', cfg_str2[4])
+        self.assertEqual('MTU="1500"', cfg_str2[11])
+        self.assertEqual('DNS1="9.0.2.1"', cfg_str2[12])
+        self.assertEqual('DNS2="9.0.3.1"', cfg_str2[13])
 
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
@@ -325,6 +399,40 @@ class SLESTestCase(base.SDKTestCase):
         self.assertEqual("NAME='OSA Express Network card (1000)'", cfg_str[5])
         self.assertEqual("MTU='8000'", cfg_str[6])
 
+    def test_create_network_configuration_files_multi_nics(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': "192.168.95.0/24",
+                           'nic_vdev': '1000',
+                           'mtu': 8000},
+                           {'ip_addr': '192.168.96.11',
+                            'dns_addr': ['9.0.2.1', '9.0.3.1'],
+                            'gateway_addr': '192.168.96.1',
+                            'cidr': "192.168.96.0/24",
+                            'nic_vdev': '1003',
+                            'mtu': 1500}]
+        file_path = '/etc/sysconfig/network/'
+        first = False
+        files_and_cmds = self.sles15_dist.create_network_configuration_files(
+            file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        cfg_str = net_conf_files[0][1].split('\n')
+        self.assertEqual("BOOTPROTO='static'", cfg_str[0])
+        self.assertEqual("IPADDR='192.168.95.10'", cfg_str[1])
+        self.assertEqual("NETMASK='255.255.255.0'", cfg_str[2])
+        self.assertEqual("BROADCAST='192.168.95.255'", cfg_str[3])
+        self.assertEqual("NAME='OSA Express Network card (1000)'", cfg_str[5])
+        self.assertEqual("MTU='8000'", cfg_str[6])
+
+        cfg_str2 = net_conf_files[2][1].split('\n')
+        self.assertEqual("BOOTPROTO='static'", cfg_str2[0])
+        self.assertEqual("IPADDR='192.168.96.11'", cfg_str2[1])
+        self.assertEqual("NETMASK='255.255.255.0'", cfg_str2[2])
+        self.assertEqual("BROADCAST='192.168.96.255'", cfg_str2[3])
+        self.assertEqual("NAME='OSA Express Network card (1003)'", cfg_str2[5])
+        self.assertEqual("MTU='1500'", cfg_str2[6])
+
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
     def test_get_volume_attach_configuration_cmds(self, get_template,
@@ -445,6 +553,41 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                 {'addresses': ['192.168.95.10/24'],
                                 'gateway4': '192.168.95.1',
                                 'mtu': '6000',
+                                'nameservers':
+                                    {'addresses': ['9.0.2.1', '9.0.3.1']}
+                                }
+                            },
+                        'version': 2
+                        }
+                    }
+        self.assertEqual(ret, expect)
+
+    def test_create_network_configuration_files_multi_nics(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+                           'dns_addr': ['9.0.2.1', '9.0.3.1'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': "192.168.95.0/24",
+                           'nic_vdev': '1000',
+                           'mtu': 6000},
+                           {'ip_addr': '192.168.96.11',
+                            'dns_addr': ['9.0.2.1', '9.0.3.1'],
+                            'gateway_addr': '192.168.96.1',
+                            'cidr': "192.168.96.0/24",
+                            'nic_vdev': '1003',
+                            'mtu': 1500}]
+        file_path = '/etc/netplan/'
+        first = True
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
+            file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        ret = net_conf_files[0][1]
+        expect = {'network':
+                        {'ethernets':
+                            {'enc1003':
+                                {'addresses': ['192.168.96.11/24'],
+                                'gateway4': '',
+                                'mtu': '1500',
                                 'nameservers':
                                     {'addresses': ['9.0.2.1', '9.0.3.1']}
                                 }
