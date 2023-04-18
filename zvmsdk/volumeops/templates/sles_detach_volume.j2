@@ -148,7 +148,7 @@ do
     # if is last volume, then should offline the FCP
     if [ $is_last_volume -eq 1 ]; then
         echo "this is last volume, will offline fcp device $fcp"
-        /sbin/chzdev zfcp-host $fcp -d
+        /sbin/chzdev -d zfcp-host $fcp
         echo "FCP device $fcp was offline now"
         echo "To delete udev file /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules"
         rm -f /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules
