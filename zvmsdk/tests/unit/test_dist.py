@@ -584,9 +584,16 @@ class UBUNTU20TestCase(base.SDKTestCase):
         ret = net_conf_files[0][1]
         expect = {'network':
                         {'ethernets':
-                            {'enc1003':
+                            {'enc1000':
+                                {'addresses': ['192.168.95.10/24'],
+                                'gateway4': '192.168.95.1',
+                                'mtu': '6000',
+                                'nameservers':
+                                    {'addresses': ['9.0.2.1', '9.0.3.1']}
+                                },
+                             'enc1003':
                                 {'addresses': ['192.168.96.11/24'],
-                                'gateway4': '',
+                                'gateway4': '192.168.96.1',
                                 'mtu': '1500',
                                 'nameservers':
                                     {'addresses': ['9.0.2.1', '9.0.3.1']}
