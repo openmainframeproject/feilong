@@ -1402,13 +1402,40 @@ class ubuntu20(ubuntu):
         else:
             clean_cmd = ''
 
+        device_cfg = {}
         for idx, network in enumerate(guest_networks):
             # Mark 1st network in guest_networks as primary
             network['primary'] = True if idx == 0 else False
+
             base_vdev = network['nic_vdev'].lower()
-            (cfg_str) = self._generate_network_configuration(network,
+            device = self._get_device_name(base_vdev)
+
+            device_cfg_str = self._generate_network_configuration(network,
                                     base_vdev)
-            LOG.debug('Network configure file content is: %s', cfg_str)
+            device_cfg[device] = device_cfg_str
+        # For Ubuntu20 and Ubuntu 22, when there are multi nics,
+        # there is still 1 network config yml file, all nics are
+        # written in this file, example is:
+        #  network:
+        #   ethernets:
+        #    enc1000:
+        #     addresses:
+        #     - 172.26.54.179/17
+        #     gateway4: 172.26.0.1
+        #     mtu: '1500'
+        #    enc1003:
+        #     addresses:
+        #     - 192.168.6.5/24
+        #     gateway4: '192.168.6.1'
+        #     mtu: '1500'
+        #  version: 2
+        cfg_str = {'network':
+                    {'version': 2,
+                     'ethernets': device_cfg
+                    }
+                  }
+        LOG.debug('Network configure file content is: %s', cfg_str)
+
         if first:
             cfg_files.append((network_config_file_name, cfg_str))
         else:
@@ -1427,7 +1454,7 @@ class ubuntu20(ubuntu):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None) and network['primary']):
+            (network['gateway_addr'] is not None)):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
@@ -1445,33 +1472,18 @@ class ubuntu20(ubuntu):
             (network['mtu'] is not None)):
             mtu = str(network['mtu'])
 
-        device = self._get_device_name(vdev)
         if dns_v4:
-            cfg_str = {'network':
-                            {'ethernets':
-                                {device:
-                                    {'addresses': [ip_v4 + '/' + cidr],
-                                     'gateway4': gateway_v4,
-                                     'mtu': mtu,
-                                     'nameservers':
-                                        {'addresses': dns_v4}
-                                    }
-                                },
-                            'version': 2
-                            }
-                        }
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                       'gateway4': gateway_v4,
+                       'mtu': mtu,
+                       'nameservers':
+                           {'addresses': dns_v4}
+                       }
         else:
-            cfg_str = {'network':
-                            {'ethernets':
-                                {device:
-                                    {'addresses': [ip_v4 + '/' + cidr],
-                                     'gateway4': gateway_v4,
-                                     'mtu': mtu
-                                    }
-                                },
-                            'version': 2
-                            }
-                        }
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                        'gateway4': gateway_v4,
+                        'mtu': mtu
+                       }
         return cfg_str
 
 
