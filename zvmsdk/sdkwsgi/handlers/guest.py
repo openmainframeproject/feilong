@@ -578,7 +578,7 @@ def guest_get(req):
     info = _guest_get(req, userid)
 
     # info we got looks like:
-    # {'user_direct': [u'USER RESTT305 PASSW0RD 1024m 1024m G',
+    # {'user_direct': [u'USER RESTT305 PASSW0RD 1024M 1024M G',
     #                  u'INCLUDE OSDFLT']}
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

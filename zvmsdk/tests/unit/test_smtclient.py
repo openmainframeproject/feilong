@@ -203,7 +203,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -233,7 +233,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list,
@@ -266,7 +266,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -293,7 +293,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:512M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -322,7 +322,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:1G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -352,7 +352,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2048M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -381,7 +381,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -455,7 +455,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -481,7 +481,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -509,7 +509,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -538,7 +538,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa"')
@@ -569,7 +569,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -600,7 +600,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -630,7 +630,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -661,7 +661,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 100)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -693,7 +693,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -724,7 +724,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
@@ -805,7 +805,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         dedicate_vdevs = ['5c71', '5d71']
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" --commandSetShare "RELATIVE 200" '
@@ -837,7 +837,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         dedicate_vdevs = ['5c71', '5d71']
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" '
@@ -869,7 +869,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
-        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+        rd = ('makevm fakeuser directory LBYONLY 1024M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms --iplParam dummy '
               '--iplLoadparam load=1')
@@ -3834,7 +3834,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     def test_private_get_defined_cpu_addrs(self, get_user_direct):
-        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024M 64G G',
                                         'INCLUDE OSDFLT',
                                         'CPU 00 BASE',
                                         'CPU 0A',
@@ -3852,7 +3852,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     def test_private_get_defined_cpu_addrs_no_max_cpu(self, get_user_direct):
-        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024M 64G G',
                                         'INCLUDE OSDFLT',
                                         'CPU 00 BASE',
                                         'CPU 0A',

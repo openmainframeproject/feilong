@@ -612,7 +612,7 @@ class SMTClient(object):
                   dedicate_vdevs, loaddev, account, comment_list,
                   cschedule='', cshare='', rdomain='', pcif=''):
         """ Create VM and add disks if specified. """
-        rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
+        rd = ('makevm %(uid)s directory LBYONLY %(mem)iM %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
               '--maxMemSize %(max_mem)s --setReservedMem' %
               {'uid': userid, 'mem': memory,

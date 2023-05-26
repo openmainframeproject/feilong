@@ -530,7 +530,7 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.live_resize_memory")
     def test_guest_live_resize_mem(self, live_resize_memory):
-        size = "1024m"
+        size = "1024M"
         self.api.guest_live_resize_mem(self.userid, size)
         live_resize_memory.assert_called_once_with(self.userid, size)
 
