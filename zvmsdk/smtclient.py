@@ -612,10 +612,15 @@ class SMTClient(object):
                   dedicate_vdevs, loaddev, account, comment_list,
                   cschedule='', cshare='', rdomain='', pcif=''):
         """ Create VM and add disks if specified. """
-        rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
+        if memory % 1024 == 0:
+            mem = str(int(memory / 1024)) + 'G'
+        else:
+            mem = str(memory) + 'M'
+        # add diskpool information to userid definition
+        rd = ('makevm %(uid)s directory LBYONLY %(mem)s %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
               '--maxMemSize %(max_mem)s --setReservedMem' %
-              {'uid': userid, 'mem': memory,
+              {'uid': userid, 'mem': mem,
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
                'cpu': cpu, 'prof': profile,
                'max_cpu': max_cpu, 'max_mem': max_mem})
@@ -674,6 +679,16 @@ class SMTClient(object):
                 raise exception.SDKInvalidInputFormat(msg=errmsg)
             rd += ' --commandPcif %s' % pcif
 
+        disk_pool_info = "DISK_POOL " + CONF.zvm.disk_pool if CONF.zvm.disk_pool else None
+        if len(disk_list) == 1:
+            disk = disk_list[0]
+            if 'format' in disk and disk['format'].lower() == 'swap':
+                disk_pool_info = disk.get('disk_pool') or CONF.zvm.disk_pool
+        if disk_pool_info:
+            if comment_list is not None:
+                comment_list.append(disk_pool_info)
+            else:
+                comment_list = [disk_pool_info]
         comments = ''
         if comment_list is not None:
             for comment in comment_list:
@@ -706,6 +721,7 @@ class SMTClient(object):
             disk = disk_list[0]
             if 'format' in disk and disk['format'].lower() == 'swap':
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                disk_pool_info = disk_pool
                 if disk_pool is None:
                     # if it's vdisk, then create user direct directly
                     vd = disk.get('vdev') or self.generate_disk_vdev(offset=0)
