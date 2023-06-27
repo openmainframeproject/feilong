@@ -619,7 +619,7 @@ class SMTClient(object):
 
         rd = ('makevm %(uid)s directory LBYONLY %(mem)s %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
-              '--maxMemSize %(max_mem)s --setReservedMem' %
+              '--maxMemSize %(max_mem)s --setIniStandbyRem' %
               {'uid': userid, 'mem': mem,
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
                'cpu': cpu, 'prof': profile,
@@ -4102,7 +4102,7 @@ class SMTClient(object):
 
     def _get_defined_memory(self, userid):
         user_direct = self.get_user_direct(userid)
-        defined_mem = max_mem = reserved_mem = -1
+        defined_mem = max_mem = -1
         for ent in user_direct:
             # u'USER userid password storage max privclass'
             if ent.startswith("USER "):
@@ -4113,10 +4113,7 @@ class SMTClient(object):
                     break
                 defined_mem = int(zvmutils.convert_to_mb(fields[3]))
                 max_mem = int(zvmutils.convert_to_mb(fields[4]))
-            # For legacy guests, the reserved memory may not be defined
-            if ent.startswith("COMMAND DEF STOR RESERVED"):
-                reserved_mem = int(zvmutils.convert_to_mb(ent.split(' ')[4]))
-        return (defined_mem, max_mem, reserved_mem, user_direct)
+        return (defined_mem, max_mem, user_direct)
 
     def _replace_user_direct(self, userid, user_entry):
         # user_entry can be a list or a string
@@ -4184,12 +4181,12 @@ class SMTClient(object):
         # Check defined storage in user entry.
         # Update STORAGE and RESERVED accordingly.
         size = int(zvmutils.convert_to_mb(memory))
-        (defined_mem, max_mem, reserved_mem,
-         user_direct) = self._get_defined_memory(userid)
+        (defined_mem, max_mem, user_direct) = \
+            self._get_defined_memory(userid)
         # Check max memory is properly defined
-        if max_mem == -1 or reserved_mem == -1:
+        if defined_mem == -1 or max_mem == -1:
             LOG.error("Memory resize for guest '%s' cann't be done."
-                      "Failed to get the defined/max/reserved memory size "
+                      "Failed to get the defined/max memory size "
                       "from user directory." % userid)
             raise exception.SDKConflictError(modID='guest', rs=19,
                                              userid=userid)
@@ -4213,16 +4210,6 @@ class SMTClient(object):
             # set action to 1 to represent that revert need to be done when
             # live resize failed.
             action = 1
-            # get the new reserved memory size
-            new_reserved = max_mem - size
-            # get maximum reserved memory value
-            MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
-                        CONF.zvm.user_default_max_reserved_memory))
-
-            # when new reserved memory value > the MAX_STOR_RESERVED,
-            # make is as the MAX_STOR_RESERVED value
-            if new_reserved > MAX_STOR_RESERVED:
-                new_reserved = MAX_STOR_RESERVED
             # prepare the new user entry content
             entry_str = ""
             for ent in user_direct:
@@ -4242,7 +4229,7 @@ class SMTClient(object):
                     # remove the last space
                     new_ent = new_ent.strip()
                 elif ent.startswith("COMMAND DEF STOR RESERVED"):
-                    new_ent = ("COMMAND DEF STOR RESERVED %iM" % new_reserved)
+                    new_ent = ("COMMAND DEF STOR INITIAL STANDBY REMAINDER")
                 else:
                     new_ent = ent
                 # append this new entry
@@ -4334,21 +4321,7 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
-        # get maximum reserved memory value
-        MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
-                        CONF.zvm.user_default_max_reserved_memory))
-        # The maximum increased memory size in one live resizing can't
-        # exceed MAX_STOR_RESERVED
         increase_size = size - active_size
-        if increase_size > MAX_STOR_RESERVED:
-            LOG.error("Live memory resize for guest '%s' cann't be done. "
-                      "The memory size to be increased: '%im' is greater "
-                      " than the maximum reserved memory size: '%im'." %
-                      (userid, increase_size, MAX_STOR_RESERVED))
-            raise exception.SDKConflictError(modID='guest', rs=21,
-                                             userid=userid,
-                                             inc=increase_size,
-                                             max=MAX_STOR_RESERVED)
 
         # Static resize memory. (increase/decrease memory from user directory)
         (action, defined_mem, max_mem,
@@ -4365,25 +4338,40 @@ class SMTClient(object):
             return
         else:
             # Do live resize. update memory size
+            # If the user direct include DEF STOR RESERVED statement,
+            # then need define standby storage
             # Step1: Define new standby storage
-            cmd_str = ("vmcp def storage standby %sM" % increase_size)
-            try:
-                self.execute_cmd(userid, cmd_str)
-            except exception.SDKSMTRequestFailed as e:
-                # rollback and return
-                msg = ("Define standby memory of guest: '%s' failed with "
-                       "error: %s." % (userid, e.format_message()))
-                LOG.error(msg)
-                # Start to do rollback
-                if action == 1:
-                    LOG.debug("Start to revert user definition of guest '%s'."
-                              % userid)
-                    self._revert_user_direct(userid, user_direct)
-                # Finally, raise the error and exit
-                raise exception.SDKGuestOperationError(rs=11,
-                                                       userid=userid,
-                                                       err=e.format_message())
-
+            if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+                # 'DEF STOR RESERVED' statement in Legacy user direct is replace to
+                # 'COMMAND DEFINE STORAGE INITIAL STANDBY REMAINDER', so here def all
+                # reserved memory to standby
+                reserved_mem_size = 0
+                stor_info = self.execute_cmd(userid, 'vmcp q storage')
+                # stor_info example:
+                # ['STORAGE = 40G MAX = 100G INC = 128M STANDBY = 0  RESERVED = 60G']
+                if stor_info and len(stor_info) >= 1:
+                    reserved_mem = stor_info[0].split('RESERVED =')[1].split()[0]
+                    reserved_mem_size = int(zvmutils.convert_to_mb(reserved_mem))
+                if reserved_mem_size > 0:
+                    cmd_str = ("vmcp def storage standby %sM" % reserved_mem_size)
+                else:
+                    cmd_str = ("vmcp def storage standby %sM" % increase_size)
+                try:
+                    self.execute_cmd(userid, cmd_str)
+                except exception.SDKSMTRequestFailed as e:
+                    # rollback and return
+                    msg = ("Define standby memory of guest: '%s' failed with "
+                           "error: %s." % (userid, e.format_message()))
+                    LOG.error(msg)
+                    # Start to do rollback
+                    if action == 1:
+                        LOG.debug("Start to revert user definition of guest '%s'."
+                                  % userid)
+                        self._revert_user_direct(userid, user_direct)
+                    # Finally, raise the error and exit
+                    raise exception.SDKGuestOperationError(rs=11,
+                                                           userid=userid,
+                                                           err=e.format_message())
             # Step 2: Online new memory
             cmd_str = ("chmem -e %sM" % increase_size)
             try:
@@ -4395,14 +4383,15 @@ class SMTClient(object):
                 LOG.error(msg1)
                 # Start to do rollback
                 LOG.info("Start to do revert.")
-                LOG.debug("Reverting the standby memory.")
-                try:
-                    self.execute_cmd(userid, "vmcp def storage standby 0M")
-                except exception.SDKSMTRequestFailed as err2:
-                    # print revert error info and continue
-                    msg2 = ("Revert standby memory of guest: '%s' failed with "
-                           "error: %s." % (userid, err2.format_message()))
-                    LOG.error(msg2)
+                if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+                    LOG.debug("Reverting the standby memory.")
+                    try:
+                        self.execute_cmd(userid, "vmcp def storage standby 0M")
+                    except exception.SDKSMTRequestFailed as err2:
+                        # print revert error info and continue
+                        msg2 = ("Revert standby memory of guest: '%s' failed with "
+                               "error: %s." % (userid, err2.format_message()))
+                        LOG.error(msg2)
                 # Continue to do the user directory change.
                 if action == 1:
                     LOG.debug("Reverting the user directory change of guest "

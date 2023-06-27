@@ -220,6 +220,19 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                     b'COMMAND DEF STOR RESERVED 0M\n')
 
     @mock.patch("os.write")
+    def test_create_VM_STOR_STANDBY_REMAINDER(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'setIniStandbyRem': ''}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                    b'COMMAND DEF STOR INITIAL STANDBY REMAINDER\n')
+
+    @mock.patch("os.write")
     def test_create_with_profile(self, write):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
