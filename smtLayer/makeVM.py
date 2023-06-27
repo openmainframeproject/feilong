@@ -77,6 +77,7 @@ keyOpsList = {
         '--profile': ['profName', 1, 2],
         '--maxCPU': ['maxCPU', 1, 1],
         '--setReservedMem': ['setReservedMem', 0, 0],
+        '--setIniStandbyRem': ['setIniStandbyRem', 0, 0],
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
         '--iplLoadparam': ['iplLoadparam', 1, 2],
@@ -179,6 +180,9 @@ def createVM(rh):
         # If no such line defined in user direct, resizing would report
         # error due to it can't get the original reserved memory value.
         dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
+
+    if 'setIniStandbyRem' in rh.parms:
+        dirLines.append("COMMAND DEF STOR INITIAL STANDBY REMAINDER")
 
     if 'loadportname' in rh.parms:
         wwpn = rh.parms['loadportname'].replace("0x", "")
@@ -394,6 +398,7 @@ def showInvLines(rh):
         "--profile <profName>")
     rh.printLn("N", "                     --maxCPU <maxCPUCnt> " +
         "--setReservedMem")
+    rh.printLn("N", "                     --setIniStandbyRem")
     rh.printLn("N", "                     --dedicate <vdevs> ")
     rh.printLn("N", "                     --loadportname <wwpn> " +
         "--loadlun <lun>")
@@ -461,6 +466,8 @@ def showOperandLines(rh):
                    "Set the additional memory space (maxMemSize - priMemSize)")
         rh.printLn("N", "                              " +
                    "as reserved memory of the virtual machine.")
+        rh.printLn("N", "      --setIniStandbyRem      - " +
+                   "Specifies that the STANDBY storage size should be calculated.")
         rh.printLn("N", "      <password>            - " +
                    "Specifies the password for the new virtual")
         rh.printLn("N", "                              " +

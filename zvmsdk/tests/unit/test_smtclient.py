@@ -204,7 +204,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -231,7 +231,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1025M G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -261,7 +261,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list,
                                   profile, max_cpu, max_mem, '',
@@ -294,7 +294,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -321,7 +321,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:512M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -350,7 +350,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:1G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -380,7 +380,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2048M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -409,7 +409,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -483,7 +483,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -509,7 +509,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -537,7 +537,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {}, '',
@@ -566,7 +566,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -597,7 +597,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--comment "comment1$@$@$comment2 is comment$@$@$"')
@@ -628,7 +628,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSchedule CEEPOOL')
@@ -658,7 +658,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSetShare "RELATIVE 125"')
@@ -689,7 +689,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 100)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSetShare "RELATIVE 200"')
@@ -721,7 +721,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandRDomain Z15ONLY')
@@ -752,7 +752,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandPcif 100:200')
@@ -833,7 +833,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" --commandSetShare "RELATIVE 200" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
@@ -865,7 +865,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
@@ -897,7 +897,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms --iplParam dummy '
               '--iplLoadparam load=1')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -4544,10 +4544,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, -1, sample_definition)
-        self.assertRaises(exception.SDKConflictError,
+        get_defined.return_value = (4096, 65536, sample_definition)
+        self.assertRaises(exception.SDKInternalError,
                           self._smtclient.resize_memory, userid, size)
-        replace_def.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
     @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
@@ -4561,7 +4560,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        get_defined.return_value = (4096, 65536, sample_definition)
         self.assertRaises(exception.SDKConflictError,
                           self._smtclient.resize_memory, userid, size)
         replace_def.assert_not_called()
@@ -4578,7 +4577,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        get_defined.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 0)
@@ -4597,7 +4596,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4605,7 +4604,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 10240M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 55296M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4624,7 +4623,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4632,7 +4631,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4654,7 +4653,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        get_def.return_value = (1024, 131072, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4662,7 +4661,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4684,7 +4683,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        get_def.return_value = (1024, 131072, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4692,7 +4691,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4714,7 +4713,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 262144, 131072, sample_definition)
+        get_def.return_value = (1024, 262144, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4722,7 +4721,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 4096M 256G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 131072M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4741,7 +4740,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         lock_def.side_effect = exception.SDKSMTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.resize_memory, userid, size)
@@ -4763,7 +4762,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         replace_def.side_effect = exception.SDKSMTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.resize_memory, userid, size)
@@ -4771,7 +4770,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4782,17 +4781,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF STOR INITIAL STANDBY REMAINDER',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, 61440)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4805,11 +4803,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4823,11 +4820,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, 61440)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4835,17 +4831,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF STOR INITIAL STANDBY REMAINDER',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, -1)
         self.assertEqual(max_mem, -1)
-        self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -4948,11 +4943,44 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         req_mem = "4096m"
         get_active_mem.return_value = 2048
-        resize_mem.return_value = (1, 2048, 65536, [])
-        exec_cmd.side_effect = ['', '']
+        sample_direct = [u'USER TESTUID LBYONLY 2048M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR INI STANDBY REMAINDER',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 2048, 65536, sample_direct)
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 62G  RESERVED = 0G'],
+                                '', '']
         self._smtclient.live_resize_memory(userid, req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        online_mem_cmd = "chmem -e 2048M"
+        exec_cmd.assert_has_calls([mock.call(userid, online_mem_cmd)])
+        revert.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
+    @mock.patch.object(smtclient.SMTClient, 'resize_memory')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, '_revert_user_direct')
+    def test_live_resize_memory_more_standby(self, revert, exec_cmd, resize_mem,
+                                     get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 2048M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 61440M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 2048, 65536, sample_direct)
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                '', '']
+        self._smtclient.live_resize_memory(userid, req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 63488M"
         online_mem_cmd = "chmem -e 2048M"
         exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
                                    mock.call(userid, online_mem_cmd)])
@@ -4975,12 +5003,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 2048, 65536, sample_direct)
-        exec_cmd.side_effect = exception.SDKSMTRequestFailed({}, 'fake err')
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                exception.SDKSMTRequestFailed({}, 'fake err')]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        def_standby_cmd = "vmcp def storage standby 63488M"
         exec_cmd.assert_called_with(userid, def_standby_cmd)
         revert.assert_called_once_with(userid, sample_direct)
 
@@ -5003,13 +5032,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (0, 4096, 65536, sample_direct)
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'fake err'),
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                exception.SDKSMTRequestFailed({}, 'fake err'),
                                 '']
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        def_standby_cmd = "vmcp def storage standby 63488M"
         exec_cmd.assert_called_with(userid, def_standby_cmd)
         revert.assert_not_called()
 
@@ -5032,17 +5062,19 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 4096, 65536, sample_direct)
-        exec_cmd.side_effect = ['',
-                                exception.SDKSMTRequestFailed({}, 'fake err'),
-                                '']
+        exec_cmd.side_effect = [
+            ['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+            '', exception.SDKSMTRequestFailed({}, 'fake err'), '']
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        query_stor_cmd = 'vmcp q storage'
+        def_standby_cmd = "vmcp def storage standby 63488M"
         online_mem_cmd = "chmem -e 2048M"
         revert_standby_cmd = "vmcp def storage standby 0M"
-        exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
+        exec_cmd.assert_has_calls([mock.call(userid, query_stor_cmd),
+                                   mock.call(userid, def_standby_cmd),
                                    mock.call(userid, online_mem_cmd),
                                    mock.call(userid, revert_standby_cmd)])
         revert.assert_called_once_with(userid, sample_direct)
@@ -5050,7 +5082,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
     @mock.patch.object(smtclient.SMTClient, 'resize_memory')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    def test_live_resize_memory_exceed_max_stor_reserved(self, exec_cmd,
+    @mock.patch.object(smtclient.SMTClient, '_revert_user_direct')
+    def test_live_resize_memory_exceed_max_stor_reserved(self, revert_user_direct,
+                                                         exec_cmd,
                                                          resize_mem,
                                                          get_active_mem):
         userid = 'testuid'
@@ -5064,10 +5098,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 258048, 262144, sample_direct)
-        self.assertRaises(exception.SDKConflictError,
+        exec_cmd.side_effect = ['',
+                                exception.SDKSMTRequestFailed({},
+                                    'Define standby memory err'),
+                                '']
+        self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
-        resize_mem.assert_not_called()
 
     def test_guest_deploy_rhcos_no_ignition(self):
         userid = 'testuid'
