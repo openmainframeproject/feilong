@@ -678,6 +678,19 @@ class SMTClient(object):
                           " <dev>:<dev>" % pcif)
                 raise exception.SDKInvalidInputFormat(msg=errmsg)
             rd += ' --commandPcif %s' % pcif
+        # add dasd group information to userid as comment
+        disk_pool_info = "DASD_GROUP " + CONF.zvm.disk_pool if CONF.zvm.disk_pool else None
+        if len(disk_list) == 1:
+            disk = disk_list[0]
+            if 'format' in disk and disk['format'].lower() == 'swap':
+                disk_pool_info = disk.get('disk_pool') or CONF.zvm.disk_pool
+                if disk_pool_info:
+                    disk_pool_info = "DASD_GROUP " + disk_pool_info
+        if disk_pool_info:
+            if comment_list is not None:
+                comment_list.append(disk_pool_info)
+            else:
+                comment_list = [disk_pool_info]
 
         comments = ''
         if comment_list is not None:

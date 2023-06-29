@@ -205,7 +205,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
+              '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
                                   [])
@@ -232,7 +233,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1025M G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
+              '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
                                   [])
@@ -262,7 +264,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby lbyuser1:lbyuser2 --ipl 0100')
+              '--logonby lbyuser1:lbyuser2 --ipl 0100 '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list,
                                   profile, max_cpu, max_mem, '',
                                   '', '', [], {}, '', [])
@@ -538,7 +541,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby lbyuser1:lbyuser2 --ipl cms')
+              '--logonby lbyuser1:lbyuser2 --ipl cms '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {}, '',
                                   [])
@@ -568,7 +572,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
-              '--account "dummy account aaa"')
+              '--account "dummy account aaa" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, None)
@@ -600,7 +605,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--comment "comment1$@$@$comment2 is comment$@$@$"')
+              '--comment "comment1$@$@$comment2 is comment$@$@$DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, comment_list)
@@ -631,7 +636,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--commandSchedule CEEPOOL')
+              '--commandSchedule CEEPOOL '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, [], 'CEEPOOL')
@@ -661,7 +667,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--commandSetShare "RELATIVE 125"')
+              '--commandSetShare "RELATIVE 125" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, [], '', 'RELATIVE 125')
@@ -692,7 +699,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--commandSetShare "RELATIVE 200"')
+              '--commandSetShare "RELATIVE 200" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, [], '', '')
@@ -724,7 +732,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--commandRDomain Z15ONLY')
+              '--commandRDomain Z15ONLY '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, [], '', '', 'Z15ONLY')
@@ -755,7 +764,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
-              '--commandPcif 100:200')
+              '--commandPcif 100:200 '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
                                   account, [], '', '', '', '100:200')
@@ -836,6 +846,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" --commandSetShare "RELATIVE 200" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, ipl_from, '', '',
@@ -868,6 +879,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, ipl_from, '', '',
@@ -899,7 +911,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby lbyuser1:lbyuser2 --ipl cms --iplParam dummy '
-              '--iplLoadparam load=1')
+              '--iplLoadparam load=1 '
+              '--comment "DASD_GROUP ECKD:TESTPOOL$@$@$"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', ipl_param,
                                   ipl_loadparam, [], {}, '', [])
