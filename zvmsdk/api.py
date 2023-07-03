@@ -352,21 +352,51 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.guest_list()
 
-    def host_diskpool_get_info(self, disk_pool=None):
+    def host_diskpool_get_info(self, disk_pool=None, details=False):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
         disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
-        :returns: Dictionary describing disk pool usage info
+        :param boolean details: if it's True, get the free space
+        of the volumes among the diskpool.
+        :returns: if details is False, Dictionary describing disk pool usage info,
+        if details is True, Dictionary describing the free space of the volumes
+        among the diskpool.
+
+        disk_pool is optional. disk_pool default to None because
+        it is more convenient for users to just type function name when
+        they want to get the disk pool info of CONF.zvm.disk_pool.
+        The default value of CONF.zvm.disk_pool is None, if it's configured,
+        the format must be "ECKD:eckdpool" or "FBA:fbapool".
+        details is optional. details default to False.
+        1.example if details is False:
+        {'disk_total': 2034, 'disk_used': 1469, 'disk_available': 564}
+        2. example if details is True:
+        {
+             'poolname': [
+                 {'volume_name': 'vol1',
+                  'device_type': 'type1',
+                  'start_cylinder': '100',
+                  'free_size': '1456',
+                  'dasd_group': 'poolname',
+                  'region_name': 'vol1'
+                 },
+                 {'volume_name': 'vol2',
+                  'device_type': 'typ1',
+                  'start_cylinder': '3000',
+                  'free_size': '15291',
+                  'dasd_group': 'poolname',
+                  'region_name': 'vol2'
+                 },
+             ]
+        }
         """
-        # disk_pool is optional. disk_pool default to None because
-        # it is more convenient for users to just type function name when
-        # they want to get the disk pool info of CONF.zvm.disk_pool.
-        # The default value of CONF.zvm.disk_pool is None, if it's configured,
-        # the format must be "ECKD:eckdpool" or "FBA:fbapool".
         disk_pool = disk_pool or CONF.zvm.disk_pool
         if disk_pool is None:
-            # Return 0 directly if disk_pool not configured
-            return {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
+            if not details:
+                # Return 0 directly if disk_pool not configured
+                return {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
+            else:
+                return {}
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
@@ -380,9 +410,9 @@ class SDKAPI(object):
             LOG.error(msg)
             raise exception.SDKInvalidInputFormat(msg)
 
-        action = "get information of disk pool: '%s'" % disk_pool
+        action = "get information of disk pool: '%s' '%s'" % (disk_pool, details)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._hostops.diskpool_get_info(diskpool_name)
+            return self._hostops.diskpool_get_info(diskpool_name, details)
 
     def image_delete(self, image_name):
         """Delete image from image repository

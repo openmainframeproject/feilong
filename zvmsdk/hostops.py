@@ -142,30 +142,30 @@ class HOSTOps(object):
                 else:
                     return volume_info
 
-    def diskpool_get_info(self, pool):
-        dp_info = self._smtclient.get_diskpool_info(pool)
+    def diskpool_get_info(self, pool, details=False):
+        dp_info = self._smtclient.get_diskpool_info(pool, details)
         with zvmutils.expect_invalid_resp_data(dp_info):
-            for k in list(dp_info.keys()):
-                s = dp_info[k].strip().upper()
-                if s.endswith('G'):
-                    sl = s[:-1].split('.')
-                    n1, n2 = int(sl[0]), int(sl[1])
-                    if n2 >= 5:
-                        n1 += 1
-                    dp_info[k] = n1
-                elif s.endswith('M'):
-                    n_mb = int(s[:-3])
-                    n_gb, n_ad = n_mb // 1024, n_mb % 1024
-                    if n_ad >= 512:
-                        n_gb += 1
-                    dp_info[k] = n_gb
-                else:
-                    exp = "ending with a 'G' or 'M'"
-                    errmsg = ("Invalid diskpool size format: %(invalid)s; "
-                        "Expected: %(exp)s") % {'invalid': s, 'exp': exp}
-                    LOG.error(errmsg)
-                    raise exception.SDKInternalError(msg=errmsg)
-
+            if not details:
+                for k in list(dp_info.keys()):
+                    s = dp_info[k].strip().upper()
+                    if s.endswith('G'):
+                        sl = s[:-1].split('.')
+                        n1, n2 = int(sl[0]), int(sl[1])
+                        if n2 >= 5:
+                            n1 += 1
+                        dp_info[k] = n1
+                    elif s.endswith('M'):
+                        n_mb = int(s[:-3])
+                        n_gb, n_ad = n_mb // 1024, n_mb % 1024
+                        if n_ad >= 512:
+                            n_gb += 1
+                        dp_info[k] = n_gb
+                    else:
+                        exp = "ending with a 'G' or 'M'"
+                        errmsg = ("Invalid diskpool size format: %(invalid)s; "
+                            "Expected: %(exp)s") % {'invalid': s, 'exp': exp}
+                        LOG.error(errmsg)
+                        raise exception.SDKInternalError(msg=errmsg)
         return dp_info
 
     def host_get_ssi_info(self):

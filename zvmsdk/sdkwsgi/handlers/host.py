@@ -63,9 +63,9 @@ class HostAction(object):
         return info
 
     @validation.query_schema(image.diskpool)
-    def diskpool_get_info(self, req, poolname):
+    def diskpool_get_info(self, req, poolname, details):
         info = self.client.send_request('host_diskpool_get_info',
-                                        disk_pool=poolname)
+                                        disk_pool=poolname, details=details)
         return info
 
     def get_ssi_info(self):
@@ -154,14 +154,21 @@ def host_get_volume_info(req):
 @tokens.validate
 def host_get_disk_info(req):
 
-    def _host_get_disk_info(req, poolname):
+    def _host_get_disk_info(req, poolname, details):
         action = get_action()
-        return action.diskpool_get_info(req, poolname)
+        return action.diskpool_get_info(req, poolname, details)
 
     poolname = None
     if 'poolname' in req.GET:
         poolname = req.GET['poolname']
-    info = _host_get_disk_info(req, poolname)
+    details = 'False'
+    if 'details' in req.GET:
+        details = req.GET['details']
+    if details.lower() == 'true':
+        details = True
+    else:
+        details = False
+    info = _host_get_disk_info(req, poolname, details)
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)

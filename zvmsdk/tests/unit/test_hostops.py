@@ -100,10 +100,28 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             "disk_available": "38842.7M",
             }
         dp_info = self._hostops.diskpool_get_info("fakepool")
-        get_diskpool_info.assert_called_once_with("fakepool")
+        get_diskpool_info.assert_called_once_with("fakepool", False)
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_info")
+    def test_get_diskpool_details_info(self, get_diskpool_info):
+        diskpool_info = [{'volume_name': 'VOL1',
+                                    'device_type': 'TYPE1',
+                                    'start_cylinder': 13456,
+                                    'free_size': 2345,
+                                    'dasd_group': 'POOL1'},
+                                   {'volume_name': 'VOL2',
+                                    'device_type': 'TYPE1',
+                                    'start_cylinder': '22456',
+                                    'free_size': 12980,
+                                    'dasd_group': 'POOL1'}]
+        diskpool_info_results = {'POOL1': diskpool_info}
+        get_diskpool_info.return_value = diskpool_info_results
+        dp_info = self._hostops.diskpool_get_info("fakepool", True)
+        get_diskpool_info.assert_called_once_with("fakepool", True)
+        self.assertEqual(dp_info['POOL1'], diskpool_info)
 
     @mock.patch("time.time")
     @mock.patch("zvmsdk.hostops.HOSTOps._cache_enabled")
