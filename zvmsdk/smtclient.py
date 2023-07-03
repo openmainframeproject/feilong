@@ -619,7 +619,7 @@ class SMTClient(object):
 
         rd = ('makevm %(uid)s directory LBYONLY %(mem)s %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
-              '--maxMemSize %(max_mem)s --setReservedMem' %
+              '--maxMemSize %(max_mem)s --setIniStandbyRem' %
               {'uid': userid, 'mem': mem,
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
                'cpu': cpu, 'prof': profile,
@@ -3571,15 +3571,19 @@ class SMTClient(object):
     def _get_defined_cpu_addrs(self, userid):
         user_direct = self.get_user_direct(userid)
         defined_addrs = []
+        defined_addrs_long = []
         max_cpus = 0
         for ent in user_direct:
             if ent.startswith("CPU"):
                 cpu_addr = ent.split()[1].strip().upper()
                 defined_addrs.append(cpu_addr)
+            if ent.startswith("COMMAND DEFINE CPU"):
+                cpu_addr_long = ent.split()[3].strip().upper()
+                defined_addrs_long.append(cpu_addr_long)
             if ent.startswith("MACHINE ESA"):
                 max_cpus = int(ent.split()[2].strip())
 
-        return (max_cpus, defined_addrs)
+        return (max_cpus, defined_addrs, defined_addrs_long)
 
     def _get_available_cpu_addrs(self, used_addrs, max_cpus):
         # Get available CPU addresses that are not defined in user entry
@@ -3608,6 +3612,24 @@ class SMTClient(object):
             active_addrs.append(addr)
         return active_addrs
 
+    def get_active_cpu_offline_addrs(self, userid):
+        # Get the offline cpu addrs in two-digit hex string in upper case
+        # Sample output for 'lscpu --parse=ADDRESS --offline':
+        # # The following is the parsable format, which can be fed to other
+        # # programs. Each different item in every column has an unique ID
+        # # starting from zero.
+        # # Address
+        # 2
+        offline_addrs = []
+        offline_cpus = self.execute_cmd(userid, "lscpu --parse=ADDRESS --offline")
+        for c in offline_cpus:
+            # Skip the comment lines at beginning
+            if c.startswith("# "):
+                continue
+            addr = hex(int(c.strip()))[2:].rjust(2, '0').upper()
+            offline_addrs.append(addr)
+        return offline_addrs
+
     def resize_cpus(self, userid, count):
         # Check defined cpus in user entry. If greater than requested, then
         # delete cpus. Otherwise, add new cpus.
@@ -3617,8 +3639,29 @@ class SMTClient(object):
         # cpu_addrs: list of influenced cpu addrs
         action = 0
         updated_addrs = []
-        (max_cpus, defined_addrs) = self._get_defined_cpu_addrs(userid)
-        defined_count = len(defined_addrs)
+        defined_count = 0
+
+        # Based on the following reasons, we need to delete all short format
+        # 'CPU XX' and ensure long format 'COMMAND DEFINE CPU XX TYPE IFL'
+        # number correct after resize.
+        # 1, For vm not resized after deploying,
+        # only having 'COMMAND DEFINE CPU XX TYPE IFL' format definition.
+        # 2, For vm resized before, having both kinds definitions:
+        # 'COMMAND DEFINE CPU XX TYPE IFL' and 'CPU XX', and their counts
+        # may not be the same, as resize and counting before only
+        # handles 'CPU XX'.
+
+        (max_cpus, defined_addrs_short, defined_addrs_long) = \
+            self._get_defined_cpu_addrs(userid)
+        defined_count_short = len(defined_addrs_short)
+        defined_count_long = len(defined_addrs_long)
+        only_long_def = False
+        if (defined_count_short == 0 and defined_count_long > 0):
+            defined_count = defined_count_long
+            only_long_def = True
+        else:
+            defined_count = defined_count_short
+
         # Check maximum cpu count defined
         if max_cpus == 0:
             LOG.error("Resize for guest '%s' cann't be done. The maximum "
@@ -3644,86 +3687,229 @@ class SMTClient(object):
         elif defined_count < count:
             action = 1
             # add more CPUs
-            available_addrs = self._get_available_cpu_addrs(defined_addrs,
-                                                            max_cpus)
-            # sort the list and get the first few addrs to use
-            available_addrs.sort()
-            # Define new cpus in user directory
-            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
-                          "--operands"))
-            updated_addrs = available_addrs[0:count - defined_count]
-            for addr in updated_addrs:
-                rd += (" -k CPU=CPUADDR=%s" % addr)
+            available_addrs_long = self._get_available_cpu_addrs(
+                defined_addrs_long, max_cpus)
+            available_addrs_long.sort()
 
-            # Add resize support for share of CPU
-            if CONF.zvm.user_default_share_unit > 0:
-                total = CONF.zvm.user_default_share_unit * count
-                rd += (" -k SHARE=RELATIVE=%s" % total)
+            to_delete_addrs_short = []
+            to_delete_addrs_long = []
+            to_add_addrs_long = []
 
-            try:
-                self._request(rd)
-            except exception.SDKSMTRequestFailed as e:
-                msg = ("Define new cpus in user directory for '%s' failed with"
-                       " SMT error: %s" % (userid, e.format_message()))
-                LOG.error(msg)
-                raise exception.SDKGuestOperationError(rs=6, userid=userid,
-                                                       err=e.format_message())
-            LOG.info("New CPUs defined in user directory for '%s' "
-                     "successfully" % userid)
-            return (action, updated_addrs, max_cpus)
-        else:
-            action = 2
-            # Delete CPUs
-            defined_addrs.sort()
-            updated_addrs = defined_addrs[-(defined_count - count):]
-            # Delete the last few cpus in user directory
-            rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
-                          "--operands"))
-            for addr in updated_addrs:
-                rd += (" -k CPU=CPUADDR=%s" % addr)
-            try:
-                self._request(rd)
-            except exception.SDKSMTRequestFailed as e:
-                msg = ("Delete CPUs in user directory for '%s' failed with"
-                       " SMT error: %s" % (userid, e.format_message()))
-                LOG.error(msg)
-                raise exception.SDKGuestOperationError(rs=6, userid=userid,
-                                                       err=e.format_message())
-            LOG.info("CPUs '%s' deleted from user directory for '%s' "
-                     "successfully" % (str(updated_addrs), userid))
-            # Add resize support for share of CPU
-            if CONF.zvm.user_default_share_unit > 0:
-                total = CONF.zvm.user_default_share_unit * count
-                rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
-                          "--operands -k SHARE=RELATIVE=%s" % total))
+            if only_long_def:
+                # e.g. 5->7
+                # short : no short, don't add.
+                # long: add
+                to_add_addrs_long = available_addrs_long[0:count - defined_count_long]
+            else:
+                # e.g. 5->3->4, 5->3->6, 5->7->9, or verify old vm which only
+                # has short format 4->6
+
+                # short, delete them all
+                defined_addrs_short.sort()
+                to_delete_addrs_short = defined_addrs_short
+
+                # long, delete or add
+                defined_addrs_long.sort()
+                if defined_count_long < count:
+                    # add. e.g.5->6, 5->9
+                    to_add_addrs_long = available_addrs_long[0:count - defined_count_long]
+                elif defined_count_long > count:
+                    # Delete cpus in user directory, as for the vm resized before,
+                    # need to delete long format in some situations, e.g. 5->3->4,
+                    # as long format "COMMAND DEFINE CPU XX TYPE IFL" not handled
+                    # during resize 5->3 before, although 3->4 is resized up,
+                    # still need to delete 1 for long format. e.g. 5->4
+                    to_delete_addrs_long = defined_addrs_long[-(defined_count_long - count):]
+
+            # Delete the last few cpus in user directory in format "CPU XX"
+            # and "COMMAND DEFINE CPU XX TYPE IFL".
+            if len(to_delete_addrs_short) > 0 or len(to_delete_addrs_long) > 0:
+                rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
+                              "--operands"))
+                if len(to_delete_addrs_short) > 0:
+                    for addr in to_delete_addrs_short:
+                        rd += (" -k CPU=CPUADDR=%s" % addr)
+                if len(to_delete_addrs_long) > 0:
+                    for addr2 in to_delete_addrs_long:
+                        rd += (" -k COMMAND_DEFINE_CPU=CPUADDR=%s" % addr2)
                 try:
                     self._request(rd)
                 except exception.SDKSMTRequestFailed as e:
-                    msg = ("Update share statement in user directory for '%s' failed with"
+                    msg = ("Delete CPUs in user directory for '%s' failed "
+                           "with SMT error: %s"
+                           % (userid, e.format_message()))
+                    LOG.error(msg)
+                    raise exception.SDKGuestOperationError(
+                        rs=6, userid=userid, err=e.format_message())
+                LOG.info("CPUs '%s' and '%s' deleted from user directory"
+                         " for '%s' successfully"
+                         % (str(to_delete_addrs_short),
+                            str(to_delete_addrs_long), userid))
+
+            # Define new cpus in user directory
+            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                          "--operands"))
+            need_action = False
+            # May not need to send request at all, because existing long
+            # format items may be enough. e.g. 5->3->5, resize down 5->3
+            # before, as long format items were not handled before,
+            # there are still 5 long format items, so we don't need to
+            # add more even it is resize up to 5 now.
+            if len(to_add_addrs_long) > 0:
+                need_action = True
+                for addr2 in to_add_addrs_long:
+                    rd += (" -k COMMAND_DEFINE_CPU=\'CPUADDR=%s TYPE=IFL\'" % addr2)
+
+            # Add resize support for share of CPU
+            if CONF.zvm.user_default_share_unit > 0:
+                need_action = True
+                total = CONF.zvm.user_default_share_unit * count
+                rd += (" -k SHARE=RELATIVE=%s" % total)
+
+            if need_action:
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as e:
+                    msg = ("Define new cpus in user directory for '%s' failed with"
                            " SMT error: %s" % (userid, e.format_message()))
                     LOG.error(msg)
                     raise exception.SDKGuestOperationError(rs=6, userid=userid,
                                                            err=e.format_message())
-                LOG.info("Update share statment in user directory for '%s' "
-                     "successfully" % userid)
-            return (action, updated_addrs, max_cpus)
+                LOG.info("New CPUs defined '%s' in user directory for '%s' "
+                         "or add resize support for share of CPU successfully"
+                         % (str(to_add_addrs_long), userid))
+                return (action, to_add_addrs_long + to_delete_addrs_long, max_cpus)
+            else:
+                LOG.info("Existing CPUs defined in long format"
+                         " 'COMMAND DEFINE CPU XX TYPE IFL' '%s'"
+                         " in user directory for '%s' are enough"
+                         " for this resize. Don't need to add more."
+                         % (str(defined_addrs_long), userid))
+                return (action, to_add_addrs_long + to_delete_addrs_long, max_cpus)
+        else:
+            action = 2
+            # Delete CPUs
+            available_addrs_short = self._get_available_cpu_addrs(
+                defined_addrs_short, max_cpus)
+            available_addrs_short.sort()
+            available_addrs_long = self._get_available_cpu_addrs(
+                defined_addrs_long, max_cpus)
+            available_addrs_long.sort()
+
+            to_delete_addrs_short = []
+            to_delete_addrs_long = []
+            to_add_addrs_long = []
+
+            if only_long_def:
+                # e.g. 5->3
+                # short : no short, don't add.
+                # long: delete
+                defined_addrs_long.sort()
+                to_delete_addrs_long = defined_addrs_long[-(defined_count_long - count):]
+            else:
+                # e.g. 5->3->2, 5->7->6, 5->7->3, or very old vm which only
+                # has short format 4->2
+
+                # short, delete all.
+                defined_addrs_short.sort()
+                to_delete_addrs_short = defined_addrs_short
+
+                # long, delete or add
+                defined_addrs_long.sort()
+                if defined_count_long < count:
+                    # Add cpus in user directory, for an existing vm
+                    # resized to a larger size cpu before, e.g. 5->7->6, as long
+                    # format "COMMAND DEFINE CPU XX TYPE IFL" not handled during
+                    # resize 5->7 before, although 7->6 now, still need to add 1
+                    # for long format. e.g.5->6,
+                    to_add_addrs_long = available_addrs_long[0:count - defined_count_long]
+                elif defined_count_long > count:
+                    # delete. e.g. 5->2, 5->3
+                    to_delete_addrs_long = defined_addrs_long[-(defined_count_long - count):]
+
+            # Delete the last few cpus in user directory in format "CPU XX"
+            # and "COMMAND DEFINE CPU XX TYPE IFL".
+            if len(to_delete_addrs_short) > 0 or len(to_delete_addrs_long) > 0:
+                rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
+                              "--operands"))
+                if len(to_delete_addrs_short) > 0:
+                    for addr in to_delete_addrs_short:
+                        rd += (" -k CPU=CPUADDR=%s" % addr)
+                if len(to_delete_addrs_long) > 0:
+                    for addr2 in to_delete_addrs_long:
+                        rd += (" -k COMMAND_DEFINE_CPU=CPUADDR=%s" % addr2)
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as e:
+                    msg = ("Delete CPUs in user directory for '%s' failed "
+                           "with SMT error: %s"
+                           % (userid, e.format_message()))
+                    LOG.error(msg)
+                    raise exception.SDKGuestOperationError(
+                        rs=6, userid=userid, err=e.format_message())
+                LOG.info("CPUs '%s' and '%s' deleted from user directory"
+                         " for '%s' successfully"
+                         % (str(to_delete_addrs_short),
+                            str(to_delete_addrs_long), userid))
+
+            # Add new cpus in user directory
+            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                          "--operands"))
+            need_action = False
+
+            if len(to_add_addrs_long) > 0:
+                need_action = True
+                for addr2 in to_add_addrs_long:
+                    rd += (" -k COMMAND_DEFINE_CPU=\'CPUADDR=%s TYPE=IFL\'" % addr2)
+
+            # Add resize support for share of CPU
+            if CONF.zvm.user_default_share_unit > 0:
+                need_action = True
+                total = CONF.zvm.user_default_share_unit * count
+                rd += (" -k SHARE=RELATIVE=%s" % total)
+
+            if need_action:
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as e:
+                    msg = ("Define new cpus in user directory for '%s' failed with"
+                           " SMT error: %s" % (userid, e.format_message()))
+                    LOG.error(msg)
+                    raise exception.SDKGuestOperationError(rs=6, userid=userid,
+                                                           err=e.format_message())
+                LOG.info("New CPUs '%s' defined in user directory for '%s'"
+                         " successfully or update share statement in user"
+                         " directory successfully"
+                         % (str(to_add_addrs_long), userid))
+
+            return (action, to_add_addrs_long + to_delete_addrs_long, max_cpus)
 
     def live_resize_cpus(self, userid, count):
-        # Get active cpu count and compare with requested count
-        # If request count is smaller than the current count, then report
-        # error and exit immediately.
+        # Get active cpu(online) count and compare with requested count
         active_addrs = self.get_active_cpu_addrs(userid)
         active_count = len(active_addrs)
-        if active_count > count:
-            LOG.error("Failed to live resize cpus of guest: %(uid)s, "
-                      "current active cpu count: %(cur)i is greater than "
-                      "the requested count: %(req)i." %
-                      {'uid': userid, 'cur': active_count,
-                       'req': count})
-            raise exception.SDKConflictError(modID='guest', rs=2,
-                                             userid=userid,
-                                             active=active_count,
-                                             req=count)
+        active_addrs.sort()
+
+        # Get offline cpu count
+        offline_addrs = self.get_active_cpu_offline_addrs(userid)
+
+        # Backup user directory long format cpu definitions in
+        # defined_addrs_long_bk for rollback
+        (max_cpus, defined_addrs_short_bk, defined_addrs_long_bk) = \
+            self._get_defined_cpu_addrs(userid)
+
+        # If request count is smaller than the current count, then report
+        # error and exit immediately.
+        # if active_count > count:
+        #     LOG.error("Failed to live resize cpus of guest: %(uid)s, "
+        #               "current active cpu count: %(cur)i is greater than "
+        #               "the requested count: %(req)i." %
+        #               {'uid': userid, 'cur': active_count,
+        #                'req': count})
+        #     raise exception.SDKConflictError(modID='guest', rs=2,
+        #                                      userid=userid,
+        #                                      active=active_count,
+        #                                      req=count)
 
         # Static resize CPUs. (add or delete CPUs from user directory)
         (action, updated_addrs, max_cpus) = self.resize_cpus(userid, count)
@@ -3736,107 +3922,187 @@ class SMTClient(object):
                      % userid)
             return
         else:
-            # Get the number of cpus to add to active and check address
-            active_free = self._get_available_cpu_addrs(active_addrs,
-                                                        max_cpus)
-            active_free.sort()
-            active_new = active_free[0:count - active_count]
-            # Do live resize
-            # Define new cpus
-            cmd_str = "vmcp def cpu " + ' '.join(active_new)
-            try:
-                self.execute_cmd(userid, cmd_str)
-            except exception.SDKSMTRequestFailed as err1:
-                # rollback and return
-                msg1 = ("Define cpu of guest: '%s' to active failed with . "
-                       "error: %s." % (userid, err1.format_message()))
-                # Start to do rollback
-                if action == 0:
-                    LOG.error(msg1)
-                else:
-                    LOG.error(msg1 + (" Will revert the user directory "
-                                      "change."))
-                    # Combine influenced cpu addrs
-                    cpu_entries = ""
-                    for addr in updated_addrs:
-                        cpu_entries += (" -k CPU=CPUADDR=%s" % addr)
-                    rd = ''
-                    if action == 1:
-                        # Delete added CPUs
-                        rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM"
-                                      % userid, " --operands"))
-                    else:
-                        # Add deleted CPUs
-                        rd = ''.join(("SMAPI %s API Image_Definition_Create_DM"
-                                      % userid, " --operands"))
-                    rd += cpu_entries
-                    try:
-                        self._request(rd)
-                    except exception.SDKSMTRequestFailed as err2:
-                        msg = ("Failed to revert user directory change for '"
-                               "%s', SMT error: %s" % (userid,
-                                                        err2.format_message()))
-                        LOG.error(msg)
-                    else:
-                        # revert change for share statement
-                        if CONF.zvm.user_default_share_unit > 0:
-                            old = CONF.zvm.user_default_share_unit * active_count
-                            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
-                                     "--operands -k SHARE=RELATIVE=%s" % old))
-                            try:
-                                self._request(rd)
-                            except exception.SDKSMTRequestFailed as e:
-                                msg = ("Failed to revert user directory change of share for '"
-                                   "%s', SMT error: %s" % (userid, e.format_message()))
-                                LOG.error(msg)
-                            else:
-                                LOG.info("Revert user directory change for '%s' "
-                                    "successfully." % userid)
-                        else:
-                            LOG.info("Revert user directory change for '%s' "
-                                "successfully." % userid)
-                # Finally raise the exception
-                raise exception.SDKGuestOperationError(
-                    rs=7, userid=userid, err=err1.format_message())
-        # Activate successfully, rescan in Linux layer to hot-plug new cpus
-        LOG.info("Added new CPUs to active configuration of guest '%s'" %
-                 userid)
-        try:
-            self.execute_cmd(userid, "chcpu -r")
-        except exception.SDKSMTRequestFailed as err:
-            msg = err.format_message()
-            LOG.error("Rescan cpus to hot-plug new defined cpus for guest: "
-                      "'%s' failed with error: %s. No rollback is done and you"
-                      "may need to check the status and restart the guest to "
-                      "make the defined cpus online." % (userid, msg))
-            raise exception.SDKGuestOperationError(rs=8, userid=userid,
-                                                   err=msg)
+            is_ubuntu = False
+            uname_out = self.execute_cmd(userid, "uname -a")
+            if uname_out and len(uname_out) >= 1:
+                distro = uname_out[0]
+            else:
+                distro = ''
+            if 'ubuntu' in distro or 'Ubuntu' in distro \
+                    or 'UBUNTU' in distro:
+                is_ubuntu = True
 
-        uname_out = self.execute_cmd(userid, "uname -a")
-        if uname_out and len(uname_out) >= 1:
-            distro = uname_out[0]
+            if active_count < count:
+                # Add live cpu
+                # Get the number of cpus to add to active and check address
+                active_free = self._get_available_cpu_addrs(active_addrs,
+                                                            max_cpus)
+                active_free.sort()
+                active_new = active_free[0:count - active_count]
+
+                # For addresses disabled, just enable it,
+                # otherwise need to define and trigger cpu scan.
+                to_enable_addrs = [a for a in active_new if a in offline_addrs]
+                to_define_addrs = list(set(active_new) - set(offline_addrs))
+                to_enable_addrs.sort()
+                to_define_addrs.sort()
+
+                # Do live resize.
+                # Including 1, define new cpus; 2, enable cups;
+
+                # 1, Define new cpus
+                if to_define_addrs:
+                    cmd_str = "vmcp def cpu " + ' '.join(to_define_addrs)
+                    try:
+                        self.execute_cmd(userid, cmd_str)
+                    except exception.SDKSMTRequestFailed as err1:
+                        # rollback and return.
+                        # compare updated_addrs with defined_addrs_long_bk.
+                        msg1 = ("Define cpu of guest: '%s' to active failed with "
+                                "error: %s." % (userid, err1.format_message()))
+                        # Start to do rollback
+                        if action == 0:
+                            LOG.error(msg1)
+                        else:
+                            LOG.error(msg1 + (" Will revert the user directory "
+                                              "change."))
+                            self.roll_back_user_directory_definitions(
+                                userid, updated_addrs, defined_addrs_long_bk,
+                                active_count)
+                        # Finally raise the exception
+                        raise exception.SDKGuestOperationError(
+                            rs=7, userid=userid, err=err1.format_message())
+                    # Activate successfully, rescan in Linux layer to hot-plug new cpus
+                    LOG.info("Added new CPUs to active configuration of guest '%s'" %
+                             userid)
+                    try:
+                        self.execute_cmd(userid, "chcpu -r")
+                    except exception.SDKSMTRequestFailed as err:
+                        msg = err.format_message()
+                        LOG.error("Rescan cpus to hot-plug new defined cpus for guest: "
+                                  "'%s' failed with error: %s. No rollback is done and you"
+                                  "may need to check the status and restart the guest to "
+                                  "make the defined cpus online." % (userid, msg))
+                        raise exception.SDKGuestOperationError(rs=8, userid=userid,
+                                                               err=msg)
+
+                    if is_ubuntu:
+                        try:
+                            # need use chcpu -e <cpu-list> to make cpu online for Ubuntu
+                            online_cmd = "chcpu -e " + ','.join(to_define_addrs)
+                            self.execute_cmd(userid, online_cmd)
+                        except exception.SDKSMTRequestFailed as err:
+                            msg = err.format_message()
+                            LOG.error("Enable cpus for ubuntu guest: '%s' "
+                                      "failed with error: %s. No rollback is"
+                                      " done and you may need to check the "
+                                      "status and restart the guest to make"
+                                      " the defined cpus online."
+                                      % (userid, msg))
+                            raise exception.SDKGuestOperationError(rs=15, userid=userid,
+                                                                   err=msg)
+                    LOG.info("Enabled cpus just defined for ubuntu guest: '%s' finished successfully."
+                             % userid)
+
+                # 2, enable cups
+                if to_enable_addrs:
+                    cmd_str = "chcpu -e " + ','.join(to_enable_addrs)
+                    try:
+                        self.execute_cmd(userid, cmd_str)
+                    except exception.SDKSMTRequestFailed as err1:
+                        # rollback and return
+                        msg1 = ("Enable cpu of guest: '%s' to active failed with . "
+                                "error: %s." % (userid, err1.format_message()))
+                        # Start to do rollback
+                        if action == 0:
+                            LOG.error(msg1)
+                        else:
+                            self.roll_back_user_directory_definitions(
+                                userid, updated_addrs, defined_addrs_long_bk,
+                                active_count)
+                        # Finally raise the exception
+                        raise exception.SDKGuestOperationError(
+                            rs=7, userid=userid, err=err1.format_message())
+                    # Enable cups successfully
+                    LOG.info("Enable CPUs to online guest '%s'" % userid)
+
+            elif active_count > count:
+                # Disable online cpus, as not find a way to undefine or delete
+                # a configured cpu. A disabled cpu can only be enabled later,
+                # and not be defined again.
+                to_disable_addrs = active_addrs[-(active_count - count):]
+                cmd_str = "chcpu -d " + ','.join(to_disable_addrs)
+                try:
+                    self.execute_cmd(userid, cmd_str)
+                except exception.SDKSMTRequestFailed as err1:
+                    # rollback and return
+                    msg1 = ("Disable cpu of guest: '%s' to offline failed "
+                            "with error: %s." % (userid,
+                                                 err1.format_message()))
+                    if action == 0:
+                        LOG.error(msg1)
+                    else:
+                        # Start to do rollback
+                        self.roll_back_user_directory_definitions(
+                            userid, updated_addrs, defined_addrs_long_bk,
+                            active_count)
+                    # Finally raise the exception
+                    raise exception.SDKGuestOperationError(
+                        rs=7, userid=userid, err=err1.format_message())
+                # Disable cups successfully
+                LOG.info("Disable CPUs to offline guest '%s'" % userid)
+
+    def roll_back_user_directory_definitions(self, userid, updated_addrs,
+                                             defined_addrs_long_bk,
+                                             active_count):
+        # Only need to roll back cpu definition in long
+        # format: "COMMAND DEFINE CPU XX TYPE IFL".
+        # All the impacted cpus are either been added
+        # or deleted.
+        to_add_rollback_addrs = [a for a in updated_addrs if a in defined_addrs_long_bk]
+        to_del_rollback_addrs = list(set(updated_addrs) - set(to_add_rollback_addrs))
+        to_add_rollback_addrs.sort()
+        to_del_rollback_addrs.sort()
+        if to_add_rollback_addrs:
+            rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                          "--operands"))
+            for addr in to_add_rollback_addrs:
+                rd += (" -k COMMAND_DEFINE_CPU=\'CPUADDR=%s TYPE=IFL\'" % addr)
         else:
-            distro = ''
-        if 'ubuntu' in distro or 'Ubuntu' in distro \
-                or 'UBUNTU' in distro:
-            try:
-                # need use chcpu -e <cpu-list> to make cpu online for Ubuntu
-                online_cmd = "chcpu -e " + ','.join(active_new)
-                self.execute_cmd(userid, online_cmd)
-            except exception.SDKSMTRequestFailed as err:
-                msg = err.format_message()
-                LOG.error("Enable cpus for guest: '%s' failed with error: %s. "
-                          "No rollback is done and you may need to check the "
-                          "status and restart the guest to make the defined "
-                          "cpus online." % (userid, msg))
-                raise exception.SDKGuestOperationError(rs=15, userid=userid,
-                                                       err=msg)
-        LOG.info("Live resize cpus for guest: '%s' finished successfully."
-                 % userid)
+            rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
+                          "--operands"))
+            for addr in to_del_rollback_addrs:
+                rd += (" -k COMMAND_DEFINE_CPU=CPUADDR=%s" % addr)
+
+        try:
+            self._request(rd)
+        except exception.SDKSMTRequestFailed as err2:
+            msg = ("Failed to revert user directory change for '"
+                   "%s', SMT error: %s" % (userid,
+                                           err2.format_message()))
+            LOG.error(msg)
+        else:
+            # revert change for share statement
+            if CONF.zvm.user_default_share_unit > 0:
+                old = CONF.zvm.user_default_share_unit * active_count
+                rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                              "--operands -k SHARE=RELATIVE=%s" % old))
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as e:
+                    msg = ("Failed to revert user directory change of share for '"
+                           "%s', SMT error: %s" % (userid, e.format_message()))
+                    LOG.error(msg)
+                else:
+                    LOG.info("Revert user directory change for '%s' "
+                             "successfully." % userid)
+            else:
+                LOG.info("Revert user directory change for '%s' "
+                         "successfully." % userid)
 
     def _get_defined_memory(self, userid):
         user_direct = self.get_user_direct(userid)
-        defined_mem = max_mem = reserved_mem = -1
+        defined_mem = max_mem = -1
         for ent in user_direct:
             # u'USER userid password storage max privclass'
             if ent.startswith("USER "):
@@ -3847,10 +4113,7 @@ class SMTClient(object):
                     break
                 defined_mem = int(zvmutils.convert_to_mb(fields[3]))
                 max_mem = int(zvmutils.convert_to_mb(fields[4]))
-            # For legacy guests, the reserved memory may not be defined
-            if ent.startswith("COMMAND DEF STOR RESERVED"):
-                reserved_mem = int(zvmutils.convert_to_mb(ent.split(' ')[4]))
-        return (defined_mem, max_mem, reserved_mem, user_direct)
+        return (defined_mem, max_mem, user_direct)
 
     def _replace_user_direct(self, userid, user_entry):
         # user_entry can be a list or a string
@@ -3918,12 +4181,12 @@ class SMTClient(object):
         # Check defined storage in user entry.
         # Update STORAGE and RESERVED accordingly.
         size = int(zvmutils.convert_to_mb(memory))
-        (defined_mem, max_mem, reserved_mem,
-         user_direct) = self._get_defined_memory(userid)
+        (defined_mem, max_mem, user_direct) = \
+            self._get_defined_memory(userid)
         # Check max memory is properly defined
-        if max_mem == -1 or reserved_mem == -1:
+        if defined_mem == -1 or max_mem == -1:
             LOG.error("Memory resize for guest '%s' cann't be done."
-                      "Failed to get the defined/max/reserved memory size "
+                      "Failed to get the defined/max memory size "
                       "from user directory." % userid)
             raise exception.SDKConflictError(modID='guest', rs=19,
                                              userid=userid)
@@ -3947,16 +4210,6 @@ class SMTClient(object):
             # set action to 1 to represent that revert need to be done when
             # live resize failed.
             action = 1
-            # get the new reserved memory size
-            new_reserved = max_mem - size
-            # get maximum reserved memory value
-            MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
-                        CONF.zvm.user_default_max_reserved_memory))
-
-            # when new reserved memory value > the MAX_STOR_RESERVED,
-            # make is as the MAX_STOR_RESERVED value
-            if new_reserved > MAX_STOR_RESERVED:
-                new_reserved = MAX_STOR_RESERVED
             # prepare the new user entry content
             entry_str = ""
             for ent in user_direct:
@@ -3976,7 +4229,7 @@ class SMTClient(object):
                     # remove the last space
                     new_ent = new_ent.strip()
                 elif ent.startswith("COMMAND DEF STOR RESERVED"):
-                    new_ent = ("COMMAND DEF STOR RESERVED %iM" % new_reserved)
+                    new_ent = ("COMMAND DEF STOR INITIAL STANDBY REMAINDER")
                 else:
                     new_ent = ent
                 # append this new entry
@@ -4068,21 +4321,7 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
-        # get maximum reserved memory value
-        MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
-                        CONF.zvm.user_default_max_reserved_memory))
-        # The maximum increased memory size in one live resizing can't
-        # exceed MAX_STOR_RESERVED
         increase_size = size - active_size
-        if increase_size > MAX_STOR_RESERVED:
-            LOG.error("Live memory resize for guest '%s' cann't be done. "
-                      "The memory size to be increased: '%im' is greater "
-                      " than the maximum reserved memory size: '%im'." %
-                      (userid, increase_size, MAX_STOR_RESERVED))
-            raise exception.SDKConflictError(modID='guest', rs=21,
-                                             userid=userid,
-                                             inc=increase_size,
-                                             max=MAX_STOR_RESERVED)
 
         # Static resize memory. (increase/decrease memory from user directory)
         (action, defined_mem, max_mem,
@@ -4099,25 +4338,40 @@ class SMTClient(object):
             return
         else:
             # Do live resize. update memory size
+            # If the user direct include DEF STOR RESERVED statement,
+            # then need define standby storage
             # Step1: Define new standby storage
-            cmd_str = ("vmcp def storage standby %sM" % increase_size)
-            try:
-                self.execute_cmd(userid, cmd_str)
-            except exception.SDKSMTRequestFailed as e:
-                # rollback and return
-                msg = ("Define standby memory of guest: '%s' failed with "
-                       "error: %s." % (userid, e.format_message()))
-                LOG.error(msg)
-                # Start to do rollback
-                if action == 1:
-                    LOG.debug("Start to revert user definition of guest '%s'."
-                              % userid)
-                    self._revert_user_direct(userid, user_direct)
-                # Finally, raise the error and exit
-                raise exception.SDKGuestOperationError(rs=11,
-                                                       userid=userid,
-                                                       err=e.format_message())
-
+            if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+                # 'DEF STOR RESERVED' statement in Legacy user direct is replace to
+                # 'COMMAND DEFINE STORAGE INITIAL STANDBY REMAINDER', so here def all
+                # reserved memory to standby
+                reserved_mem_size = 0
+                stor_info = self.execute_cmd(userid, 'vmcp q storage')
+                # stor_info example:
+                # ['STORAGE = 40G MAX = 100G INC = 128M STANDBY = 0  RESERVED = 60G']
+                if stor_info and len(stor_info) >= 1:
+                    reserved_mem = stor_info[0].split('RESERVED =')[1].split()[0]
+                    reserved_mem_size = int(zvmutils.convert_to_mb(reserved_mem))
+                if reserved_mem_size > 0:
+                    cmd_str = ("vmcp def storage standby %sM" % reserved_mem_size)
+                else:
+                    cmd_str = ("vmcp def storage standby %sM" % increase_size)
+                try:
+                    self.execute_cmd(userid, cmd_str)
+                except exception.SDKSMTRequestFailed as e:
+                    # rollback and return
+                    msg = ("Define standby memory of guest: '%s' failed with "
+                           "error: %s." % (userid, e.format_message()))
+                    LOG.error(msg)
+                    # Start to do rollback
+                    if action == 1:
+                        LOG.debug("Start to revert user definition of guest '%s'."
+                                  % userid)
+                        self._revert_user_direct(userid, user_direct)
+                    # Finally, raise the error and exit
+                    raise exception.SDKGuestOperationError(rs=11,
+                                                           userid=userid,
+                                                           err=e.format_message())
             # Step 2: Online new memory
             cmd_str = ("chmem -e %sM" % increase_size)
             try:
@@ -4129,14 +4383,15 @@ class SMTClient(object):
                 LOG.error(msg1)
                 # Start to do rollback
                 LOG.info("Start to do revert.")
-                LOG.debug("Reverting the standby memory.")
-                try:
-                    self.execute_cmd(userid, "vmcp def storage standby 0M")
-                except exception.SDKSMTRequestFailed as err2:
-                    # print revert error info and continue
-                    msg2 = ("Revert standby memory of guest: '%s' failed with "
-                           "error: %s." % (userid, err2.format_message()))
-                    LOG.error(msg2)
+                if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+                    LOG.debug("Reverting the standby memory.")
+                    try:
+                        self.execute_cmd(userid, "vmcp def storage standby 0M")
+                    except exception.SDKSMTRequestFailed as err2:
+                        # print revert error info and continue
+                        msg2 = ("Revert standby memory of guest: '%s' failed with "
+                               "error: %s." % (userid, err2.format_message()))
+                        LOG.error(msg2)
                 # Continue to do the user directory change.
                 if action == 1:
                     LOG.debug("Reverting the user directory change of guest "

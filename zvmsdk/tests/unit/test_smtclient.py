@@ -204,7 +204,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -231,7 +231,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1025M G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100 --commandSetShare "RELATIVE 200"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -261,7 +261,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list,
                                   profile, max_cpu, max_mem, '',
@@ -294,7 +294,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -321,7 +321,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:512M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -350,7 +350,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:1G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -380,7 +380,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2048M')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -409,7 +409,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --vdisk 0100:2G')
         r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                       max_cpu, max_mem, '', '', '', [], {}, '',
@@ -483,7 +483,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -509,7 +509,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, '', '', '', [], {}, '',
@@ -537,7 +537,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {}, '',
@@ -566,7 +566,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -597,7 +597,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--comment "comment1$@$@$comment2 is comment$@$@$"')
@@ -628,7 +628,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSchedule CEEPOOL')
@@ -658,7 +658,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSetShare "RELATIVE 125"')
@@ -689,7 +689,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 100)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandSetShare "RELATIVE 200"')
@@ -721,7 +721,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandRDomain Z15ONLY')
@@ -752,7 +752,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms '
               '--account "dummy account aaa" '
               '--commandPcif 100:200')
@@ -833,7 +833,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" --commandSetShare "RELATIVE 200" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
@@ -865,7 +865,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         loaddev = {'portname': '5005076802400c1b',
                    'lun': '0000000000000000'}
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 5c71 '
               '--dedicate "5c71 5d71" '
               '--loadportname 5005076802400c1b --loadlun 0000000000000000')
@@ -897,7 +897,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
-              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl cms --iplParam dummy '
               '--iplLoadparam load=1')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
@@ -3871,11 +3871,49 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                         'SYSTEM XCATVSW2 DEVICES 3',
                                         'MDISK 0100 3390 52509 1100 OMB1AB MR',
                                         '']
-        (max_cpus, defined_addrs) = self._smtclient._get_defined_cpu_addrs(
-            'TESTUID')
+        (max_cpus, defined_addrs, defined_addrs_long) = \
+            self._smtclient._get_defined_cpu_addrs('TESTUID')
         get_user_direct.assert_called_once_with('TESTUID')
         self.assertEqual(max_cpus, 32)
         self.assertEqual(defined_addrs, ['00', '0A'])
+        self.assertEqual(defined_addrs_long, [])
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_private_get_defined_cpu_addrs_long(self, get_user_direct):
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+                                        'INCLUDE OSDFLT',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'COMMAND DEFINE CPU 01 TYPE IFL',
+                                        'CPU 00',
+                                        'IPL 0100',
+                                        'MACHINE ESA 32',
+                                        'NICDEF 1000 TYPE QDIO LAN '
+                                        'SYSTEM XCATVSW2 DEVICES 3',
+                                        'MDISK 0100 3390 52509 1100 OMB1AB MR',
+                                        '']
+        (max_cpus, defined_addrs, defined_addrs_long) = \
+            self._smtclient._get_defined_cpu_addrs('TESTUID')
+        get_user_direct.assert_called_once_with('TESTUID')
+        self.assertEqual(defined_addrs, ['00'])
+        self.assertEqual(defined_addrs_long, ['00', '01'])
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_private_get_defined_cpu_addrs_not_resized(self, get_user_direct):
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+                                        'INCLUDE OSDFLT',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'COMMAND DEFINE CPU 01 TYPE IFL',
+                                        'IPL 0100',
+                                        'MACHINE ESA 32',
+                                        'NICDEF 1000 TYPE QDIO LAN '
+                                        'SYSTEM XCATVSW2 DEVICES 3',
+                                        'MDISK 0100 3390 52509 1100 OMB1AB MR',
+                                        '']
+        (max_cpus, defined_addrs, defined_addrs_long) = \
+            self._smtclient._get_defined_cpu_addrs('TESTUID')
+        get_user_direct.assert_called_once_with('TESTUID')
+        self.assertEqual(defined_addrs, [])
+        self.assertEqual(defined_addrs_long, ['00', '01'])
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     def test_private_get_defined_cpu_addrs_no_max_cpu(self, get_user_direct):
@@ -3888,11 +3926,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                         'SYSTEM XCATVSW2 DEVICES 3',
                                         'MDISK 0100 3390 52509 1100 OMB1AB MR',
                                         '']
-        (max_cpus, defined_addrs) = self._smtclient._get_defined_cpu_addrs(
-            'TESTUID')
+        (max_cpus, defined_addrs, defined_addrs_long) = \
+            self._smtclient._get_defined_cpu_addrs('TESTUID')
         get_user_direct.assert_called_once_with('TESTUID')
         self.assertEqual(max_cpus, 0)
         self.assertEqual(defined_addrs, ['00', '0A'])
+        self.assertEqual(defined_addrs_long, [])
 
     def test_private_get_available_cpu_addrs(self):
         used = ['00', '01', '1A', '1F']
@@ -3920,16 +3959,26 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         addrs.sort()
         self.assertListEqual(addrs, ['00', '03', '0A', '13'])
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus(self, get_active, resize, get_avail,
-                              exec_cmd, request):
+                              exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+        exec_cmd.side_effect = [['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+                                 's390x #1 SMP Fri Mar 27 14:43:09 UTC'
+                                 ' 2020 s390x s390x s390x GNU/Linux '],
+                                [''],
+                                ['']]
+
         resize.return_value = (1, ['02', '03'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
@@ -3940,22 +3989,69 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_uname = "uname -a"
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu)])
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
+    def test_live_resize_cpus_enable_part(self, get_active, resize, get_avail,
+                              exec_cmd, request, get_offline, get_defined):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        get_offline.return_value = ['02']
+        get_defined.return_value = (32, ['00'], ['00', '01'])
+        exec_cmd.side_effect = [['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+                                 's390x #1 SMP Fri Mar 27 14:43:09 UTC'
+                                 ' 2020 s390x s390x s390x GNU/Linux '],
+                                [''],
+                                [''],
+                                ['']]
+
+        resize.return_value = (1, ['02', '03'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        self._smtclient.live_resize_cpus(userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_uname = "uname -a"
+        cmd_def_cpu = "vmcp def cpu 03"
+        cmd_rescan_cpu = "chcpu -r"
+        cmd_enable_cpu = "chcpu -e 02"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_enable_cpu)])
+        request.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_equal_active(self, get_active, resize, get_avail,
-                                           exec_cmd, request):
+                                           exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01', '02', '03']
+        get_offline.return_value = []
+        get_defined.return_value = (32, ['00', '01'], ['00', '01', '02', '03'])
         resize.return_value = (1, ['02', '03'], 32)
         self._smtclient.live_resize_cpus(userid, count)
         get_active.assert_called_once_with(userid)
@@ -3964,24 +4060,39 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         exec_cmd.assert_not_called()
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_less_active(self, get_active, resize, get_avail,
-                                           exec_cmd, request):
+                                           exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01', '02', '03', '04']
-        self.assertRaises(exception.SDKConflictError,
-                          self._smtclient.live_resize_cpus, userid, count)
+        get_offline.return_value = []
+        get_defined.return_value = (32, ['00', '01'], ['00', '01', '02', '03', '04'])
+        resize.return_value = (1, ['04'], 32)
+        exec_cmd.side_effect = [['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+                                 's390x #1 SMP Fri Mar 27 14:43:09 UTC'
+                                 ' 2020 s390x s390x s390x GNU/Linux '],
+                                [''],
+                                ['']]
+
+        self._smtclient.live_resize_cpus(userid, count)
         get_active.assert_called_once_with(userid)
-        resize.assert_not_called()
+        resize.assert_called_once_with(userid, count)
         get_avail.assert_not_called()
-        exec_cmd.assert_not_called()
+        cmd_uname = "uname -a"
+        cmd_disable_cpu = "chcpu -d 04"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_disable_cpu)])
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -3989,26 +4100,38 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_definition_equal(self, get_active,
                                                         resize, get_avail,
-                                                        exec_cmd, request):
+                                                        exec_cmd, request,
+                                                      get_offline, get_defined):
         # Test case: active update failed, definition not updated
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+
         resize.return_value = (0, [], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
+        exec_cmd.side_effect = [['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+                                 's390x #1 SMP Fri Mar 27 14:43:09 UTC'
+                                 ' 2020 s390x s390x s390x GNU/Linux '],
+                                exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        cmd_uname = "uname -a"
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu)])
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4016,31 +4139,42 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_added_cpus(self, get_active,
                                                 resize, get_avail,
-                                                exec_cmd, request):
+                                                exec_cmd, request,
+                                                get_offline, get_defined):
         userid = 'testuid'
         count = 4
         base.set_conf('zvm', 'user_default_share_unit', 100)
         get_active.return_value = ['00', '01']
-        resize.return_value = (1, ['01', '02', '03'], 32)
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+
+        resize.return_value = (1, ['02', '03'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
+        exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        cmd_uname = "uname -a"
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu)])
+
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
-              "-k CPU=CPUADDR=01 -k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+              "-k COMMAND_DEFINE_CPU=CPUADDR=02 -k COMMAND_DEFINE_CPU=CPUADDR=03")
         rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
               "-k SHARE=RELATIVE=200")
         calls = [call(rd), call(rd2)]
         request.assert_has_calls(calls)
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4048,30 +4182,42 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_deleted_cpus(self, get_active,
                                                   resize, get_avail,
-                                                  exec_cmd, request):
+                                                  exec_cmd, request,
+                                                  get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01', '04', '0A'])
+
         resize.return_value = (2, ['04', '0A'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
+        exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
-        rd = ("SMAPI testuid API Image_Definition_Create_DM --operands "
-              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=0A")
+        # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        cmd_uname = "uname -a"
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu)])
+
+        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=04 TYPE=IFL\' "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=0A TYPE=IFL\'")
         rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
               "-k SHARE=RELATIVE=200")
         calls = [call(rd), call(rd2)]
         request.assert_has_calls(calls)
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4079,28 +4225,39 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_revert_failed(self, get_active,
                                             resize, get_avail,
-                                            exec_cmd, request):
+                                            exec_cmd, request,
+                                            get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01', '04', '0A'])
+
         resize.return_value = (2, ['04', '0A'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
+        exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         request.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
-        rd = ("SMAPI testuid API Image_Definition_Create_DM --operands "
-              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=0A")
+        cmd_uname = "uname -a"
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu)])
+        # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=04 TYPE=IFL\' "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=0A TYPE=IFL\'")
         request.assert_called_once_with(rd)
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4108,17 +4265,21 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_rescan_failed(self, get_active,
                                             resize, get_avail,
-                                            exec_cmd, request):
+                                            exec_cmd, request,
+                                            get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+
         resize.return_value = (2, ['04', '0A'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err')]
+        exec_cmd.side_effect = ["", "", exception.SDKSMTRequestFailed({}, 'err')]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
@@ -4126,64 +4287,76 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+        cmd_uname = "uname -a"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu)])
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_redhat(self, get_active, resize, get_avail,
-                              exec_cmd, request):
+                              exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+
         resize.return_value = (1, ['02', '03'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [[''],
-                                [''],
-                                ['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+        exec_cmd.side_effect = [['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
                                  's390x #1 SMP Fri Mar 27 14:43:09 UTC'
-                                 ' 2020 s390x s390x s390x GNU/Linux ']]
+                                 ' 2020 s390x s390x s390x GNU/Linux '],
+                                [''],
+                                ['']]
         self._smtclient.live_resize_cpus(userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_uname = "uname -a"
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        cmd_uname = "uname -a"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
-                                   mock.call(userid, cmd_rescan_cpu),
-                                   mock.call(userid, cmd_uname)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
         request.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_addrs')
     def test_live_resize_cpus_ubuntu(self, get_active, resize, get_avail,
-                              exec_cmd, request):
+                              exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01']
+        get_offline.return_value = []
+        get_defined.return_value = (32, [], ['00', '01'])
+
         resize.return_value = (1, ['02', '03'], 32)
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        exec_cmd.side_effect = [[''],
-                                  [''],
-                                  ['Linux ubuntu20-ext4-eckd 5.4.0-37-generic'
+        exec_cmd.side_effect = [['Linux ubuntu20-ext4-eckd 5.4.0-37-generic'
                                    ' #41-Ubuntu SMP Wed Jun 3 17:53:50 UTC '
                                    '2020 s390x s390x s390x GNU/Linux'],
+                                  [''],
+                                  [''],
                                   ['']]
         self._smtclient.live_resize_cpus(userid, count)
         get_active.assert_called_once_with(userid)
@@ -4194,9 +4367,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         cmd_rescan_cpu = "chcpu -r"
         cmd_uname = "uname -a"
         cmd_chcpu = "chcpu -e 02,03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu),
-                                   mock.call(userid, cmd_uname),
                                    mock.call(userid, cmd_chcpu)])
         request.assert_not_called()
 
@@ -4207,7 +4380,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      get_avail, request):
         userid = 'testuid'
         count = 2
-        get_defined.return_value = (32, ['00', '01'])
+        get_defined.return_value = (32, ['00', '01'], ['00', '01'])
         return_data = self._smtclient.resize_cpus(userid, count)
         self.assertTupleEqual(return_data, (0, [], 32))
         get_defined.assert_called_once_with(userid)
@@ -4221,19 +4394,55 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              get_avail, request):
         userid = 'testuid'
         count = 4
-        get_defined.return_value = (32, ['00', '01'])
+        get_defined.return_value = (32, ['00', '01'], ['00', '01'])
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
         return_data = self._smtclient.resize_cpus(userid, count)
+        # As short format definitions needs to be deleted
         self.assertTupleEqual(return_data, (1, ['02', '03'], 32))
         get_defined.assert_called_once_with(userid)
         get_avail.assert_called_once_with(['00', '01'], 32)
         rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03 -k SHARE=RELATIVE=400")
-        request.assert_called_once_with(rd)
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=02 TYPE=IFL\' "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=03 TYPE=IFL\' "
+              "-k SHARE=RELATIVE=400")
+        # request.assert_called_once_with(rd)
+        rd2 = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
+              "-k CPU=CPUADDR=00 -k CPU=CPUADDR=01")
+        calls = [call(rd2), call(rd)]
+        request.assert_has_calls(calls)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_add_resized_vm(self, get_defined,
+                             get_avail, request):
+        userid = 'testuid'
+        count = 4
+        # 5->3->4
+        get_defined.return_value = (32, ['00', '01', '02'],
+                                    ['00', '01', '02', '03', '04'])
+        avail_lst = ['05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+
+        return_data = self._smtclient.resize_cpus(userid, count)
+        base.set_conf('zvm', 'user_default_share_unit', 100)
+
+        self.assertTupleEqual(return_data, (1, ['04'], 32))
+        get_defined.assert_called_once_with(userid)
+
+        rd2 = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
+              "-k CPU=CPUADDR=00 -k CPU=CPUADDR=01 -k CPU=CPUADDR=02 "
+               "-k COMMAND_DEFINE_CPU=CPUADDR=04")
+        calls = [call(rd2)]
+        request.assert_has_calls(calls)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4242,13 +4451,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 get_avail, request):
         userid = 'testuid'
         count = 4
-        get_defined.return_value = (32, ['00', '1A', '02', '01', '11', '10'])
+        get_defined.return_value = (32, [], ['00', '1A', '02', '01', '11', '10'])
         return_data = self._smtclient.resize_cpus(userid, count)
         self.assertTupleEqual(return_data, (2, ['11', '1A'], 32))
         get_defined.assert_called_once_with(userid)
-        get_avail.assert_not_called()
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
-              "-k CPU=CPUADDR=11 -k CPU=CPUADDR=1A")
+              "-k COMMAND_DEFINE_CPU=CPUADDR=11 -k COMMAND_DEFINE_CPU=CPUADDR=1A")
         rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
               "-k SHARE=RELATIVE=400")
         calls = [call(rd), call(rd2)]
@@ -4261,7 +4469,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                          get_avail, request):
         userid = 'testuid'
         count = 4
-        get_defined.return_value = (0, ['00', '01'])
+        get_defined.return_value = (0, ['00', '01'], ['00', '01'])
         self.assertRaises(exception.SDKConflictError,
                           self._smtclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
@@ -4275,7 +4483,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                          get_avail, request):
         userid = 'testuid'
         count = 40
-        get_defined.return_value = (32, ['00', '01'])
+        get_defined.return_value = (32, ['00', '01'], ['00', '01'])
         self.assertRaises(exception.SDKConflictError,
                           self._smtclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
@@ -4289,7 +4497,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                     get_avail, request):
         userid = 'testuid'
         count = 4
-        get_defined.return_value = (32, ['00', '01'])
+        get_defined.return_value = (32, [], ['00', '01'])
         avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
                      '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
                      '12', '13', '14', '15', '16', '17', '18', '19',
@@ -4300,9 +4508,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           self._smtclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
         get_avail.assert_called_once_with(['00', '01'], 32)
+
         rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03 -k SHARE=RELATIVE=400")
-        request.assert_called_once_with(rd)
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=02 TYPE=IFL\' "
+              "-k COMMAND_DEFINE_CPU=\'CPUADDR=03 TYPE=IFL\' "
+              "-k SHARE=RELATIVE=400")
+        calls = [call(rd)]
+        request.assert_has_calls(calls)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
@@ -4311,14 +4523,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                        get_avail, request):
         userid = 'testuid'
         count = 4
-        get_defined.return_value = (32, ['00', '01', '02', '03', '04', '05'])
+        get_defined.return_value = (32, [], ['00', '01', '02', '03', '04', '05'])
         request.side_effect = exception.SDKSMTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
-        get_avail.assert_not_called()
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
-              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=05")
+              "-k COMMAND_DEFINE_CPU=CPUADDR=04 -k COMMAND_DEFINE_CPU=CPUADDR=05")
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
@@ -4333,10 +4544,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, -1, sample_definition)
-        self.assertRaises(exception.SDKConflictError,
+        get_defined.return_value = (4096, 65536, sample_definition)
+        self.assertRaises(exception.SDKInternalError,
                           self._smtclient.resize_memory, userid, size)
-        replace_def.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
     @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
@@ -4350,7 +4560,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        get_defined.return_value = (4096, 65536, sample_definition)
         self.assertRaises(exception.SDKConflictError,
                           self._smtclient.resize_memory, userid, size)
         replace_def.assert_not_called()
@@ -4367,7 +4577,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        get_defined.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 0)
@@ -4386,7 +4596,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4394,7 +4604,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 10240M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 55296M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4413,7 +4623,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4421,7 +4631,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4443,7 +4653,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        get_def.return_value = (1024, 131072, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4451,7 +4661,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4473,7 +4683,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        get_def.return_value = (1024, 131072, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4481,7 +4691,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4503,7 +4713,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 262144, 131072, sample_definition)
+        get_def.return_value = (1024, 262144, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -4511,7 +4721,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 4096M 256G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 131072M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4530,7 +4740,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         lock_def.side_effect = exception.SDKSMTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.resize_memory, userid, size)
@@ -4552,7 +4762,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        get_def.return_value = (4096, 65536, sample_definition)
         replace_def.side_effect = exception.SDKSMTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.resize_memory, userid, size)
@@ -4560,7 +4770,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "COMMAND DEF STOR INITIAL STANDBY REMAINDER\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
@@ -4571,17 +4781,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF STOR INITIAL STANDBY REMAINDER',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, 61440)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4594,11 +4803,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4612,11 +4820,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, 4096)
         self.assertEqual(max_mem, 65536)
-        self.assertEqual(reserved_mem, 61440)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -4624,17 +4831,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF STOR INITIAL STANDBY REMAINDER',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
         get_user_direct.return_value = sample_definition
-        (defined_mem, max_mem, reserved_mem, user_direct) = \
+        (defined_mem, max_mem, user_direct) = \
             self._smtclient._get_defined_memory(userid)
         self.assertEqual(defined_mem, -1)
         self.assertEqual(max_mem, -1)
-        self.assertEqual(reserved_mem, -1)
         self.assertListEqual(user_direct, sample_definition)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -4737,11 +4943,44 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         req_mem = "4096m"
         get_active_mem.return_value = 2048
-        resize_mem.return_value = (1, 2048, 65536, [])
-        exec_cmd.side_effect = ['', '']
+        sample_direct = [u'USER TESTUID LBYONLY 2048M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR INI STANDBY REMAINDER',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 2048, 65536, sample_direct)
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 62G  RESERVED = 0G'],
+                                '', '']
         self._smtclient.live_resize_memory(userid, req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        online_mem_cmd = "chmem -e 2048M"
+        exec_cmd.assert_has_calls([mock.call(userid, online_mem_cmd)])
+        revert.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
+    @mock.patch.object(smtclient.SMTClient, 'resize_memory')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, '_revert_user_direct')
+    def test_live_resize_memory_more_standby(self, revert, exec_cmd, resize_mem,
+                                     get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 2048M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 61440M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 2048, 65536, sample_direct)
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                '', '']
+        self._smtclient.live_resize_memory(userid, req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 63488M"
         online_mem_cmd = "chmem -e 2048M"
         exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
                                    mock.call(userid, online_mem_cmd)])
@@ -4764,12 +5003,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 2048, 65536, sample_direct)
-        exec_cmd.side_effect = exception.SDKSMTRequestFailed({}, 'fake err')
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                exception.SDKSMTRequestFailed({}, 'fake err')]
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        def_standby_cmd = "vmcp def storage standby 63488M"
         exec_cmd.assert_called_with(userid, def_standby_cmd)
         revert.assert_called_once_with(userid, sample_direct)
 
@@ -4792,13 +5032,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (0, 4096, 65536, sample_direct)
-        exec_cmd.side_effect = [exception.SDKSMTRequestFailed({}, 'fake err'),
+        exec_cmd.side_effect = [['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+                                exception.SDKSMTRequestFailed({}, 'fake err'),
                                 '']
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        def_standby_cmd = "vmcp def storage standby 63488M"
         exec_cmd.assert_called_with(userid, def_standby_cmd)
         revert.assert_not_called()
 
@@ -4821,17 +5062,19 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 4096, 65536, sample_direct)
-        exec_cmd.side_effect = ['',
-                                exception.SDKSMTRequestFailed({}, 'fake err'),
-                                '']
+        exec_cmd.side_effect = [
+            ['STORAGE = 2G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 62G'],
+            '', exception.SDKSMTRequestFailed({}, 'fake err'), '']
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
         resize_mem.assert_called_once_with(userid, req_mem)
-        def_standby_cmd = "vmcp def storage standby 2048M"
+        query_stor_cmd = 'vmcp q storage'
+        def_standby_cmd = "vmcp def storage standby 63488M"
         online_mem_cmd = "chmem -e 2048M"
         revert_standby_cmd = "vmcp def storage standby 0M"
-        exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
+        exec_cmd.assert_has_calls([mock.call(userid, query_stor_cmd),
+                                   mock.call(userid, def_standby_cmd),
                                    mock.call(userid, online_mem_cmd),
                                    mock.call(userid, revert_standby_cmd)])
         revert.assert_called_once_with(userid, sample_direct)
@@ -4839,7 +5082,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
     @mock.patch.object(smtclient.SMTClient, 'resize_memory')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    def test_live_resize_memory_exceed_max_stor_reserved(self, exec_cmd,
+    @mock.patch.object(smtclient.SMTClient, '_revert_user_direct')
+    def test_live_resize_memory_exceed_max_stor_reserved(self, revert_user_direct,
+                                                         exec_cmd,
                                                          resize_mem,
                                                          get_active_mem):
         userid = 'testuid'
@@ -4853,10 +5098,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                          u'']
         resize_mem.return_value = (1, 258048, 262144, sample_direct)
-        self.assertRaises(exception.SDKConflictError,
+        exec_cmd.side_effect = ['',
+                                exception.SDKSMTRequestFailed({},
+                                    'Define standby memory err'),
+                                '']
+        self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.live_resize_memory, userid,
                           req_mem)
-        resize_mem.assert_not_called()
 
     def test_guest_deploy_rhcos_no_ignition(self):
         userid = 'testuid'
