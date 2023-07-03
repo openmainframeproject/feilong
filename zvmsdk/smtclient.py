@@ -1658,12 +1658,20 @@ class SMTClient(object):
 
         return host_info
 
-    def get_diskpool_info(self, pool):
+    def get_diskpool_info(self, pool, details=False):
         with zvmutils.log_and_reraise_smt_request_failed():
-            results = self._request("getHost diskpoolspace %s" % pool)
-        dp_info = zvmutils.translate_response_to_dict(
-            '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
-
+            details_required = ''
+            dp_info = {}
+            if details is False:
+                details_required = 'false'
+            else:
+                details_required = 'true'
+            results = self._request("getHost diskpoolspace %s %s" % (pool, details_required))
+            if not details:
+                dp_info = zvmutils.translate_response_to_dict(
+                    '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
+            else:
+                dp_info = zvmutils.translate_disk_pool_info_to_dict(pool, '\n'.join(results['response']))
         return dp_info
 
     def get_vswitch_list(self):

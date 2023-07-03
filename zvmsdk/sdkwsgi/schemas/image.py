@@ -77,7 +77,8 @@ diskname = {
 diskpool = {
     'type': 'object',
     'properties': {
-        'poolname': parameter_types.disk_pool_list
+        'poolname': parameter_types.disk_pool_list,
+        'details': parameter_types.single_param(parameter_types.boolean)
     },
     'additionalProperties': False
 }

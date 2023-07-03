@@ -43,6 +43,8 @@ from zvmsdk import log
 
 CONF = config.CONF
 LOG = log.LOG
+# maximum I knew is 60019, so make it double
+maximumCyl = 130000
 
 
 def execute(cmd, timeout=None):
@@ -629,6 +631,50 @@ def translate_response_data_to_expect_dict(results, step):
             key, value = results[i + k].split(':')
             data[volume_name][key] = value
     return data
+
+
+def translate_disk_size(disk_type, disk_size):
+    size = 0
+
+    if disk_type[:4] == "3390":
+        size = int(disk_size) * 737280
+    elif disk_type[:4] == "9336":
+        size = int(disk_size) * 512
+    else:
+        # now we don't know the type, it might be caused
+        # by SMAPI layer and we got a ??? type
+        # then let's guess the type if > maximumCyl
+        # then think it's a 9336, otherwise, take as 3390
+        if int(disk_size) > maximumCyl:
+            size = int(disk_size) * 512
+        else:
+            size = int(disk_size) * 737280
+
+    return size
+
+
+def translate_disk_pool_info_to_dict(pool, results):
+    if isinstance(pool, list):
+        poolnames = [pool_name.upper() for pool_name in pool]
+    else:
+        poolnames = [pool.upper()]
+
+    # The directory for the translated infos
+    disk_pool_infos = {}
+    key_info = ['volume_name', 'device_type', 'start_cylinder', 'free_size', 'dasd_group', 'region_name']
+    for i in range(len(poolnames)):
+        disk_pool_infos[poolnames[i]] = []
+    for line in results.splitlines():
+        # For the volume info in each line
+        volume_info = {}
+        parts = line.split()
+        parts[3] = round(translate_disk_size(parts[1], parts[3]) / (1024 * 1024 * 1024))
+        poolname = parts[4].upper()
+        for i in range(len(key_info)):
+            volume_info[key_info[i]] = parts[i]
+        if poolname in poolnames:
+            disk_pool_infos[poolname].append(volume_info)
+    return disk_pool_infos
 
 
 @wrap_invalid_resp_data_error

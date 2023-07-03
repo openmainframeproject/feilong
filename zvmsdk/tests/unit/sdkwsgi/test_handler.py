@@ -662,7 +662,7 @@ class HostHandlerTest(unittest.TestCase):
             get_disk_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_disk_info.assert_called_once_with(mock.ANY, None)
+            get_disk_info.assert_called_once_with(mock.ANY, None, False)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_diskpool_volumes(self, mock_validate):

@@ -320,3 +320,75 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         expected_calls_order = [mock_info.mock_calls.index(c) for c in expected_calls]
         self.assertEqual(expected_calls_order, sorted(expected_calls_order))
         mock_info.reset_mock()
+
+    def test_translate_disk_pool_info_to_dict(self):
+        # test only one diskpool
+        poolname = 'pool1'
+        diskpool_info = 'T60300 3390-A 220346 14420 POOL1 T60300\n' \
+            'T60300 3390-A 627987 14563 POOL1 T60300'
+        expect = {'POOL1': [{'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '220346',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'},
+                            {'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '627987',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'}]}
+        results = zvmutils.translate_disk_pool_info_to_dict(poolname, diskpool_info)
+        self.assertDictEqual(expect, results)
+        # test diskpool list
+        poolname = ['pool1', 'pool2']
+        diskpool_info = 'T60300 3390-A 220346 14420 POOL1 T60300\n' \
+            'T60300 3390-A 627987 14563 POOL1 T60300\n' \
+            'T60301 3390-A 320346 14563 POOL2 T60301\n' \
+            'T60301 3390-A 727987 14563 POOL2 T60301'
+        expect = {'POOL1': [{'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '220346',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'},
+                            {'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '627987',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'}],
+                  'POOL2': [{'volume_name': 'T60301',
+                             'device_type': '3390-A',
+                             'start_cylinder': '320346',
+                             'free_size': 10,
+                             'dasd_group': 'POOL2',
+                             'region_name': 'T60301'},
+                            {'volume_name': 'T60301',
+                             'device_type': '3390-A',
+                             'start_cylinder': '727987',
+                             'free_size': 10,
+                             'dasd_group': 'POOL2',
+                             'region_name': 'T60301'}]}
+        results = zvmutils.translate_disk_pool_info_to_dict(poolname, diskpool_info)
+        self.assertDictEqual(expect, results)
+        # Test match one diskpool name with multiple diskpool of the results
+        poolname = 'pool1'
+        diskpool_info = 'T60300 3390-A 220346 14420 POOL1 T60300\n' \
+                        'T60300 3390-A 627987 14563 POOL1 T60300\n' \
+                        'T60301 3390-A 320346 14563 POOL2 T60301\n' \
+                        'T60301 3390-A 727987 14563 POOL2 T60301'
+        expect = {'POOL1': [{'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '220346',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'},
+                            {'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '627987',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'}]}
+        results = zvmutils.translate_disk_pool_info_to_dict(poolname, diskpool_info)
+        self.assertDictEqual(expect, results)
