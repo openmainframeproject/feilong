@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -42,7 +42,8 @@ create = {
                 'cschedule': parameter_types.cpupool,
                 'cshare': parameter_types.share,
                 'rdomain': parameter_types.rdomain,
-                'pcif': parameter_types.pcif
+                'pcif': parameter_types.pcif,
+                'meta_data': parameter_types.meta_data
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,

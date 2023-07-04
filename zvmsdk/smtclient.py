@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -610,7 +610,7 @@ class SMTClient(object):
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
                   dedicate_vdevs, loaddev, account, comment_list,
-                  cschedule='', cshare='', rdomain='', pcif=''):
+                  cschedule='', cshare='', rdomain='', pcif='', meta_data=None):
         """ Create VM and add disks if specified. """
         if memory % 1024 == 0:
             mem = str(int(memory / 1024)) + 'G'
@@ -758,6 +758,7 @@ class SMTClient(object):
                 LOG.error(msg)
                 raise exception.SDKSMTRequestFailed(err.results, msg)
 
+        # TODO: storage meta_data to DB
         # Add the guest to db immediately after user created
         action = "add guest '%s' to database" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):

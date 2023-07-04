@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -224,7 +224,7 @@ class VMOps(object):
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem, ipl_from,
                   ipl_param, ipl_loadparam, dedicate_vdevs, loaddev, account,
-                  comment_list, cschedule, cshare, rdomain, pcif):
+                  comment_list, cschedule, cshare, rdomain, pcif, meta_data):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
@@ -234,7 +234,7 @@ class VMOps(object):
                                    ipl_param, ipl_loadparam,
                                    dedicate_vdevs, loaddev, account,
                                    comment_list, cschedule, cshare, rdomain,
-                                   pcif)
+                                   pcif, meta_data)
 
         # add userid into smapi namelist
         self._smtclient.namelist_add(self._namelist, userid)

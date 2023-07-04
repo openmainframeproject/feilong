@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -797,7 +797,7 @@ class SDKAPI(object):
                      ipl_from='', ipl_param='', ipl_loadparam='',
                      dedicate_vdevs=None, loaddev={}, account='',
                      comment_list=None, cschedule='', cshare='',
-                     rdomain='', pcif=''):
+                     rdomain='', pcif='', meta_data=None):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -954,7 +954,7 @@ class SDKAPI(object):
                                          ipl_from, ipl_param, ipl_loadparam,
                                          dedicate_vdevs, loaddev, account,
                                          comment_list, cschedule, cshare,
-                                         rdomain, pcif)
+                                         rdomain, pcif, meta_data)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):

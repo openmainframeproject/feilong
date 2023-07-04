@@ -412,6 +412,10 @@ comment_list = {
     }
 }
 
+meta_data = {
+    'type': 'object',
+}
+
 live_migrate_parms = {
     'type': 'object',
     'properties': {
