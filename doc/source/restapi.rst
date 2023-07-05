@@ -186,7 +186,6 @@ Create a vm in z/VM
   - loaddev: guest_loaddev
   - account: guest_account
   - comment_list: guest_comment_list
-  - meta_data: guest_meta_data
 
 
 * Request sample:
