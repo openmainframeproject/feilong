@@ -176,12 +176,6 @@ guest_comment_list:
   in: body
   required: false
   type: list
-guest_meta_data:
-  description: |
-    meta data of the virtual machine.
-  in: body
-  required: false
-  type: dict
 user_profile_guest:
   description: |
     Profile of guest, ``null`` is also allowed.
