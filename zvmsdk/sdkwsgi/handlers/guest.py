@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017-2020 IBM Corp.
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -84,6 +84,8 @@ class VMHandler(object):
             kwargs_list['rdomain'] = guest['rdomain']
         if 'pcif' in guest_keys:
             kwargs_list['pcif'] = guest['pcif']
+        if 'meta_data' in guest_keys:
+            kwargs_list['meta_data'] = guest['meta_data']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)
