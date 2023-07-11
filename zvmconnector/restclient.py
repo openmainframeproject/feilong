@@ -562,9 +562,13 @@ def req_host_get_diskpool_volumes(start_index, *args, **kwargs):
 def req_host_diskpool_get_info(start_index, *args, **kwargs):
     url = '/host/diskpool'
     poolname = kwargs.get('disk_pool', None)
+    details = kwargs.get('details', False)
     append = ''
     if poolname is not None:
-        append += "?poolname=%s" % poolname
+        append += "?poolname=%s&" % poolname
+    else:
+        append += "?"
+    append += "details=%s" % details
     url += append
     body = None
     return url, body

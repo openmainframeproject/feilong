@@ -59,7 +59,8 @@ information for the positional operands:
 """
 posOpsList = {
     'DISKPOOLSPACE': [
-                          ['Disk Pool Name', 'poolName', False, 2]
+                          ['Disk Pool Name', 'poolName', False, 2],
+                          ['Detail info required', 'details', False, 2]
                      ],
     'DISKPOOLVOLUMES': [
                           ['Disk Pool Name', 'poolName', False, 2]
@@ -282,8 +283,6 @@ def getDiskPoolSpace(rh):
 
     rh.printSysLog("Enter getHost.getDiskPoolSpace")
 
-    results = {'overallRC': 0}
-
     if 'poolName' not in rh.parms:
         poolNames = ["*"]
     else:
@@ -291,51 +290,89 @@ def getDiskPoolSpace(rh):
             poolNames = rh.parms['poolName']
         else:
             poolNames = [rh.parms['poolName']]
+    details = False
+    if 'details' in rh.parms:
+        if rh.parms['details'].lower() == 'true':
+            details = True
+
+    if not details:
+        getDiskPoolSpaceUsage(rh, poolNames)
+    else:
+        getDiskPoolRangeSpace(rh, poolNames)
+
+
+def getDiskPoolRangeSpace(rh, poolNames):
+    results = {'overallRC': 0}
+    parms = [
+        "-q", "2",
+        "-e", "3",
+        "-T", "DUMMY",
+        "-n", " ".join(poolNames)]
+
+    results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+    if results['overallRC'] == 0:
+        if not results['response']:
+            # No pool information found.
+            msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0402'][0])
+        else:
+            # Print the response
+            rh.printLn("N", results['response'])
+    else:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+    rh.printSysLog("Exit getHost.getDiskPoolSpace, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
+
+
+def getDiskPoolSpaceUsage(rh, poolNames):
+    results = {'overallRC': 0}
+    # Loop thru each pool getting total.  Do it for query 2 & 3
+    totals = {}
+    for qType in ["2", "3"]:
+        parms = [
+            "-q", qType,
+            "-e", "3",
+            "-T", "DUMMY",
+            "-n", " ".join(poolNames)]
+
+        results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+        if results['overallRC'] == 0:
+            for line in results['response'].splitlines():
+                parts = line.split()
+                if len(parts) == 9:
+                    poolName = parts[7]
+                else:
+                    poolName = parts[4]
+                if poolName not in totals:
+                    totals[poolName] = {"2": 0., "3": 0.}
+
+                totals[poolName][qType] += _getDiskSize(parts)
+        else:
+            # SMAPI API failed.
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            break
 
     if results['overallRC'] == 0:
-        # Loop thru each pool getting total.  Do it for query 2 & 3
-        totals = {}
-        for qType in ["2", "3"]:
-            parms = [
-                "-q", qType,
-                "-e", "3",
-                "-T", "DUMMY",
-                "-n", " ".join(poolNames)]
-
-            results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
-            if results['overallRC'] == 0:
-                for line in results['response'].splitlines():
-                    parts = line.split()
-                    if len(parts) == 9:
-                        poolName = parts[7]
-                    else:
-                        poolName = parts[4]
-                    if poolName not in totals:
-                        totals[poolName] = {"2": 0., "3": 0.}
-
-                    totals[poolName][qType] += _getDiskSize(parts)
-            else:
-                # SMAPI API failed.
-                rh.printLn("ES", results['response'])
-                rh.updateResults(results)    # Use results from invokeSMCLI
-                break
-
-        if results['overallRC'] == 0:
-            if len(totals) == 0:
-                # No pool information found.
-                msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
-                rh.printLn("ES", msg)
-                rh.updateResults(msgs.msg['0402'][0])
-            else:
-                # Produce a summary for each pool
-                for poolName in sorted(totals):
-                    total = totals[poolName]["2"] + totals[poolName]["3"]
-                    rh.printLn("N", poolName + " Total: " +
-                        generalUtils.cvtToMag(rh, total))
-                    rh.printLn("N", poolName + " Used: " +
-                        generalUtils.cvtToMag(rh, totals[poolName]["3"]))
-                    rh.printLn("N", poolName + " Free: " +
-                        generalUtils.cvtToMag(rh, totals[poolName]["2"]))
+        if len(totals) == 0:
+            # No pool information found.
+            msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0402'][0])
+        else:
+            # Produce a summary for each pool
+            for poolName in sorted(totals):
+                total = totals[poolName]["2"] + totals[poolName]["3"]
+                rh.printLn("N", poolName + " Total: " +
+                    generalUtils.cvtToMag(rh, total))
+                rh.printLn("N", poolName + " Used: " +
+                    generalUtils.cvtToMag(rh, totals[poolName]["3"]))
+                rh.printLn("N", poolName + " Free: " +
+                    generalUtils.cvtToMag(rh, totals[poolName]["2"]))
 
     rh.printSysLog("Exit getHost.getDiskPoolSpace, rc: " +
         str(rh.results['overallRC']))

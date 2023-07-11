@@ -602,6 +602,12 @@ disk_info_used:
   in: body
   required: true
   type: int
+details:
+  description: |
+    get the free space of all volumes on the disk pool or not.
+  in: path
+  required: false
+  type: boolean
 diskpool_volumes:
   description: |
     The volume list of the diskpool

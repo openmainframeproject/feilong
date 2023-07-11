@@ -1542,13 +1542,14 @@ Get Host disk pool info
 
 **GET /host/diskpool**
 
-Get disk pool information on the host.
+Get disk pool information(or the free space among all volumes in the disk pool) on the host.
 
 * Request:
 
 .. restapi_parameters:: parameters.yaml
 
   - poolname: disk_pool
+  - details: details
 
 * Response code:
 
@@ -1565,6 +1566,8 @@ Get disk pool information on the host.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_info.tpl
+   :language: javascript
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_details_info.tpl
    :language: javascript
 
 Get host disk pool volume names

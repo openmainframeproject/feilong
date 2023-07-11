@@ -1800,7 +1800,31 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                   'disk_used': '397.4G'}
         dp_info = self._smtclient.get_diskpool_info('pool')
 
-        smt_req.assert_called_once_with('getHost diskpoolspace pool')
+        smt_req.assert_called_once_with('getHost diskpoolspace pool false')
+        self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_diskpool_details_info(self, smt_req):
+        resp = ['T60300 3390-A 220346 14420 POOL1 T60300',
+            'T60300 3390-A 627987 14563 POOL1 T60300']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                 'response': resp}
+        expect = {'POOL1': [{'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '220346',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'},
+                            {'volume_name': 'T60300',
+                             'device_type': '3390-A',
+                             'start_cylinder': '627987',
+                             'free_size': 10,
+                             'dasd_group': 'POOL1',
+                             'region_name': 'T60300'}]}
+        dp_info = self._smtclient.get_diskpool_info('POOL1', True)
+
+        smt_req.assert_called_once_with('getHost diskpoolspace POOL1 true')
         self.assertDictEqual(dp_info, expect)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
