@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -179,3 +179,60 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             if "Not found the volume info in " in exc:
                 pass
         self.assertEqual(2, get_vol_infos.call_count)
+
+    @mock.patch('os.path.exists', mock.MagicMock(return_value=True))
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_host_suffix(self, get_host_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 6.1.0",
+            "hypervisor_name": "FAKENODE",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            }
+        suffix = '1\n'
+        mockopen = mock.mock_open(read_data=suffix)
+        with mock.patch('builtins.open', mockopen):
+            host_info = self._hostops.get_info()
+        get_host_info.assert_called_once_with()
+        self.assertEqual(host_info['vcpus'], 10)
+        self.assertEqual(host_info['hypervisor_version'], 610)
+        self.assertEqual(host_info['disk_used'], 0)
+        self.assertEqual(host_info['hypervisor_hostname'], "FAKENODE.1")
+        self.assertEqual(host_info['zvm_host'], "FAKENODE.1")
+
+    @mock.patch('os.path.exists', mock.MagicMock(return_value=True))
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_host_suffix_empty(self, get_host_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 6.1.0",
+            "hypervisor_name": "FAKENODE",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            }
+        suffix = ''
+        mockopen = mock.mock_open(read_data=suffix)
+        with mock.patch('builtins.open', mockopen):
+            host_info = self._hostops.get_info()
+        get_host_info.assert_called_once_with()
+        self.assertEqual(host_info['hypervisor_hostname'], "FAKENODE")
+        self.assertEqual(host_info['zvm_host'], "FAKENODE")
