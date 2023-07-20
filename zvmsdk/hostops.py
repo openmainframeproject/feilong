@@ -15,8 +15,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import os
 import time
+
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -51,7 +52,6 @@ class HOSTOps(object):
 
         with zvmutils.expect_invalid_resp_data(inv_info):
             host_info['zcc_userid'] = inv_info['zcc_userid']
-            host_info['zvm_host'] = inv_info['zvm_host']
             host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
             host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
             host_info['cpu_info'] = {}
@@ -65,8 +65,22 @@ class HOSTOps(object):
             verl = inv_info['hypervisor_os'].split()[1].split('.')
             version = int(''.join(verl))
             host_info['hypervisor_version'] = version
-            host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['ipl_time'] = inv_info['ipl_time']
+            # add hypervisor hostname suffix if file
+            # $HOME/.zvmsdk_hypervisor_hostname_suffix exists
+            suffix_file = '/'.join((os.path.expanduser('~'),
+                                    const.HYPERVISOR_HOSTNAME_SUFFIX_FILE))
+            if os.path.exists(suffix_file):
+                with open(suffix_file, 'r') as f:
+                    lines = f.readlines()
+                    suffix = lines[0].strip('\n ') if lines else ''
+                host_info['zvm_host'] = '.'.join(
+                            (inv_info['zvm_host'], suffix)).strip('.')
+                host_info['hypervisor_hostname'] = '.'.join(
+                            (inv_info['hypervisor_name'], suffix)).strip('.')
+            else:
+                host_info['zvm_host'] = inv_info['zvm_host']
+                host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
 
         disk_pool = CONF.zvm.disk_pool
         if disk_pool is None:

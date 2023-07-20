@@ -146,3 +146,5 @@ FILE_TYPE = {
 
 SDK_DATA_PATH = '/var/lib/zvmsdk/'
 IUCV_AUTH_USERID_PATH = '/etc/zvmsdk/iucv_authorized_userid'
+
+HYPERVISOR_HOSTNAME_SUFFIX_FILE = '.zvmsdk_hypervisor_hostname_suffix'
