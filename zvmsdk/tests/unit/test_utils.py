@@ -392,3 +392,68 @@ class ZVMUtilsTestCases(base.SDKTestCase):
                              'region_name': 'T60300'}]}
         results = zvmutils.translate_disk_pool_info_to_dict(poolname, diskpool_info)
         self.assertDictEqual(expect, results)
+
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_pchid_by_chpid(self, lschp):
+        lschp.return_value = (b'CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID\n============================'
+                                   b'===============\n0.27   1     1     25    -    -       02e4 \n')
+        chpid = '27'
+        pchid = zvmutils.get_pchid_by_chpid(chpid)
+        self.assertEqual('02e4', pchid)
+
+    @mock.patch.object(subprocess, 'check_output')
+    @mock.patch("zvmsdk.log.LOG.info")
+    def test_print_all_pchids(self, mock_info, lschp_output):
+        lschp_output.return_value = (b'CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID\n============================'
+                              b'===============\n0.00   1     1     11    -    -      (ff00)\n0.01   1    '
+                              b' 1     01    -    -      (ff01)\n0.10   1     1     25    -    -       02'
+                              b'40 \n0.11   1     1     25    -    -       0260 \n0.12   1     1     25   '
+                              b' -    -       0244 \n0.13   1     1     25    -    -       0264 \n0.14   1'
+                              b'     1     25    -    -       0248 \n0.15   1     1     25    -    -     '
+                              b'  0268 \n0.16   1     1     25    -    -       024c \n0.17   1     1     2'
+                              b'5    -    -       026c \n0.30   1     1     1b    -    -       0280 \n0.31'
+                              b'   1     1     1b    -    -       02a0 \n0.32   1     1     1b    -    - '
+                              b'      0284 \n0.33   1     1     1b    -    -       02a4 \n0.34   1     1  '
+                              b'   1b    -    -       0288 \n0.35   1     1     1b    -    -       02a8 \n'
+                              b'0.36   1     1     1b    -    -       028c \n0.37   1     1     1b    -  '
+                              b'  -       02ac \n0.70   1     1     11    -    -       01c0 \n0.71   1    '
+                              b' 1     11    -    -       01e0 \n0.72   1     1     11    -    -       01'
+                              b'c4 \n0.73   1     1     11    -    -       01c8 \n0.74   1     1     11   '
+                              b' -    -       01e8 \n0.75   1     1     11    -    -       01e4 \n0.76   1'
+                              b'     1     11    -    -       01cc \n0.77   1     1     11    -    -     '
+                              b'  01ec \n0.80   1     1     24    -    -      (07c0)\n0.81   1     1     2'
+                              b'4    -    -      (07c1)\n0.82   1     1     24    -    -      (07c2)\n0.83'
+                              b'   1     1     24    -    -      (07c3)\n')
+        zvmutils.print_all_pchids()
+        mock_info.assert_called_with('CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID\n'
+                                     '===========================================\n'
+                                     '0.00   1     1     11    -    -      (ff00)\n'
+                                     '0.01   1     1     01    -    -      (ff01)\n'
+                                     '0.10   1     1     25    -    -       0240 \n'
+                                     '0.11   1     1     25    -    -       0260 \n'
+                                     '0.12   1     1     25    -    -       0244 \n'
+                                     '0.13   1     1     25    -    -       0264 \n'
+                                     '0.14   1     1     25    -    -       0248 \n'
+                                     '0.15   1     1     25    -    -       0268 \n'
+                                     '0.16   1     1     25    -    -       024c \n'
+                                     '0.17   1     1     25    -    -       026c \n'
+                                     '0.30   1     1     1b    -    -       0280 \n'
+                                     '0.31   1     1     1b    -    -       02a0 \n'
+                                     '0.32   1     1     1b    -    -       0284 \n'
+                                     '0.33   1     1     1b    -    -       02a4 \n'
+                                     '0.34   1     1     1b    -    -       0288 \n'
+                                     '0.35   1     1     1b    -    -       02a8 \n'
+                                     '0.36   1     1     1b    -    -       028c \n'
+                                     '0.37   1     1     1b    -    -       02ac \n'
+                                     '0.70   1     1     11    -    -       01c0 \n'
+                                     '0.71   1     1     11    -    -       01e0 \n'
+                                     '0.72   1     1     11    -    -       01c4 \n'
+                                     '0.73   1     1     11    -    -       01c8 \n'
+                                     '0.74   1     1     11    -    -       01e8 \n'
+                                     '0.75   1     1     11    -    -       01e4 \n'
+                                     '0.76   1     1     11    -    -       01cc \n'
+                                     '0.77   1     1     11    -    -       01ec \n'
+                                     '0.80   1     1     24    -    -      (07c0)\n'
+                                     '0.81   1     1     24    -    -      (07c1)\n'
+                                     '0.82   1     1     24    -    -      (07c2)\n'
+                                     '0.83   1     1     24    -    -      (07c3)\n')
