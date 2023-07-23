@@ -429,6 +429,7 @@ class FCP(object):
         self._dev_status = None
         self._npiv_port = None
         self._chpid = None
+        self._pchid = None
         self._physical_port = None
         self._assigned_id = None
         self._owner = None
@@ -469,6 +470,9 @@ class FCP(object):
                     if len(self._chpid) != 2:
                         LOG.warn("CHPID value %s of FCP device %s is "
                                  "invalid!" % (self._chpid, self._dev_no))
+                    else:
+                        # get pchid from linux command lschp
+                        self._pchid = zvmutils.get_pchid_by_chpid(self._chpid)
                 elif 'Physical world wide port numbe' in line:
                     self._physical_port = self._get_value_from_line(line)
                 elif 'Owner' in line:
@@ -500,6 +504,9 @@ class FCP(object):
     def get_chpid(self):
         return self._chpid
 
+    def get_pchid(self):
+        return self._pchid
+
     def get_owner(self):
         return self._owner
 
@@ -509,13 +516,13 @@ class FCP(object):
 
     def to_tuple(self):
         """Tranfer this object to a tuple type, format is like
-           (fcp_id, wwpn_npiv, wwpn_phy, chpid, state, owner)
+           (fcp_id, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner)
         for example:
-           ('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+           ('1a06', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'active',
           'user1')
         """
         return (self.get_dev_no(), self.get_npiv_port(),
-                self.get_physical_port(), self.get_chpid(),
+                self.get_physical_port(), self.get_chpid(), self.get_pchid(),
                 self.get_dev_status(), self.get_owner())
 
 
@@ -813,13 +820,13 @@ class FCPManager(object):
         example (key=FCP)
         {
             'fcp_id': (fcp_id, userid, connections, reserved, wwpn_npiv,
-                       wwpn_phy, chpid, state, owner, tmpl_id),
+                       wwpn_phy, chpid, pchid, state, owner, tmpl_id),
             '1a06':   ('1a06', 'C2WDL003', 2, 1, 'c05076ddf7000002',
-                       'c05076ddf7001d81', 27, 'active', 'C2WDL003', ''),
+                       'c05076ddf7001d81', 27, '02e4', 'active', 'C2WDL003', ''),
             '1b08':   ('1b08', 'C2WDL003', 2, 1, 'c05076ddf7000002',
-                     'c05076ddf7001d81', 27, 'active', 'C2WDL003', ''),
+                     'c05076ddf7001d81', 27, '02e4', 'active', 'C2WDL003', ''),
             '1c08':   ('1c08', 'C2WDL003', 2, 1, 'c05076ddf7000002',
-                     'c05076ddf7001d81', 27, 'active', 'C2WDL003', ''),
+                     'c05076ddf7001d81', 27, '02e4', 'active', 'C2WDL003', ''),
         }
         """
 
@@ -885,9 +892,9 @@ class FCPManager(object):
             for fcp in del_fcp_set:
                 # example of a FCP record in fcp_dict_in_db
                 # (fcp_id, userid, connections, reserved, wwpn_npiv,
-                #  wwpn_phy, chpid, state, owner, tmpl_id)
+                #  wwpn_phy, chpid, pchid, state, owner, tmpl_id)
                 (fcp_id, userid, connections, reserved, wwpn_npiv_db,
-                 wwpn_phy_db, chpid_db, fcp_state_db,
+                 wwpn_phy_db, chpid_db, pchid_db, fcp_state_db,
                  fcp_owner_db, tmpl_id) = fcp_dict_in_db[fcp]
                 if connections == 0 and reserved == 0:
                     fcp_ids_secure_to_delete.add(fcp)
@@ -914,15 +921,17 @@ class FCPManager(object):
             for fcp in inter_set:
                 # example of a FCP record in fcp_dict_in_db
                 # (fcp_id, userid, connections, reserved, wwpn_npiv,
-                #  wwpn_phy, chpid, state, owner, tmpl_id)
+                #  wwpn_phy, chpid, pchid, state, owner, tmpl_id)
                 (fcp_id, userid, connections, reserved, wwpn_npiv_db,
-                 wwpn_phy_db, chpid_db, fcp_state_db,
+                 wwpn_phy_db, chpid_db, pchid_db, fcp_state_db,
                  fcp_owner_db, tmpl_id) = fcp_dict_in_db[fcp]
                 # Get physical WWPN and NPIV WWPN queried from z/VM
                 wwpn_phy_zvm = fcp_dict_in_zvm[fcp].get_physical_port()
                 wwpn_npiv_zvm = fcp_dict_in_zvm[fcp].get_npiv_port()
                 # Get CHPID queried from z/VM
                 chpid_zvm = fcp_dict_in_zvm[fcp].get_chpid()
+                # Get PCHID queried from z/VM
+                pchid_zvm = fcp_dict_in_zvm[fcp].get_pchid()
                 # Get FCP device state queried from z/VM
                 # Possible state returned by ZVM:
                 # 'active', 'free' or 'offline'
@@ -957,6 +966,9 @@ class FCPManager(object):
                 if chpid_db != chpid_zvm:
                     # Check chpid changed or not
                     fcp_ids_need_update.add(fcp)
+                elif pchid_db != pchid_zvm:
+                    # Check pchid changed or not
+                    fcp_ids_need_update.add(fcp)
                 elif fcp_state_db != fcp_state_zvm:
                     # Check state changed or not
                     fcp_ids_need_update.add(fcp)
@@ -982,6 +994,8 @@ class FCPManager(object):
         # Update the dict of all FCPs into FCP table in database
         self.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+        # Get available channel-paths from linux command lschp and log the info
+        zvmutils.print_all_pchids()
 
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
@@ -1525,6 +1539,7 @@ class FCPManager(object):
                                 "c05076de3300038b",
                                 "c05076de33002e41",
                                 "27",
+                                '02e4',
                                 "free",
                                 "none",
                                 "36439338-db14-11ec-bb41-0201018b1dd2"
@@ -1538,6 +1553,7 @@ class FCPManager(object):
                                 "c05076de330003a2",
                                 "c05076de33002e41",
                                 "27",
+                                '02e4',
                                 "free",
                                 "none",
                                 "36439338-db14-11ec-bb41-0201018b1dd2"
@@ -1553,6 +1569,7 @@ class FCPManager(object):
                                 "c05076de33000353",
                                 "c05076de33002641",
                                 "32",
+                                '0264',
                                 "free",
                                 "none",
                                 "36439338-db14-11ec-bb41-0201018b1dd2"

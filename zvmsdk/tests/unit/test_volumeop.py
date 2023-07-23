@@ -366,40 +366,46 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
 
 class TestFCP(base.SDKTestCase):
 
-    def test_parse_normal(self):
+    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
+    def test_parse_normal(self, get_pchid_by_chpid):
         info = ['opnstk1: FCP device number: B83D',
                 'opnstk1:   Status: Free',
                 'opnstk1:   NPIV world wide port number: NONE',
                 'opnstk1:   Channel path ID: 59',
                 'opnstk1:   Physical world wide port number: 20076D8500005181',
                 'Owner: NONE']
+        get_pchid_by_chpid.return_value = '02e4'
         fcp = volumeop.FCP(info)
         self.assertEqual('b83d', fcp.get_dev_no())
         self.assertEqual('free', fcp.get_dev_status())
         self.assertEqual('none', fcp.get_npiv_port())
         self.assertEqual('59', fcp.get_chpid())
+        self.assertEqual('02e4', fcp.get_pchid())
         self.assertEqual('20076d8500005181', fcp.get_physical_port())
         self.assertEqual('none', fcp.get_owner())
-        self.assertEqual(('b83d', 'none', '20076d8500005181', '59',
+        self.assertEqual(('b83d', 'none', '20076d8500005181', '59', '02e4',
                           'free', 'none'),
                          fcp.to_tuple())
 
-    def test_parse_npiv(self):
+    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
+    def test_parse_npiv(self, get_pchid_by_chpid):
         info = ['opnstk1: FCP device number: B83D',
                 'opnstk1:   Status: Active',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
                 'opnstk1:   Physical world wide port number: 20076D8500005181',
                 'Owner: UNIT0001']
+        get_pchid_by_chpid.return_value = '02e4'
         fcp = volumeop.FCP(info)
         self.assertEqual('b83d', fcp.get_dev_no())
         self.assertEqual('active', fcp.get_dev_status())
         self.assertEqual('20076d8500005182', fcp.get_npiv_port())
         self.assertEqual('59', fcp.get_chpid())
+        self.assertEqual('02e4', fcp.get_pchid())
         self.assertEqual('20076d8500005181', fcp.get_physical_port())
         self.assertEqual('unit0001', fcp.get_owner())
         self.assertEqual(('b83d', '20076d8500005182', '20076d8500005181',
-                          '59', 'active', 'unit0001'),
+                          '59', '02e4', 'active', 'unit0001'),
                          fcp.to_tuple())
 
 
@@ -418,9 +424,9 @@ class TestFCPManager(base.SDKTestCase):
         with database.get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp "
                              "(fcp_id, assigner_id, connections, "
-                             "reserved, wwpn_npiv, wwpn_phy, chpid, "
+                             "reserved, wwpn_npiv, wwpn_phy, chpid, pchid,"
                              "state, owner, tmpl_id) VALUES "
-                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
 
     def _insert_data_into_template_table(self, templates_info):
         # insert data into all columns of template table
@@ -453,16 +459,16 @@ class TestFCPManager(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = ''
         fcp_info_list = [('1a01', 'user1', 0, 0, 'c05076de33000a01',
-                          'c05076de3300264a', '27', 'active', 'owner1',
+                          'c05076de3300264a', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1a02', 'user1', 0, 1, 'c05076de33000a02',
-                          'c05076de3300264a', '27', 'active', 'owner1',
+                          'c05076de3300264a', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b01', 'user2', 1, 1, 'c05076de33000b01',
-                          'c05076de3300264b', '27', 'active', 'owner1',
+                          'c05076de3300264b', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b03', 'user2', 2, 1, 'c05076de33000b03',
-                          'c05076de3300264b', '27', 'active', 'owner2',
+                          'c05076de3300264b', '27', '02e4', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # remove dirty data from other test cases
@@ -484,16 +490,16 @@ class TestFCPManager(base.SDKTestCase):
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
         fcp_info_list = [('1a10', assinger_id, 1, 1, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b10', assinger_id, 1, 1, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id),
                          ('1a11', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id),
                          ('1b11', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id)
                          ]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
@@ -536,16 +542,16 @@ class TestFCPManager(base.SDKTestCase):
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
         fcp_info_list = [('1a10', '', 0, 0, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'free', '',
+                          'c05076de33002641', '27', '02e4', 'free', '',
                           ''),
                          ('1b10', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'free', '',
+                          'c05076de33002641', '27', '02e4', 'free', '',
                           ''),
                          ('1a11', '', 0, 0, 'c05076de3300c83c',
-                          'c05076de33002641', '27', 'free', '',
+                          'c05076de33002641', '27', '02e4', 'free', '',
                           ''),
                          ('1b11', '', 0, 0, 'c05076de3300d83c',
-                          'c05076de33002641', '27', 'free', '',
+                          'c05076de33002641', '27', '02e4', 'free', '',
                           '')
                          ]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
@@ -630,16 +636,16 @@ class TestFCPManager(base.SDKTestCase):
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         fcp_info_list = [('1a10', assinger_id, 0, 0, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b10', assinger_id, 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id),
                          ('1a11', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id),
                          ('1b11', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id)
                          ]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
@@ -671,10 +677,13 @@ class TestFCPManager(base.SDKTestCase):
                                self.fcpops._valid_fcp_devcie_wwpn,
                                fcp_list_2, assigner_id)
 
+    @mock.patch("zvmsdk.utils.print_all_pchids")
+    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
     @mock.patch("zvmsdk.utils.get_smt_userid", mock.Mock())
-    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
-    def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info):
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
+    def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info, get_pchid_by_chpid, print_all_pchids):
         """Test get_fcp_dict_in_zvm"""
+        print_all_pchids.return_value = None
         raw_fcp_info_from_zvm = [
             'opnstk1: FCP device number: 1A01',
             'opnstk1:   Status: Free',
@@ -690,7 +699,18 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: '
             '20076D8500005185',
             'Owner: UNIT0001']
-        mock_zvm_fcp_info.return_value = raw_fcp_info_from_zvm
+        info_1a01 = raw_fcp_info_from_zvm[0:6]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_1a01 = volumeop.FCP(info_1a01)
+        info_1b03 = raw_fcp_info_from_zvm[6:12]
+        get_pchid_by_chpid.return_value = '02e6'
+        fcp_1b03 = volumeop.FCP(info_1b03)
+
+        mock_zvm_fcp_info.return_value = {
+            '1a01': fcp_1a01,
+            '1b03': fcp_1b03
+        }
+
         expected_fcp_dict_keys = {
             '1a01', '1b03'}
         fcp_dict = self.fcpops.get_fcp_dict_in_zvm()
@@ -699,13 +719,16 @@ class TestFCPManager(base.SDKTestCase):
             all([isinstance(v, volumeop.FCP)
                 for v in list(fcp_dict.values())]))
 
+    @mock.patch("zvmsdk.utils.print_all_pchids")
     @mock.patch("zvmsdk.volumeop.FCPManager."
                 "sync_fcp_table_with_zvm")
     @mock.patch("zvmsdk.volumeop.FCPManager."
                 "get_fcp_dict_in_zvm")
     def test_sync_db_with_zvm(self, fcp_dict_in_zvm,
-                              sync_fcp_table_with_zvm):
+                              sync_fcp_table_with_zvm,
+                              print_all_pchids):
         """Test sync_db_with_zvm"""
+        print_all_pchids.return_value = None
         zvm_fcp_dict = {
             # inter_set:
             '1a01': ('1a01', '', 1, 1, 0, '', '20076D8500005182',
@@ -724,21 +747,23 @@ class TestFCPManager(base.SDKTestCase):
         fcp_dict_in_zvm.assert_called_once()
         sync_fcp_table_with_zvm.assert_called_once_with(zvm_fcp_dict)
 
-    def test_sync_fcp_table_with_zvm(self):
+    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
+    def test_sync_fcp_table_with_zvm(self, get_pchid_by_chpid):
         """Test sync_fcp_table_with_zvm"""
+        get_pchid_by_chpid.return_value = '021c'
         # fcp info in original database
         template_id = ''
         fcp_info_list = [('1a01', 'user1', 0, 0, 'c05076de33000001',
-                          'c05076de3300264a', '27', 'active', 'owner1',
+                          'c05076de3300264a', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1a02', 'user1', 0, 0, 'c05076de33000002',
-                          'c05076de3300264a', '27', 'active', 'owner1',
+                          'c05076de3300264a', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b01', 'user2', 1, 1, 'c05076de33000003',
-                          'c05076de3300264b', '27', 'active', 'owner1',
+                          'c05076de3300264b', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('1b03', 'unit0001', 2, 1, 'c05076de33000004',
-                          'c05076de3300264b', '27', 'active', 'owner2',
+                          'c05076de3300264b', '27', '02e4', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # remove dirty data from other test cases
@@ -784,24 +809,40 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: '
             '20076D8500005185',
             'Owner: UNIT0001']
+        info_1a01 = fcp_info_in_zvm[0:6]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_1a01 = volumeop.FCP(info_1a01)
+
+        info_1b01 = fcp_info_in_zvm[6:12]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_1b01 = volumeop.FCP(info_1b01)
+
+        info_1b02 = fcp_info_in_zvm[12:18]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_1b02 = volumeop.FCP(info_1b02)
+
+        info_1b03 = fcp_info_in_zvm[18:24]
+        get_pchid_by_chpid.return_value = '021c'
+        fcp_1b03 = volumeop.FCP(info_1b03)
+
         fcp_dict_in_zvm = {
-            '1a01': volumeop.FCP(fcp_info_in_zvm[0:6]),
-            '1b01': volumeop.FCP(fcp_info_in_zvm[6:12]),
-            '1b02': volumeop.FCP(fcp_info_in_zvm[12:18]),
-            '1b03': volumeop.FCP(fcp_info_in_zvm[18:24]),
+            '1a01': fcp_1a01,
+            '1b01': fcp_1b01,
+            '1b02': fcp_1b02,
+            '1b03': fcp_1b03,
         }
         fcp_info_in_db_expected = {
             '1a01': ('1a01', 'user1', 0, 0, 'c05076de33000a01',
-                     '20076d8500005181', '27', 'free', 'none',
+                     '20076d8500005181', '27', '02e4', 'free', 'none',
                      template_id),
             '1b01': ('1b01', 'user2', 1, 1, 'c05076de33000003',
-                     'c05076de3300264b', '27', 'active', 'owner1',
+                     'c05076de3300264b', '27', '02e4', 'active', 'owner1',
                      template_id),
             '1b02': ('1b02', '', 0, 0, 'c05076de33000b02',
-                     '20076d8500005181', '27', 'free', 'none',
+                     '20076d8500005181', '27', '02e4', 'free', 'none',
                      template_id),
             '1b03': ('1b03', 'unit0001', 2, 1, 'c05076de33000004',
-                     'c05076de3300264b', '30', 'active', 'unit0001',
+                     'c05076de3300264b', '30', '021c', 'active', 'unit0001',
                      template_id)
         }
         try:
@@ -936,11 +977,11 @@ class TestFCPManager(base.SDKTestCase):
             fcp_info_list_2 = [
                             # allocated
                             ('1b00', 'user2', 1, 1, 'c05076de3300c83c',
-                            'c05076de33002641', '27', 'active', '',
+                            'c05076de33002641', '27', '02e4', 'active', '',
                             template_id_2),
                             # unallocated_but_active
                             ('1b01', '', 0, 0, 'c05076de3300d83c',
-                            'c05076de33002641', '35', 'active', 'owner2',
+                            'c05076de33002641', '35', '02a4', 'active', 'owner2',
                             '')]
             fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
@@ -1042,17 +1083,17 @@ class TestFCPManager(base.SDKTestCase):
             fcp_info_list_1 = [
                             # available
                             ('1a00', '', 0, 0, 'c05076de3300a83c',
-                            'c05076de33002641', '27', 'free', '',
+                            'c05076de33002641', '27', '02e4', 'free', '',
                             '')
                             ]
             fcp_info_list_2 = [
                             # allocated
                             ('1b00', 'user2', 1, 1, 'c05076de3300c83c',
-                            'c05076de33002641', '27', 'active', '',
+                            'c05076de33002641', '27', '02e4', 'active', '',
                             template_id_2),
                             # unallocated_but_active
                             ('1b01', '', 0, 0, 'c05076de3300d83c',
-                            'c05076de33002641', '35', 'active', 'owner2',
+                            'c05076de33002641', '35', '02a4', 'active', 'owner2',
                             '')]
             fcp_id_list_1 = [fcp_info[0] for fcp_info in fcp_info_list_1]
             fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
@@ -1370,9 +1411,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
         with database.get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp "
                              "(fcp_id, assigner_id, connections, "
-                             "reserved, wwpn_npiv, wwpn_phy, chpid, "
+                             "reserved, wwpn_npiv, wwpn_phy, chpid, pchid,"
                              "state, owner, tmpl_id) VALUES "
-                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
 
     def _insert_data_into_template_table(self, templates_info):
         # insert data into all columns of template table
@@ -1432,10 +1473,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         # insert data into fcp table
         template_id = 'fakehos1-1111-1111-1111-111111111111'
         fcp_info_list = [('a83c', 'fakeuser', 0, 1, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('b83c', 'fakeuser', 0, 1, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
@@ -1477,13 +1518,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
             self._delete_from_template_table(template_id_list)
 
+    @mock.patch("zvmsdk.utils.print_all_pchids")
+    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
     @mock.patch("zvmsdk.utils.get_smt_userid")
-    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
     @mock.patch("zvmsdk.utils.get_lpar_name")
     def test_get_volume_connector_reserve(self, get_lpar_name,
-                                          get_all_fcp_info,
-                                          get_smt_userid):
+                                          get_all_fcp_pool,
+                                          get_smt_userid,
+                                          get_pchid_by_chpid,
+                                          print_all_pchids):
         """Test get_volume_connector when reserve parameter is True"""
+        print_all_pchids.return_value = None
         get_lpar_name.return_value = "fakehos1"
         get_smt_userid.return_value = "fakesmt"
         fcp_list = ['opnstk1: FCP device number: A83C',
@@ -1502,16 +1548,26 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Physical world wide port number: '
                     'C05076DE33002641',
                     'Owner: NONE']
-        get_all_fcp_info.return_value = fcp_list
+        info_a83c = fcp_list[0:6]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_a83c = volumeop.FCP(info_a83c)
+        info_b83c = fcp_list[6:12]
+        get_pchid_by_chpid.return_value = '02e4'
+        fcp_b83c = volumeop.FCP(info_b83c)
+
+        get_all_fcp_pool.return_value = {
+            'a83c': fcp_a83c,
+            'b83c': fcp_b83c
+        }
         # insert data into fcp table
         template_id = 'fakehos1-1111-1111-1111-111111111111'
         # in database, the state in active, but in zvm it is free
         # get_volume_connector should be able to get them
         fcp_info_list = [('a83c', '', 0, 0, 'c05076de3300a83c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '0240', 'active', 'owner1',
                           template_id),
                          ('b83c', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '0240', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -1606,10 +1662,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_check.return_value = True
         # insert data into tempalte
         fcp_info_list = [('c123', 'user1', 0, 0, '20076D8500005182',
-                          '20076D8500005181', '27', 'active', 'owner1',
+                          '20076D8500005181', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('d123', 'user1', 0, 0, '20076D8500005183',
-                          '20076D8500005181', '27', 'active', 'owner2',
+                          '20076D8500005181', '27', '02e4', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         wwpns = ['20076d8500005182', '20076d8500005183']
@@ -1692,10 +1748,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         fcp_info_list = [('c123', 'user2', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user2', 0, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -1758,10 +1814,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_check_userid.return_value = True
         wwpns = ['20076d8500005182', '20076d8500005183']
         fcp_info_list = [('c123', 'user1', 2, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user1', 2, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -1836,10 +1892,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1',
                            'fcp_template_id': 'BOEM5401-1111-1111-1111-111111111111'}
         fcp_info_list = [('c123', 'user1', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user1', 0, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -1879,10 +1935,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1',
                            'fcp_template_id': 'BOEM5401-1111-1111-1111-111111111111'}
         fcp_info_list = [('c123', 'user1', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user1', 0, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         mock_increase_conn.return_value = {'c123': 1, 'd123': 1}
         mock_check.return_value = True
@@ -1940,10 +1996,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'fcp_template_id': 'BOEM5401-1111-1111-1111-111111111111'}
         mock_increase_conn.return_value = {'c123': 1, 'd123': 1}
         fcp_info_list = [('c123', 'user1', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user1', 0, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -2063,10 +2119,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1',
                            'fcp_template_id': 'BOEM5401-1111-1111-1111-111111111111'}
         fcp_info_list = [('c123', 'user1', 1, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('d123', 'user1', 1, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -2126,10 +2182,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         # set connections of f83c to 1
         # left connections of f84c to 0
         fcp_info_list = [('f83c', 'user1', 1, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('f84c', 'user1', 0, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -2314,10 +2370,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         fcp_info_list = [('183c', 'user1', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('283c', 'user1', 1, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -2364,10 +2420,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         fcp_info_list = [('183c', 'user1', 0, 1, 'c05076de3300011c',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('283c', 'user1', 1, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
@@ -2396,7 +2452,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1'}
         mock_check.return_value = True
         fcp_info_list = [('283c', 'user1', 2, 1, 'c05076de3300011d',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)

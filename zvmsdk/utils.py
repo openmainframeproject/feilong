@@ -786,6 +786,69 @@ def check_userid_on_others(userid):
         raise exception.SDKInternalError(msg=msg)
 
 
+def get_pchid_by_chpid(chpid):
+    """Get pchid of FCP device from its chpid
+
+    :param chpid: Channel path ID of FCP device, for example: 10
+    :return pchid: Physical channel ID of FCP device, for example: 0240
+    """
+    try:
+        pchid = ""
+        cmd = ["lschp", chpid]
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        list = output.split('\n')
+        for line in list:
+            # Example:
+            # CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID
+            # ===========================================
+            # 0.10   1     1     25    -    -       0240
+            # Split line by blank space
+            column_list = re.split('\s+', line)
+            # A CHPID is specified in hexadecimal notation in the form <cssid>.<id> where <cssid> is
+            # the channel-subsystem identifier and <id> is the CHPID-number (e.g. 0.10).
+            # So get CHPID-number from column_list[0][2:4]
+            if column_list[0][2:4] == chpid:
+                pchid = column_list[6]
+                break
+        return pchid
+    except Exception as err:
+        msg = ("Could not find the pchid: %s") % err
+        raise exception.SDKInternalError(msg=msg)
+
+
+def print_all_pchids():
+    # Print all available physical channel-paths.
+    try:
+        cmd = ["lschp"]
+        # Get available channel-paths from linux command lschp
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        LOG.info("Available channel-paths are as below:")
+        # Log the info
+        # Information is shown as below format in log
+        # [2023-07-27 01:55:30] [INFO] CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID
+        # ===========================================
+        # 0.00   1     1     11    -    -      (ff00)
+        # 0.01   1     1     01    -    -      (ff01)
+        # 0.10   1     1     25    -    -       0240
+        # 0.11   1     1     25    -    -       0260
+        # 0.12   1     1     25    -    -       0244
+        # 0.13   1     1     25    -    -       0264
+        # 0.14   1     1     25    -    -       0248
+        # 0.15   1     1     25    -    -       0268
+        # 0.16   1     1     25    -    -       024c
+        # 0.17   1     1     25    -    -       026c
+        LOG.info(output)
+    except Exception as err:
+        msg = ("Error occurred when execute lschp: %s") % err
+        raise exception.SDKInternalError(msg=msg)
+
+
 def expand_fcp_list(fcp_list):
     """Expand fcp list string into a python list object which contains
     each fcp devices in the list string. A fcp list is composed of fcp

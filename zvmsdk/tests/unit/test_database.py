@@ -329,9 +329,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         with database.get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp "
                              "(fcp_id, assigner_id, connections, "
-                             "reserved, wwpn_npiv, wwpn_phy, chpid, "
+                             "reserved, wwpn_npiv, wwpn_phy, chpid, pchid,"
                              "state, owner, tmpl_id) VALUES "
-                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
 
     def _insert_data_into_template_table(self, templates_info):
         # insert data into all columns of template table
@@ -394,8 +394,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             default_sp_list=kwargs['default_sp_list'],
             min_fcp_paths_count=2)
         fcp_info = [
-            ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
-            ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+            ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1'),
+            ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1')]
         # set FCP ('1a01', '1b03') as inuse
         try:
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
@@ -450,13 +450,13 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 0, 0, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id),
                          ('2222', '', 0, 1, 'c05076de33000222',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id),
                          ('3333', '', 0, 1, 'c05076de33000333',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -513,13 +513,13 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         """
         format of item in fcp_info_list:
         (fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy,
-         chpid, state, owner, tmpl_id)
+         chpid, pchid, state, owner, tmpl_id)
         """
         fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('2222', 'user2', 0, 0, 'c05076de33000222',
-                          'c05076de33002641', '27', 'active', 'owner2',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -532,15 +532,15 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             res = self.db_op.get_all_fcps_of_assigner()
             # Format of return is like:
             # [(fcp_id, userid, connections, reserved, wwpn_npiv, wwpn_phy,
-            #   chpid, state, owner, tmpl_id), (...)].
+            #   chpid, pchid, state, owner, tmpl_id), (...)].
             self.assertEqual(len(res), 2)
-            self.assertEqual(len(res[0]), 10)
+            self.assertEqual(len(res[0]), 11)
             # connections == 0
             self.assertEqual(res[0][2], 0)
             # case 2, specify an assigner_id
             res = self.db_op.get_all_fcps_of_assigner(assigner_id='user2')
             self.assertEqual(len(res), 1)
-            self.assertEqual(len(res[0]), 10)
+            self.assertEqual(len(res[0]), 11)
             self.assertEqual(res[0][1], 'user2')
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
@@ -556,7 +556,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -577,7 +577,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', 'user2', 1, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -605,7 +605,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         """Test API decrease_connections when connections is 0"""
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 0, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -622,7 +622,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -644,10 +644,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', '', 2, 1, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id),
                          ('2222', '', 3, 1, 'c05076de33000222',
-                          'c05076de33002641', '27', 'active', 'user1',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -836,10 +836,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         self._insert_data_into_template_fcp_mapping_table(template_fcp)
         # insert test data into table fcp
         fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('2222', 'user1', 0, 0, 'c05076de33000222',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -877,10 +877,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # insert test data into table fcp
         template_id = 'fakehost-1111-1111-1111-111111111111'
         fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
                          ('2222', 'user1', 0, 0, 'c05076de33000222',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -956,34 +956,34 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # WWPNs in test data:
         #   1b02 wwpns are empty, others are normal
         fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('1a01', '', 0, 0, 'c05076de33000a01',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1a02', '', 1, 1, 'c05076de33000a02',
-                          'c05076de33002641', '27', '', 'owner1',
+                          'c05076de33002641', '27', '02e4', '', 'owner1',
                           ''),
                          ('1a03', '', 0, 0, 'c05076de33000a03',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1a04', '', 0, 0, 'c05076de33000a04',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1b00', '', 0, 1, 'c05076de33000b00',
-                          'c05076de33002642', '30', '', 'owner1',
+                          'c05076de33002642', '30', '021c', '', 'owner1',
                           ''),
                          ('1b01', '', 0, 0, 'c05076de33000b01',
-                          'c05076de33002642', '30', 'free', 'owner1',
+                          'c05076de33002642', '30', '021c', 'free', 'owner1',
                           ''),
                          ('1b02', '', 0, 0, '',
-                          '', '30', 'notfound', 'owner1',
+                          '', '30', '021c', 'notfound', 'owner1',
                           ''),
                          ('1b03', '', 0, 0, 'c05076de33000b03',
-                          'c05076de33002642', '30', 'free', 'owner1',
+                          'c05076de33002642', '30', '021c', 'free', 'owner1',
                           ''),
                          ('1b04', '', 0, 0, 'c05076de33000b04',
-                          'c05076de33002642', '30', 'active', 'owner1',
+                          'c05076de33002642', '30', '021c', 'active', 'owner1',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -1061,34 +1061,34 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # WWPNs in test data:
         #   1b02 wwpns are empty, others are normal
         fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
-                          'c05076de33002641', '27', 'active', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           ''),
                          ('1a01', '', 0, 0, 'c05076de33000a01',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1a02', '', 1, 1, 'c05076de33000a02',
-                          'c05076de33002641', '27', '', 'owner1',
+                          'c05076de33002641', '27', '02e4', '', 'owner1',
                           ''),
                          ('1a03', '', 0, 0, 'c05076de33000a03',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1a04', '', 0, 0, 'c05076de33000a04',
-                          'c05076de33002641', '27', 'free', 'owner1',
+                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
                           ''),
                          ('1b00', '', 0, 1, 'c05076de33000b00',
-                          'c05076de33002642', '30', '', 'owner1',
+                          'c05076de33002642', '30', '021c', '', 'owner1',
                           ''),
                          ('1b01', '', 0, 0, 'c05076de33000b01',
-                          'c05076de33002642', '30', 'free', 'owner1',
+                          'c05076de33002642', '30', '021c', 'free', 'owner1',
                           ''),
                          ('1b02', '', 0, 0, '',
-                          '', '30', 'notfound', 'owner1',
+                          '', '30', '021c', 'notfound', 'owner1',
                           ''),
                          ('1b03', '', 0, 0, 'c05076de33000b03',
-                          'c05076de33002642', '30', 'free', 'owner1',
+                          'c05076de33002642', '30', '021c', 'free', 'owner1',
                           ''),
                          ('1b04', '', 0, 0, 'c05076de33000b04',
-                          'c05076de33002642', '30', 'active', 'owner1',
+                          'c05076de33002642', '30', '021c', 'active', 'owner1',
                           '')]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         # delete dirty data from other test cases
@@ -1266,8 +1266,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 host_default=kwargs['host_default'],
                 default_sp_list=kwargs['default_sp_list'])
             fcp_info = [
-                ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
-                ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+                ('1a01', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1'),
+                ('1b03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1')]
             # set FCP ('1a01', '1b03') as inuse
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
             reserve_info = (('1a01', '1b03'), 'user1', tmpl_id)
@@ -1300,8 +1300,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 host_default=False,
                 default_sp_list=[])
             fcp_info = [
-                ('1a02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1'),
-                ('1b02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active', 'user1')]
+                ('1a02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1'),
+                ('1b02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1')]
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
             reserve_info = (('1a02', '1b02'), 'user1', 'fake_id_1111')
             self.db_op.reserve_fcps(*reserve_info)
@@ -1574,7 +1574,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 host_default=kwargs2['host_default'],
                 default_sp_list=kwargs2['default_sp_list'])
             fcp_info = [
-                ('1a00', 'wwpn_npiv_1', 'wwpn_phy_1', '27', 'active',
+                ('1a00', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active',
                 'user1')]
             try:
                 self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
@@ -1625,7 +1625,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(1, len(result[1]))
             fcp_in_db = result[1]
             expected = ('1a00', tmpl_id_1, 0, '', 0, 1, 'wwpn_npiv_1',
-                                 'wwpn_phy_1', 27, 'active', 'user1', tmpl_id_1)
+                                 'wwpn_phy_1', 27, '02e4', 'active', 'user1', tmpl_id_1)
             i = 0
             for fcp in fcp_in_db:
                 self.assertEqual(fcp[i], expected[i])

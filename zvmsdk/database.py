@@ -319,6 +319,7 @@ class FCPDbOperator(object):
         #   wwpn_npiv: NPIV WWPN
         #   wwpn_phy: Physical WWPN
         #   chpid: channel ID of FCP device
+        #   pchid: Physical channel ID of FCP device
         #   state: FCP device status
         #   owner: VM userid representing an unique VM,
         #          it is read from z/VM hypervisor and
@@ -336,6 +337,7 @@ class FCPDbOperator(object):
             "wwpn_npiv      varchar(16) NOT NULL DEFAULT '' COLLATE NOCASE,"
             "wwpn_phy       varchar(16) NOT NULL DEFAULT '' COLLATE NOCASE,"
             "chpid          char(2)     NOT NULL DEFAULT '' COLLATE NOCASE,"
+            "pchid          char(4)     NOT NULL DEFAULT '' COLLATE NOCASE,"
             "state          varchar(8)  NOT NULL DEFAULT '' COLLATE NOCASE,"
             "owner          varchar(8)  NOT NULL DEFAULT '' COLLATE NOCASE,"
             "tmpl_id        varchar(32) NOT NULL DEFAULT '' COLLATE NOCASE,"
@@ -417,18 +419,18 @@ class FCPDbOperator(object):
         from z/VM.
 
         The input fcp_info_list should be list of FCP info, for example:
-        [(fcp_id, wwpn_npiv, wwpn_phy, chpid, state, owner),
-         ('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+        [(fcp_id, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner),
+         ('1a06', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'active',
           'user1'),
-         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', 'free',
+         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'free',
           'user1'),
-         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'active',
           'user2')]
         """
         with get_fcp_conn() as conn:
             conn.executemany("INSERT INTO fcp (fcp_id, wwpn_npiv, wwpn_phy, "
-                             "chpid, state, owner) "
-                             "VALUES (?, ?, ?, ?, ?, ?)", fcp_info_list)
+                             "chpid, pchid, state, owner) "
+                             "VALUES (?, ?, ?, ?, ?, ?, ?)", fcp_info_list)
 
     def bulk_delete_from_fcp_table(self, fcp_id_list: list):
         """Delete multiple FCP records from fcp table
@@ -444,12 +446,12 @@ class FCPDbOperator(object):
         """Update multiple records with FCP info queried from z/VM.
 
         The input fcp_info_list should be list of FCP info set, for example:
-        [(fcp_id, wwpn_npiv, wwpn_phy, chpid, state, owner),
-         ('1a06', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+        [(fcp_id, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner),
+         ('1a06', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'active',
           'user1'),
-         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', 'free',
+         ('1a07', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'free',
           'user1'),
-         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', 'active',
+         ('1a08', 'c05076de33000355', 'c05076de33002641', '27', '02e4', 'active',
           'user2')]
         """
         # transfer state and owner to a comment dict
@@ -461,12 +463,12 @@ class FCPDbOperator(object):
         for fcp in fcp_info_list:
             # change order of update data
             # the new order is like:
-            #   (wwpn_npiv, wwpn_phy, chpid, state, owner, fcp_id)
+            #   (wwpn_npiv, wwpn_phy, chpid, pchid, state, owner, fcp_id)
             new_record = list(fcp[1:]) + [fcp[0]]
             data_to_update.append(new_record)
         with get_fcp_conn() as conn:
             conn.executemany("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=?, "
-                             "chpid=?, state=?, owner=? WHERE "
+                             "chpid=?, pchid=?, state=?, owner=? WHERE "
                              "fcp_id=?", data_to_update)
 
     def bulk_update_state_in_fcp_table(self, fcp_id_list: list,
@@ -487,24 +489,24 @@ class FCPDbOperator(object):
         Format of return is like :
         [
           (fcp_id, userid, connections, reserved, wwpn_npiv, wwpn_phy,
-           chpid, state, owner, tmpl_id),
+           chpid, pchid, state, owner, tmpl_id),
           ('283c', 'user1', 2, 1, 'c05076ddf7000002', 'c05076ddf7001d81',
-           27,'active', 'user1', ''),
+           '27', '02e4', 'active', 'user1', ''),
           ('483c', 'user2', 0, 0, 'c05076ddf7000001', 'c05076ddf7001d82',
-           27, 'free', 'NONE', '')
+           '27', '02e4', 'free', 'NONE', '')
         ]
         """
         with get_fcp_conn() as conn:
             if assigner_id:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
                                       "connections, reserved, wwpn_npiv, "
-                                      "wwpn_phy, chpid, state, owner, "
+                                      "wwpn_phy, chpid, pchid, state, owner, "
                                       "tmpl_id FROM fcp WHERE "
                                       "assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
                                      "connections, reserved, wwpn_npiv, "
-                                      "wwpn_phy, chpid, state, owner, "
+                                      "wwpn_phy, chpid, pchid, state, owner, "
                                       "tmpl_id FROM fcp")
             fcp_info = result.fetchall()
             if not fcp_info:
