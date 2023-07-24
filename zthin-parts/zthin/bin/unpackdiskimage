@@ -327,6 +327,21 @@ function resizePartition {
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
       return 1
     fi
+  elif [[ $fs =~ "LVM2_member" ]]; then
+    inform "LVM partitions found, Resize physical volume(s) by pvresize."
+    output=$(which pvresize)
+    if [[ $? -ne 0 ]]; then
+      inform "(Warning):Resize abort for pvresize command not found. Please manually extend LVM partition"
+      return 0
+    fi
+
+    inform "Resize physical volume(s) type $fs lastPartition: $lastPartition with pvresize."
+    out=`pvresize  -v ${lastPartition}`
+    if [[ $? -ne 0 ]]; then
+      inform "(Warning):pvresize execution failed. Please check and manually resize LVM partition"
+    else
+      inform "Successful Resize physical volume(s), type $fs lastPartition: $lastPartition, out: $out."
+    fi
   else
     inform "(Warning) The file system type $fs is not support to be increased"
   fi
