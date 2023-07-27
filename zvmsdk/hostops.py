@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -67,8 +67,8 @@ class HOSTOps(object):
             host_info['hypervisor_version'] = version
             host_info['ipl_time'] = inv_info['ipl_time']
             # add hypervisor hostname suffix if file
-            # $HOME/.zvmsdk_hypervisor_hostname_suffix exists
-            suffix_file = '/'.join((os.path.expanduser('~'),
+            # /opt/.zvmsdk_hypervisor_hostname_suffix exists
+            suffix_file = '/'.join(('/opt',
                                     const.HYPERVISOR_HOSTNAME_SUFFIX_FILE))
             if os.path.exists(suffix_file):
                 with open(suffix_file, 'r') as f:
