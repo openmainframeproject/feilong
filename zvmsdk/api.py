@@ -884,12 +884,13 @@ class SDKAPI(object):
         :param dedicate_vdevs: (list) the list of device vdevs to dedicate to
                the guest.
         :param loaddev: (dict) the loaddev parms to add in the guest directory.
-               Current supported key includes: 'portname', 'lun'.
+               Current supported key includes: 'portname', 'lun' and 'alterdev'.
                Both the 'portname' and 'lun' can specify only one one- to
                eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF
                The format should be:
                {'portname': str,
-               'lun': str}
+               'lun': str,
+               'alterdev': str}
         :param account: (str) account string, see
         https://www.ibm.com/docs/en/zvm/6.4?topic=SSB27U_6.4.0/
                 com.ibm.zvm.v640.hcpa5/daccoun.htm#daccoun
