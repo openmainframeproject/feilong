@@ -152,8 +152,7 @@ def createVM(rh):
         dirLines.append("COMMAND ATTACH PCIF %s * AS %s" % (s[0], s[1]))
 
     if 'ipl' in rh.parms:
-        dirLines.append("IPL LOADDEV")
-        ipl_string = "LOADDEV DEVICE %s " % rh.parms['ipl']
+        ipl_string = "IPL LOADDEV"
 
         if 'iplParam' in rh.parms:
             ipl_string += ("PARM %s " % rh.parms['iplParam'])
@@ -162,6 +161,7 @@ def createVM(rh):
             ipl_string += ("LOADPARM %s " % rh.parms['iplLoadparam'])
 
         dirLines.append(ipl_string)
+        dirLines.append("LOADDEV DEVICE %s " % rh.parms['ipl'])
 
     if 'byUsers' in rh.parms:
         users = ' '.join(rh.parms['byUsers'])
