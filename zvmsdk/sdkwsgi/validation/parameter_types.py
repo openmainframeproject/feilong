@@ -135,7 +135,8 @@ loaddev = {
                 'minLength': 1,
                 'maxLength': 16,
                 'pattern': '^[0-9a-fA-F]{,16}$'},
-    },
+        'alterdev': {'type': 'string'}
+                },
     'additionalProperties': False
 }
 

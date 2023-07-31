@@ -84,6 +84,7 @@ keyOpsList = {
         '--dedicate': ['dedicate', 1, 2],
         '--loadportname': ['loadportname', 1, 2],
         '--loadlun': ['loadlun', 1, 2],
+        '--alterdev': ['alterdev', 1, 2],
         '--vdisk': ['vdisk', 1, 2],
         '--account': ['account', 1, 2],
         '--comment': ['comment', 1, 2],
@@ -151,7 +152,10 @@ def createVM(rh):
         dirLines.append("COMMAND ATTACH PCIF %s * AS %s" % (s[0], s[1]))
 
     if 'ipl' in rh.parms:
-        ipl_string = "IPL %s " % rh.parms['ipl']
+        if 'loadportname' in rh.parms and 'loadlun' in rh.parms:
+            ipl_string = "IPL LOADDEV"
+        else:
+            ipl_string = "IPL %s " % rh.parms['ipl']
 
         if 'iplParam' in rh.parms:
             ipl_string += ("PARM %s " % rh.parms['iplParam'])
@@ -160,6 +164,9 @@ def createVM(rh):
             ipl_string += ("LOADPARM %s " % rh.parms['iplLoadparam'])
 
         dirLines.append(ipl_string)
+
+        if 'loadportname' in rh.parms and 'loadlun' in rh.parms:
+            dirLines.append("LOADDEV DEVICE %s " % rh.parms['ipl'])
 
     if 'byUsers' in rh.parms:
         users = ' '.join(rh.parms['byUsers'])
@@ -191,6 +198,13 @@ def createVM(rh):
     if 'loadlun' in rh.parms:
         lun = rh.parms['loadlun'].replace("0x", "")
         dirLines.append("LOADDEV LUN %s" % lun)
+
+    if 'alterdev' in rh.parms:
+        paths = rh.parms['alterdev'].split(',')
+        for path in paths:
+            device_port = path.split(':')
+            dirLines.append("LOADDEV SCSI ALTERNATE %s PORT %s" % (
+                device_port[0], device_port[1]))
 
     if 'dedicate' in rh.parms:
         vdevs = rh.parms['dedicate'].split()
