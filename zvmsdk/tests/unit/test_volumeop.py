@@ -1446,12 +1446,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.utils.get_smt_userid")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
-    @mock.patch("zvmsdk.utils.get_lpar_name")
-    def test_get_volume_connector_unreserve(self, get_lpar_name,
+    @mock.patch("zvmsdk.utils.get_zvm_name")
+    def test_get_volume_connector_unreserve(self, get_zvm_name,
                                             get_all_fcp_info,
                                             get_smt_userid):
         """Test get_volume_connector when reserve parameter is False"""
-        get_lpar_name.return_value = "fakehos1"
+        get_zvm_name.return_value = "fakehos1"
         get_smt_userid.return_value = "fakesmt"
         fcp_list = ['opnstk1: FCP device number: A83C',
                     'opnstk1:   Status: Active',
@@ -1522,15 +1522,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
     @mock.patch("zvmsdk.utils.get_smt_userid")
     @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
-    @mock.patch("zvmsdk.utils.get_lpar_name")
-    def test_get_volume_connector_reserve(self, get_lpar_name,
+    @mock.patch("zvmsdk.utils.get_zvm_name")
+    def test_get_volume_connector_reserve(self, get_zvm_name,
                                           get_all_fcp_pool,
                                           get_smt_userid,
                                           get_pchid_by_chpid,
                                           print_all_pchids):
         """Test get_volume_connector when reserve parameter is True"""
         print_all_pchids.return_value = None
-        get_lpar_name.return_value = "fakehos1"
+        get_zvm_name.return_value = "fakehos1"
         get_smt_userid.return_value = "fakesmt"
         fcp_list = ['opnstk1: FCP device number: A83C',
                     'opnstk1:   Status: Free',

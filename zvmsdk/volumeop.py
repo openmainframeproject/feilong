@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-#    Copyright 2017, 2022 IBM Corp.
+#
+#    Copyright 2017, 2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -2350,9 +2350,9 @@ class FCPVolumeManager(object):
                 raise exception.SDKVolumeOperationError(
                     rs=11, userid=assigner_id, msg=errmsg)
 
-            # get lpar name of the userid,
+            # get z/VM name of the userid,
             # if no host name got, raise exception
-            zvm_host = zvmutils.get_lpar_name()
+            zvm_host = zvmutils.get_zvm_name()
             if zvm_host == '':
                 errmsg = "failed to get z/VM LPAR name."
                 LOG.error(errmsg)

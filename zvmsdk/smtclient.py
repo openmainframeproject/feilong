@@ -697,6 +697,8 @@ class SMTClient(object):
                 rd += ' --loadportname %s' % loaddev['portname']
             if 'lun' in loaddev:
                 rd += ' --loadlun %s' % loaddev['lun']
+            if 'alterdev' in loaddev:
+                rd += ' --alterdev %s' % loaddev['alterdev']
 
         # now, we need consider swap only case, customer using boot
         # from volume but no disk pool provided, we allow to create
