@@ -21,6 +21,7 @@ import contextlib
 import errno
 import functools
 import inspect
+import json
 import netaddr
 import os
 import pwd
@@ -572,7 +573,7 @@ def get_smt_userid():
         raise exception.SDKInternalError(msg=msg)
 
 
-def get_lpar_name():
+def get_zvm_name():
     """Get the name of the LPAR that this vm is on."""
     cmd = ["sudo", "/sbin/vmcp", "query userid"]
     try:
@@ -1036,3 +1037,168 @@ def verify_fcp_list_in_hex_format(fcp_list):
             errmsg = ('FCP list {} contains non-hex value.'
                       '').format(fcp_list)
             raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+
+def get_zhypinfo(filter='all'):
+    """
+    Filter the result of Linux command zhypinfo by filter.
+
+    :param filter: (str) possible values are cpc, lpar, zvm and all.
+
+    :return zhyp_info: (dict) contain the data specified by param filter
+
+    example zhyp_info with filter='cpc'
+    {
+        "cpc": {
+            "layer_name": "M54",
+            "manufacturer": "IBM",
+            "type": "3906",
+            "model_capacity": "701",
+            "model": "M04",
+            "type_name": "IBM z14",
+            "type_family": "0",
+            "sequence_code": "0000000000082F57",
+            ...
+        }
+    }
+
+    example zhyp_info with filter='lpar'
+    {
+      "lpar": {
+        "layer_type_num": "2",
+        "layer_type": "LPAR",
+        "layer_name": "ZVM4OCP1",
+        "layer_uuid": "5c20996c-9907-11ea-9d7b-00106f0dd8c9",
+        "secure": null,
+        ...
+      }
+    }
+
+    example zhyp_info with filter='zvm'
+    {
+          "zvm": {
+            "layer_type_num": "3",
+            "layer_type": "z/VM-hypervisor",
+            "layer_name": "BOEM5401",
+            "control_program_id": "z/VM    7.1.0",
+            ...
+    }
+    """
+
+    # Linux command zhypinfo prints information about virtualization layers on IBM Z.
+    # Example of zhypinfo json output:
+    #     $ zhypinfo -j
+    #     {
+    #       "Layer 0": {             <--- CPC layer
+    #         "layer_type_num": "1",
+    #         "layer_type": "CEC",
+    #         "layer_name": "M54",
+    #         "manufacturer": "IBM",
+    #         "type": "3906",
+    #         "model_capacity": "701",
+    #         "model": "M04",
+    #         "type_name": "IBM z14",
+    #         "sequence_code": "0000000000082F57",
+    #         "lic_identifier": "601b24ff63979b81",
+    #         "plant": "02",
+    #         ...
+    #       },
+    #       "Layer 1": {             <--- LPAR layer
+    #         "layer_type_num": "2",
+    #         "layer_type": "LPAR",
+    #         "layer_name": "ZVM4OCP1",
+    #         "layer_uuid": "5c20996c-9907-11ea-9d7b-00106f0dd8c9",
+    #         "secure": null,
+    #         ...
+    #       },
+    #       "Layer 2": {            <--- z/VM layer
+    #         "layer_type_num": "3",
+    #         "layer_type": "z/VM-hypervisor",
+    #         "layer_name": "BOEM5401",
+    #         "control_program_id": "z/VM    7.1.0",
+    #         ...
+    #       }
+    #     }
+    cmd = ["/usr/bin/zhypinfo", "-j"]
+    try:
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+    except Exception as err:
+        msg = ("Failed to run command zhypinfo: {}. "
+               "To run zhypinfo, you must install the package of "
+               "qclib (Query Capacity Library)").format(err)
+        raise exception.SDKInternalError(msg=msg)
+    else:
+        output = json.loads(output)
+        zhyp_info = dict()
+        # Replace the key from 'Layer 0, Layer 1, ...'
+        # to the corresponding layer_type value.
+        # Values from the previous example
+        #   layer_type of Layer 0 is CEC
+        #   layer_type of Layer 1 is LPAR
+        #   layer_type of Layer 2 is z/VM-hypervisor
+        # To be more robust,
+        # code need to be compatible if output contains more than 3 layers,
+        for layer in output:
+            key = output[layer]['layer_type']
+            if key == 'CEC':
+                key = 'CPC'
+            elif key == 'z/VM-hypervisor':
+                key = 'zVM'
+            # lower key
+            zhyp_info[key.lower()] = output[layer]
+        # filter
+        filter = filter.lower()
+        if filter == 'all':
+            return zhyp_info
+        elif filter in zhyp_info:
+            return {filter: zhyp_info[filter]}
+        else:
+            return dict()
+
+
+def get_cpc_name(zhypinfo=None):
+    """get cpc name from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return cpc_name: str
+    """
+    if zhypinfo and 'cpc' in zhypinfo:
+        cpc_name = zhypinfo['cpc']['layer_name']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        cpc_name = zhypinfo['cpc']['layer_name']
+    return cpc_name
+
+
+def get_cpc_sn(zhypinfo=None):
+    """get cpc serial number from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return cpc_sn: str
+    """
+    if zhypinfo and 'cpc' in zhypinfo:
+        cpc_sn = zhypinfo['cpc']['sequence_code']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        cpc_sn = zhypinfo['cpc']['sequence_code']
+    return cpc_sn
+
+
+def get_lpar_name(zhypinfo=None):
+    """get lpar name from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return lpar_name: str
+    """
+    if zhypinfo and 'lpar' in zhypinfo:
+        lpar_name = zhypinfo['lpar']['layer_name']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        lpar_name = zhypinfo['lpar']['layer_name']
+    return lpar_name

@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017, 2022 IBM Corp.
+# Copyright 2017, 2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -26,6 +26,13 @@ from zvmsdk.tests.unit import base
 from zvmsdk import exception
 
 
+def mock_reset(*args):
+    """Reset mock objects in args"""
+    for m in args:
+        if isinstance(m, Mock):
+            m.reset_mock(return_value=True, side_effect=True)
+
+
 class ZVMUtilsTestCases(base.SDKTestCase):
     def test_convert_to_mb(self):
         self.assertEqual(2355.2, zvmutils.convert_to_mb('2.3G'))
@@ -46,9 +53,9 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'namelist', 'TSTNLIST')
 
     @mock.patch.object(subprocess, 'check_output')
-    def test_get_lpar_name(self, vmcp_query):
+    def test_get_zvm_name(self, vmcp_query):
         vmcp_query.return_value = b"IAAS01EF AT BOEM5401"
-        self.assertEqual("BOEM5401", zvmutils.get_lpar_name())
+        self.assertEqual("BOEM5401", zvmutils.get_zvm_name())
 
     def test_expand_fcp_list_normal(self):
         fcp_list = "1f10;1f11;1f12;1f13;1f14"
@@ -457,3 +464,211 @@ class ZVMUtilsTestCases(base.SDKTestCase):
                                      '0.81   1     1     24    -    -      (07c1)\n'
                                      '0.82   1     1     24    -    -      (07c2)\n'
                                      '0.83   1     1     24    -    -      (07c3)\n')
+
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_zhypinfo(self, mock_check_output):
+        """test get_zhypinfo"""
+        # prepare for happy path cases, where
+        # possible values for layer are cpc, lpar, zvm and all.
+        mock_check_output.return_value = (
+            b'{\n'
+            b'  "Layer 0": {\n'
+            b'    "layer_type_num": "1",\n'
+            b'    "layer_category_num": "2",\n'
+            b'    "layer_type": "CEC",\n'
+            b'    "layer_category": "HOST",\n'
+            b'    "layer_name": "M54",\n'
+            b'    "manufacturer": "IBM",\n'
+            b'    "type": "3906",\n'
+            b'    "model_capacity": "701",\n'
+            b'    "model": "M04",\n'
+            b'    "type_name": "IBM z14",\n'
+            b'    "type_family": "0",\n'
+            b'    "sequence_code": "0000000000082F57",\n'
+            b'    "lic_identifier": "601b24ff63979b81",\n'
+            b'    "plant": "02"\n'
+            b'  },\n'
+            b'  "Layer 1": {\n'
+            b'    "layer_type_num": "2",\n'
+            b'    "layer_category_num": "1",\n'
+            b'    "layer_type": "LPAR",\n'
+            b'    "layer_category": "GUEST",\n'
+            b'    "partition_number": "2",\n'
+            b'    "partition_char": "Shared",\n'
+            b'    "partition_char_num": "2",\n'
+            b'    "layer_name": "ZVM4OCP1",\n'
+            b'    "layer_extended_name": null,\n'
+            b'    "layer_uuid": "5c20996c-9907-11ea-9d7b-00106f0dd8c9",\n'
+            b'    "adjustment": "116",\n'
+            b'    "has_secure": null,\n'
+            b'    "secure": null\n'
+            b'  },\n'
+            b'  "Layer 2": {\n'
+            b'    "layer_type_num": "3",\n'
+            b'    "layer_category_num": "2",\n'
+            b'    "layer_type": "z/VM-hypervisor",\n'
+            b'    "layer_category": "HOST",\n'
+            b'    "layer_name": "BOEM5401",\n'
+            b'    "cluster_name": null,\n'
+            b'    "control_program_id": "z/VM    7.1.0",\n'
+            b'    "adjustment": "142"\n'
+            b'  }\n'
+            b'}\n')
+        # case1: call w/o param
+        expected_1 = {'cpc': {'layer_category': 'HOST',
+                              'layer_category_num': '2',
+                              'layer_name': 'M54',
+                              'layer_type': 'CEC',
+                              'layer_type_num': '1',
+                              'lic_identifier': '601b24ff63979b81',
+                              'manufacturer': 'IBM',
+                              'model': 'M04',
+                              'model_capacity': '701',
+                              'plant': '02',
+                              'sequence_code': '0000000000082F57',
+                              'type': '3906',
+                              'type_family': '0',
+                              'type_name': 'IBM z14'},
+                     'lpar': {'adjustment': '116',
+                              'has_secure': None,
+                              'layer_category': 'GUEST',
+                              'layer_category_num': '1',
+                              'layer_extended_name': None,
+                              'layer_name': 'ZVM4OCP1',
+                              'layer_type': 'LPAR',
+                              'layer_type_num': '2',
+                              'layer_uuid': '5c20996c-9907-11ea-9d7b-00106f0dd8c9',
+                              'partition_char': 'Shared',
+                              'partition_char_num': '2',
+                              'partition_number': '2',
+                              'secure': None},
+                     'zvm': {'adjustment': '142',
+                             'cluster_name': None,
+                             'control_program_id': 'z/VM    7.1.0',
+                             'layer_category': 'HOST',
+                             'layer_category_num': '2',
+                             'layer_name': 'BOEM5401',
+                             'layer_type': 'z/VM-hypervisor',
+                             'layer_type_num': '3'}}
+        result_1 = zvmutils.get_zhypinfo()
+        self.assertDictEqual(expected_1, result_1)
+        # case2: call by filter='all'
+        expected_2 = expected_1
+        result_2 = zvmutils.get_zhypinfo(filter='all')
+        self.assertDictEqual(expected_2, result_2)
+        # case3: call by filter='cpc'
+        expected_3 = {'cpc': {'layer_category': 'HOST',
+                              'layer_category_num': '2',
+                              'layer_name': 'M54',
+                              'layer_type': 'CEC',
+                              'layer_type_num': '1',
+                              'lic_identifier': '601b24ff63979b81',
+                              'manufacturer': 'IBM',
+                              'model': 'M04',
+                              'model_capacity': '701',
+                              'plant': '02',
+                              'sequence_code': '0000000000082F57',
+                              'type': '3906',
+                              'type_family': '0',
+                              'type_name': 'IBM z14'}}
+        result_3 = zvmutils.get_zhypinfo(filter='cpc')
+        self.assertDictEqual(expected_3, result_3)
+        # case4: call by filter='zvm'
+        expected_4 = {'zvm': {'adjustment': '142',
+                              'cluster_name': None,
+                              'control_program_id': 'z/VM    7.1.0',
+                              'layer_category': 'HOST',
+                              'layer_category_num': '2',
+                              'layer_name': 'BOEM5401',
+                              'layer_type': 'z/VM-hypervisor',
+                              'layer_type_num': '3'}}
+        result_4 = zvmutils.get_zhypinfo(filter='zvm')
+        self.assertDictEqual(expected_4, result_4)
+        # case5: call by invalid layer
+        expected_5 = {}
+        result_5 = zvmutils.get_zhypinfo(filter='fake')
+        self.assertDictEqual(expected_5, result_5)
+
+        # error case 6: zhypinfo command not exist
+        mock_reset(mock_check_output)
+        mock_check_output.side_effect = FileNotFoundError(
+            "No such file or directory: '/usr/bin/zhypinfo'")
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "Failed to run command zhypinfo: "
+                               "No such file or directory: \'/usr/bin/zhypinfo\'. "
+                               "To run zhypinfo, you must install the package of "
+                               "qclib \(Query Capacity Library\)",
+                               zvmutils.get_zhypinfo,
+                               filter='lpar')
+
+    @mock.patch('zvmsdk.utils.get_zhypinfo')
+    def test_get_cpc_name(self, mock_get_zhypinfo):
+        """test get_cpc_name"""
+        zhypinfo = {
+            'cpc': {
+                'layer_name': 'fake_cpc_name',
+                'sequence_code': 'fake_cpc_sn'
+            },
+            'lpar': {
+                'layer_name': 'fake_lpar_name'
+            }
+        }
+        # case1
+        expect = 'fake_cpc_name'
+        result = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
+        self.assertEqual(expect, result)
+        # case2
+        mock_get_zhypinfo.return_value = {'cpc': {'layer_name': 'cpc_name'}}
+        expect = 'cpc_name'
+        result = zvmutils.get_cpc_name()
+        self.assertEqual(expect, result)
+        result = zvmutils.get_cpc_name(zhypinfo={'aaa': {}})
+        self.assertEqual(expect, result)
+
+    @mock.patch('zvmsdk.utils.get_zhypinfo')
+    def test_get_cpc_sn(self, mock_get_zhypinfo):
+        """test get_cpc_sn"""
+        zhypinfo = {
+            'cpc': {
+                'layer_name': 'fake_cpc_name',
+                'sequence_code': 'fake_cpc_sn'
+            },
+            'lpar': {
+                'layer_name': 'fake_lpar_name'
+            }
+        }
+        # case1
+        expect = 'fake_cpc_sn'
+        result = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
+        self.assertEqual(expect, result)
+        # case2
+        mock_get_zhypinfo.return_value = {'cpc': {'sequence_code': 'cpc_sn'}}
+        expect = 'cpc_sn'
+        result = zvmutils.get_cpc_sn()
+        self.assertEqual(expect, result)
+        result = zvmutils.get_cpc_sn(zhypinfo={'aaa': {}})
+        self.assertEqual(expect, result)
+
+    @mock.patch('zvmsdk.utils.get_zhypinfo')
+    def test_get_lpar_name(self, mock_get_zhypinfo):
+        """test get_lpar_name"""
+        zhypinfo = {
+            'cpc': {
+                'layer_name': 'fake_cpc_name',
+                'sequence_code': 'fake_cpc_sn'
+            },
+            'lpar': {
+                'layer_name': 'fake_lpar_name'
+            }
+        }
+        # case1
+        expect = 'fake_lpar_name'
+        result = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
+        self.assertEqual(expect, result)
+        # case2
+        mock_get_zhypinfo.return_value = {'lpar': {'layer_name': 'lpar_name'}}
+        expect = 'lpar_name'
+        result = zvmutils.get_lpar_name()
+        self.assertEqual(expect, result)
+        result = zvmutils.get_lpar_name(zhypinfo={'aaa': {}})
+        self.assertEqual(expect, result)
