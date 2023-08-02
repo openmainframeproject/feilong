@@ -237,9 +237,10 @@ guest_dedicate_vdevs:
 
 guest_loaddev:
   description: |
-    The loaddev parms to add in the guest directory.Current supported key includes 'portname'
-    and 'lun'. Both the 'portname' and 'lun' can specify only one one- to
-    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF.
+    The loaddev parms to add in the guest directory.Current supported key includes 'portname',
+    'lun' and 'alterdev'. Both the 'portname' and 'lun' can specify only one one- to
+    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF. There is 'alterdev' added
+    only when the compute node z/VM supports multipath IPL feature.
   in: body
   required: false
   type: dict
