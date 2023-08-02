@@ -1660,6 +1660,39 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self._purge_fcp_db()
 
+    def test_get_pchids_by_fcp_template(self):
+        """Test function get_pchids_by_fcp_template"""
+        # insert test data into table template_fcp_mapping
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        template_fcp = [('1111', template_id, 0),
+                        ('2222', template_id, 1)]
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert test data into table fcp
+        fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
+                          template_id),
+                         ('2222', 'user1', 0, 0, 'c05076de33000222',
+                          'c05076de33002641', '30', '02ec', 'active', 'owner1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            # case1: fcp_template doesn't have related pchid info
+            template_id_not_exist = 'fakehost-1111-1111-1111-111111111122'
+            pchids_blank = self.db_op.get_pchids_by_fcp_template(template_id_not_exist)
+            self.assertEqual([], pchids_blank)
+            # case2: fcp_template has related pchid info
+            template_id = 'fakehost-1111-1111-1111-111111111111'
+            pchids = self.db_op.get_pchids_by_fcp_template(template_id)
+            pchids.sort(reverse=False)
+            self.assertEqual(["02e4", "02ec"], pchids)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
     @classmethod

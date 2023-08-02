@@ -1455,6 +1455,28 @@ class FCPDbOperator(object):
             raw = result.fetchall()
         return raw
 
+    def get_pchids_by_fcp_template(self, fcp_template_id):
+        """Get pchid info of one FCP Multipath Template by fcp_template_id.
+
+        :param fcp_template_id: (str) id of FCP Multipath Template
+
+        :return pchids: (list) a list of pchid
+        for example: ['0240', '0260']
+        """
+        pchids = []
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                    "SELECT DISTINCT fcp.pchid "
+                    "FROM template_fcp_mapping AS tf "
+                    "INNER JOIN fcp "
+                    "ON tf.fcp_id=fcp.fcp_id "
+                    "WHERE tf.tmpl_id=?", (fcp_template_id,))
+
+            raw = result.fetchall()
+            for item in raw:
+                pchids.append(item['pchid'])
+        return pchids
+
     def get_host_default_fcp_template(self, host_default=True):
         """Get the host default FCP Multipath Template base info.
         return format: (id|name|description|is_default|sp_name)
