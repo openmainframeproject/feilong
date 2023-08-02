@@ -1277,7 +1277,7 @@ class FCPDbOperator(object):
             # If min_fcp_paths_count is not None or fcp_devices is not None, need to validate the value.
             # min_fcp_paths_count should not be larger than fcp device path count, or else, raise error.
             self._validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count, fcp_template_id)
-
+            ori_phid_list = self.get_pchids_by_fcp_template(fcp_template_id)
             tmpl_basic, fcp_detail = self.get_fcp_templates_details(
                 [fcp_template_id])
 
@@ -1418,6 +1418,10 @@ class FCPDbOperator(object):
             #  (i.e. tmpl_basic[0]['sp_name'] is 'SP1',
             #  while tmpl_basic[1]['sp_name'] is 'SP2'.
             tmpl_basic = self.get_fcp_templates_details([fcp_template_id])[0]
+            final_phid_list = self.get_pchids_by_fcp_template(fcp_template_id)
+            add_items = list(set(final_phid_list) - set(ori_phid_list))
+            del_items = list(set(ori_phid_list) - set(final_phid_list))
+            all_items = final_phid_list
             return {'fcp_template': {
                 'name': tmpl_basic[0]['name'],
                 'id': tmpl_basic[0]['id'],
@@ -1426,7 +1430,12 @@ class FCPDbOperator(object):
                 'storage_providers':
                     [] if tmpl_basic[0]['sp_name'] is None
                     else [r['sp_name'] for r in tmpl_basic],
-                'min_fcp_paths_count': self.get_min_fcp_paths_count(fcp_template_id)
+                'min_fcp_paths_count': self.get_min_fcp_paths_count(fcp_template_id),
+                'pchids': {
+                    'add': add_items,
+                    'del': del_items,
+                    'all': all_items
+                }
             }}
 
     def get_fcp_templates(self, template_id_list=None):
