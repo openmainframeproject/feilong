@@ -1032,11 +1032,16 @@ class FCPManager(object):
                    % (min_fcp_paths_count, len(fcp_devices_by_path)))
             LOG.error(msg)
             raise exception.SDKConflictError(modID='volume', rs=23, msg=msg)
+        zhypinfo = zvmutils.get_zhypinfo()
+        cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
+        cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
+        lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
                                     default_sp_list, min_fcp_paths_count)
         min_fcp_paths_count_db = self.db.get_min_fcp_paths_count(tmpl_id)
+        final_phid_list = self.db.get_pchids_by_fcp_template(tmpl_id)
         # Return template basic info
         LOG.info("A FCP Multipath Template was created with ID %s." % tmpl_id)
         return {'fcp_template': {'name': name,
@@ -1044,12 +1049,17 @@ class FCPManager(object):
                 'description': description,
                 'host_default': host_default,
                 'storage_providers': default_sp_list if default_sp_list else [],
-                'min_fcp_paths_count': min_fcp_paths_count_db}}
+                'min_fcp_paths_count': min_fcp_paths_count_db,
+                'pchids': final_phid_list,
+                'cpc_sn': cpc_sn,
+                'cpc_name': cpc_name,
+                'lpar': lpar}}
 
     def edit_fcp_template(self, fcp_template_id, name=None,
                           description=None, fcp_devices=None,
                           host_default=None, default_sp_list=None,
                           min_fcp_paths_count=None):
+
         """ Edit a FCP Multipath Template
 
         The kwargs values are pre-validated in two places:
@@ -1092,12 +1102,19 @@ class FCPManager(object):
             (fcp_template_id, name, description, fcp_devices,
              host_default, default_sp_list, min_fcp_paths_count)))
         # DML in FCP database
+        zhypinfo = zvmutils.get_zhypinfo()
+        cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
+        cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
+        lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
         result = self.db.edit_fcp_template(fcp_template_id, name=name,
                                            description=description,
                                            fcp_devices=fcp_devices,
                                            host_default=host_default,
                                            default_sp_list=default_sp_list,
                                            min_fcp_paths_count=min_fcp_paths_count)
+        result['fcp_template']['cpc_sn'] = cpc_sn
+        result['fcp_template']['cpc_name'] = cpc_name
+        result['fcp_template']['lpar'] = lpar
         LOG.info("Exit: edit_fcp_template")
         return result
 
