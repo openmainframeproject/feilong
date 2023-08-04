@@ -1012,6 +1012,13 @@ class FCPManager(object):
             'host_default': True,
             'storage_providers': ['sp4', 'v7k60'],
             'min_fcp_paths_count': 2
+            'pchids': {'add': [],
+                       'del': [],
+                       'all': ['0a20']},
+            'cpc_sn': '0000000000082F57',
+            'cpc_name': 'M54',
+            'lpar': 'ZVM4OCP3',
+            'hypervisor_hostname': 'BOEM5403'
             }
         }
         """
@@ -1036,6 +1043,7 @@ class FCPManager(object):
         cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
         cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
         lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
+        hypervisor_hostname = zvmutils.get_zvm_name()
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
@@ -1053,6 +1061,7 @@ class FCPManager(object):
                 'pchids': final_phid_list,
                 'cpc_sn': cpc_sn,
                 'cpc_name': cpc_name,
+                'hypervisor_hostname': hypervisor_hostname,
                 'lpar': lpar}}
 
     def edit_fcp_template(self, fcp_template_id, name=None,
@@ -1094,7 +1103,14 @@ class FCPManager(object):
                 'description': 'This is Default template',
                 'host_default': True,
                 'storage_providers': ['sp4', 'v7k60'],
-                'min_fcp_paths_count': 2
+                'min_fcp_paths_count': 2,
+                'pchids': {'add': [],
+                           'del': [],
+                           'all': ['0a20']},
+                'cpc_sn': '0000000000082F57',
+                'cpc_name': 'M54',
+                'lpar': 'ZVM4OCP3',
+                'hypervisor_hostname': 'BOEM5403'
               }
             }
         """
@@ -1106,6 +1122,7 @@ class FCPManager(object):
         cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
         cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
         lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
+        hypervisor_hostname = zvmutils.get_zvm_name()
         result = self.db.edit_fcp_template(fcp_template_id, name=name,
                                            description=description,
                                            fcp_devices=fcp_devices,
@@ -1115,6 +1132,7 @@ class FCPManager(object):
         result['fcp_template']['cpc_sn'] = cpc_sn
         result['fcp_template']['cpc_name'] = cpc_name
         result['fcp_template']['lpar'] = lpar
+        result['fcp_template']['hypervisor_hostname'] = hypervisor_hostname
         LOG.info("Exit: edit_fcp_template")
         return result
 

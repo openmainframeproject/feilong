@@ -1235,7 +1235,10 @@ class FCPDbOperator(object):
                 'description': 'This is Default template',
                 'host_default': True,
                 'storage_providers': ['sp4', 'v7k60'],
-                'min_fcp_paths_count': 2
+                'min_fcp_paths_count': 2,
+                'pchids': {'add': [],
+                           'del': [],
+                           'all': ['0a20']},
               }
             }
         """
