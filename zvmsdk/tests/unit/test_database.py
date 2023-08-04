@@ -1345,6 +1345,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             kwargs['description'] = 'test_desc'
             kwargs['host_default'] = True
             kwargs['default_sp_list'] = ['SP1', 'SP2']
+            add_items = []
+            del_items = []
+            all_items = ['02e4']
             tmpl_basic = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
             expected = {'fcp_template': {
                 'id': tmpl_id,
@@ -1352,7 +1355,12 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'description': kwargs['description'],
                 'host_default': kwargs['host_default'],
                 'storage_providers': kwargs['default_sp_list'],
-                'min_fcp_paths_count': 2
+                'min_fcp_paths_count': 2,
+                'pchids': {
+                    'add': add_items,
+                    'del': del_items,
+                    'all': all_items
+                }
             }}
             self.assertEqual(expected, tmpl_basic)
         finally:
