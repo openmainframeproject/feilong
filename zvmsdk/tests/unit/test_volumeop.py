@@ -858,9 +858,13 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
+    @mock.patch("zvmsdk.utils.get_zvm_name")
     @patch('zvmsdk.utils.get_zhypinfo')
     @mock.patch.object(uuid, 'uuid1')
-    def test_create_fcp_template(self, get_uuid, mock_get_zhypinfo):
+    def test_create_fcp_template(self,
+                                 get_uuid,
+                                 mock_get_zhypinfo,
+                                 mock_get_zvm_name):
         """Test create_fcp_template"""
         # there is already a default template:
         # fakehos1-1111-1111-1111-111111111111
@@ -872,6 +876,7 @@ class TestFCPManager(base.SDKTestCase):
                     "lpar": {"layer_name": "ZVM4OCP3"}}
 
         mock_get_zhypinfo.return_value = zhypinfo
+        mock_get_zvm_name.return_value = 'BOEM5403'
         template_id_list = [tmpl[0] for tmpl in templates]
         self._insert_data_into_template_table(templates)
         # parameters of new template
@@ -924,6 +929,7 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(ret['fcp_template']['cpc_sn'], '0000000000082F57')
             self.assertEqual(ret['fcp_template']['cpc_name'], 'M54')
             self.assertEqual(ret['fcp_template']['lpar'], 'ZVM4OCP3')
+            self.assertEqual(ret['fcp_template']['hypervisor_hostname'], 'BOEM5403')
             # check content in database
             all_templates_info = self.fcpops.get_fcp_templates(
                 template_id_list)
@@ -946,9 +952,13 @@ class TestFCPManager(base.SDKTestCase):
                                name, description, fcp_devices,
                                min_fcp_paths_count=min_fcp_paths_count)
 
+    @mock.patch("zvmsdk.utils.get_zvm_name")
     @mock.patch("zvmsdk.utils.get_zhypinfo")
     @mock.patch("zvmsdk.database.FCPDbOperator.edit_fcp_template")
-    def test_edit_fcp_template(self, mock_db_edit_tmpl, mock_get_zhypinfo):
+    def test_edit_fcp_template(self,
+                               mock_db_edit_tmpl,
+                               mock_get_zhypinfo,
+                               mock_zvm_name):
         """ Test edit_fcp_template """
         tmpl_id = 'fake_id'
         kwargs = {
@@ -958,9 +968,11 @@ class TestFCPManager(base.SDKTestCase):
             'host_default': False,
             'default_sp_list': ['sp1'],
             'min_fcp_paths_count': 2}
+        mock_zvm_name.return_value = 'BOEM5403'
         self.fcpops.edit_fcp_template(tmpl_id, **kwargs)
         mock_db_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
         mock_get_zhypinfo.assert_any_call()
+        mock_zvm_name.assert_any_call()
 
     def test_update_template_fcp_raw_usage(self):
         raw = ('fcp_id_1', 'tmpl_id_1', 0, 'assigner_id', 1, 0,
