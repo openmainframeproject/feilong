@@ -1140,20 +1140,20 @@ class FCPManager(object):
         """group raw_item with template_id and path
         raw_item format:
         [(fcp_id|tmpl_id|path|assigner_id|connections|reserved|
-        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)]
+        wwpn_npiv|wwpn_phy|chpid|pchid|state|owner|tmpl_id)]
         return format:
         {
           template_id: {
             path: [(fcp_id, template_id, assigner_id,
                      connections,
                      reserved, wwpn_npiv, wwpn_phy,
-                     chpid, state, owner,
+                     chpid, pchid, state, owner,
                      tmpl_id),()]
           }
         }
         """
         (fcp_id, template_id, path_id, assigner_id, connections,
-         reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
+         reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner,
          tmpl_id) = raw_item
         if not raw_usage.get(template_id, None):
             raw_usage[template_id] = {}
@@ -1162,7 +1162,7 @@ class FCPManager(object):
         # remove path_id from raw data, keep the last templ_id to
         # represent from which template this FCP has been allocated out.
         return_raw = (fcp_id, template_id, assigner_id, connections,
-                      reserved, wwpn_npiv, wwpn_phy, chpid, state,
+                      reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state,
                       owner, tmpl_id)
         raw_usage[template_id][path_id].append(return_raw)
         return raw_usage
@@ -1210,7 +1210,7 @@ class FCPManager(object):
         raw_item format:
 
         (fcp_id|tmpl_id|path|assigner_id|connections|reserved|
-        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)
+        wwpn_npiv|wwpn_phy|chpid|pchid|state|owner|tmpl_id)
 
         the first three properties are from template_fcp_mapping table,
         and the others are from fcp table. These three properties will
@@ -1239,7 +1239,7 @@ class FCPManager(object):
         # unallocated_but_active, allocated_but_free
         # CHPIDs
         (fcp_id, template_id, path_id, assigner_id, connections,
-         reserved, _, _, chpid, state, owner, _) = raw_item
+         reserved, _, _, chpid, pchid, state, owner, _) = raw_item
 
         # The raw_item is for each fcp device, so there are multiple
         # items for each single FCP Multipath Template.
@@ -1252,11 +1252,11 @@ class FCPManager(object):
         if not statistics_usage[template_id].get(path_id, None):
             statistics_usage[template_id][path_id] = {
                 "total": [],
-                "total_count": 0,
+                "total_count": {},
                 "single_fcp": [],
                 "range_fcp": [],
                 "available": [],
-                "available_count": 0,
+                "available_count": {},
                 "allocated": [],
                 "reserve_only": [],
                 "connection_only": [],
@@ -1264,7 +1264,8 @@ class FCPManager(object):
                 "allocated_but_free": [],
                 "notfound": [],
                 "offline": [],
-                "CHPIDs": {}}
+                "CHPIDs": {},
+                "PCHIDs": {}}
         # when this fcp_id is not None, means the fcp exists in zvm, i.e in
         # fcp table, then it will have detail info from fcp table
         # when this fcp_id is None, means the fcp does not exist in zvm, no
@@ -1358,6 +1359,22 @@ class FCPManager(object):
                         template_id][path_id]["CHPIDs"].update({chpid: []})
                 statistics_usage[
                     template_id][path_id]["CHPIDs"][chpid].append(fcp_id)
+            if pchid:
+                if not statistics_usage[template_id][path_id]["PCHIDs"].get(pchid, None):
+                    statistics_usage[
+                        template_id][path_id]["PCHIDs"].update({pchid: ''})
+                    statistics_usage[
+                        template_id][path_id]["total_count"].update({pchid: 0})
+                    statistics_usage[
+                        template_id][path_id]["available_count"].update({pchid: 0})
+                statistics_usage[
+                    template_id][path_id]["PCHIDs"][pchid] = chpid
+                statistics_usage[
+                    template_id][path_id]["total_count"][pchid] += 1
+                if fcp_id in statistics_usage[template_id][path_id]["available"]:
+                    statistics_usage[
+                        template_id][path_id]["available_count"][pchid] += 1
+
         # this FCP in template_fcp_mapping table but not found in z/VM
         else:
             # add into 'total' and 'not_found'
@@ -1377,15 +1394,6 @@ class FCPManager(object):
         """
         for template_statistics in statistics_usage.values():
             for path in template_statistics:
-                # count total and available fcp before shrink
-                if template_statistics[path]["total"]:
-                    template_statistics[path][
-                        "total_count"] = len(template_statistics[path][
-                                                "total"])
-                if template_statistics[path]["available"]:
-                    template_statistics[path][
-                        "available_count"] = len(template_statistics[path][
-                                                    "available"])
                 # only below sections in statistics need to shrink
                 need_shrink_sections = ["total",
                                         "available",
@@ -1398,7 +1406,7 @@ class FCPManager(object):
                 # Do NOT transform unallocated_but_active,
                 # because its value also contains VM userid.
                 # e.g. [('1b04','owner1'), ('1b05','owner2')]
-                # Do NOT transform CHPIDs, total_count, single_fcp,
+                # Do NOT transform CHPIDs, PCHIDs, total_count, single_fcp,
                 # range_fcp and available_count
                 for section in need_shrink_sections:
                     fcp_list = template_statistics[path][section]
@@ -1454,7 +1462,12 @@ class FCPManager(object):
                 "storage_providers": [
                     "v7k60",
                     "sp4"
-                ]
+                ],
+                "cpc_name": "T46",
+                "cpc_sn": "00000000000282A8",
+                "lpar": "S0P01",
+                "hypervisor_hostname": "BOET4601",
+                "PCHIDs": ['0240', '0260']
                 },
                 {
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
@@ -1463,7 +1476,12 @@ class FCPManager(object):
                 "host_default": False,
                 "storage_providers": [
                     "ds8k60c1"
-                ]
+                ],
+                "cpc_name": "T46",
+                "cpc_sn": "00000000000282A8",
+                "lpar": "S0P01",
+                "hypervisor_hostname": "BOET4601",
+                "PCHIDs": ['0240', '0260']
                 },
                 {
                 "id": "12345678",
@@ -1472,7 +1490,12 @@ class FCPManager(object):
                 "host_default": False,
                 "storage_providers": [
                     "sp3"
-                ]
+                ],
+                "cpc_name": "T46",
+                "cpc_sn": "00000000000282A8",
+                "lpar": "S0P01",
+                "hypervisor_hostname": "BOET4601",
+                "PCHIDs": ['0240', '0260']
                 }
             ]
         }
@@ -1494,7 +1517,12 @@ class FCPManager(object):
                 "storage_providers": [
                     "v7k60",
                     "sp4"
-                ]
+                ],
+                "cpc_name": "T46",
+                "cpc_sn": "00000000000282A8",
+                "lpar": "S0P01",
+                "hypervisor_hostname": "BOET4601",
+                "PCHIDs": ['0240', '0260']
                 },
                 {
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
@@ -1503,7 +1531,12 @@ class FCPManager(object):
                 "host_default": False,
                 "storage_providers": [
                     "ds8k60c1"
-                ]
+                ],
+                "cpc_name": "T46",
+                "cpc_sn": "00000000000282A8",
+                "lpar": "S0P01",
+                "hypervisor_hostname": "BOET4601",
+                "PCHIDs": ['0240', '0260']
                 }
             ]
         }
@@ -1536,6 +1569,25 @@ class FCPManager(object):
 
         for value in template_list.values():
             ret.append(value)
+        # Get zhyp_info
+        zhypinfo = zvmutils.get_zhypinfo()
+        cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
+        cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
+        lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
+        # Get hypervisor_hostname
+        hypervisor_hostname = zvmutils.get_zvm_name()
+        for item in ret:
+            # Add cpc_sn info
+            item["cpc_sn"] = cpc_sn
+            # Add cpc_name info
+            item["cpc_name"] = cpc_name
+            # Add lpar info
+            item["lpar"] = lpar
+            # Add hypervisor_hostname info
+            item["hypervisor_hostname"] = hypervisor_hostname
+            # Add PCHIDs info
+            item["PCHIDs"] = self.db.get_pchids_by_fcp_template(item["id"])
+
         return {"fcp_templates": ret}
 
     def get_fcp_templates_details(self, template_id_list=None, raw=False,
@@ -1560,9 +1612,14 @@ class FCPManager(object):
                         "sp4",
                         "v7k60"
                     ],
+                    "cpc_name": "T46",
+                    "cpc_sn": "00000000000282A8",
+                    "lpar": "S0P01",
+                    "hypervisor_hostname": "BOET4601",
+                    "PCHIDs": ['0260', '0240'],
                     "raw":{
                         # (fcp_id, template_id, assigner_id, connections,
-                        #  reserved, wwpn_npiv, wwpn_phy, chpid, state, owner,
+                        #  reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner,
                         #  tmpl_id)
                         "0":[
                             [
@@ -1656,6 +1713,9 @@ class FCPManager(object):
                             "CHPIDs":{
                                 "27":"1A0E - 1A0F"
                             }
+                            "PCHIDs":{
+                                "02e4":"27"
+                            }
                         },
                         "1":{
                             "total":"1C0D",
@@ -1669,6 +1729,9 @@ class FCPManager(object):
                             "offline":"",
                             "CHPIDs":{
                                 "32":"1C0D"
+                            }
+                            "PCHIDs":{
+                                "0264":"32"
                             }
                         }
                     }
@@ -1697,7 +1760,7 @@ class FCPManager(object):
 
         # devices_cmd result format:
         # [(fcp_id|tmpl_id|path|assigner_id|connections|reserved|
-        # wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id)]
+        # wwpn_npiv|wwpn_phy|chpid|pchid|state|owner|tmpl_id)]
 
         tmpl_result, devices_result = self.db.get_fcp_templates_details(
             template_id_list)
@@ -1765,10 +1828,17 @@ class FCPManager(object):
                 if template_id in statistics_usage:
                     base_info.update(
                         {"statistics": statistics_usage[template_id]})
+                    # Add PCHIDs info
+                    pchids = []
+                    for _, path_detail in statistics_usage[template_id].items():
+                        if path_detail['PCHIDs']:
+                            pchids.append(list(path_detail['PCHIDs'].keys())[0])
+                    base_info.update({"PCHIDs": pchids})
                 else:
                     # some templates do not have fcp devices or do not have
                     # valid fcp in zvm, so do not have statistics_usage data
                     base_info.update({"statistics": {}})
+                    base_info.update({"PCHIDs": []})
             # after join statistics info, template_info format is like this:
             # {
             #     temlate_id: {
@@ -1777,7 +1847,12 @@ class FCPManager(object):
             #         "description": description,
             #         "host_default": is_default,
             #         "storage_providers": [sp_name],
-            #          "statistics": {
+            #         "cpc_name": "T46",
+            #         "cpc_sn": "00000000000282A8",
+            #         "lpar": "S0P01",
+            #         "hypervisor_hostname": "BOET4601",
+            #         "PCHIDs": ['0260', '0240'],
+            #         "statistics": {
             #              path1: {},
             #              path2: {}}
             #          }
@@ -1785,6 +1860,23 @@ class FCPManager(object):
             # }
         for value in template_info.values():
             ret.append(value)
+
+        # Get zhyp_info
+        zhypinfo = zvmutils.get_zhypinfo()
+        cpc_sn = zvmutils.get_cpc_sn(zhypinfo=zhypinfo)
+        cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
+        lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
+        # Get hypervisor_hostname
+        hypervisor_hostname = zvmutils.get_zvm_name()
+        for item in ret:
+            # Add cpc_sn info
+            item["cpc_sn"] = cpc_sn
+            # Add cpc_name info
+            item["cpc_name"] = cpc_name
+            # Add lpar info
+            item["lpar"] = lpar
+            # Add zvm name info
+            item["hypervisor_hostname"] = hypervisor_hostname
         return {"fcp_templates": ret}
 
     def delete_fcp_template(self, template_id):
