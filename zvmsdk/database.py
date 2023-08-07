@@ -1235,7 +1235,10 @@ class FCPDbOperator(object):
                 'description': 'This is Default template',
                 'host_default': True,
                 'storage_providers': ['sp4', 'v7k60'],
-                'min_fcp_paths_count': 2
+                'min_fcp_paths_count': 2,
+                'pchids': {'add': [],
+                           'del': [],
+                           'all': ['0a20']},
               }
             }
         """
@@ -1576,7 +1579,7 @@ class FCPDbOperator(object):
 
         'devices_cmd' result format:
         fcp_id|tmpl_id|path|assigner_id|connections|reserved|
-        wwpn_npiv|wwpn_phy|chpid|state|owner|tmpl_id
+        wwpn_npiv|wwpn_phy|chpid|pchid|state|owner|tmpl_id
 
         In 'devices_cmd' result: the first three properties are from
         template_fcp_mapping table, and the others are from fcp table.
@@ -1597,7 +1600,7 @@ class FCPDbOperator(object):
         devices_cmd = (
             "SELECT tf.fcp_id, tf.tmpl_id, tf.path, fcp.assigner_id, "
             "fcp.connections, fcp.reserved, fcp.wwpn_npiv, fcp.wwpn_phy, "
-            "fcp.chpid, fcp.state, fcp.owner, fcp.tmpl_id "
+            "fcp.chpid, fcp.pchid, fcp.state, fcp.owner, fcp.tmpl_id "
             "FROM template_fcp_mapping AS tf "
             "LEFT OUTER JOIN fcp "
             "ON tf.fcp_id=fcp.fcp_id")
