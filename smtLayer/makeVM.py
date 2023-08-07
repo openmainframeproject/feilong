@@ -152,10 +152,12 @@ def createVM(rh):
         dirLines.append("COMMAND ATTACH PCIF %s * AS %s" % (s[0], s[1]))
 
     if 'ipl' in rh.parms:
-        if 'loadportname' in rh.parms and 'loadlun' in rh.parms:
+        ipl_string = "IPL %s " % rh.parms['ipl']
+        # only use IPL LOADDEV for BFV deploy when supports multipath IPL
+        # alter in parms means the zvm supports multipath IPL
+        if ('alterdev' in rh.parms and 'loadportname' in rh.parms and
+            'loadlun' in rh.parms):
             ipl_string = "IPL LOADDEV"
-        else:
-            ipl_string = "IPL %s " % rh.parms['ipl']
 
         if 'iplParam' in rh.parms:
             ipl_string += ("PARM %s " % rh.parms['iplParam'])
@@ -165,7 +167,8 @@ def createVM(rh):
 
         dirLines.append(ipl_string)
 
-        if 'loadportname' in rh.parms and 'loadlun' in rh.parms:
+        if ('alterdev' in rh.parms and 'loadportname' in rh.parms and
+            'loadlun' in rh.parms):
             dirLines.append("LOADDEV DEVICE %s " % rh.parms['ipl'])
 
     if 'byUsers' in rh.parms:
