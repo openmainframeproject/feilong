@@ -316,3 +316,75 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                 b'COMMAND SET VCONFIG MODE LINUX\n'
                                 b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                 b'LOGONBY USER1 USER2\n')
+
+    @mock.patch("os.write")
+    def test_create_with_dasd_on_zvm_not_support_multipath_IPL(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'ipl': '0100'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'IPL 0100 \n')
+
+    @mock.patch("os.write")
+    def test_create_with_dasd_on_zvm_support_multipath_IPL(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'ipl': '0100'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'IPL 0100 \n')
+
+    @mock.patch("os.write")
+    def test_create_with_bfv_on_zvm_not_support_multipath_IPL(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'ipl': '1a0e', 'dedicate': '1a0e 1c0d',
+                 'loadportname': '50050768102491e1',
+                 'loadlun': '0000000000000000'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'IPL 1a0e \n'
+                                b'LOADDEV PORTname 50050768102491e1\n'
+                                b'LOADDEV LUN 0000000000000000\n'
+                                b'DEDICATE 1a0e 1a0e\n'
+                                b'DEDICATE 1c0d 1c0d\n')
+
+    @mock.patch("os.write")
+    def test_create_with_bfv_on_zvm_support_multipath_IPL(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'ipl': '1a0e', 'dedicate': '1a0e 1c0d',
+                 'loadportname': '50050768102491e1',
+                 'loadlun': '0000000000000000',
+                 'alterdev': '1a01:50050768102491e2,1c0d:50050768102491e3'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'IPL LOADDEV\n'
+                                b'LOADDEV DEVICE 1a0e \n'
+                                b'LOADDEV PORTname 50050768102491e1\n'
+                                b'LOADDEV LUN 0000000000000000\n'
+                                b'LOADDEV SCSI ALTERNATE 1a01 PORT 50050768102491e2\n'
+                                b'LOADDEV SCSI ALTERNATE 1c0d PORT 50050768102491e3\n'
+                                b'DEDICATE 1a0e 1a0e\n'
+                                b'DEDICATE 1c0d 1c0d\n')
