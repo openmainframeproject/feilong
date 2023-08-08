@@ -38,6 +38,9 @@ class SDKAPITestCase(base.SDKTestCase):
         patcher = mock.patch('zvmsdk.volumeop.FCPManager.sync_db')
         self.addCleanup(patcher.stop)
         self.mock_sync_db = patcher.start()
+        patcher_pchids = mock.patch("zvmsdk.utils.print_all_pchids", mock.Mock())
+        patcher_pchids.start()
+        self.addCleanup(patcher_pchids.stop)
         self.api = api.SDKAPI()
 
     def test_init_ComputeAPI(self):
