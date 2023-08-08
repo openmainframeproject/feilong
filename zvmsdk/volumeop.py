@@ -1104,9 +1104,14 @@ class FCPManager(object):
                 'host_default': True,
                 'storage_providers': ['sp4', 'v7k60'],
                 'min_fcp_paths_count': 2,
-                'pchids': {'add': [],
-                           'del': [],
-                           'all': ['0a20']},
+                'pchids': {
+                    'add' : ['C'],
+                    'delete' : {
+                        'all': ['D', 'E'],
+                        'not_exist_in_any_template': ['F']
+                    },
+                    'all' : ['A', 'B', 'C']
+                }
                 'cpc_sn': '0000000000082F57',
                 'cpc_name': 'M54',
                 'lpar': 'ZVM4OCP3',
