@@ -535,6 +535,8 @@ class FCPManager(object):
         self._smtclient = smtclient.get_smtclient()
         # Sync FCP DB
         self.sync_db()
+        # Get available channel-paths from linux command lschp and log the info
+        zvmutils.print_all_pchids()
 
     def sync_db(self):
         """Sync FCP DB with the FCP info queried from zVM"""
@@ -994,8 +996,6 @@ class FCPManager(object):
         # Update the dict of all FCPs into FCP table in database
         self.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
         LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
-        # Get available channel-paths from linux command lschp and log the info
-        zvmutils.print_all_pchids()
 
     def create_fcp_template(self, name, description: str = '',
                             fcp_devices: str = '',
