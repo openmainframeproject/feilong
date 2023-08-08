@@ -44,6 +44,9 @@ class fakeE(Exception):
 class TestVolumeOperatorAPI(base.SDKTestCase):
 
     def setUp(self):
+        patcher = patch("zvmsdk.utils.print_all_pchids", mock.Mock())
+        patcher.start()
+        self.addCleanup(patcher.stop)
         super(TestVolumeOperatorAPI, self).setUp()
         self.operator = volumeop.VolumeOperatorAPI()
 
@@ -414,6 +417,8 @@ class TestFCPManager(base.SDKTestCase):
     @classmethod
     @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
     def setUpClass(cls):
+        patcher = patch("zvmsdk.utils.print_all_pchids", mock.Mock())
+        patcher.start()
         super(TestFCPManager, cls).setUpClass()
         cls.fcpops = volumeop.FCPManager()
         cls.db_op = database.FCPDbOperator()
@@ -1508,6 +1513,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @classmethod
     @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
     def setUpClass(cls):
+        patcher = patch("zvmsdk.utils.print_all_pchids", mock.Mock())
+        patcher.start()
         super(TestFCPVolumeManager, cls).setUpClass()
         cls.volumeops = volumeop.FCPVolumeManager()
         cls.db_op = database.FCPDbOperator()
