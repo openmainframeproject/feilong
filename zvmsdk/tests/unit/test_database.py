@@ -1345,9 +1345,6 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             kwargs['description'] = 'test_desc'
             kwargs['host_default'] = True
             kwargs['default_sp_list'] = ['SP1', 'SP2']
-            add_items = []
-            del_items = []
-            all_items = ['02e4']
             tmpl_basic = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
             expected = {'fcp_template': {
                 'id': tmpl_id,
@@ -1357,15 +1354,47 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'storage_providers': kwargs['default_sp_list'],
                 'min_fcp_paths_count': 2,
                 'pchids': {
-                    'add': add_items,
-                    'del': del_items,
-                    'all': all_items
+                        'add': [],
+                        'delete': {
+                            'all': [],
+                            'not_exist_in_any_template': []},
+                        'all': ['02e4']
                 }
             }}
             self.assertEqual(expected, tmpl_basic)
         finally:
             # clean up
             self._purge_fcp_db()
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
+    def test_get_pchids_from_all_fcp_templates(self, mock_get_pchid, mock_get_fcp):
+        """test_get_pchids_from_all_fcp_templates"""
+        """Test function get_pchids_by_fcp_template"""
+        # insert test data into table template_fcp_mapping
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        template_fcp = [('1111', template_id, 0),
+                        ('2222', template_id, 1)]
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # insert test data into table fcp
+        fcp_info_list = [('1111', 'user1', 0, 0, 'c05076de33000111',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
+                           template_id),
+                           ('2222', 'user1', 0, 0, 'c05076de33000222',
+                            'c05076de33002641', '30', '02ec', 'active', 'owner1',
+                            '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        # delete dirty data from other test cases
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        # insert new test data
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            # case1: fcp_template doesn't have related pchid info
+            pchids = self.db_op.get_pchids_from_all_fcp_templates()
+            self.assertEqual(["02e4", "02ec"], pchids)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
     def test_get_fcp_templates(self):
         """test get_fcp_templates"""
