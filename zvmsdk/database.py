@@ -1236,9 +1236,14 @@ class FCPDbOperator(object):
                 'host_default': True,
                 'storage_providers': ['sp4', 'v7k60'],
                 'min_fcp_paths_count': 2,
-                'pchids': {'add': [],
-                           'del': [],
-                           'all': ['0a20']},
+                'pchids': {
+                    'add' : ['C'],
+                    'delete' : {
+                        'all': ['D', 'E'],
+                        'not_exist_in_any_template': ['F']
+                    },
+                    'all' : ['A', 'B', 'C']
+                }
               }
             }
         """
@@ -1280,7 +1285,7 @@ class FCPDbOperator(object):
             # If min_fcp_paths_count is not None or fcp_devices is not None, need to validate the value.
             # min_fcp_paths_count should not be larger than fcp device path count, or else, raise error.
             self._validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count, fcp_template_id)
-            ori_phid_list = self.get_pchids_by_fcp_template(fcp_template_id)
+            ori_pchid_list = self.get_pchids_by_fcp_template(fcp_template_id)
             tmpl_basic, fcp_detail = self.get_fcp_templates_details(
                 [fcp_template_id])
 
@@ -1421,10 +1426,13 @@ class FCPDbOperator(object):
             #  (i.e. tmpl_basic[0]['sp_name'] is 'SP1',
             #  while tmpl_basic[1]['sp_name'] is 'SP2'.
             tmpl_basic = self.get_fcp_templates_details([fcp_template_id])[0]
-            final_phid_list = self.get_pchids_by_fcp_template(fcp_template_id)
-            add_items = list(set(final_phid_list) - set(ori_phid_list))
-            del_items = list(set(ori_phid_list) - set(final_phid_list))
-            all_items = final_phid_list
+            final_pchid_list = self.get_pchids_by_fcp_template(fcp_template_id)
+            add_pchids = list(set(final_pchid_list) - set(ori_pchid_list))
+            del_pchids = list(set(ori_pchid_list) - set(final_pchid_list))
+            all_pchids_in_template = self.get_pchids_from_all_fcp_templates()
+            not_used_in_any_template = list(set(del_pchids) - set(all_pchids_in_template))
+            delete_dict = dict(all=del_pchids,
+                               not_exist_in_any_template=not_used_in_any_template)
             return {'fcp_template': {
                 'name': tmpl_basic[0]['name'],
                 'id': tmpl_basic[0]['id'],
@@ -1435,11 +1443,29 @@ class FCPDbOperator(object):
                     else [r['sp_name'] for r in tmpl_basic],
                 'min_fcp_paths_count': self.get_min_fcp_paths_count(fcp_template_id),
                 'pchids': {
-                    'add': add_items,
-                    'del': del_items,
-                    'all': all_items
+                    'add': add_pchids,
+                    'delete': delete_dict,
+                    'all': final_pchid_list
                 }
             }}
+
+    def get_pchids_from_all_fcp_templates(self):
+        """Get pchids info used by all FCP Multipath Templates.
+            :param None
+            :return pchids: (list) a list of pchid
+            for example: ['0240', '0260']
+        """
+        pchids = []
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                "SELECT DISTINCT fcp.pchid "
+                "FROM template_fcp_mapping"
+                " AS tf INNER JOIN fcp "
+                "ON tf.fcp_id=fcp.fcp_id")
+            raw = result.fetchall()
+            for item in raw:
+                pchids.append(item['pchid'])
+        return pchids
 
     def get_fcp_templates(self, template_id_list=None):
         """Get FCP Multipath Templates base info by template_id_list.
