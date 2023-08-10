@@ -1591,7 +1591,9 @@ class FCPManager(object):
             # Add hypervisor_hostname info
             item["hypervisor_hostname"] = hypervisor_hostname
             # Add PCHIDs info
-            item["PCHIDs"] = self.db.get_pchids_by_fcp_template(item["id"])
+            pchids = self.db.get_pchids_by_fcp_template(item["id"])
+            pchids.sort()
+            item["PCHIDs"] = pchids
 
         return {"fcp_templates": ret}
 
@@ -1837,7 +1839,8 @@ class FCPManager(object):
                     pchids = []
                     for _, path_detail in statistics_usage[template_id].items():
                         if path_detail['PCHIDs']:
-                            pchids.append(list(path_detail['PCHIDs'].keys())[0])
+                            pchids.extend(list(set(list(path_detail['PCHIDs'].keys()))))
+                    pchids.sort()
                     base_info.update({"PCHIDs": pchids})
                 else:
                     # some templates do not have fcp devices or do not have
