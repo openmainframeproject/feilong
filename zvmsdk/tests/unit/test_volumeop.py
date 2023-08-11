@@ -906,7 +906,7 @@ class TestFCPManager(base.SDKTestCase):
                 "cpc_name": "M54",
                 "lpar": "ZVM4OCP3",
                 "hypervisor_hostname": "BOEM5403",
-                'PCHIDs': []
+                'pchids': []
             },
             'fakehos2-1111-1111-1111-111111111111': {
                 "id": "fakehos2-1111-1111-1111-111111111111",
@@ -919,7 +919,7 @@ class TestFCPManager(base.SDKTestCase):
                 "cpc_name": "M54",
                 "lpar": "ZVM4OCP3",
                 "hypervisor_hostname": "BOEM5403",
-                'PCHIDs': []
+                'pchids': []
             },
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c': {
                 "id": "ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c",
@@ -932,7 +932,7 @@ class TestFCPManager(base.SDKTestCase):
                 "cpc_name": "M54",
                 "lpar": "ZVM4OCP3",
                 "hypervisor_hostname": "BOEM5403",
-                'PCHIDs': []
+                'pchids': []
             },
         }
         try:
@@ -1029,7 +1029,8 @@ class TestFCPManager(base.SDKTestCase):
             template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
             self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
             # insert data into template_fcp_mapping table
-            template_fcp = [('1b01', template_id_2, 1)]
+            template_fcp = [('1b00', template_id_2, 1),
+                            ('1b01', template_id_2, 1)]
             self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
 
             fcp_info_list_2 = [
@@ -1059,7 +1060,7 @@ class TestFCPManager(base.SDKTestCase):
                     "cpc_name": "fake_cpc_name",
                     "lpar": "fake_lpar_name",
                     "hypervisor_hostname": "fake_hypervisor_hostname",
-                    "PCHIDs": []
+                    "pchids": []
                     }]}
             self.assertDictEqual(result_1, expected_1)
 
@@ -1077,7 +1078,7 @@ class TestFCPManager(base.SDKTestCase):
                     "cpc_name": "fake_cpc_name",
                     "lpar": "fake_lpar_name",
                     "hypervisor_hostname": "fake_hypervisor_hostname",
-                    "PCHIDs": ["02a4"]
+                    "pchids": ["02A4", "02E4"]
                     }]}
             result_2 = self.fcpops.get_fcp_templates(assigner_id='user2')
             self.assertDictEqual(result_2, expected_2)
@@ -1108,7 +1109,7 @@ class TestFCPManager(base.SDKTestCase):
                         "cpc_name": "fake_cpc_name",
                         "lpar": "fake_lpar_name",
                         "hypervisor_hostname": "fake_hypervisor_hostname",
-                        "PCHIDs": []
+                        "pchids": []
                     },
                     {
                         "id": template_id_2,
@@ -1121,7 +1122,7 @@ class TestFCPManager(base.SDKTestCase):
                         "cpc_name": "fake_cpc_name",
                         "lpar": "fake_lpar_name",
                         "hypervisor_hostname": "fake_hypervisor_hostname",
-                        "PCHIDs": ["02a4"]
+                        "pchids": ["02A4", "02E4"]
                     }]}
             result_6 = self.fcpops.get_fcp_templates(default_sp_list=['all'])
             self.assertDictEqual(result_6, expected_all)
@@ -1163,9 +1164,11 @@ class TestFCPManager(base.SDKTestCase):
             # prepare test data
             template_id_1 = 'template_id_1'
             template_id_2 = 'template_id_2'
+            template_id_3 = 'template_id_3'
             templates = [(template_id_1, 'name1', 'desc1', 1),
-                         (template_id_2, 'name2', 'desc2', 0)]
-            self._delete_from_template_table([template_id_1, template_id_2])
+                         (template_id_2, 'name2', 'desc2', 0),
+                         (template_id_3, 'name3', 'desc3', 0)]
+            self._delete_from_template_table([template_id_1, template_id_2, template_id_3])
             self._insert_data_into_template_table(templates)
             template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
             self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
@@ -1185,20 +1188,35 @@ class TestFCPManager(base.SDKTestCase):
                             ('1b01', '', 0, 0, 'c05076de3300d83c',
                             'c05076de33002641', '35', '02a4', 'active', 'owner2',
                             '')]
+            fcp_info_list_3 = [
+                            # allocated
+                            ('1c00', 'user3', 1, 1, 'c05076de3300c83c',
+                            'c05076de33002641', '27', '02e4', 'active', '',
+                            template_id_2),
+                            # unallocated_but_active
+                            ('1c02', '', 0, 0, 'c05076de3300d83c',
+                            'c05076de33002641', '35', '02a4', 'active', 'owner3',
+                            '')]
             fcp_id_list_1 = [fcp_info[0] for fcp_info in fcp_info_list_1]
             fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
+            fcp_id_list_3 = [fcp_info[0] for fcp_info in fcp_info_list_3]
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
             self._insert_data_into_fcp_table(fcp_info_list_1)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
             self._insert_data_into_fcp_table(fcp_info_list_2)
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_3)
+            self._insert_data_into_fcp_table(fcp_info_list_3)
             template_fcp = [('1a00', template_id_1, 0),
                             ('1f00', template_id_1, 0),
                             ('1x00', template_id_1, 1),
                             ('1b00', template_id_2, 0),
-                            ('1b01', template_id_2, 1)]
+                            ('1b01', template_id_2, 1),
+                            ('1c00', template_id_3, 0),
+                            ('1c02', template_id_3, 0)]
             fcp_id_list_1.append('1x00')
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_3, template_id_3)
             self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
 
             # case1: test get_fcp_templates_details without input parameter
@@ -1213,15 +1231,15 @@ class TestFCPManager(base.SDKTestCase):
                 "cpc_name": "fake_cpc_name",
                 "lpar": "fake_lpar_name",
                 "hypervisor_hostname": "fake_hypervisor_hostname",
-                "PCHIDs": ["02e4"],
+                "pchids": ["02E4"],
                 "statistics": {
                     0: {
                             "total": "1A00, 1F00",
-                            "total_count": {'02e4': 1},
+                            "total_count": {'02E4': 1},
                             "single_fcp": "1A00, 1F00",
                             "range_fcp": "",
                             "available": "1A00",
-                            "available_count": {'02e4': 1},
+                            "available_count": {'02E4': 1},
                             "allocated": "",
                             "reserve_only": "",
                             "connection_only": "",
@@ -1229,8 +1247,8 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated_but_free": "",
                             "notfound": "1F00",
                             "offline": "",
-                            "CHPIDs": {"27": "1A00"},
-                            'PCHIDs': {'02e4': '27'}},
+                            "chpids": {"27": "1A00"},
+                            'pchids': {'02E4': '27'}},
                     1: {
                             "total": "1X00",
                             "total_count": {},
@@ -1245,8 +1263,8 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated_but_free": "",
                             "notfound": "1X00",
                             "offline": "",
-                            "CHPIDs": {},
-                            'PCHIDs': {}}
+                            "chpids": {},
+                            'pchids': {}}
                 }
                 }
             expected_2 = {
@@ -1260,15 +1278,15 @@ class TestFCPManager(base.SDKTestCase):
                 "cpc_name": "fake_cpc_name",
                 "lpar": "fake_lpar_name",
                 "hypervisor_hostname": "fake_hypervisor_hostname",
-                "PCHIDs": ["02e4", "02a4"],
+                "pchids": ["02A4", "02E4"],
                 "statistics": {
                     0: {
                             "total": "1B00",
-                            "total_count": {'02e4': 1},
+                            "total_count": {'02E4': 1},
                             "single_fcp": "1B00",
                             "range_fcp": "",
                             "available": "",
-                            "available_count": {'02e4': 0},
+                            "available_count": {'02E4': 0},
                             "allocated": "1B00",
                             "reserve_only": "",
                             "connection_only": "",
@@ -1276,15 +1294,15 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
-                            "CHPIDs": {"27": "1B00"},
-                            'PCHIDs': {'02e4': '27'}},
+                            "chpids": {"27": "1B00"},
+                            'pchids': {'02E4': '27'}},
                     1: {
                             "total": "1B01",
-                            "total_count": {'02a4': 1},
+                            "total_count": {'02A4': 1},
                             "single_fcp": "1B01",
                             "range_fcp": "",
                             "available": "",
-                            "available_count": {'02a4': 0},
+                            "available_count": {'02A4': 0},
                             "allocated": "",
                             "reserve_only": "",
                             "connection_only": "",
@@ -1292,13 +1310,44 @@ class TestFCPManager(base.SDKTestCase):
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
-                            "CHPIDs": {"35": "1B01"},
-                            'PCHIDs': {'02a4': '35'}
+                            "chpids": {"35": "1B01"},
+                            'pchids': {'02A4': '35'}
                     }
                 }
             }
+            expected_3 = {
+                "id": template_id_3,
+                "name": "name3",
+                "description": "desc3",
+                "host_default": False,
+                "storage_providers": [],
+                'min_fcp_paths_count': 1,
+                "cpc_sn": "fake_cpc_sn",
+                "cpc_name": "fake_cpc_name",
+                "lpar": "fake_lpar_name",
+                "hypervisor_hostname": "fake_hypervisor_hostname",
+                "pchids": ["02A4", "02E4"],
+                "statistics": {
+                    0: {
+                            "total": "1C00, 1C02",
+                            "total_count": {'02E4': 1, '02A4': 1},
+                            "single_fcp": "1C00, 1C02",
+                            "range_fcp": "",
+                            "available": "",
+                            "available_count": {'02E4': 0, '02A4': 0},
+                            "allocated": "1C00",
+                            "reserve_only": "",
+                            "connection_only": "",
+                            "unallocated_but_active": {"1C02": "owner3"},
+                            "allocated_but_free": "",
+                            "notfound": "",
+                            "offline": "",
+                            "chpids": {"27": "1C00", "35": "1C02"},
+                            'pchids': {'02E4': '27', '02A4': '35'}}
+                }
+            }
             expected_all = {
-                "fcp_templates": [expected_1, expected_2]}
+                "fcp_templates": [expected_1, expected_2, expected_3]}
             result_all = self.fcpops.get_fcp_templates_details(raw=False,
                                                              statistics=True,
                                                              sync_with_zvm=False)
@@ -1323,9 +1372,11 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list_3)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
-            self._delete_from_template_table([template_id_1, template_id_2])
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list_3, template_id_3)
+            self._delete_from_template_table([template_id_1, template_id_2, template_id_3])
 
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates_details")
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
@@ -1381,11 +1432,11 @@ class TestFCPManager(base.SDKTestCase):
             'tmpl_id_1': {
                 '0': {
                     "total": ['1A01', '1A02'],
-                    "total_count": {'0264': 1, '02e4': 1},
+                    "total_count": {'0264': 1, '02E4': 1},
                     "single_fcp": [],
                     "range_fcp": [],
                     "available": ['1A02'],
-                    "available_count": {'0264': 1, '02e4': 0},
+                    "available_count": {'0264': 1, '02E4': 0},
                     "allocated": ['1A01'],
                     "reserve_only": [],
                     "connection_only": [],
@@ -1393,17 +1444,17 @@ class TestFCPManager(base.SDKTestCase):
                     "allocated_but_free": [],
                     "notfound": [],
                     "offline": [],
-                    "CHPIDs": {'27': ['1A01'],
+                    "chpids": {'27': ['1A01'],
                                '32': ['1A02']},
-                    'PCHIDs': {'0264': '32',
-                               '02e4': '27'}},
+                    'pchids': {'0264': '32',
+                               '02E4': '27'}},
                 '1': {
                     "total": ['1B01', '1B02'],
-                    "total_count": {'0264': 1, '02e4': 1},
+                    "total_count": {'0264': 1, '02E4': 1},
                     "single_fcp": [],
                     "range_fcp": [],
                     "available": [],
-                    "available_count": {'0264': 0, '02e4': 0},
+                    "available_count": {'0264': 0, '02E4': 0},
                     "allocated": [],
                     "reserve_only": [],
                     "connection_only": [],
@@ -1413,19 +1464,19 @@ class TestFCPManager(base.SDKTestCase):
                     "allocated_but_free": [],
                     "notfound": [],
                     "offline": [],
-                    "CHPIDs": {'27': ['1B01'],
+                    "chpids": {'27': ['1B01'],
                                '32': ['1B02']},
-                    'PCHIDs': {'0264': '32',
-                               '02e4': '27'}}
+                    'pchids': {'0264': '32',
+                               '02E4': '27'}}
                                },
             'tmpl_id_2': {
                 '0': {
                     "total": ['1C03', '1C05', '1C06'],
-                    "total_count": {'0158': 1, '02a4': 2},
+                    "total_count": {'0158': 1, '02A4': 2},
                     "single_fcp": [],
                     "range_fcp": [],
                     "available": [],
-                    "available_count": {'0158': 0, '02a4': 0},
+                    "available_count": {'0158': 0, '02A4': 0},
                     "allocated": ['1C06'],
                     "reserve_only": ['1C03'],
                     "connection_only": ['1C05'],
@@ -1433,9 +1484,9 @@ class TestFCPManager(base.SDKTestCase):
                     "allocated_but_free": ['1C05', '1C06'],
                     "notfound": [],
                     "offline": [],
-                    "CHPIDs": {'25': ['1C03', '1C05'],
+                    "chpids": {'25': ['1C03', '1C05'],
                                '26': ['1C06']},
-                    'PCHIDs': {'0158': '26', '02a4': '25'}},
+                    'pchids': {'0158': '26', '02A4': '25'}},
                 '1': {
                     "total": ['1D05', '1D06'],
                     "total_count": {},
@@ -1450,17 +1501,17 @@ class TestFCPManager(base.SDKTestCase):
                     "allocated_but_free": [],
                     "notfound": ['1D05', '1D06'],
                     "offline": [],
-                    "CHPIDs": {},
-                    'PCHIDs': {}}
+                    "chpids": {},
+                    'pchids': {}}
                     },
             'tmpl_id_3': {
                 '0': {
                     "total": ['1E09'],
-                    "total_count": {'021c': 1},
+                    "total_count": {'021C': 1},
                     "single_fcp": [],
                     "range_fcp": [],
                     "available": [],
-                    "available_count": {'021c': 0},
+                    "available_count": {'021C': 0},
                     "allocated": [],
                     "reserve_only": [],
                     "connection_only": [],
@@ -1468,8 +1519,8 @@ class TestFCPManager(base.SDKTestCase):
                     "allocated_but_free": [],
                     "notfound": [],
                     "offline": ['1E09'],
-                    "CHPIDs": {'30': ['1E09']},
-                    'PCHIDs': {'021c': '30'}}}
+                    "chpids": {'30': ['1E09']},
+                    'pchids': {'021C': '30'}}}
                     }
         self.assertDictEqual(statistics_usage, expected)
 

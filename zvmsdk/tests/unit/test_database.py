@@ -1358,7 +1358,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                         'delete': {
                             'all': [],
                             'not_exist_in_any_template': []},
-                        'all': ['02e4']
+                        'all': ['02E4']
                 }
             }}
             self.assertEqual(expected, tmpl_basic)
@@ -1391,7 +1391,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         try:
             # case1: fcp_template doesn't have related pchid info
             pchids = self.db_op.get_pchids_from_all_fcp_templates()
-            self.assertEqual(["02e4", "02ec"], pchids)
+            self.assertEqual(["02E4", "02EC"], pchids)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
@@ -1725,7 +1725,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             template_id = 'fakehost-1111-1111-1111-111111111111'
             pchids = self.db_op.get_pchids_by_fcp_template(template_id)
             pchids.sort(reverse=False)
-            self.assertEqual(["02e4", "02ec"], pchids)
+            self.assertEqual(["02E4", "02EC"], pchids)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)

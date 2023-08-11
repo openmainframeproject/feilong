@@ -1242,7 +1242,7 @@ class FCPManager(object):
         # get statistic data about:
         # available, allocated, notfound,
         # unallocated_but_active, allocated_but_free
-        # CHPIDs
+        # chpids, pchids
         (fcp_id, template_id, path_id, assigner_id, connections,
          reserved, _, _, chpid, pchid, state, owner, _) = raw_item
 
@@ -1269,8 +1269,8 @@ class FCPManager(object):
                 "allocated_but_free": [],
                 "notfound": [],
                 "offline": [],
-                "CHPIDs": {},
-                "PCHIDs": {}}
+                "chpids": {},
+                "pchids": {}}
         # when this fcp_id is not None, means the fcp exists in zvm, i.e in
         # fcp table, then it will have detail info from fcp table
         # when this fcp_id is None, means the fcp does not exist in zvm, no
@@ -1359,21 +1359,23 @@ class FCPManager(object):
                                 "device %s allocated by ZCC but its assigner "
                                 "differs from owner." % str(fcp_id))
             if chpid:
-                if not statistics_usage[template_id][path_id]["CHPIDs"].get(chpid, None):
+                chpid = chpid.upper()
+                if not statistics_usage[template_id][path_id]["chpids"].get(chpid, None):
                     statistics_usage[
-                        template_id][path_id]["CHPIDs"].update({chpid: []})
+                        template_id][path_id]["chpids"].update({chpid: []})
                 statistics_usage[
-                    template_id][path_id]["CHPIDs"][chpid].append(fcp_id)
+                    template_id][path_id]["chpids"][chpid].append(fcp_id)
             if pchid:
-                if not statistics_usage[template_id][path_id]["PCHIDs"].get(pchid, None):
+                pchid = pchid.upper()
+                if not statistics_usage[template_id][path_id]["pchids"].get(pchid, None):
                     statistics_usage[
-                        template_id][path_id]["PCHIDs"].update({pchid: ''})
+                        template_id][path_id]["pchids"].update({pchid: ''})
                     statistics_usage[
                         template_id][path_id]["total_count"].update({pchid: 0})
                     statistics_usage[
                         template_id][path_id]["available_count"].update({pchid: 0})
                 statistics_usage[
-                    template_id][path_id]["PCHIDs"][pchid] = chpid
+                    template_id][path_id]["pchids"][pchid] = chpid
                 statistics_usage[
                     template_id][path_id]["total_count"][pchid] += 1
                 if fcp_id in statistics_usage[template_id][path_id]["available"]:
@@ -1411,7 +1413,7 @@ class FCPManager(object):
                 # Do NOT transform unallocated_but_active,
                 # because its value also contains VM userid.
                 # e.g. [('1b04','owner1'), ('1b05','owner2')]
-                # Do NOT transform CHPIDs, PCHIDs, total_count, single_fcp,
+                # Do NOT transform chpids, pchids, total_count, single_fcp,
                 # range_fcp and available_count
                 for section in need_shrink_sections:
                     fcp_list = template_statistics[path][section]
@@ -1419,9 +1421,9 @@ class FCPManager(object):
                         utils.shrink_fcp_list(fcp_list))
                 # shrink for each CHIPID
                 for chpid, fcps in template_statistics[
-                    path]['CHPIDs'].items():
+                    path]['chpids'].items():
                     fcp_list = fcps
-                    template_statistics[path]['CHPIDs'][chpid] = (
+                    template_statistics[path]['chpids'][chpid] = (
                         utils.shrink_fcp_list(fcp_list))
 
     def _split_singe_range_fcp_list(self, statistics_usage):
@@ -1472,7 +1474,7 @@ class FCPManager(object):
                 "cpc_sn": "00000000000282A8",
                 "lpar": "S0P01",
                 "hypervisor_hostname": "BOET4601",
-                "PCHIDs": ['0240', '0260']
+                "pchids": ['0240', '0260']
                 },
                 {
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
@@ -1486,7 +1488,7 @@ class FCPManager(object):
                 "cpc_sn": "00000000000282A8",
                 "lpar": "S0P01",
                 "hypervisor_hostname": "BOET4601",
-                "PCHIDs": ['0240', '0260']
+                "pchids": ['0240', '0260']
                 },
                 {
                 "id": "12345678",
@@ -1500,7 +1502,7 @@ class FCPManager(object):
                 "cpc_sn": "00000000000282A8",
                 "lpar": "S0P01",
                 "hypervisor_hostname": "BOET4601",
-                "PCHIDs": ['0240', '0260']
+                "pchids": ['0240', '0260']
                 }
             ]
         }
@@ -1527,7 +1529,7 @@ class FCPManager(object):
                 "cpc_sn": "00000000000282A8",
                 "lpar": "S0P01",
                 "hypervisor_hostname": "BOET4601",
-                "PCHIDs": ['0240', '0260']
+                "pchids": ['0240', '0260']
                 },
                 {
                 "id": "36439338-db14-11ec-bb41-0201018b1dd3",
@@ -1541,7 +1543,7 @@ class FCPManager(object):
                 "cpc_sn": "00000000000282A8",
                 "lpar": "S0P01",
                 "hypervisor_hostname": "BOET4601",
-                "PCHIDs": ['0240', '0260']
+                "pchids": ['0240', '0260']
                 }
             ]
         }
@@ -1590,8 +1592,10 @@ class FCPManager(object):
             item["lpar"] = lpar
             # Add hypervisor_hostname info
             item["hypervisor_hostname"] = hypervisor_hostname
-            # Add PCHIDs info
-            item["PCHIDs"] = self.db.get_pchids_by_fcp_template(item["id"])
+            # Add pchids info
+            pchids = self.db.get_pchids_by_fcp_template(item["id"])
+            pchids.sort()
+            item["pchids"] = pchids
 
         return {"fcp_templates": ret}
 
@@ -1621,7 +1625,7 @@ class FCPManager(object):
                     "cpc_sn": "00000000000282A8",
                     "lpar": "S0P01",
                     "hypervisor_hostname": "BOET4601",
-                    "PCHIDs": ['0260', '0240'],
+                    "pchids": ['0260', '0240'],
                     "raw":{
                         # (fcp_id, template_id, assigner_id, connections,
                         #  reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner,
@@ -1715,10 +1719,10 @@ class FCPManager(object):
                             "allocated_but_free":"",
                             "notfound":"",
                             "offline":"",
-                            "CHPIDs":{
+                            "chpids":{
                                 "27":"1A0E - 1A0F"
                             }
-                            "PCHIDs":{
+                            "pchids":{
                                 "02e4":"27"
                             }
                         },
@@ -1732,10 +1736,10 @@ class FCPManager(object):
                             "allocated_but_free":"",
                             "notfound":"",
                             "offline":"",
-                            "CHPIDs":{
+                            "chpids":{
                                 "32":"1C0D"
                             }
-                            "PCHIDs":{
+                            "pchids":{
                                 "0264":"32"
                             }
                         }
@@ -1833,17 +1837,18 @@ class FCPManager(object):
                 if template_id in statistics_usage:
                     base_info.update(
                         {"statistics": statistics_usage[template_id]})
-                    # Add PCHIDs info
+                    # Add pchids info
                     pchids = []
                     for _, path_detail in statistics_usage[template_id].items():
-                        if path_detail['PCHIDs']:
-                            pchids.append(list(path_detail['PCHIDs'].keys())[0])
-                    base_info.update({"PCHIDs": pchids})
+                        if path_detail['pchids']:
+                            pchids.extend(list(set(list(path_detail['pchids'].keys()))))
+                    pchids.sort()
+                    base_info.update({"pchids": pchids})
                 else:
                     # some templates do not have fcp devices or do not have
                     # valid fcp in zvm, so do not have statistics_usage data
                     base_info.update({"statistics": {}})
-                    base_info.update({"PCHIDs": []})
+                    base_info.update({"pchids": []})
             # after join statistics info, template_info format is like this:
             # {
             #     temlate_id: {
@@ -1856,7 +1861,7 @@ class FCPManager(object):
             #         "cpc_sn": "00000000000282A8",
             #         "lpar": "S0P01",
             #         "hypervisor_hostname": "BOET4601",
-            #         "PCHIDs": ['0260', '0240'],
+            #         "pchids": ['0260', '0240'],
             #         "statistics": {
             #              path1: {},
             #              path2: {}}
