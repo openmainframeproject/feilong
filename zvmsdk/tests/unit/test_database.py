@@ -1219,7 +1219,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                'min_fcp_paths_count from fcp_template_id',
                                self.db_op.get_min_fcp_paths_count, 'fake_fcp_template_id')
 
-    def test_edit_fcp_template(self):
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_from_all_fcp_templates")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
+    def test_edit_fcp_template(self, mock_get_fcp_pchids, mock_get_all):
         """ Test edit_fcp_template()
 
         """
@@ -1336,7 +1338,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             fcp_in_db = {0: set(), 1: set()}
             for row in fcp_detail:
                 fcp_in_db[row['path']].add(row['fcp_id'])
-            self.assertEqual(expected, fcp_in_db)
+            self.assertCountEqual(expected, fcp_in_db)
 
             # case5
             # DML: table(template and template_sp_mapping)
@@ -1345,6 +1347,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             kwargs['description'] = 'test_desc'
             kwargs['host_default'] = True
             kwargs['default_sp_list'] = ['SP1', 'SP2']
+            origin_pchids = ['02E4']
+            final_pchids = ['02E4']
+            mock_get_fcp_pchids.side_effect = [origin_pchids, final_pchids]
+            mock_get_all.return_value = ['02e3']
             tmpl_basic = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
             expected = {'fcp_template': {
                 'id': tmpl_id,
@@ -1361,7 +1367,88 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                         'all': ['02E4']
                 }
             }}
-            self.assertEqual(expected, tmpl_basic)
+            self.assertCountEqual(expected, tmpl_basic)
+            mock_get_fcp_pchids.mock_reset()
+            mock_get_all.mock_reset()
+
+            # case 6: edit leads pchids useage add and remove at same time
+            origin_pchids = ['A', 'B', 'C']
+            final_pchids = ['D', 'B', 'C']
+            mock_get_fcp_pchids.side_effect = [origin_pchids, final_pchids]
+            mock_get_all.return_value = ['D', 'B', 'C', 'E']
+            return_values = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            expected = {'fcp_template': {
+                'id': tmpl_id,
+                'name': kwargs['name'],
+                'description': kwargs['description'],
+                'host_default': kwargs['host_default'],
+                'storage_providers': kwargs['default_sp_list'],
+                'min_fcp_paths_count': 2,
+                'pchids': {
+                    'add': ['D'],
+                    'delete': {
+                        'all': ['A'],
+                        'not_exist_in_any_template': ['A']},
+                    'all': ['D', 'B', 'C']
+                }}}
+            self.assertCountEqual(expected, return_values)
+            calls = [mock.call(tmpl_id[0]), mock.call(tmpl_id[0])]
+            mock_get_fcp_pchids.has_callscalls(calls)
+            mock_get_all.assert_any_call()
+            mock_get_fcp_pchids.mock_reset()
+            mock_get_all.mock_reset()
+
+            # case 7: edit without pchids useag change
+            origin_pchids = ['A', 'B', 'C']
+            final_pchids = ['A', 'B', 'C']
+            mock_get_all.return_value = ['D', 'B', 'C', 'A']
+            mock_get_fcp_pchids.side_effect = [origin_pchids, final_pchids]
+            return_values = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            expected = {'fcp_template': {
+                'id': tmpl_id,
+                'name': kwargs['name'],
+                'description': kwargs['description'],
+                'host_default': kwargs['host_default'],
+                'storage_providers': kwargs['default_sp_list'],
+                'min_fcp_paths_count': 2,
+                'pchids': {
+                    'add': [],
+                    'delete': {
+                        'all': [],
+                        'not_exist_in_any_template': []},
+                    'all': ['A', 'B', 'C']
+                }}}
+            self.assertCountEqual(expected, return_values)
+            calls = [mock.call(tmpl_id[0]), mock.call(tmpl_id[0])]
+            mock_get_fcp_pchids.has_callscalls(calls)
+            mock_get_all.assert_any_call()
+            mock_get_fcp_pchids.mock_reset()
+            mock_get_all.mock_reset()
+
+            # case 8: edit leads  pchids useag delete
+            origin_pchids = ['A', 'B', 'C', 'D']
+            final_pchids = ['B', 'C']
+            mock_get_all.return_value = ['D', 'B', 'C', 'A']
+            mock_get_fcp_pchids.side_effect = [origin_pchids, final_pchids]
+            return_values = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            expected = {'fcp_template': {
+                'id': tmpl_id,
+                'name': kwargs['name'],
+                'description': kwargs['description'],
+                'host_default': kwargs['host_default'],
+                'storage_providers': kwargs['default_sp_list'],
+                'min_fcp_paths_count': 2,
+                'pchids': {
+                    'add': [],
+                    'delete': {
+                        'all': ['A', 'D'],
+                        'not_exist_in_any_template': []},
+                    'all': ['B', 'C']
+                }}}
+            self.assertCountEqual(expected, return_values)
+            calls = [mock.call(tmpl_id[0]), mock.call(tmpl_id[0])]
+            mock_get_fcp_pchids.has_callscalls(calls)
+            mock_get_all.assert_any_call()
         finally:
             # clean up
             self._purge_fcp_db()
@@ -1391,7 +1478,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         try:
             # case1: fcp_template doesn't have related pchid info
             pchids = self.db_op.get_pchids_from_all_fcp_templates()
-            self.assertEqual(["02E4", "02EC"], pchids)
+            self.assertEqual(['02E4', '02EC'], pchids)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
@@ -1725,7 +1812,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             template_id = 'fakehost-1111-1111-1111-111111111111'
             pchids = self.db_op.get_pchids_by_fcp_template(template_id)
             pchids.sort(reverse=False)
-            self.assertEqual(["02E4", "02EC"], pchids)
+            self.assertEqual(['02E4', '02EC'], pchids)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
