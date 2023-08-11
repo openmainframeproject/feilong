@@ -1464,7 +1464,7 @@ class FCPDbOperator(object):
                 "ON tf.fcp_id=fcp.fcp_id")
             raw = result.fetchall()
             for item in raw:
-                pchids.append(item['pchid'])
+                pchids.append(item['pchid'].upper())
         return pchids
 
     def get_fcp_templates(self, template_id_list=None):
@@ -1512,7 +1512,7 @@ class FCPDbOperator(object):
 
             raw = result.fetchall()
             for item in raw:
-                pchids.append(item['pchid'])
+                pchids.append(item['pchid'].upper())
         return pchids
 
     def get_host_default_fcp_template(self, host_default=True):
