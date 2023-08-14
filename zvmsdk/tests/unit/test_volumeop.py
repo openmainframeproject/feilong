@@ -1187,7 +1187,10 @@ class TestFCPManager(base.SDKTestCase):
                             # unallocated_but_active
                             ('1b01', '', 0, 0, 'c05076de3300d83c',
                             'c05076de33002641', '35', '02a4', 'active', 'owner2',
-                            '')]
+                            ''),
+                            ('1b02', 'user2', 1, 1, 'c05076de3300d83c',
+                            'c05076de33002641', '27', '02e4', 'active', '',
+                            template_id_2)]
             fcp_info_list_3 = [
                             # allocated
                             ('1c00', 'user3', 1, 1, 'c05076de3300c83c',
@@ -1211,6 +1214,7 @@ class TestFCPManager(base.SDKTestCase):
                             ('1x00', template_id_1, 1),
                             ('1b00', template_id_2, 0),
                             ('1b01', template_id_2, 1),
+                            ('1b02', template_id_2, 1),
                             ('1c00', template_id_3, 0),
                             ('1c02', template_id_3, 0)]
             fcp_id_list_1.append('1x00')
@@ -1297,21 +1301,21 @@ class TestFCPManager(base.SDKTestCase):
                             "chpids": {"27": "1B00"},
                             'pchids': {'02E4': '27'}},
                     1: {
-                            "total": "1B01",
-                            "total_count": {'02A4': 1},
-                            "single_fcp": "1B01",
-                            "range_fcp": "",
+                            "total": "1B01 - 1B02",
+                            "total_count": {'02A4': 1, '02E4': 1},
+                            "single_fcp": "",
+                            "range_fcp": "1B01 - 1B02",
                             "available": "",
-                            "available_count": {'02A4': 0},
-                            "allocated": "",
+                            "available_count": {'02A4': 0, '02E4': 0},
+                            "allocated": "1B02",
                             "reserve_only": "",
                             "connection_only": "",
                             "unallocated_but_active": {"1B01": "owner2"},
                             "allocated_but_free": "",
                             "notfound": "",
                             "offline": "",
-                            "chpids": {"35": "1B01"},
-                            'pchids': {'02A4': '35'}
+                            "chpids": {"35": "1B01", "27": "1B02"},
+                            'pchids': {'02A4': '35', '02E4': '27'}
                     }
                 }
             }
