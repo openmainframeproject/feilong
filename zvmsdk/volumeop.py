@@ -1841,7 +1841,8 @@ class FCPManager(object):
                     pchids = []
                     for _, path_detail in statistics_usage[template_id].items():
                         if path_detail['pchids']:
-                            pchids.extend(list(set(list(path_detail['pchids'].keys()))))
+                            pchids.extend(list(path_detail['pchids'].keys()))
+                    pchids = list(set(pchids))
                     pchids.sort()
                     base_info.update({"pchids": pchids})
                 else:
