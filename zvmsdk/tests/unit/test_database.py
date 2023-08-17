@@ -1346,6 +1346,14 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             kwargs['host_default'] = True
             kwargs['default_sp_list'] = ['SP1', 'SP2']
             tmpl_basic = self.db_op.edit_fcp_template(tmpl_id, **kwargs)
+            all_add_pchids = []
+            first_used_by_templates = []
+            del_pchids = []
+            not_used_in_any_template = []
+            add_pchids = dict(all=list(all_add_pchids),
+                              first_used_by_templates=first_used_by_templates)
+            delete_dict = dict(all=del_pchids,
+                               not_exist_in_any_template=not_used_in_any_template)
             expected = {'fcp_template': {
                 'id': tmpl_id,
                 'name': kwargs['name'],
@@ -1354,10 +1362,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'storage_providers': kwargs['default_sp_list'],
                 'min_fcp_paths_count': 2,
                 'pchids': {
-                        'add': [],
-                        'delete': {
-                            'all': [],
-                            'not_exist_in_any_template': []},
+                        'add': add_pchids,
+                        'delete': delete_dict,
                         'all': ['02E4']
                 }
             }}

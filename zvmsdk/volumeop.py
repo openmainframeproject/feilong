@@ -1012,9 +1012,12 @@ class FCPManager(object):
             'host_default': True,
             'storage_providers': ['sp4', 'v7k60'],
             'min_fcp_paths_count': 2
-            'pchids': {'add': [],
-                       'del': [],
-                       'all': ['0a20']},
+            'pchids': {
+                'add': {
+                    'all': ['A', 'B'],
+                    'first_used_by_templates': ['B']
+                },
+            },
             'cpc_sn': '0000000000082F57',
             'cpc_name': 'M54',
             'lpar': 'ZVM4OCP3',
@@ -1044,12 +1047,16 @@ class FCPManager(object):
         cpc_name = zvmutils.get_cpc_name(zhypinfo=zhypinfo)
         lpar = zvmutils.get_lpar_name(zhypinfo=zhypinfo)
         hypervisor_hostname = zvmutils.get_zvm_name()
+        all_pchid_used_by_templates = self.db.get_pchids_from_all_fcp_templates()
         # Insert related records in FCP database
         self.db.create_fcp_template(tmpl_id, name, description,
                                     fcp_devices_by_path, host_default,
                                     default_sp_list, min_fcp_paths_count)
         min_fcp_paths_count_db = self.db.get_min_fcp_paths_count(tmpl_id)
-        final_phid_list = self.db.get_pchids_by_fcp_template(tmpl_id)
+        final_pchid_list = self.db.get_pchids_by_fcp_template(tmpl_id)
+        add_pchids = dict(all=final_pchid_list,
+                          first_used_by_templates=list(set(final_pchid_list) -
+                                                       set(all_pchid_used_by_templates)))
         # Return template basic info
         LOG.info("A FCP Multipath Template was created with ID %s." % tmpl_id)
         return {'fcp_template': {'name': name,
@@ -1058,7 +1065,7 @@ class FCPManager(object):
                 'host_default': host_default,
                 'storage_providers': default_sp_list if default_sp_list else [],
                 'min_fcp_paths_count': min_fcp_paths_count_db,
-                'pchids': final_phid_list,
+                'pchids': add_pchids,
                 'cpc_sn': cpc_sn,
                 'cpc_name': cpc_name,
                 'hypervisor_hostname': hypervisor_hostname,
@@ -1105,10 +1112,13 @@ class FCPManager(object):
                 'storage_providers': ['sp4', 'v7k60'],
                 'min_fcp_paths_count': 2,
                 'pchids': {
-                    'add' : ['C'],
+                    'add' : {
+                        'all': ['A', 'B'],
+                        'first_used_by_templates': ['A']
+                    },
                     'delete' : {
                         'all': ['D', 'E'],
-                        'not_exist_in_any_template': ['F']
+                        'not_exist_in_any_template': ['E']
                     },
                     'all' : ['A', 'B', 'C']
                 }
