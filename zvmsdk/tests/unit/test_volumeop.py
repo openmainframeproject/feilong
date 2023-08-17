@@ -945,7 +945,7 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(ret['fcp_template']['description'], description)
             self.assertEqual(ret['fcp_template']['host_default'], host_default)
             self.assertEqual(ret['fcp_template']['storage_providers'], default_sp_list)
-            self.assertEqual(ret['fcp_template']['pchids'], [])
+            self.assertEqual(ret['fcp_template']['pchids'], {'all': [], 'first_used_by_templates': []})
             self.assertEqual(ret['fcp_template']['cpc_sn'], '0000000000082F57')
             self.assertEqual(ret['fcp_template']['cpc_name'], 'M54')
             self.assertEqual(ret['fcp_template']['lpar'], 'ZVM4OCP3')

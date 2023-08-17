@@ -1237,10 +1237,13 @@ class FCPDbOperator(object):
                 'storage_providers': ['sp4', 'v7k60'],
                 'min_fcp_paths_count': 2,
                 'pchids': {
-                    'add' : ['C'],
+                    'add' : {
+                        'all': ['A', 'B'],
+                        'first_used_by_templates': ['B']
+                    },
                     'delete' : {
                         'all': ['D', 'E'],
-                        'not_exist_in_any_template': ['F']
+                        'not_exist_in_any_template': ['E']
                     },
                     'all' : ['A', 'B', 'C']
                 }
@@ -1286,6 +1289,7 @@ class FCPDbOperator(object):
             # min_fcp_paths_count should not be larger than fcp device path count, or else, raise error.
             self._validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count, fcp_template_id)
             ori_pchid_list = self.get_pchids_by_fcp_template(fcp_template_id)
+            all_pchid_used_by_templates = self.get_pchids_from_all_fcp_templates()
             tmpl_basic, fcp_detail = self.get_fcp_templates_details(
                 [fcp_template_id])
 
@@ -1427,7 +1431,11 @@ class FCPDbOperator(object):
             #  while tmpl_basic[1]['sp_name'] is 'SP2'.
             tmpl_basic = self.get_fcp_templates_details([fcp_template_id])[0]
             final_pchid_list = self.get_pchids_by_fcp_template(fcp_template_id)
-            add_pchids = list(set(final_pchid_list) - set(ori_pchid_list))
+            add_pchids = dict(all=list(set(final_pchid_list) -
+                                       set(ori_pchid_list)),
+                              first_used_by_templates=list(set(final_pchid_list) -
+                                                           set(all_pchid_used_by_templates)))
+
             del_pchids = list(set(ori_pchid_list) - set(final_pchid_list))
             all_pchids_in_template = self.get_pchids_from_all_fcp_templates()
             not_used_in_any_template = list(set(del_pchids) - set(all_pchids_in_template))
