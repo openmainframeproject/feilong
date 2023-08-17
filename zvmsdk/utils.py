@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # Copyright 2011 OpenStack Foundation.
 #
@@ -866,7 +866,7 @@ def expand_fcp_list(fcp_list):
 
     Example 2:
     if fcp_list is empty string: '',
-    then the function will return an empty set: {}
+    then the function will return an empty dict: {}
 
     ATTENTION: To support multipath, we expect fcp_list should be like
     "0011-0014;0021-0024", "0011-0014" should have been on same physical
