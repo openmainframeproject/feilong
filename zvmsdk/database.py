@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017, 2022 IBM Corp.
+#
+#    Copyright 2017, 2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1473,6 +1473,51 @@ class FCPDbOperator(object):
             raw = result.fetchall()
             for item in raw:
                 pchids.append(item['pchid'].upper())
+        return pchids
+
+    def get_pchids_of_all_inuse_fcp_devices(self):
+        """Get the PCHIDs of all the FCP devices allocated from any FCP multipath template
+
+        :param None
+        :return pchids: (dict) PCHIDs as keys, FCP devices as values
+            for example:
+            {
+                '02E0': '1A01 - 1A03',
+                '03FC': '1B02, 1B05'
+            }
+        """
+        pchids = dict()
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                "SELECT pchid, fcp_id "
+                "FROM fcp "
+                "WHERE tmpl_id != '' "
+                "ORDER BY pchid")
+            # already ORDER BY pchid in SQL
+            # inuse_fcp_devices ex:
+            # ( each item is a sqlite3.Row object, dict-style
+            #   {'pchid': '02E0',  'fcp_id': '1A01'},
+            #   {'pchid': '02E0',  'fcp_id': '1A02'},
+            #   {'pchid': '02E0',  'fcp_id': '1A03'},
+            #   {'pchid': '03FC',  'fcp_id': '1B02'},
+            #   {'pchid': '03FC',  'fcp_id': '1B05'} )
+            inuse_fcp_devices = result.fetchall()
+        # shrink_fcp_list
+        if inuse_fcp_devices:
+            # tmp_fcps ex:
+            # ('1A01', '1A02', '1A03', '1B02', '1B05')
+            tmp_fcps = tuple(fcp['fcp_id'] for fcp in inuse_fcp_devices)
+            # tmp_pchids ex:
+            # ('02E0', '02E0', '02E0', '03FC', '03FC')
+            tmp_pchids = tuple(fcp['pchid'] for fcp in inuse_fcp_devices)
+            # process per pchid
+            for pd in set(tmp_pchids):
+                first_idx = tmp_pchids.index(pd)
+                last_idx = first_idx + tmp_pchids.count(pd)
+                # shrink_fcp_list
+                shrunk_fcp_devices = utils.shrink_fcp_list(
+                    list(tmp_fcps[first_idx:last_idx]))
+                pchids[pd.upper()] = shrunk_fcp_devices
         return pchids
 
     def get_fcp_templates(self, template_id_list=None):
