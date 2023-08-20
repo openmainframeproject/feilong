@@ -1495,13 +1495,17 @@ class FCPDbOperator(object):
                 "ORDER BY pchid")
             # already ORDER BY pchid in SQL
             # inuse_fcp_devices ex:
-            # ( each item is a sqlite3.Row object, dict-style
+            # [ each item is a sqlite3.Row object, dict-style
             #   {'pchid': '02E0',  'fcp_id': '1A01'},
             #   {'pchid': '02E0',  'fcp_id': '1A02'},
             #   {'pchid': '02E0',  'fcp_id': '1A03'},
             #   {'pchid': '03FC',  'fcp_id': '1B02'},
-            #   {'pchid': '03FC',  'fcp_id': '1B05'} )
+            #   {'pchid': '03FC',  'fcp_id': '1B05'} ]
             inuse_fcp_devices = result.fetchall()
+        # upper case
+        for item in inuse_fcp_devices:
+            for key in item:
+                item[key] = item[key].upper()
         # shrink_fcp_list
         if inuse_fcp_devices:
             # tmp_fcps ex:

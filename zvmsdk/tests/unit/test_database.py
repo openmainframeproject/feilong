@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017, 2022 IBM Corp.
+# Copyright 2017, 2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -19,6 +19,7 @@
 import mock
 import uuid
 import random
+from mock import Mock, patch
 
 from zvmsdk import utils
 from zvmsdk import config
@@ -316,6 +317,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
+    #################################################
+    #            Helper Methods                     #
+    #################################################
     def get_path_of_fcp(self, fcp_id, fcp_template_id):
         with database.get_fcp_conn() as conn:
             result = conn.execute("SELECT path FROM template_fcp_mapping "
@@ -1170,7 +1174,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         fcp_template_id = 'fcp_tmpl_1'
         self.db_op._validate_min_fcp_paths_count(fcp_devices, min_fcp_paths_count, fcp_template_id)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
     def test_validate_min_fcp_paths_count_only_with_fcp_error(self, get_min_fcp_paths_count_from_db):
         fcp_devices = '1a10;1b10'
         fcp_template_id = 'fcc_tmpl_1'
@@ -1180,7 +1184,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                self.db_op._validate_min_fcp_paths_count,
                                fcp_devices, None, fcp_template_id)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @patch("zvmsdk.database.FCPDbOperator.get_path_count")
     def test_validate_min_fcp_paths_count_only_with_minCount_error(self, get_path_count):
         fcp_devices = None
         min_fcp_paths_count = 4
@@ -1191,16 +1195,16 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                self.db_op._validate_min_fcp_paths_count,
                                fcp_devices, min_fcp_paths_count, fcp_template_id)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    @patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
     def test_get_min_fcp_paths_count_not_set_minCount(self, get_min_fcp_paths_count_from_db, get_path_count):
         get_path_count.return_value = 2
         get_min_fcp_paths_count_from_db.return_value = -1
         ret = self.db_op.get_min_fcp_paths_count('template_id')
         self.assertEqual(2, ret)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    @patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
     def test_get_min_fcp_paths_count_with_minCount(self, get_min_fcp_paths_count_from_db, get_path_count):
         get_path_count.return_value = 2
         get_min_fcp_paths_count_from_db.return_value = 4
@@ -1212,7 +1216,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                'min_fcp_paths_count from fcp_template_id',
                                self.db_op.get_min_fcp_paths_count, None)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
+    @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count_from_db")
     def test_get_min_fcp_paths_count_with_none_mincount(self, get_min_fcp_paths_count_from_db):
         get_min_fcp_paths_count_from_db.return_value = None
         self.assertRaisesRegex(exception.SDKObjectNotExistError,
@@ -1220,9 +1224,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                                self.db_op.get_min_fcp_paths_count, 'fake_fcp_template_id')
 
     def test_edit_fcp_template(self):
-        """ Test edit_fcp_template()
-
-        """
+        """Test edit_fcp_template"""
         tmpl_id = 'fake_id_0000'
         kwargs = {
             'name': 'new_name',
@@ -1372,9 +1374,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # clean up
             self._purge_fcp_db()
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates")
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
-    def test_get_pchids_from_all_fcp_templates(self, mock_get_pchid, mock_get_fcp):
+    @patch("zvmsdk.database.FCPDbOperator.get_fcp_templates", Mock())
+    @patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template", Mock())
+    def test_get_pchids_from_all_fcp_templates(self):
         """test_get_pchids_from_all_fcp_templates"""
         """Test function get_pchids_by_fcp_template"""
         # insert test data into table template_fcp_mapping
@@ -1735,6 +1737,34 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    @patch('zvmsdk.database._FCP_CONN')
+    def test_get_pchids_of_all_inuse_fcp_devices(self, mock_conn):
+        """test get_pchids_of_all_inuse_fcp_devices"""
+        mock_conn.execute().fetchall.side_effect = [
+            [],
+            [   # pchid: 02E0
+                {'pchid': '02e0', 'fcp_id': '1a0a'},
+                {'pchid': '02e0', 'fcp_id': '1a09'},
+                {'pchid': '02e0', 'fcp_id': '1a0b'},
+                {'pchid': '02e0', 'fcp_id': '1A02'},
+                {'pchid': '02E0', 'fcp_id': '1A11'},
+                # pchid: 03FC
+                {'pchid': '03fc', 'fcp_id': '1c03'},
+                {'pchid': '03fc', 'fcp_id': '1c04'},
+                {'pchid': '03fc', 'fcp_id': '1b1f'},
+                {'pchid': '03FC', 'fcp_id': '1B20'},
+                {'pchid': '03FC', 'fcp_id': '1B21'}]
+        ]
+        # case1: no inuse fcp
+        expected = {}
+        result = self.db_op.get_pchids_of_all_inuse_fcp_devices()
+        self.assertEqual(expected, result)
+        # case2: has inuse fcp
+        expected = {'02E0': '1A02, 1A09 - 1A0B, 1A11',
+                    '03FC': '1B1F - 1B21, 1C03 - 1C04'}
+        result = self.db_op.get_pchids_of_all_inuse_fcp_devices()
+        self.assertEqual(expected, result)
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
