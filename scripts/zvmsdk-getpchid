@@ -65,7 +65,7 @@ def setup_logging():
 def get_fcp_devices_per_pchid():
     """ Get PCHIDs and FCP devices from all FCP multipath templates
 
-    :return: (dict)
+    :return: (dict) PCHIDs are ordered by PCHID No.
     example:
         {
             "cpc_sn": "0000000000082F57",
@@ -73,16 +73,6 @@ def get_fcp_devices_per_pchid():
             "lpar": "ZVM4OCP3",
             "hypervisor_hostname": "BOEM5403",
             "pchids": [
-                {
-                    "pchid": "02E0",
-                    "fcp_devices": "1A01 - 1A03",
-                    "fcp_devices_count": 3
-                },
-                {
-                    "pchid": "03FC",
-                    "fcp_devices": "1B02, 1B05",
-                    "fcp_devices_count": 2
-                },
                 {
                     "pchid": "0240",
                     "fcp_devices": "",
@@ -92,6 +82,16 @@ def get_fcp_devices_per_pchid():
                     "pchid": "0260",
                     "fcp_devices": "",
                     "fcp_devices_count": 0
+                },
+                {
+                    "pchid": "02E0",
+                    "fcp_devices": "1A01 - 1A03",
+                    "fcp_devices_count": 3
+                },
+                {
+                    "pchid": "03FC",
+                    "fcp_devices": "1B02, 1B05",
+                    "fcp_devices_count": 2
                 }
             ]
         }
@@ -104,8 +104,11 @@ def get_fcp_devices_per_pchid():
         # get the PCHIDs of all the FCP devices
         # that are included in any FCP multipath template
         # all_pchids ex: a list of pchids
-        # ['0240', '0260' '03FC', '02E0']
+        # ['03FC', '0240', '02E0', '0260']
         all_pchids = fcp_mgr.db.get_pchids_from_all_fcp_templates()
+        # sort all_pchids to later append into pchids ordered by PCHID No.
+        # ['0240', '0260', '02E0', '03FC']
+        all_pchids.sort()
         # get the PCHIDs of all the inuse FCP devices
         # inuse_pchids ex:
         # (dict) PCHIDs as keys, FCP devices as values
@@ -118,7 +121,8 @@ def get_fcp_devices_per_pchid():
     # get the unused PCHIDs
     # unuse_pchids ex:
     # ['0240', '0260']
-    unuse_pchids = set(all_pchids) - set(inuse_pchids)
+    unuse_pchids = list(set(all_pchids) - set(inuse_pchids))
+    unuse_pchids.sort()
     # log
     LOG.info("all pchids in FCP multipath templates: {}".format(all_pchids))
     LOG.info("inuse pchids in FCP multipath templates: {}".format(inuse_pchids))
@@ -135,22 +139,19 @@ def get_fcp_devices_per_pchid():
                'hypervisor_hostname': hypervisor_hostname,
                'lpar': lpar,
                'pchids': []}
-    # process inuse_pchids
-    for pd in inuse_pchids:
-        item = {
-            'pchid': pd,
-            'fcp_devices': inuse_pchids[pd],
-            'fcp_devices_count': len(
-                utils.expand_fcp_list(inuse_pchids[pd])[0])}
+    # append into pchids ordered by pchid No.
+    for pd in all_pchids:
+        item = {'pchid': pd}
+        if pd in inuse_pchids:
+            # for inuse_pchids
+            item['fcp_devices'] = inuse_pchids[pd]
+            item['fcp_devices_count'] = len(
+                utils.expand_fcp_list(inuse_pchids[pd])[0])
+        else:
+            # for unused_pchids
+            item['fcp_devices'] = ''
+            item['fcp_devices_count'] = 0
         result['pchids'].append(item)
-    # process unuse_pchids
-    for pd in unuse_pchids:
-        item = {
-            'pchid': pd,
-            'fcp_devices': '',
-            'fcp_devices_count': 0}
-        result['pchids'].append(item)
-    LOG.info('result : {}'.format(result))
     return result
 
 #################################################
