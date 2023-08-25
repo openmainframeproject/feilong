@@ -580,6 +580,7 @@ function deployDiskImage {
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
         if (( gzipCompression == 0 )); then
           declare -a stages=('overall_placeholder' 'dd' 'ckddecode')
           dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
@@ -648,6 +649,7 @@ function deployDiskImage {
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
         if (( gzipCompression == 0 )); then
           dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
             > /dev/disk/by-path/ccw-0.0.${alias}
@@ -1022,6 +1024,7 @@ function deployDiskImage {
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
 
         # Zero out the disk header
         out=`dd if=/dev/zero bs=512 count=2 2>&1 of=/dev/disk/by-path/ccw-0.0.${alias}`
@@ -1133,6 +1136,7 @@ function deployDiskImage {
         printError "Failed to create a temporary file in the /var/log/zthin directory"
         exit 3
       fi
+      wipefs --all --force "/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}"
       if (( gzipCompression == 0 )); then
         dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
           > /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
