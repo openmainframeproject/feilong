@@ -1618,31 +1618,51 @@ class SDKAPI(object):
         self._networkops.delete_vswitch(vswitch_name, persist)
 
     def get_volume_connector(self, userid, reserve=False,
-                             fcp_template_id=None, sp_name=None):
-        """Get connector information of the guest for attaching to volumes.
+                             fcp_template_id=None, sp_name=None, pchid_info=None):
+        """Get connector information of the guest for attaching volumes.
         This API is for Openstack Cinder driver only now.
 
-        Connector information is a dictionary representing the
-        machine that will be making the connection as follows::
-
+        @param userid: (str) instance userid in z/VM
+        @param reserve: (bool) True for attach-volume process, False for detach-volume
+        @param fcp_template_id: (str) FCP multipath template ID
+        @param sp_name: (str) storage provider hostname
+        @param pchid_info: (dict) PCHID as key
+            example:
+            { 'AAAA': { 'total_allocate': 126, 'instance_allocate': 120, 'max': 128},
+              'BBBB': { 'total_allocate': 104, 'instance_allocate': 102, 'max': 110},
+              'CCCC': { 'total_allocate': 100, 'instance_allocate': 100, 'max': 90}}
+        @return: (dict)
+            example:
             {
-                'zvm_fcp': fcp
-                'wwpns': [wwpn]
-                'host': host
-                'phy_to_virt_initiators': {},
-                'fcp_paths': 0,
-                'fcp_template_id': fcp_template_id
+                'zvm_fcp': [fcp1, fcp2, fcp3]
+                'wwpns': [npiv_wwpn1, npiv_wwpn2, npiv_wwpn3]
+                'phy_to_virt_initiators':{
+                    npiv_wwpn1: phy_wwpn1,
+                    npiv_wwpn2: phy_wwpn2,
+                    npiv_wwpn3: phy_wwpn3
+                }
+                'host': LPARname_VMuserid, # the name to be used by storage provider
+                'fcp_paths': 3,            # the count of fcp paths
+                'fcp_template_id': '123',  # if user doesn't specify it,
+                                             it is either the SP default or the host
+                                             default template id
+                'cpc_sn': '8257',
+                'cpc_name': 'M54',
+                'lpar': 'ZVM4OCP1',
+                "hypervisor_hostname": "BOEM5401",
+                'pchid_fcp_map': {
+                    'A': [fcp1, fcp2],
+                    'B': [fcp3]
+                },
+                'is_reserved_changed': True  # True for either attaching 1st volume to
+                                               or detaching last volume from
+                                               the VM (assigner_id)
+                                               through this template (fcp_template_id)
             }
-        This information will be used by IBM storwize FC driver in Cinder.
-
-        :param str userid: the user id of the guest
-        :param boolean reserve: the flag to reserve FCP device
-        :param str fcp_template_id: the FCP Multipath Template id
-               which FCP devices are allocated by
-        :param str sp_name: the storage provider name
         """
         return self._volumeop.get_volume_connector(
-            userid, reserve, fcp_template_id, sp_name)
+            userid, reserve,
+            fcp_template_id=fcp_template_id, sp_name=sp_name, pchid_info=pchid_info)
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                          default_sp_list= None, host_default=None):
