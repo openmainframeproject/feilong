@@ -654,6 +654,7 @@ class FCPManager(object):
         is_reserved_changed = False
         with database.get_fcp_conn():
 
+            # try getting a default template if no specified template
             if not fcp_template_id:
                 LOG.info("FCP Multipath Template id is not specified when reserving FCP "
                          "devices for assigner %s." % assigner_id)
@@ -2487,7 +2488,7 @@ class FCPVolumeManager(object):
     @utils.synchronized('volumeAttachOrDetach-{assigner_id}')
     def get_volume_connector(self, assigner_id, reserve,
                              fcp_template_id=None, sp_name=None, pchid_info=None):
-        """Get connector information of the instance for attaching volumes.
+        """Get connector information of the instance for attaching or detaching volumes.
 
         @param assigner_id: (str) instance userid in z/VM
         @param reserve: (bool) True for attach-volume process, False for detach-volume
@@ -2532,8 +2533,8 @@ class FCPVolumeManager(object):
 
         def _precheck():
             # verify z/VM hypervisor name of the userid
-            zvm_host = zvmutils.get_zvm_name()
-            if not zvm_host:
+            hypervisor_hostname = zvmutils.get_zvm_name()
+            if not hypervisor_hostname:
                 errmsg = "failed to get z/VM hypervisor name."
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(
@@ -2549,7 +2550,7 @@ class FCPVolumeManager(object):
                     rs=11, userid=assigner_id, msg=errmsg)
 
         with database.get_fcp_conn():
-            zvm_host = None
+            hypervisor_hostname = None
             # precheck
             _precheck()
             """
@@ -2582,7 +2583,6 @@ class FCPVolumeManager(object):
         cpc_sn = utils.get_cpc_sn(zhypinfo=zhypinfo)
         cpc_name = utils.get_cpc_name(zhypinfo=zhypinfo)
         lpar = utils.get_lpar_name(zhypinfo=zhypinfo)
-        hypervisor_hostname = utils.get_zvm_name()
         # process empty fcp_list
         if not fcp_list:
             errmsg = ("Not enough available FCP devices found from "
@@ -2618,7 +2618,7 @@ class FCPVolumeManager(object):
 
         # return the LPARname+VMuserid
         # as host to be used by storage provider
-        ret_host = zvm_host + '_' + assigner_id
+        ret_host = hypervisor_hostname + '_' + assigner_id
         connector = {'zvm_fcp': fcp_ids,
                      'wwpns': wwpns,
                      'phy_to_virt_initiators': phy_virt_wwpn_map,

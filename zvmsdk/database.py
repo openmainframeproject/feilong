@@ -830,6 +830,18 @@ class FCPDbOperator(object):
     #########################################################
     def get_allocated_fcps_from_assigner(self,
                                          assigner_id, fcp_template_id):
+        """ Get the previously allocated FCP devices of the instance
+        by fcp.connections<>0 OR fcp.reserved<>0
+
+        @param assigner_id: (str) instance userid in z/VM
+        @param fcp_template_id: (str) FCP multipath template ID
+        @return: a list of sqlite3.Row objects.
+          sqlite3.Row can be accessed in dict-style.
+          example:
+          [{'fcp_id':'1B02', 'path':1, 'pchid':'A', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+           {'fcp_id':'1C04', 'path':4, 'pchid':'B', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+           {'fcp_id':'1E05', 'path':5, 'pchid':'E', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
+        """
         with get_fcp_conn() as conn:
             result = conn.execute(
                 "SELECT "
@@ -844,10 +856,21 @@ class FCPDbOperator(object):
                 "ORDER BY tf.fcp_id ASC",
                 (fcp_template_id, assigner_id, fcp_template_id))
             fcp_list = result.fetchall()
-
         return fcp_list
 
     def get_reserved_fcps_from_assigner(self, assigner_id, fcp_template_id):
+        """ Get the previously reserved FCP devices of the instance
+        by fcp.reserved<>0
+
+        @param assigner_id: (str) instance userid in z/VM
+        @param fcp_template_id: (str) FCP multipath template ID
+        @return: a list of sqlite3.Row objects.
+          sqlite3.Row can be accessed in dict-style.
+          example:
+          [{'fcp_id':'1B02', 'path':1, 'pchid':'A', 'wwpn_npiv':'aa', 'wwpn_phy':'xx', 'connections':0},
+           {'fcp_id':'1C04', 'path':4, 'pchid':'C', 'wwpn_npiv':'bb', 'wwpn_phy':'yy', 'connections':0},
+           {'fcp_id':'1E05', 'path':5, 'pchid':'E', 'wwpn_npiv':'cc', 'wwpn_phy':'zz', 'connections':0}]
+        """
         with get_fcp_conn() as conn:
             result = conn.execute(
                 "SELECT fcp.fcp_id, fcp.wwpn_npiv, "
@@ -934,20 +957,20 @@ class FCPDbOperator(object):
                 return fcp_list
             '''
             fcps 2 paths example:
-               fcp  conn reserved state
+               fcp  conn reserved state path pchid wwpn_npiv wwpn_phy
               ------------------
-            [('1a00', 1, 1, 'active'),
-             ('1a01', 0, 0, 'free'),
-             ('1a02', 0, 0, 'free'),
-             ('1a03', 0, 0, 'free'),
-             ('1a04', 0, 0, 'offline'"),
+            [('1a00', 1, 1, 'active', ...),
+             ('1a01', 0, 0, 'free', ...),
+             ('1a02', 0, 0, 'free', ...),
+             ('1a03', 0, 0, 'free', ...),
+             ('1a04', 0, 0, 'offline', ...),
              ...
-             ('1b00', 1, 0, 'active'),
-             ('1b01', 2, 1, 'active'),
-             ('1b02', 0, 0, 'free'),
-             ('1b03', 0, 0, 'free'),
-             ('1b04', 0, 0, 'free'),
-             ...           ]
+             ('1b00', 1, 0, 'active', ...),
+             ('1b01', 2, 1, 'active', ...),
+             ('1b02', 0, 0, 'free', ...),
+             ('1b03', 0, 0, 'free', ...),
+             ('1b04', 0, 0, 'free', ...),
+             ...]
             '''
             result = conn.execute(
                 "SELECT fcp.fcp_id, fcp.connections, tf.path, fcp.pchid, "
@@ -964,8 +987,8 @@ class FCPDbOperator(object):
          idx    fcp_pair
          ----------------
         { 1 : [('1a01', 'c0507...', 'c0604...', 0, 'AAAA')],
-          2 : ['1a02'],
-          3 : ['1a03']}
+          2 : [('1a02', ...)],
+          3 : [('1a03', ...)]}
         '''
         # The FCP count of 1st path
         for i in range(count_per_path[0]):
@@ -978,8 +1001,8 @@ class FCPDbOperator(object):
         fcp_pair_map example:
          idx    fcp_pair
          ----------------------
-        { 2 : ['1a02', '1b02'],
-          3 : ['1a03', '1b03']}
+        { 2 : [('1a02', ...), ('1b02', ...)],
+          3 : [('1a03', ...), ('1b03', ...)]}
         '''
         for idx in fcp_pair_map.copy():
             s = 0
@@ -999,7 +1022,7 @@ class FCPDbOperator(object):
         '''
         case3: return one group randomly chosen from fcp_pair_map
         fcp_list example:
-        ['1a03', '1b03']
+        [('1a03', ...), ('1b03', ...)]
         '''
         LOG.info("Print at most 5 available FCP groups: {}".format(
             list(fcp_pair_map.values())[:5]))
@@ -1049,8 +1072,12 @@ class FCPDbOperator(object):
            {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
         """
 
-        def _calculate_instance_count(pchid_info ,pchids_per_path_combinations):
-            """ Calculate to-be-created instance count based on PCHID info """
+        def _calculate_weight(pchid_info, pchids_per_path_combinations):
+            """ Calculate the weight based on PCHID info
+            In a way, the weight reflects the capability
+            of how many times of FCP device allocation can be done.
+            The higher is the weight, the stronger is the capability.
+            """
 
             # free_fcp_count_per_pchid:
             # PCHID as key, free-FCP-device-count as value. Ex:
@@ -1067,53 +1094,58 @@ class FCPDbOperator(object):
                 # comb_fcp_count_per_pchid:
                 # PCHID as key, occurance-count-in-comb as value. Ex:
                 # {'EEEE': 1, 'CCCC': 2}
+                # In the example, for this comb
+                # it means PCHID 'EEEE' occurs once, PCHID 'CCCC' occurs twice;
+                # it indicates 1 FCP device from 'EEEE' and 2 from 'CCCC'
+                # will be consumed to satisfy one time of FCP device allocation.
                 comb_fcp_count_per_pchid = {
                     pchid: (list(comb.values()).count(pchid))
                     for pchid in set(comb.values())}
-                # instance_count:
-                # indicates how many instances can be created if choosing this comb.
+                # weight:
+                # In a way, the weight reflects the capability of how many times
+                # of FCP device allocation can be done if choosing this comb.
                 # take PCHIDs 'EEEE' and 'CCCC' as example:
                 # min(20/1, 17/2) -> min(20, 8.5) -> 8.5
-                instance_count = min(
+                weight = min(
                     free_fcp_count_per_pchid[p] / comb_fcp_count_per_pchid[p]
                     for p in comb_fcp_count_per_pchid)
                 # comb ex:
-                # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5}
-                comb['instance_count'] = instance_count
+                # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}
+                comb['weight'] = weight
             # log
             LOG.info(
-                'after _calculate_instance_count, pchids_per_path_combinations: '
+                'after _calculate_weight, pchids_per_path_combinations: '
                 '{}'.format(pchids_per_path_combinations))
 
-        def _remove_invalid_instance_count(pchids_per_path_combinations):
-            """remove the combinations whose instance_count is less than 1"""
+        def _remove_invalid_weight(pchids_per_path_combinations):
+            """remove the combinations whose weight is less than 1"""
             for comb in pchids_per_path_combinations.copy():
-                if comb['instance_count'] < 1:
+                if comb['weight'] < 1:
                     pchids_per_path_combinations.remove(comb)
             # log
             LOG.info(
-                'after _remove_invalid_instance_count, pchids_per_path_combinations: '
+                'after _remove_invalid_weight, pchids_per_path_combinations: '
                 '{}'.format(pchids_per_path_combinations))
 
-        def _select_max_instance_count(pchids_per_path_combinations):
-            """ keep only the combinations with max instance count """
-            # max_instance_count ex: 8.5
-            max_instance_count = max(
-                p['instance_count'] for p in pchids_per_path_combinations)
-            # keep only the combinations with max instance count
+        def _select_max_weight(pchids_per_path_combinations):
+            """ keep only the combinations with max weight """
+            # max_weight ex: 8.5
+            max_weight = max(
+                p['weight'] for p in pchids_per_path_combinations)
+            # keep only the combinations with max weight
             for comb in pchids_per_path_combinations.copy():
-                if comb['instance_count'] != max_instance_count:
+                if comb['weight'] != max_weight:
                     pchids_per_path_combinations.remove(comb)
             # log
             LOG.info(
-                'after _select_max_instance_count, pchids_per_path_combinations: '
+                'after _select_max_weight, pchids_per_path_combinations: '
                 '{}'.format(pchids_per_path_combinations))
 
         def _select_most_distributed_pchids(pchids_per_path_combinations):
             """ keep only the combinations with most distributed PCHIDs """
-            # pop the instance_count
+            # pop the weight
             for comb in pchids_per_path_combinations:
-                comb.pop('instance_count')
+                comb.pop('weight')
             # max_pchid_count ex:
             # max(3,3,2)
             max_pchid_count = max(
@@ -1288,44 +1320,44 @@ class FCPDbOperator(object):
                     tmp_pchid_comb_with_path = [
                         dict(zip(path_idx_comb, comb)) for comb in tmp_pchid_comb]
                     pchids_per_path_combinations.extend(tmp_pchid_comb_with_path)
-                # calculate to-be-created instance count for each combination,
-                # afterwards, instance_count is added, ex:
+                # calculate weight for each combination,
+                # afterwards, weight is added, ex:
                 # path_cnt pchids_per_path_combinations
                 # -----------------------------------
-                # 3        [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC', 'instance_count': 0.0},
-                #           {1: 'AAAA', 3: 'CCCC', 4: 'DDDD', 'instance_count': -3.0},
-                #           {1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'instance_count': 1.0},
-                #           {1: 'BBBB', 3: 'CCCC', 4: 'DDDD', 'instance_count': -3.0},
-                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'instance_count': 1.0},
-                #           {1: 'AAAA', 4: 'CCCC', 5: 'EEEE', 'instance_count': 0.0},
-                #           {1: 'AAAA', 4: 'DDDD', 5: 'EEEE', 'instance_count': -3.0},
-                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                #           {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'instance_count': -3.0},
-                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                #           {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'instance_count': -3.0}]
-                _calculate_instance_count(pchid_info, pchids_per_path_combinations)
+                # 3        [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC', 'weight': 0.0},
+                #           {1: 'AAAA', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+                #           {1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
+                #           {1: 'BBBB', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
+                #           {1: 'AAAA', 4: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+                #           {1: 'AAAA', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                #           {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                #           {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0}]
+                _calculate_weight(pchid_info, pchids_per_path_combinations)
                 # remove the combinations
-                # whose instance_count is less than 1, ex:
+                # whose weight is less than 1, ex:
                 # path_cnt pchids_per_path_combinations
                 # -----------------------------------
-                # 3        [{1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'instance_count': 1.0},
-                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'instance_count': 1.0},
-                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5}]
-                _remove_invalid_instance_count(pchids_per_path_combinations)
-                # _select_max_instance_count must be called before
+                # 3        [{1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
+                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
+                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
+                _remove_invalid_weight(pchids_per_path_combinations)
+                # _select_max_weight must be called before
                 # _select_most_distributed_pchids, because we treat
-                # _select_max_instance_count with higher priority
+                # _select_max_weight with higher priority
                 if pchids_per_path_combinations:
-                    # keep only the combinations with max instance count
+                    # keep only the combinations with max weight
                     # path_cnt pchids_per_path_combinations
                     # -----------------------------------
-                    # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                    #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'instance_count': 8.5},
-                    #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'instance_count': 8.5}]
-                    _select_max_instance_count(pchids_per_path_combinations)
+                    # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                    #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                    #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
+                    _select_max_weight(pchids_per_path_combinations)
                     # keep only the combinations with most distributed PCHIDs
                     # path_cnt pchids_per_path_combinations
                     # -----------------------------------
@@ -1782,7 +1814,7 @@ class FCPDbOperator(object):
                 "ORDER BY pchid")
             # already ORDER BY pchid in SQL
             # inuse_fcp_devices ex:
-            # [ each item is a sqlite3.Row object in dict-style
+            # [ each item is a sqlite3.Row object that can be accessed in dict-style
             #   {'pchid': '02E0',  'fcp_id': '1A01'},
             #   {'pchid': '02E0',  'fcp_id': '1A02'},
             #   {'pchid': '02E0',  'fcp_id': '1A03'},
@@ -1885,7 +1917,7 @@ class FCPDbOperator(object):
                 "ORDER BY path, pchid", (fcp_template_id,))
 
             # free_pchids_per_path ex:
-            # [ each item is a sqlite3.Row object in dict-style
+            # [ each item is a sqlite3.Row object that can be accessed in dict-style
             #   {'pchid': '01E0',  'path': '1'},
             #   {'pchid': '02A0',  'path': '1'},
             #   {'pchid': '02A0',  'path': '3'},
