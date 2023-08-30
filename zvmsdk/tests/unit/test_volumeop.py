@@ -36,6 +36,15 @@ def mock_reset(*args):
             m.reset_mock(return_value=True, side_effect=True)
 
 
+def _purge_fcp_db():
+    """ Delete all records in the fcp related tables """
+    with database.get_fcp_conn() as conn:
+        conn.execute("DELETE FROM fcp")
+        conn.execute("DELETE FROM template")
+        conn.execute("DELETE FROM template_fcp_mapping")
+        conn.execute("DELETE FROM template_sp_mapping")
+
+
 class fakeE(Exception):
     def __init__(self, error):
         self.errmsg = error
@@ -414,6 +423,10 @@ class TestFCP(base.SDKTestCase):
 
 class TestFCPManager(base.SDKTestCase):
 
+    def setUp(self):
+        super(TestFCPManager, self).setUp()
+        self.maxDiff = None
+
     @classmethod
     @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
     def setUpClass(cls):
@@ -452,12 +465,14 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
     def test_get_all_fcp_info(self, get_fcp_info):
         """Test get_all_fcp_info"""
+        _purge_fcp_db()
         get_fcp_info.return_value = []
         self.fcpops._get_all_fcp_info('dummy1')
         get_fcp_info.assert_called_once_with('dummy1', None)
 
     def test_get_fcp_dict_in_db(self):
         """Test get_fcp_dict_in_db"""
+        _purge_fcp_db()
         # create 2 FCP records
         # a83c: connections == 0, reserved == 0
         # a83d: connections == 2, reserved == 1
@@ -491,9 +506,11 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     def test_allocate_fcp_devices_with_existed_reserved_fcp(self):
+        _purge_fcp_db()
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
+        pchid_info = dict()
         fcp_info_list = [('1a10', assinger_id, 1, 1, 'c05076de3300a83c',
                           'c05076de33002641', '27', '02e4', 'active', 'owner1',
                           template_id),
@@ -522,16 +539,26 @@ class TestFCPManager(base.SDKTestCase):
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
 
         try:
-            available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
-                assinger_id, template_id, sp_name)
-            expected_fcp_list = [('1a10', 'c05076de3300a83c', 'c05076de33002641'),
-                                 ('1b10', 'c05076de3300b83c', 'c05076de33002641')]
-            actual_fcp_list = []
+            is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
+                assinger_id, template_id, sp_name, pchid_info)
+            new_list = []
             for fcp in available_list:
-                fcp_id, wwpn_npiv, wwpn_phy = fcp
-                actual_fcp_list.append((fcp_id, wwpn_npiv, wwpn_phy))
+                item = {
+                    'fcp_id': fcp['fcp_id'].upper(),
+                    'wwpn_npiv': fcp['wwpn_npiv'],
+                    'wwpn_phy': fcp['wwpn_phy'],
+                    'path': fcp['path'],
+                    'pchid': fcp['pchid'].upper()
+                }
+                new_list.append(item)
+            expected_fcp_list = [
+                {'fcp_id': '1A10', 'path': 0, 'pchid': '02E4',
+                 'wwpn_npiv': 'c05076de3300a83c', 'wwpn_phy': 'c05076de33002641'},
+                {'fcp_id': '1B10', 'path': 1, 'pchid': '02E4',
+                 'wwpn_npiv': 'c05076de3300b83c', 'wwpn_phy': 'c05076de33002641'}]
+            self.assertEqual(is_reserved_changed, False)
             self.assertEqual(template_id, fcp_tmpl_id)
-            self.assertEqual(expected_fcp_list, actual_fcp_list)
+            self.assertEqual(expected_fcp_list, new_list)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self._delete_from_template_table(template_id_list)
@@ -543,9 +570,11 @@ class TestFCPManager(base.SDKTestCase):
         reserve fcp devices for the assigner which hasn't reserved any
         fcp devices before
         """
+        _purge_fcp_db()
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
+        pchid_info = dict()
         fcp_info_list = [('1a10', '', 0, 0, 'c05076de3300a83c',
                           'c05076de33002641', '27', '02e4', 'free', '',
                           ''),
@@ -574,12 +603,13 @@ class TestFCPManager(base.SDKTestCase):
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
         config.CONF.volume.get_fcp_pair_with_same_index = 1
         try:
-            available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
-                assinger_id, template_id, sp_name)
+            is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
+                assinger_id, template_id, sp_name, pchid_info)
             actual_fcp_list = []
             for fcp in available_list:
-                fcp_id, wwpn_npiv, wwpn_phy = fcp
-                actual_fcp_list.append((fcp_id, wwpn_npiv, wwpn_phy))
+                # fcp_id, wwpn_npiv, wwpn_phy, path, pchid = fcp
+                actual_fcp_list.append(fcp)
+            self.assertEqual(is_reserved_changed, True)
             self.assertEqual(template_id, fcp_tmpl_id)
             self.assertEqual(2, len(actual_fcp_list))
         finally:
@@ -592,10 +622,11 @@ class TestFCPManager(base.SDKTestCase):
         Not specify template id, and no sp default template and
         no host default template, should raise error
         """
+        _purge_fcp_db()
         template_id = None
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
-
+        pchid_info = dict()
         # insert data into template table to add a default template
         templates = [('0001', 'name1', 'desc1', 0)]
         template_id_list = [tmpl[0] for tmpl in templates]
@@ -605,7 +636,7 @@ class TestFCPManager(base.SDKTestCase):
                                    "No FCP Multipath Template is specified and no "
                                    "default FCP Multipath Template is found.",
                                    self.fcpops.allocate_fcp_devices,
-                                   assinger_id, template_id, sp_name)
+                                   assinger_id, template_id, sp_name, pchid_info)
         finally:
             self._delete_from_template_table(template_id_list)
 
@@ -613,14 +644,17 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.get_allocated_fcps_from_assigner")
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_devices")
     def test_allocate_fcp_devices_without_free_fcp_device(self, mocked_get_fcp_devices, mocked_get_allocated_fcps):
+        _purge_fcp_db()
         config.CONF.volume.get_fcp_pair_with_same_index = None
         mocked_get_fcp_devices.return_value = []
         mocked_get_allocated_fcps.return_value = []
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
-        available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
-            assinger_id, template_id, sp_name)
+        pchid_info = dict()
+        is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
+            assinger_id, template_id, sp_name, pchid_info)
+        self.assertEqual(is_reserved_changed, False)
         self.assertEqual(template_id, fcp_tmpl_id)
         self.assertEqual(0, len(available_list))
 
@@ -629,6 +663,7 @@ class TestFCPManager(base.SDKTestCase):
         if not specify fcp_template_id when calling release_fcp_devices,
         error will be raised
         """
+        _purge_fcp_db()
         assigner_id = "test_assigner"
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
                                "fcp_template_id is not specified while "
@@ -636,8 +671,9 @@ class TestFCPManager(base.SDKTestCase):
                                self.fcpops.release_fcp_devices,
                                assigner_id, None)
 
-    def test_release_fcp_devices_return_empty_array(self):
-        """If not found any fcp devices to release, return empty array"""
+    def test_release_fcp_devices_return_empty_fcp_list(self):
+        """If not found any fcp devices to release, return empty list"""
+        _purge_fcp_db()
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         fcp_info_list = [('1a10', assinger_id, 0, 0, 'c05076de3300a83c',
@@ -662,13 +698,59 @@ class TestFCPManager(base.SDKTestCase):
             template_fcp)
 
         try:
-            res = self.fcpops.release_fcp_devices(assinger_id, template_id)
-            self.assertEqual(len(res), 0)
+            is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            self.assertEqual((is_reserved_changed, fcp_list), (False, []))
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    def test_release_fcp_devices_return_nonempty_fcp_list(self):
+        """If found any fcp devices to release, return the fcp list"""
+        _purge_fcp_db()
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        fcp_info_list = [('1a10', assinger_id, 0, 1, 'c05076de3300a83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
+                          template_id),
+                         ('1b10', assinger_id, 0, 1, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id),
+                         ('1a11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id),
+                         ('1b11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id)
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert data into template_fcp_mapping table
+        template_fcp = [('1a10', template_id, 0),
+                        ('1a11', template_id, 0),
+                        ('1b10', template_id, 1),
+                        ('1b11', template_id, 1)]
+        self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
+            template_fcp)
+
+        try:
+            is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            new_list = []
+            for fcp in fcp_list:
+                item = {
+                    'fcp_id': fcp['fcp_id'],
+                    'connections': fcp['connections']
+                }
+                new_list.append(item)
+            expect_list = [
+                {'fcp_id': '1a10', 'connections': 0},
+                {'fcp_id': '1b10', 'connections': 0}]
+            self.assertEqual((is_reserved_changed, new_list), (True, expect_list))
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
     def test_valid_fcp_devcie_wwpn(self):
+        _purge_fcp_db()
         assigner_id = 'test_assigner_1'
         fcp_list_1 = [('1a10', '', ''), ('1b10', 'wwpn_npiv_0', 'wwpn_phy_0')]
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
@@ -688,6 +770,7 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
     def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info, get_pchid_by_chpid, print_all_pchids):
         """Test get_fcp_dict_in_zvm"""
+        _purge_fcp_db()
         print_all_pchids.return_value = None
         raw_fcp_info_from_zvm = [
             'opnstk1: FCP device number: 1A01',
@@ -733,6 +816,7 @@ class TestFCPManager(base.SDKTestCase):
                               sync_fcp_table_with_zvm,
                               print_all_pchids):
         """Test sync_db_with_zvm"""
+        _purge_fcp_db()
         print_all_pchids.return_value = None
         zvm_fcp_dict = {
             # inter_set:
@@ -755,6 +839,7 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
     def test_sync_fcp_table_with_zvm(self, get_pchid_by_chpid):
         """Test sync_fcp_table_with_zvm"""
+        _purge_fcp_db()
         get_pchid_by_chpid.return_value = '021c'
         # fcp info in original database
         template_id = ''
@@ -871,6 +956,7 @@ class TestFCPManager(base.SDKTestCase):
                                  mock_get_zhypinfo,
                                  mock_get_zvm_name):
         """Test create_fcp_template"""
+        _purge_fcp_db()
         # there is already a default template:
         # fakehos1-1111-1111-1111-111111111111
         templates = [('fakehos1-1111-1111-1111-111111111111', 'name1',
@@ -962,6 +1048,7 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     def test_create_fcp_template_with_error(self):
+        _purge_fcp_db()
         name = 'test_fcp_tmpl'
         description = 'test-desc'
         fcp_devices = '1a10;1b10'
@@ -980,6 +1067,7 @@ class TestFCPManager(base.SDKTestCase):
                                mock_get_zhypinfo,
                                mock_zvm_name):
         """ Test edit_fcp_template """
+        _purge_fcp_db()
         tmpl_id = 'fake_id'
         kwargs = {
             'name': 'new_name',
@@ -995,6 +1083,7 @@ class TestFCPManager(base.SDKTestCase):
         mock_zvm_name.assert_any_call()
 
     def test_update_template_fcp_raw_usage(self):
+        _purge_fcp_db()
         raw = ('fcp_id_1', 'tmpl_id_1', 0, 'assigner_id', 1, 0,
             'wwpn_npiv', 'wwpn_phy', 'chpid', 'pchid', 'state', 'owner', '')
         expected = {
@@ -1008,7 +1097,9 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch('zvmsdk.utils.get_zhypinfo')
     def test_get_fcp_templates(self, mock_get_zhypinfo, mock_get_zvm_name):
         """ Test get_fcp_templates in FCPManager"""
+        _purge_fcp_db()
         try:
+            _purge_fcp_db()
             mock_get_zvm_name.return_value = "fake_hypervisor_hostname"
             mock_get_zhypinfo.return_value = {
                 'cpc': {
@@ -1137,6 +1228,7 @@ class TestFCPManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates")
     def test_get_fcp_templates_exception(self, mock_get):
+        _purge_fcp_db()
         self.assertRaises(exception.SDKObjectNotExistError,
                           self.fcpops.get_fcp_templates,
                           ['fake_id_1', 'fake_id_2'])
@@ -1149,7 +1241,9 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
     def test_get_fcp_templates_details(self, mock_sync, mock_raw, mock_get_zhypinfo, mock_get_zvm_name):
         """ Test get_fcp_templates_details in FCPManager"""
+        _purge_fcp_db()
         try:
+            _purge_fcp_db()
             mock_get_zvm_name.return_value = "fake_hypervisor_hostname"
             mock_get_zhypinfo.return_value = {
                 'cpc': {
@@ -1160,7 +1254,6 @@ class TestFCPManager(base.SDKTestCase):
                     'layer_name': 'fake_lpar_name'
                 }
             }
-            self.maxDiff = None
             # prepare test data
             template_id_1 = 'template_id_1'
             template_id_2 = 'template_id_2'
@@ -1385,6 +1478,7 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_templates_details")
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
     def test_get_fcp_templates_details_exception(self, mock_sync, mock_get):
+        _purge_fcp_db()
         self.assertRaises(exception.SDKObjectNotExistError,
                           self.fcpops.get_fcp_templates_details,
                           template_id_list=['fake_id_1', 'fake_id_2'],
@@ -1395,7 +1489,7 @@ class TestFCPManager(base.SDKTestCase):
         mock_get.assert_not_called()
 
     def test_update_template_fcp_statistics_usage(self):
-        self.maxDiff = None
+        _purge_fcp_db()
         statistics_usage = {}
         # raw_item format
         # (fcp_id|tmpl_id|path|assigner_id|connections|
@@ -1531,12 +1625,14 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.delete_fcp_template")
     def test_delete_fcp_template(self, mock_db_delete_tmpl):
         """ Test delete_fcp_template in FCPManager"""
+        _purge_fcp_db()
         self.fcpops.delete_fcp_template('tmpl_id')
         mock_db_delete_tmpl.assert_called_once_with('tmpl_id')
 
     @mock.patch("zvmsdk.database.FCPDbOperator.increase_connections_by_assigner")
     def test_increase_fcp_connections(self, mock_increase_conn):
         """Test increase_fcp_connections"""
+        _purge_fcp_db()
         mock_increase_conn.side_effect = [1, 2, 0]
         fcp_list = ['1a01', '1b01', '1c01']
         assigner_id = 'fake_id'
@@ -1547,6 +1643,7 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.decrease_connections")
     def test_decrease_fcp_connections(self, mock_decrease_conn):
         """Test decrease_fcp_connections"""
+        _purge_fcp_db()
         # case1: no exception when call mock_decrease_conn
         mock_decrease_conn.side_effect = [1, 2, 0]
         fcp_list = ['1a01', '1b01', '1c01']
@@ -1564,6 +1661,10 @@ class TestFCPManager(base.SDKTestCase):
 
 
 class TestFCPVolumeManager(base.SDKTestCase):
+
+    def setUp(self):
+        super(TestFCPVolumeManager, self).setUp()
+        self.maxDiff = None
 
     @classmethod
     @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
@@ -1613,180 +1714,270 @@ class TestFCPVolumeManager(base.SDKTestCase):
             conn.executemany("DELETE FROM template "
                              "WHERE id=?", templates_id)
 
-    @mock.patch("zvmsdk.utils.get_smt_userid")
-    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.volumeop.FCPManager.release_fcp_devices")
+    @patch('zvmsdk.utils.get_zhypinfo')
+    @patch('zvmsdk.utils.get_cpc_sn')
+    @patch('zvmsdk.utils.get_cpc_name')
+    @patch('zvmsdk.utils.get_lpar_name')
+    @mock.patch("zvmsdk.database.FCPDbOperator.fcp_template_exist_in_db")
     @mock.patch("zvmsdk.utils.get_zvm_name")
-    def test_get_volume_connector_unreserve(self, get_zvm_name,
-                                            get_all_fcp_info,
-                                            get_smt_userid):
+    def test_get_volume_connector_unreserve(self,
+                                          m_get_zvm_name,
+                                          m_tmpl_exist,
+                                          m_get_lpar_name,
+                                          m_get_cpc_name,
+                                          m_get_cpc_sn,
+                                          m_get_zhypinfo,
+                                          m_release_fcp):
         """Test get_volume_connector when reserve parameter is False"""
-        get_zvm_name.return_value = "fakehos1"
-        get_smt_userid.return_value = "fakesmt"
-        fcp_list = ['opnstk1: FCP device number: A83C',
-                    'opnstk1:   Status: Active',
-                    'opnstk1:   NPIV world wide port number: '
-                    'C05076DE3300A83C',
-                    'opnstk1:   Channel path ID: 27',
-                    'opnstk1:   Physical world wide port number: '
-                    'C05076DE33002641',
-                    'Owner: FAKEUSER',
-                    'opnstk1: FCP device number: B83C',
-                    'opnstk1:   Status: Active',
-                    'opnstk1:   NPIV world wide port number: '
-                    'C05076DE3300B83C',
-                    'opnstk1:   Channel path ID: 27',
-                    'opnstk1:   Physical world wide port number: '
-                    'C05076DE33002641',
-                    'Owner: FAKEUSER']
-        get_all_fcp_info.return_value = fcp_list
-        # insert data into fcp table
-        template_id = 'fakehos1-1111-1111-1111-111111111111'
-        fcp_info_list = [('a83c', 'fakeuser', 0, 1, 'c05076de3300a83c',
-                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
-                          template_id),
-                         ('b83c', 'fakeuser', 0, 1, 'c05076de3300b83c',
-                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
-                          template_id)]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-        self._insert_data_into_fcp_table(fcp_info_list)
-        # insert data into template_fcp_mapping table
-        template_fcp = [('a83c', template_id, 0),
-                        ('b83c', template_id, 1)]
-        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-        self._insert_data_into_template_fcp_mapping_table(template_fcp)
-        # insert data into template table to add a default template
-        templates = [('fakehos1-1111-1111-1111-111111111111', 'name1',
-                      'desc1', 1),
-                     ('fakehos2-1111-1111-1111-111111111111', 'name2',
-                      'desc2', 0)]
-        template_id_list = [tmpl[0] for tmpl in templates]
-        self._insert_data_into_template_table(templates)
-        try:
-            connector = self.volumeops.get_volume_connector(
-                'fakeuser', False, fcp_template_id=template_id)
-            expected = {'zvm_fcp': ['a83c', 'b83c'],
-                        'wwpns': ['c05076de3300a83c', 'c05076de3300b83c'],
-                        'phy_to_virt_initiators': {
-                            'c05076de3300a83c': 'c05076de33002641',
-                            'c05076de3300b83c': 'c05076de33002641'
-                            },
-                        'host': 'fakehos1_fakeuser',
-                        'fcp_paths': 2,
-                        'fcp_template_id': template_id}
-            self.assertDictEqual(expected, connector)
+        _purge_fcp_db()
+        # mock
+        m_get_zvm_name.return_value = "fake_zvm"
+        m_tmpl_exist.return_value = True
+        m_get_zhypinfo.return_value = 'fake_zhypinfo'
+        m_get_cpc_sn.return_value = 'fake_cpc_sn'
+        m_get_cpc_name.return_value = 'fake_cpc_name'
+        m_get_lpar_name.return_value = 'fake_lpar_name'
+        fcp_template_id = 'fake_tmpl_id'
+        fcp_list = [
+            # all the key-value is lowercase returned by release_fcp_devices
+            {'fcp_id': '1b02', 'path': 1, 'pchid': '02e4', 'wwpn_npiv': 'aa', 'wwpn_phy': 'xx'},
+            {'fcp_id': '1c02', 'path': 2, 'pchid': '02e4', 'wwpn_npiv': 'bb', 'wwpn_phy': 'yy'},
+            {'fcp_id': '1e05', 'path': 5, 'pchid': '02c0', 'wwpn_npiv': 'cc', 'wwpn_phy': 'zz'}]
+        m_release_fcp.side_effect = [
+            # (is_reserved_changed, fcp_list)
+            # ccase1: fcp_list is not empty and connections != 0
+            #     (False, [{'fcp_id':'1B02'...}...])
+            (False, fcp_list),
+            # case2: fcp_list is not empty and connections = 0
+            #     (True, [{'fcp_id':'1B02'...}...])
+            (True, fcp_list),
+            # case3: fcp_list is not empty
+            #     (False, [])
+            (False, [])]
 
-            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('b83c')
-            self.assertEqual('fakeuser', userid)
-            self.assertEqual(0, conn)
-            self.assertEqual(0, reserved)
-            # because reserve is False, so tmpl_id set to ''
-            self.assertEqual('', tmpl_id)
-        finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-            self._delete_from_template_table(template_id_list)
+        # ccase1: fcp_list is not empty and connections != 0
+        # call
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', False, fcp_template_id=fcp_template_id)
+        expected = {'zvm_fcp': ['1b02', '1c02', '1e05'],
+                    'wwpns': ['aa', 'bb', 'cc'],
+                    'phy_to_virt_initiators': {
+                        'aa': 'xx',
+                        'bb': 'yy',
+                        'cc': 'zz'},
+                    'host': 'fake_zvm_fakeuser',
+                    'fcp_paths': 3,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {
+                        '02E4': ['1B02', '1C02'],
+                        '02C0': ['1E05']},
+                    'is_reserved_changed': False}
+        # verify
+        self.assertDictEqual(expected, result)
 
-    @mock.patch("zvmsdk.utils.print_all_pchids")
-    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
-    @mock.patch("zvmsdk.utils.get_smt_userid")
-    @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
+        # case2: fcp_list is not empty and connections = 0
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', False, fcp_template_id=fcp_template_id)
+        expected = {'zvm_fcp': ['1b02', '1c02', '1e05'],
+                    'wwpns': ['aa', 'bb', 'cc'],
+                    'phy_to_virt_initiators': {
+                        'aa': 'xx',
+                        'bb': 'yy',
+                        'cc': 'zz'},
+                    'host': 'fake_zvm_fakeuser',
+                    'fcp_paths': 3,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {
+                        '02E4': ['1B02', '1C02'],
+                        '02C0': ['1E05']},
+                    'is_reserved_changed': True}
+        # verify
+        self.assertDictEqual(expected, result)
+
+        # case3: fcp_list is not empty
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', False, fcp_template_id=fcp_template_id)
+        expected = {'zvm_fcp': [],
+                    'wwpns': [],
+                    'phy_to_virt_initiators': {},
+                    'host': '',
+                    'fcp_paths': 0,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {},
+                    'is_reserved_changed': False}
+        # verify
+        self.assertDictEqual(expected, result)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager.allocate_fcp_devices")
+    @patch('zvmsdk.utils.get_zhypinfo')
+    @patch('zvmsdk.utils.get_cpc_sn')
+    @patch('zvmsdk.utils.get_cpc_name')
+    @patch('zvmsdk.utils.get_lpar_name')
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
+    @mock.patch("zvmsdk.database.FCPDbOperator.fcp_template_exist_in_db")
     @mock.patch("zvmsdk.utils.get_zvm_name")
-    def test_get_volume_connector_reserve(self, get_zvm_name,
-                                          get_all_fcp_pool,
-                                          get_smt_userid,
-                                          get_pchid_by_chpid,
-                                          print_all_pchids):
+    def test_get_volume_connector_reserve(self,
+                                          m_get_zvm_name,
+                                          m_tmpl_exist,
+                                          m_get_pchid_by_tmpl,
+                                          m_get_lpar_name,
+                                          m_get_cpc_name,
+                                          m_get_cpc_sn,
+                                          m_get_zhypinfo,
+                                          m_alloc_fcp):
         """Test get_volume_connector when reserve parameter is True"""
-        print_all_pchids.return_value = None
-        get_zvm_name.return_value = "fakehos1"
-        get_smt_userid.return_value = "fakesmt"
-        fcp_list = ['opnstk1: FCP device number: A83C',
-                    'opnstk1:   Status: Free',
-                    'opnstk1:   NPIV world wide port number: '
-                    'C05076DE3300A83C',
-                    'opnstk1:   Channel path ID: 27',
-                    'opnstk1:   Physical world wide port number: '
-                    'C05076DE33002641',
-                    'Owner: NONE',
-                    'opnstk1: FCP device number: B83C',
-                    'opnstk1:   Status: Free',
-                    'opnstk1:   NPIV world wide port number: '
-                    'C05076DE3300B83C',
-                    'opnstk1:   Channel path ID: 27',
-                    'opnstk1:   Physical world wide port number: '
-                    'C05076DE33002641',
-                    'Owner: NONE']
-        info_a83c = fcp_list[0:6]
-        get_pchid_by_chpid.return_value = '02e4'
-        fcp_a83c = volumeop.FCP(info_a83c)
-        info_b83c = fcp_list[6:12]
-        get_pchid_by_chpid.return_value = '02e4'
-        fcp_b83c = volumeop.FCP(info_b83c)
+        _purge_fcp_db()
+        # mock
+        m_get_zvm_name.return_value = "fake_zvm"
+        m_tmpl_exist.return_value = True
+        m_get_pchid_by_tmpl.return_value = ['02E4', '02C0']
+        m_get_zhypinfo.return_value = 'fake_zhypinfo'
+        m_get_cpc_sn.return_value = 'fake_cpc_sn'
+        m_get_cpc_name.return_value = 'fake_cpc_name'
+        m_get_lpar_name.return_value = 'fake_lpar_name'
+        fcp_template_id = 'fake_tmpl_id'
+        fcp_list = [
+            # all the values of 'fcp_id' and 'pchid' are uppercase
+            # returned by allocate_fcp_devices
+            {'fcp_id': '1B02', 'path': 1, 'pchid': '02E4', 'wwpn_npiv': 'aa', 'wwpn_phy': 'xx'},
+            {'fcp_id': '1C02', 'path': 2, 'pchid': '02E4', 'wwpn_npiv': 'bb', 'wwpn_phy': 'yy'},
+            {'fcp_id': '1E05', 'path': 5, 'pchid': '02C0', 'wwpn_npiv': 'cc', 'wwpn_phy': 'zz'}]
+        m_alloc_fcp.side_effect = [
+            # (is_reserved_changed, fcp_list, fcp_template_id)
+            # case1: existing fcp_list is not empty
+            #     (False, [{'fcp_id':'1B02'...}...], 'tmpl_id')
+            (False, fcp_list, fcp_template_id),
+            # case2: existing fcp_list is empty, new fcp_list is not empty
+            #     (True, [{'fcp_id':'1B02'...}...], 'tmpl_id')
+            (True, fcp_list, fcp_template_id),
+            # case3: both existing and fcp_list fcp_list is empty
+            #     (False, [], 'tmpl_id')
+            (False, [], fcp_template_id)]
+        # prepare param
+        pchid_info = {
+            '02E4': {'allocated': 128, 'max': 128},
+            '02C0': {'allocated': 128, 'max': 128},
+            'BBBB': {'allocated': 109, 'max': 110}}
 
-        get_all_fcp_pool.return_value = {
-            'a83c': fcp_a83c,
-            'b83c': fcp_b83c
-        }
-        # insert data into fcp table
-        template_id = 'fakehos1-1111-1111-1111-111111111111'
-        # in database, the state in active, but in zvm it is free
-        # get_volume_connector should be able to get them
-        fcp_info_list = [('a83c', '', 0, 0, 'c05076de3300a83c',
-                          'c05076de33002641', '27', '0240', 'active', 'owner1',
-                          template_id),
-                         ('b83c', '', 0, 0, 'c05076de3300b83c',
-                          'c05076de33002641', '27', '0240', 'active', 'owner2',
-                          template_id)]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        self._insert_data_into_fcp_table(fcp_info_list)
-        # insert data into template_fcp_mapping table
-        template_fcp = [('a83c', template_id, 0),
-                        ('b83c', template_id, 1)]
-        self._insert_data_into_template_fcp_mapping_table(template_fcp)
-        # insert data into template table to add a default template
-        templates = [('fakehos1-1111-1111-1111-111111111111', 'name1',
-                      'desc1', 1),
-                     ('fakehos2-1111-1111-1111-111111111111', 'name2',
-                      'desc2', 0)]
-        template_id_list = [tmpl[0] for tmpl in templates]
-        self._insert_data_into_template_table(templates)
-        try:
-            connector = self.volumeops.get_volume_connector('fakeuser',
-                                                            True)
-            expected = {'zvm_fcp': ['a83c', 'b83c'],
-                        'wwpns': ['c05076de3300a83c', 'c05076de3300b83c'],
-                        'phy_to_virt_initiators': {
-                            'c05076de3300a83c': 'c05076de33002641',
-                            'c05076de3300b83c': 'c05076de33002641'
-                            },
-                        'host': 'fakehos1_fakeuser',
-                        'fcp_paths': 2,
-                        'fcp_template_id': template_id}
-            self.assertDictEqual(expected, connector)
+        # case1: existing fcp_list is not empty
+        # call
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', True, fcp_template_id=fcp_template_id, pchid_info=pchid_info)
+        expected = {'zvm_fcp': ['1b02', '1c02', '1e05'],
+                    'wwpns': ['aa', 'bb', 'cc'],
+                    'phy_to_virt_initiators': {
+                        'aa': 'xx',
+                        'bb': 'yy',
+                        'cc': 'zz'},
+                    'host': 'fake_zvm_fakeuser',
+                    'fcp_paths': 3,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {
+                        '02E4': ['1B02', '1C02'],
+                        '02C0': ['1E05']},
+                    'is_reserved_changed': False}
+        # verify
+        self.assertDictEqual(expected, result)
 
-            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('b83c')
-            self.assertEqual('FAKEUSER', userid)
-            self.assertEqual(0, conn)
-            self.assertEqual(1, reserved)
-            self.assertEqual(template_id, tmpl_id)
-        finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-            self._delete_from_template_table(template_id_list)
+        # case2: existing fcp_list is empty, new fcp_list is not empty
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', True, fcp_template_id=fcp_template_id, pchid_info=pchid_info)
+        expected = {'zvm_fcp': ['1b02', '1c02', '1e05'],
+                    'wwpns': ['aa', 'bb', 'cc'],
+                    'phy_to_virt_initiators': {
+                        'aa': 'xx',
+                        'bb': 'yy',
+                        'cc': 'zz'},
+                    'host': 'fake_zvm_fakeuser',
+                    'fcp_paths': 3,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {
+                        '02E4': ['1B02', '1C02'],
+                        '02C0': ['1E05']},
+                    'is_reserved_changed': True}
+        # verify
+        self.assertDictEqual(expected, result)
 
-    def test_get_volume_connector_reserve_with_error(self):
+        # case3: both existing and fcp_list fcp_list is empty
+        result = self.volumeops.get_volume_connector(
+            'fakeuser', True, fcp_template_id=fcp_template_id, pchid_info=pchid_info)
+        expected = {'zvm_fcp': [],
+                    'wwpns': [],
+                    'phy_to_virt_initiators': {},
+                    'host': '',
+                    'fcp_paths': 0,
+                    'fcp_template_id': fcp_template_id,
+                    'cpc_sn': 'fake_cpc_sn',
+                    'cpc_name': 'fake_cpc_name',
+                    'lpar': 'fake_lpar_name',
+                    'hypervisor_hostname': 'fake_zvm',
+                    'pchid_fcp_map': {},
+                    'is_reserved_changed': False}
+        # verify
+        self.assertDictEqual(expected, result)
+
+    @mock.patch("zvmsdk.utils.get_zvm_name")
+    def test_get_volume_connector_reserve_with_template_not_exist(self, m_get_zvm_name):
         """The specified FCP Multipath Template doesn't exist, should raise error."""
+        _purge_fcp_db()
+        m_get_zvm_name.return_value = "fake_zvm"
         assigner_id = 'fakeuser'
         fcp_template_id = '0001'
         sp_name = 'v7k60'
+        pchid_info = dict()
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
                                "FCP Multipath Template \(id: 0001\) does not exist.",
                                self.volumeops.get_volume_connector,
-                               assigner_id, True, fcp_template_id, sp_name)
+                               assigner_id, True, fcp_template_id, sp_name, pchid_info)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
+    @mock.patch("zvmsdk.database.FCPDbOperator.fcp_template_exist_in_db")
+    @mock.patch("zvmsdk.utils.get_zvm_name")
+    def test_get_volume_connector_reserve_with_pchid_missing(
+            self, m_get_zvm_name, m_tmpl_exist, m_get_pchids_by_tmpl):
+        """Test get_volume_connector when reserve parameter is False"""
+        _purge_fcp_db()
+        # mock
+        m_get_zvm_name.return_value = 'fakezvm'
+        m_get_pchids_by_tmpl.return_value = ['02E0', '02C0']
+        m_tmpl_exist.return_value = True
+        # fake param
+        assigner_id = 'fakeuser'
+        fcp_template_id = '0001'
+        sp_name = 'v7k60'
+        pchid_info = {
+            'AAAA': {'allocated': 128, 'max': 128},
+            'BBBB': {'allocated': 109, 'max': 110}}
+        self.assertRaisesRegex(exception.SDKVolumeOperationError,
+                               ".*The PCHIDs \[\'02C0\', \'02E0\'\] "
+                               "are missing in the pchid_info.*",
+                               self.volumeops.get_volume_connector,
+                               assigner_id, True, fcp_template_id, sp_name, pchid_info)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.volume_refresh_bootmap")
     def test_volume_refresh_bootmap(self, mock_volume_refresh_bootmap):
+        _purge_fcp_db()
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
@@ -1799,6 +1990,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     def test_attach(self, mock_dedicate, mock_add_disk, mock_fcp_info, mock_check):
         """Test attach() method."""
+        _purge_fcp_db()
         template_id = 'fakehost-1111-1111-1111-111111111111'
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -1862,6 +2054,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_attach_with_exception(self, mock_do_attach, mock_check_userid,
                                    mock_get_fcp_usage):
         """Test attach() method when _do_attach() raise exception."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1889,6 +2082,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_attach_with_root_volume(self, mock_dedicate, mock_add_disk,
                                      mock_fcp_info):
         """Test attach() method when the is_root_volume = True."""
+        _purge_fcp_db()
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1952,6 +2146,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         Means, this volume is NOT the first volume for this VM,
         so no need to dedicate again.
         """
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2006,6 +2201,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.check_userid_exist")
     def test_attach_with_do_rollback(self, mock_check_userid, mock_do_attach):
         """Test attach with do_rollback param."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2049,6 +2245,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_do_attach_with_rollback_due_to_increase_fcp_connections_failure(
             self, mock_increase_conn, mock_dedicate, mock_rollback_reserved, mock_check):
         """Test _do_attach() method when increase_fcp_connections() operations failed."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2092,6 +2289,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                                  mock_rollback_dedicated,
                                                                  mock_check):
         """Test _do_attach() method when _dedicate_fcp() operations failed."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2150,6 +2348,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                               mock_rollback_increased, mock_rollback_dedicated,
                                                               mock_check):
         """Test _do_attach() method when _add_disks() operations failed."""
+        _purge_fcp_db()
         mock_dedicate.return_value = None
         mock_check.return_value = True
         connection_info = {'platform': 'x86_64',
@@ -2213,6 +2412,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                         mock_rb_increased_conn, mock_rb_added_disk,
                                         mock_rb_dedicated_fcp, mock_rb_reserved_fcp):
         """Test _do_attach with do_rollback param"""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2276,6 +2476,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_do_detach_with_rollback_due_to_remove_disks_failure(self, mock_remove_disk,
                                                                  mock_rollback_removed, mock_check):
         """Test _do_detach() when _remove_disks() operations failed."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2337,6 +2538,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                                mock_rollback_removed,
                                                                mock_check):
         """Test need_rollback dict was set correctly."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2409,6 +2611,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                         mock_rb_decreased_conn, mock_rb_removed_disk,
                                         mock_rb_undedicate_fcp):
         """Test _do_detach with do_rollback param"""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2469,6 +2672,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.check_userid_exist", Mock())
     def test_detach_with_do_rollback(self, mock_do_detach):
         """Test detach with do_rollback param."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2511,6 +2715,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_root_volume_detach(self, mock_undedicate, mock_remove_disk,
                                 mock_check, mock_fcp_info):
         """Test detach root volume."""
+        _purge_fcp_db()
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2561,6 +2766,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_update_connections_only_detach(self, mock_undedicate,
             mock_remove_disk, mock_check, mock_fcp_info):
         """Test only update connections when detach volume."""
+        _purge_fcp_db()
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2610,6 +2816,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk,
                                   mock_check):
         """Test no undedidicate action is called when detach."""
+        _purge_fcp_db()
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -2650,6 +2857,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     def test_get_fcp_usage(self):
         """Test get_fcp_usage"""
+        _purge_fcp_db()
         template_id = 'fakehost-1111-1111-1111-111111111111'
         # reserved == 1, connections == 2, assigner_id == 'user1'
         fcp_info_list = [('283c', 'user1', 2, 1, 'c05076de33000111',
@@ -2672,6 +2880,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     def test_set_fcp_usage(self):
         """Test set_fcp_usage"""
+        _purge_fcp_db()
         template_id = 'fakehost-1111-1111-1111-111111111111'
         # reserved == 1, connections == 2, assigner_id == 'user1'
         fcp_info_list = [('283c', 'user1', 2, 1, 'c05076de33000111',
@@ -2700,6 +2909,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     def test_rollback_reserved_fcp_devices(self, get_fcp_usage, mock_get_conn, mock_unreserve):
         """Test _rollback_reserved_fcp_devices."""
+        _purge_fcp_db()
         get_fcp_usage.return_value = None
         mock_get_conn.side_effect = [1, 0, 0, 0]
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
@@ -2710,6 +2920,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     def test_rollback_increased_connections(self, get_fcp_usage, mock_decrease_conns):
         """Test _rollback_increased_connections."""
+        _purge_fcp_db()
         get_fcp_usage.return_value = None
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
         self.volumeops._rollback_increased_connections(fcp_list)
@@ -2720,6 +2931,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.get_connections_from_fcp")
     def test_rollback_dedicated_fcp_devices(self, mock_get_conn, mock_undedicate):
         """Test _rollback_dedicated_fcp_devices()."""
+        _purge_fcp_db()
         mock_get_conn.side_effect = [1, 0, 1, 0]
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
         assigner_id = 'fake_id'
@@ -2731,6 +2943,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.database.FCPDbOperator.get_connections_from_fcp")
     def test_rollback_added_disks(self, mock_get_conn, mock_rm_disk):
         """Test _rollback_added_disks()."""
+        _purge_fcp_db()
         mock_get_conn.side_effect = [1, 0, 0, 0]
         fcp_list = ['1a01', '1b01', '1c01', '1d01']
         assigner_id = 'fake_id'
