@@ -107,12 +107,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
 
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info(self, gps, gipi, gaca, ggov, ggki):
+    def test_get_info(self, gps, gipi, gaca, ggov, ggki, ggbu):
         gps.return_value = 'on'
         gipi.return_value = {'used_memory': u'4872872 KB',
                              'used_cpu_time': u'6911844399 uS',
@@ -123,6 +124,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ggov.return_value = 'RHEL8.4'
         kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
         ggki.return_value = kernel_info
+        ggbu.return_value = 'rhel8'
         vm_info = self.vmops.get_info('fakeid')
         gps.assert_called_once_with('fakeid')
         gipi.assert_called_once_with('fakeid')
@@ -138,6 +140,28 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
         self.assertEqual(vm_info['kernel_info'], kernel_info)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info_rhcos_vm(self, gps, gipi, ggbu, gaca, ggov, ggki):
+        gps.return_value = 'on'
+        gipi.return_value = {'used_memory': u'4872872 KB',
+                             'used_cpu_time': u'6911844399 uS',
+                             'guest_cpus': u'2',
+                             'userid': u'CMABVT',
+                             'max_memory': u'8388608 KB'}
+        ggbu.return_value = 'rhcos4.13'
+        gaca.return_value = [0, 1, 2]
+        gaca.assert_not_called()
+        ggov.return_value = 'RHEL8.4'
+        gaca.assert_not_called()
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
+        ggki.assert_not_called()
+
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_error(self, gps, gipi):
@@ -151,11 +175,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_shutdown(self, gps, gipi, gud, gaca, ggov, ggki):
+    def test_get_info_shutdown(self, gps, gipi, ggbu, gud, gaca, ggov, ggki):
         gps.return_value = 'off'
         gipi.return_value = None
+        ggbu.return_value = ['', '', 'SHUTDOWN']
         gud.return_value = [
             u'USER FAKEUSER DFLTPASS 2048m 2048m G',
             u'INCLUDE PROFILE',
@@ -183,15 +209,14 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
         self.assertEqual(vm_info['kernel_info'], kernel_info)
 
-    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
-    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
-    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_get_uid_failed(self, gps, gipi, gud, gaca, ggov, ggki):
+    def test_get_info_get_uid_failed(self, gps, gipi, ggbu, gud):
         gps.return_value = 'off'
         gipi.return_value = None
+        ggbu.return_value = ['', '', 'NOTEXIST']
         gud.side_effect = exception.ZVMVirtualMachineNotExist(userid='fakeid',
                                                         zvm_host='fakehost')
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
