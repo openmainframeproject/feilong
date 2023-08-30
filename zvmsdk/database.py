@@ -976,7 +976,7 @@ class FCPDbOperator(object):
                 "SELECT fcp.fcp_id, fcp.connections, tf.path, fcp.pchid, "
                 "fcp.reserved, fcp.state, fcp.wwpn_npiv, fcp.wwpn_phy "
                 "FROM fcp "
-                "INNER JOIN template_fcp_mapping AS tf"
+                "INNER JOIN template_fcp_mapping AS tf "
                 "ON tf.fcp_id=fcp.fcp_id "
                 "WHERE tf.tmpl_id=? "
                 "ORDER BY tf.path, tf.fcp_id", (fcp_template_id,))
@@ -1057,14 +1057,16 @@ class FCPDbOperator(object):
         d. wwpn_npiv IS NOT ''
         e. wwpn_phy IS NOT ''
 
-        @param fcp_template_id: FCP multipath template ID
-        @param pchid_info:
-          example:
-          { 'AAAA': { 'total_allocate': 128, 'instance_allocate': 106, 'max': 128},
-            'BBBB': { 'total_allocate': 109, 'instance_allocate': 93,  'max': 110},
-            'CCCC': { 'total_allocate': 111, 'instance_allocate': 103, 'max': 128},
-            'DDDD': { 'total_allocate': 113, 'instance_allocate': 102, 'max': 110},
-            'EEEE': { 'total_allocate': 70,  'instance_allocate': 70,  'max': 90}}
+        @param fcp_template_id: (str) FCP multipath template ID
+        @param pchid_info: (dict) PCHID as key,
+            'allocated' means the count of allocated FCP devices from the PCHID
+            'max' means the maximum allowable count of FCP devices that can be allocated from the PCHID
+            example:
+            {'AAAA': {'allocated': 128, 'max': 128},
+             'BBBB': {'allocated': 109, 'max': 110},
+             'CCCC': {'allocated': 111, 'max': 128},
+             'DDDD': {'allocated': 113, 'max': 110},
+             'EEEE': {'allocated': 70,  'max': 90}}
         @return:
           example:
           [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
@@ -1079,14 +1081,15 @@ class FCPDbOperator(object):
             The higher is the weight, the stronger is the capability.
             """
 
-            # free_fcp_count_per_pchid:
+            # free_count_in_pchid_info:
             # PCHID as key, free-FCP-device-count as value. Ex:
             # {'AAAA': 0, 'BBBB': 1, 'CCCC': 17, 'DDDD': -3, 'EEEE': 20}
-            free_fcp_count_per_pchid = dict()
+            free_count_in_pchid_info = dict()
             for pchid in pchid_info:
                 free_fcp_count = (pchid_info[pchid]['max'] -
-                                  pchid_info[pchid]['total_allocate'])
-                free_fcp_count_per_pchid[pchid] = free_fcp_count
+                                  pchid_info[pchid]['allocated'])
+                free_count_in_pchid_info[pchid] = free_fcp_count
+            LOG.info('free_count_in_pchid_info: {}'.format(free_count_in_pchid_info))
             # comb:
             # path as key, PCHID as value. Ex:
             # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE'}
@@ -1107,7 +1110,7 @@ class FCPDbOperator(object):
                 # take PCHIDs 'EEEE' and 'CCCC' as example:
                 # min(20/1, 17/2) -> min(20, 8.5) -> 8.5
                 weight = min(
-                    free_fcp_count_per_pchid[p] / comb_fcp_count_per_pchid[p]
+                    free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
                     for p in comb_fcp_count_per_pchid)
                 # comb ex:
                 # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}
@@ -1169,7 +1172,9 @@ class FCPDbOperator(object):
             """
             LOG.info('final_pchid_per_path: {}'.format(final_pchid_per_path))
             # pchid_path_filter ex:
-            # (path=1 AND pchid='BBBB') OR (path=4 AND pchid='CCCC')
+            # "(tf.path=1 AND fcp.pchid='BBBB') OR
+            #  (tf.path=4 AND fcp.pchid='CCCC') OR
+            #  (tf.path=5 AND fcp.pchid='EEEE')"
             pchid_path_filter = ' OR '.join(
                 "(tf.path={} AND fcp.pchid='{}')"
                 "".format(path, final_pchid_per_path[path])
@@ -1188,6 +1193,7 @@ class FCPDbOperator(object):
                 "AND ({}) "
                 "ORDER BY tf.path, fcp.pchid, fcp.fcp_id").format(
                 fcp_template_id, pchid_path_filter)
+
             with get_fcp_conn() as conn:
                 query_sql = conn.execute(sql)
                 fcps = query_sql.fetchall()
@@ -1196,7 +1202,7 @@ class FCPDbOperator(object):
             # { 1: [{'fcp_id': '1B02', ...}, {'fcp_id': '1B05', ...}, ...],
             #   4: [{'fcp_id': '1C04', ...}, {'fcp_id': '1C02', ...}, ...],
             #   5: [{'fcp_id': '1E05', ...}, {'fcp_id': '1E02', ...}, ...]}
-            tmp_dict = {path:[] for path in final_pchid_per_path}
+            tmp_dict = {path: [] for path in final_pchid_per_path}
             for f in fcps:
                 item = {
                     'fcp_id': f['fcp_id'].upper(),
@@ -1217,11 +1223,12 @@ class FCPDbOperator(object):
                 'after _get_one_random_fcp_combinations, '
                 'fcp_list: {}'.format(fcp_comb))
             return fcp_comb
+
         def _log_for_path_count_comparison():
-            """log for total path, min path, allocated path"""
-            allocated_paths = len(fcp_list)
+            """log for total_path_count, min_path_count, free_fcp_path_count"""
+            free_fcp_path_count = len(free_pchids_per_path)
             total_path_count = self.get_path_count(fcp_template_id)
-            if allocated_paths < total_path_count:
+            if free_fcp_path_count < total_path_count:
                 LOG.info("Not all paths of FCP Multipath Template (id={}) "
                          "have available FCP devices. "
                          "The count of minimum FCP device path is {}. "
@@ -1229,8 +1236,8 @@ class FCPDbOperator(object):
                          "The count of paths with available FCP devices is {}, "
                          "which is less than the total path count."
                          .format(fcp_template_id, min_path_count,
-                                 total_path_count, allocated_paths))
-                if allocated_paths >= min_path_count:
+                                 total_path_count, free_fcp_path_count))
+                if free_fcp_path_count >= min_path_count:
                     LOG.warning("The count of paths with available FCP devices "
                                 "is less than that of total path, but not less "
                                 "than that of minimum FCP device path. "
@@ -1244,7 +1251,7 @@ class FCPDbOperator(object):
         fcp_list = []
         with get_fcp_conn():
             # min_path_count ex: 2
-            min_path_count = self.db.get_min_fcp_paths_count(fcp_template_id)
+            min_path_count = self.get_min_fcp_paths_count(fcp_template_id)
             # free_pchids_per_path:
             # path as key, PCHID (that have free FCP devices) as value. Ex:
             #   { 1: ['AAAA', 'BBBB'],
@@ -1255,7 +1262,8 @@ class FCPDbOperator(object):
             # both path-3 and path-4 have free FCP devices from PCHID 'CCCC',
             # but the FCP devices in path-3 must differ from that in path-4,
             # because, for each template, one FCP device can only belong to one path.
-            free_pchids_per_path = self.db.get_free_pchids_by_fcp_template(fcp_template_id)
+            free_pchids_per_path = self.get_free_pchids_by_fcp_template(fcp_template_id)
+            LOG.info('free_pchids_per_path: {}'.format(free_pchids_per_path))
             # free_path_count ex: 4
             free_path_count = len(free_pchids_per_path)
             # free_path_idx ex: [1, 3, 4, 5]
@@ -1875,7 +1883,7 @@ class FCPDbOperator(object):
         :param fcp_template_id: (str) id of FCP Multipath Template
 
         :return pchids: (list) a list of pchid
-        for example: ['0240', '0260']
+        for example: ['02E0', '02C0']
         """
         pchids = []
         with get_fcp_conn() as conn:
@@ -1924,10 +1932,9 @@ class FCPDbOperator(object):
             #   {'pchid': '03FC',  'path': '3'} ]
             free_pchids_per_path = result.fetchall()
             for item in free_pchids_per_path:
-                if item['path'] in pchids:
-                    pchids[item['path']].append(item['pchid'].upper())
-                else:
+                if item['path'] not in pchids:
                     pchids[item['path']] = []
+                pchids[item['path']].append(item['pchid'].upper())
         return pchids
 
     def get_host_default_fcp_template(self, host_default=True):

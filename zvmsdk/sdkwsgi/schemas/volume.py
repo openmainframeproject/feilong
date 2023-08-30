@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -124,7 +124,8 @@ get_volume_connector = {
             'properties': {
                 'reserve': parameter_types.boolean,
                 'fcp_template_id': parameter_types.fcp_template_id,
-                'storage_provider': parameter_types.name
+                'storage_provider': parameter_types.name,
+                'pchid_info': {'type': 'object'}
             },
             'required': ['info'],
             'additionalProperties': False,

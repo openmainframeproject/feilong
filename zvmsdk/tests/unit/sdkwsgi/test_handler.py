@@ -794,7 +794,7 @@ class VolumeHandlerTest(unittest.TestCase):
         with mock.patch(function) as get_volume_connector:
             get_volume_connector.return_value = {'overallRC': 0}
             h(self.env, dummy)
-            get_volume_connector.assert_called_once_with(mock.ANY, 'test0001', True, None, None)
+            get_volume_connector.assert_called_once_with(mock.ANY, 'test0001', True, None, None, {})
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')

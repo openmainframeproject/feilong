@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1618,19 +1618,24 @@ class SDKAPI(object):
         self._networkops.delete_vswitch(vswitch_name, persist)
 
     def get_volume_connector(self, userid, reserve=False,
-                             fcp_template_id=None, sp_name=None, pchid_info=None):
-        """Get connector information of the guest for attaching volumes.
+                             fcp_template_id=None, sp_name=None, pchid_info=dict()):
+        """Get connector information of the instance for attaching or detaching volumes.
         This API is for Openstack Cinder driver only now.
 
         @param userid: (str) instance userid in z/VM
         @param reserve: (bool) True for attach-volume process, False for detach-volume
         @param fcp_template_id: (str) FCP multipath template ID
         @param sp_name: (str) storage provider hostname
-        @param pchid_info: (dict) PCHID as key
+        @param pchid_info: (dict) it is only needed when reserve is True.
+            PCHID as key,
+            'allocated' means the count of allocated FCP devices from the PCHID
+            'max' means the maximum allowable count of FCP devices that can be allocated from the PCHID
             example:
-            { 'AAAA': { 'total_allocate': 126, 'instance_allocate': 120, 'max': 128},
-              'BBBB': { 'total_allocate': 104, 'instance_allocate': 102, 'max': 110},
-              'CCCC': { 'total_allocate': 100, 'instance_allocate': 100, 'max': 90}}
+            {'AAAA': {'allocated': 126, 'max': 128},
+             'BBBB': {'allocated': 109, 'max': 110},
+             'CCCC': {'allocated': 111, 'max': 128},
+             'DDDD': {'allocated': 113, 'max': 110},
+             'EEEE': {'allocated': 70,  'max': 90}}
         @return: (dict)
             example:
             {
