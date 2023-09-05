@@ -191,14 +191,16 @@ class HandlersVolumeTest(unittest.TestCase):
         mock_send_request.return_value = {'overallRC': 0}
         mock_path_item.return_value = 'fakeuser'
         info = {'reserve': True,
-                'fcp_template_id': 'faketmpl'}
+                'fcp_template_id': 'faketmpl',
+                'pchid_info': dict()}
         body_str = {"info": info}
         self.req.body = json.dumps(body_str)
         # to pass validataion.query_schema
         self.req.environ['wsgiorg.routing_args'] = (
             (), {'userid': 'fakeuser'})
         volume.get_volume_connector(self.req)
-        mock_send_request.assert_called_once_with('get_volume_connector', 'fakeuser', True, 'faketmpl', None)
+        mock_send_request.assert_called_once_with(
+            'get_volume_connector', 'fakeuser', True, 'faketmpl', None, dict())
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')

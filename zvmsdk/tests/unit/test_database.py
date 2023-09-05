@@ -33,6 +33,13 @@ CONF = config.CONF
 LOG = log.LOG
 
 
+def mock_reset(*args):
+    """Reset mock objects in args"""
+    for m in args:
+        if isinstance(m, Mock):
+            m.reset_mock(return_value=True, side_effect=True)
+
+
 class NetworkDbOperatorTestCase(base.SDKTestCase):
 
     @classmethod
@@ -920,7 +927,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             #   set connections to 1
             self.db_op.update_usage_of_fcp('1111', 'user2', 1, 1, template_id)
             self.db_op.update_usage_of_fcp('2222', 'user2', 1, 1, template_id)
-            fcp_list = self.db_op.get_allocated_fcps_from_assigner(
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner(
                 'user2', template_id)
             self.assertEqual(2, len(fcp_list))
         finally:
@@ -1014,12 +1021,12 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # expected result:
             # it can not return 1a04 because
             # it does not have 1bxx with same index
-            expected_results = {('1a01', '1b01'), ('1a03', '1b03')}
+            expected_results = {('1A01', '1B01'), ('1A03', '1B03')}
             result = set()
             for i in range(10):
                 fcp_list = self.db_op.get_fcp_devices_with_same_index(
                     template_id)
-                result.add(tuple([fcp[0] for fcp in fcp_list]))
+                result.add(tuple([fcp['fcp_id'] for fcp in fcp_list]))
             self.assertEqual(result, expected_results)
             # test case3:
             self.db_op.reserve_fcps(['1a01', '1b03'], '', template_id)
@@ -1031,127 +1038,253 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_get_fcp_devices(self):
-        '''Test API get_fcp_devices
+    @mock.patch("zvmsdk.log.LOG.warning")
+    @mock.patch("zvmsdk.log.LOG.error")
+    @patch('zvmsdk.database.FCPDbOperator.get_path_count')
+    @patch('zvmsdk.database._FCP_CONN')
+    @patch("zvmsdk.database.FCPDbOperator.get_free_pchids_by_fcp_template")
+    @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count")
+    def test_get_fcp_devices(self, mock_min_path_count,
+                             mock_free_pchids_per_path, mock_conn,
+                             mock_total_path_count, mock_error, mock_warning):
+        '''Test get_fcp_devices'''
+        fcp_template_id = 'fake_id'
+        sql_string = (
+            "SELECT fcp.fcp_id, fcp.wwpn_npiv, fcp.wwpn_phy, tf.path, fcp.pchid "
+            "FROM template_fcp_mapping as tf "
+            "INNER JOIN fcp "
+            "ON tf.fcp_id=fcp.fcp_id "
+            "WHERE tf.tmpl_id='{}' "
+            "AND fcp.connections=0 "
+            "AND fcp.reserved=0 "
+            "AND fcp.state='free' "
+            "AND fcp.wwpn_npiv IS NOT '' "
+            "AND fcp.wwpn_phy IS NOT '' "
+            "AND ({}) "
+            "ORDER BY tf.path, fcp.pchid, fcp.fcp_id")
+        # case1: total_path_count > min_path_count > free_path_count
+        mock_min_path_count.return_value = 2
+        mock_free_pchids_per_path.return_value = {1: ['AAAA', 'BBBB']}
+        mock_total_path_count.return_value = 3
+        pchid_info = {}
+        expect = []
+        # call
+        result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+        # verify
+        self.assertEqual(expect, result)
+        mock_error.assert_called_once()
+        mock_warning.assert_not_called()
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count, mock_error, mock_warning)
 
-        get_fcp_pair() only returns
-        the following possible values:
-        e.g. When FCP DB contains FCPs from 2 paths
-        case 1
-            randomly choose one available FCP per path:
-            [1a03,1b00] ,[1a02,1b01], [1a02,1b02]...
-            [1a00,1b01] ,[1a01,1b02], ...
-        case 2
-            if CONF.volume.min_fcp_paths_count is enabled,
-            (such as, min_fcp_paths_count = 1)
-            then it may also return a single FCP
-            (such as, [1a02], [1b03], ...)
-        case 3
-           an empty list(i.e. [])
-           if no expected pair found
-        '''
-        # prepare data for FCP Multipath Template "1a00-1a04;1b00-1b04"
-        template_id = 'fakehost-1111-1111-1111-111111111111'
-        # insert test data into table fcp
-        # Usage in test data:
-        #   1a00 usage is connections == 2, reserved == 0
-        #   1a02 usage is connections == 1, reserved == 1
-        #   1b00 usage is connections == 0, reserved == 1
-        #   others are connections ==0, reserved == 0
-        # State in test data:
-        #   1a01, 1a03, 1a04, 1b01, 1b03 are free
-        #   1a00, 1b04 are active
-        #   others are ''
-        # WWPNs in test data:
-        #   1b02 wwpns are empty, others are normal
-        fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
-                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
-                          ''),
-                         ('1a01', '', 0, 0, 'c05076de33000a01',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1a02', '', 1, 1, 'c05076de33000a02',
-                          'c05076de33002641', '27', '02e4', '', 'owner1',
-                          ''),
-                         ('1a03', '', 0, 0, 'c05076de33000a03',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1a04', '', 0, 0, 'c05076de33000a04',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1b00', '', 0, 1, 'c05076de33000b00',
-                          'c05076de33002642', '30', '021c', '', 'owner1',
-                          ''),
-                         ('1b01', '', 0, 0, 'c05076de33000b01',
-                          'c05076de33002642', '30', '021c', 'free', 'owner1',
-                          ''),
-                         ('1b02', '', 0, 0, '',
-                          '', '30', '021c', 'notfound', 'owner1',
-                          ''),
-                         ('1b03', '', 0, 0, 'c05076de33000b03',
-                          'c05076de33002642', '30', '021c', 'free', 'owner1',
-                          ''),
-                         ('1b04', '', 0, 0, 'c05076de33000b04',
-                          'c05076de33002642', '30', '021c', 'active', 'owner1',
-                          '')]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-        # insert new test data
-        self._insert_data_into_fcp_table(fcp_info_list)
-        # insert test data into table template_fcp_mapping
-        template_fcp = [('1a00', template_id, 0),
-                        ('1a01', template_id, 0),
-                        ('1a02', template_id, 0),
-                        ('1a03', template_id, 0),
-                        ('1a04', template_id, 0),
-                        ('1b00', template_id, 1),
-                        ('1b01', template_id, 1),
-                        ('1b02', template_id, 1),
-                        ('1b03', template_id, 1),
-                        ('1b04', template_id, 1)]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-        # insert new test data
-        self._insert_data_into_template_fcp_mapping_table(template_fcp)
-        # insert date to template table
-        template_info = [(template_id, 'name', 'desc', False, -1)]
-        self._insert_data_into_template_table(template_info)
-        try:
-            # expected result
-            all_possible_pairs = {
-                ('1a01', '1b01'), ('1a01', '1b03'),
-                ('1a03', '1b01'), ('1a03', '1b03'),
-                ('1a04', '1b01'), ('1a04', '1b03')
-            }
-            # exhaustion to get all possible pairs
-            result = set()
-            for i in range(300):
-                fcp_list = self.db_op.get_fcp_devices(template_id)
-                # fcp_list include fcp_id, wwpn_npiv, wwpn_phy
-                # we test fcp_id only
-                result.add(tuple([fcp[0] for fcp in fcp_list]))
-            self.assertEqual(result, all_possible_pairs)
-            # test case2: no available fcp device in one path
-            #   reserve all fcp devices in path 0
-            self.db_op.reserve_fcps(['1a01', '1a03', '1a04'], '', template_id)
-            # expected result
-            for i in range(10):
-                fcp_list = self.db_op.get_fcp_devices(template_id)
-                self.assertEqual(fcp_list, [])
-            # test case3: min_fcp_paths_count was set to 1
-            # set min_fcp_paths_count to 1
-            self.db_op.edit_fcp_template(template_id, min_fcp_paths_count=1)
-            all_possible_pairs = {('1b01',), ('1b03',)}
-            result = set()
-            for i in range(10):
-                fcp_list = self.db_op.get_fcp_devices(template_id)
-                result.add(tuple([fcp[0] for fcp in fcp_list]))
-            self.assertEqual(result, all_possible_pairs)
-        finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-            self.db_op.delete_fcp_template(template_id)
+        # case2: min_path_count(2) < free_path_count(4) < total_path_count(6)
+        #        and final_pchid_per_path is on 3 paths
+        #        and only 1 combination has the largest weight
+        #        and some PCHIDs are shared across some paths
+        # >>> pp(pchids_per_path_combinations)
+        # [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC', 'weight': 0.0},
+        # {1: 'AAAA', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+        # {1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 0.0},
+        # {1: 'BBBB', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+        # {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+        # {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+        # {1: 'AAAA', 4: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+        # {1: 'AAAA', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+        # {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+        # {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+        # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}, <----
+        # {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0}]
+        mock_min_path_count.return_value = 2
+        mock_free_pchids_per_path.return_value = {
+            1: ['AAAA', 'BBBB'],
+            3: ['CCCC'],
+            4: ['CCCC', 'DDDD'],
+            5: ['EEEE']}
+        mock_total_path_count.return_value = 6
+        # mock execute(sql).fetchall in _get_one_random_fcp_combinations
+        all_fcps = [
+            {'fcp_id': '1c01', 'path': 3, 'pchid': 'cccc', 'wwpn_npiv': 'c1', 'wwpn_phy': 'x1'},
+            {'fcp_id': '1c02', 'path': 3, 'pchid': 'cccc', 'wwpn_npiv': 'c2', 'wwpn_phy': 'x2'},
+            {'fcp_id': '1c03', 'path': 4, 'pchid': 'cccc', 'wwpn_npiv': 'c3', 'wwpn_phy': 'x3'},
+            {'fcp_id': '1c04', 'path': 4, 'pchid': 'cccc', 'wwpn_npiv': 'c4', 'wwpn_phy': 'x4'},
+            {'fcp_id': '1e04', 'path': 5, 'pchid': 'eeee', 'wwpn_npiv': 'e1', 'wwpn_phy': 'y1'},
+            {'fcp_id': '1e05', 'path': 5, 'pchid': 'eeee', 'wwpn_npiv': 'e2', 'wwpn_phy': 'y2'}]
+        mock_conn.execute().fetchall.return_value = all_fcps
+        # all_fcps_with_uppercase for later verify
+        all_fcps_with_uppercase = all_fcps.copy()
+        for fcp in all_fcps_with_uppercase:
+            for k in fcp:
+                if k in ('fcp_id', 'pchid'):
+                    fcp[k] = fcp[k].upper()
+        # free_count_in_pchid_info =
+        # {'AAAA': 0, 'BBBB': 0, 'CCCC': 17, 'DDDD': -3, 'EEEE': 20}
+        pchid_info = {
+            'AAAA': {'allocated': 128, 'max': 128},
+            'BBBB': {'allocated': 110, 'max': 110},
+            'CCCC': {'allocated': 111, 'max': 128},
+            'DDDD': {'allocated': 113, 'max': 110},
+            'EEEE': {'allocated': 70, 'max': 90}}
+        # prepare sql
+        pchid_path_filter = ("(tf.path=3 AND fcp.pchid='CCCC') OR "
+                             "(tf.path=4 AND fcp.pchid='CCCC') OR "
+                             "(tf.path=5 AND fcp.pchid='EEEE')")
+        sql = sql_string[:].format(
+            fcp_template_id, pchid_path_filter)
+        for i in range(5):
+            # call
+            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            # verify final_pchid_per_path by sql
+            mock_conn.execute.assert_called_with(sql)
+            # verify result
+            final_pchid_per_path = {3: 'CCCC', 4: 'CCCC', 5: 'EEEE'}
+            for fcp in result:
+                final_pchid_per_path.pop(fcp['path'])
+                self.assertIn(fcp, all_fcps_with_uppercase)
+            self.assertEqual(final_pchid_per_path, {})
+        mock_warning.assert_called()
+        mock_error.assert_not_called()
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count, mock_error, mock_warning)
+
+        # case3: min_path_count(4) = free_path_count(4) = total_path_count(4)
+        #        and final_pchid_per_path is on 4 paths
+        #        and multiple combinations has the largest weight
+        #        and some PCHIDs are shared across some paths
+        # >>> pp(pchids_per_path_combinations)
+        # [{0: 'AAAA', 1: 'CCCC', 2: 'CCCC', 3: 'EEEE', 'weight': 10.0},
+        #  {0: 'AAAA', 1: 'CCCC', 2: 'DDDD', 3: 'EEEE', 'weight': 10.0},
+        #  {0: 'BBBB', 1: 'CCCC', 2: 'CCCC', 3: 'EEEE', 'weight': 20.0},
+        #  {0: 'BBBB', 1: 'CCCC', 2: 'DDDD', 3: 'EEEE', 'weight': 20.0}]
+        mock_min_path_count.return_value = 4
+        mock_free_pchids_per_path.return_value = {
+            0: ['AAAA', 'BBBB'],
+            1: ['CCCC'],
+            2: ['CCCC', 'DDDD'],
+            3: ['EEEE']}
+        mock_total_path_count.return_value = 4
+        # mock execute(sql).fetchall in _get_one_random_fcp_combinations
+        all_fcps = [
+            {'fcp_id': '1b01', 'path': 0, 'pchid': 'bbbb', 'wwpn_npiv': 'c1', 'wwpn_phy': 'x1'},
+            {'fcp_id': '1b02', 'path': 0, 'pchid': 'bbbb', 'wwpn_npiv': 'c2', 'wwpn_phy': 'x2'},
+            {'fcp_id': '1c03', 'path': 1, 'pchid': 'cccc', 'wwpn_npiv': 'c3', 'wwpn_phy': 'x3'},
+            {'fcp_id': '1c04', 'path': 1, 'pchid': 'cccc', 'wwpn_npiv': 'c4', 'wwpn_phy': 'x4'},
+            {'fcp_id': '1d03', 'path': 2, 'pchid': 'dddd', 'wwpn_npiv': 'c5', 'wwpn_phy': 'x5'},
+            {'fcp_id': '1d04', 'path': 2, 'pchid': 'dddd', 'wwpn_npiv': 'c6', 'wwpn_phy': 'x6'},
+            {'fcp_id': '1e04', 'path': 3, 'pchid': 'eeee', 'wwpn_npiv': 'c7', 'wwpn_phy': 'x7'},
+            {'fcp_id': '1e05', 'path': 3, 'pchid': 'eeee', 'wwpn_npiv': 'c8', 'wwpn_phy': 'x8'}]
+        mock_conn.execute().fetchall.return_value = all_fcps
+        # all_fcps_with_uppercase for later verify
+        all_fcps_with_uppercase = all_fcps.copy()
+        for fcp in all_fcps_with_uppercase:
+            for k in fcp:
+                if k in ('fcp_id', 'pchid'):
+                    fcp[k] = fcp[k].upper()
+        # free_count_in_pchid_info =
+        # {'AAAA': 10, 'BBBB': 41, 'CCCC': 43, 'DDDD': 50, 'EEEE': 31, 'FFFF': -2, 'GGGG': 80}
+        pchid_info = {
+            'AAAA': {'allocated': 118, 'max': 128},
+            'BBBB': {'allocated': 87, 'max': 128},
+            'CCCC': {'allocated': 85, 'max': 128},
+            'DDDD': {'allocated': 78, 'max': 128},
+            'EEEE': {'allocated': 108, 'max': 128},
+            'FFFF': {'allocated': 130, 'max': 128},
+            'GGGG': {'allocated': 48, 'max': 128}
+        }
+        # prepare sql
+        pchid_path_filter = ("(tf.path=0 AND fcp.pchid='BBBB') OR "
+                             "(tf.path=1 AND fcp.pchid='CCCC') OR "
+                             "(tf.path=2 AND fcp.pchid='DDDD') OR "
+                             "(tf.path=3 AND fcp.pchid='EEEE')")
+        sql = sql_string[:].format(
+            fcp_template_id, pchid_path_filter)
+        for i in range(5):
+            # call
+            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            # verify final_pchid_per_path by sql
+            mock_conn.execute.assert_called_with(sql)
+            # verify result
+            final_pchid_per_path = {0: 'BBBB', 1: 'CCCC',
+                                    2: 'DDDD', 3: 'EEEE'}
+            for fcp in result:
+                final_pchid_per_path.pop(fcp['path'])
+                self.assertIn(fcp, all_fcps_with_uppercase)
+            self.assertEqual(final_pchid_per_path, {})
+        mock_warning.assert_not_called()
+        mock_error.assert_not_called()
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count, mock_error, mock_warning)
+
+        # case4: min_path_count(4) = free_path_count(4) = total_path_count(4)
+        #        and final_pchid_per_path is on 4 paths
+        #        and multiple combinations has the largest weight
+        #        and no PCHIDs are shared across more than 1 path
+        # >>> pp(pchids_per_path_combinations)
+        # [{0: 'AAAA', 1: 'CCCC', 2: 'EEEE', 3: 'GGGG', 'weight': 10.0},
+        # {0: 'AAAA', 1: 'CCCC', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0},
+        # {0: 'AAAA', 1: 'DDDD', 2: 'EEEE', 3: 'GGGG', 'weight': 10.0},
+        # {0: 'AAAA', 1: 'DDDD', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0},
+        # {0: 'BBBB', 1: 'CCCC', 2: 'EEEE', 3: 'GGGG', 'weight': 43.0},
+        # {0: 'BBBB', 1: 'CCCC', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0},
+        # {0: 'BBBB', 1: 'DDDD', 2: 'EEEE', 3: 'GGGG', 'weight': 51.0},
+        # {0: 'BBBB', 1: 'DDDD', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0}]
+        mock_min_path_count.return_value = 4
+        mock_free_pchids_per_path.return_value = {
+            0: ['AAAA', 'BBBB'],
+            1: ['CCCC', 'DDDD'],
+            2: ['EEEE', 'FFFF'],
+            3: ['GGGG']}
+        mock_total_path_count.return_value = 4
+        # mock execute(sql).fetchall in _get_one_random_fcp_combinations
+        all_fcps = [
+            {'fcp_id': '1b01', 'path': 0, 'pchid': 'bbbb', 'wwpn_npiv': 'c1', 'wwpn_phy': 'x1'},
+            {'fcp_id': '1b02', 'path': 0, 'pchid': 'bbbb', 'wwpn_npiv': 'c2', 'wwpn_phy': 'x2'},
+            {'fcp_id': '1d03', 'path': 1, 'pchid': 'dddd', 'wwpn_npiv': 'c3', 'wwpn_phy': 'x3'},
+            {'fcp_id': '1d04', 'path': 1, 'pchid': 'dddd', 'wwpn_npiv': 'c4', 'wwpn_phy': 'x4'},
+            {'fcp_id': '1e03', 'path': 2, 'pchid': 'eeee', 'wwpn_npiv': 'c5', 'wwpn_phy': 'x5'},
+            {'fcp_id': '1e04', 'path': 2, 'pchid': 'eeee', 'wwpn_npiv': 'c6', 'wwpn_phy': 'x6'},
+            {'fcp_id': '1g04', 'path': 3, 'pchid': 'gggg', 'wwpn_npiv': 'c7', 'wwpn_phy': 'x7'},
+            {'fcp_id': '1g05', 'path': 3, 'pchid': 'gggg', 'wwpn_npiv': 'c8', 'wwpn_phy': 'x8'}]
+        mock_conn.execute().fetchall.return_value = all_fcps
+        # all_fcps_with_uppercase for later verify
+        all_fcps_with_uppercase = all_fcps.copy()
+        for fcp in all_fcps_with_uppercase:
+            for k in fcp:
+                if k in ('fcp_id', 'pchid'):
+                    fcp[k] = fcp[k].upper()
+        # free_count_in_pchid_info =
+        # {'AAAA': 10, 'BBBB': 61, 'CCCC': 43, 'DDDD': 51, 'EEEE': 61, 'FFFF': -2, 'GGGG': 80}
+        pchid_info = {
+            'AAAA': {'allocated': 118, 'max': 128},
+            'BBBB': {'allocated': 67, 'max': 128},
+            'CCCC': {'allocated': 85, 'max': 128},
+            'DDDD': {'allocated': 77, 'max': 128},
+            'EEEE': {'allocated': 67, 'max': 128},
+            'FFFF': {'allocated': 130, 'max': 128},
+            'GGGG': {'allocated': 48, 'max': 128}
+        }
+        # prepare sql
+        pchid_path_filter = ("(tf.path=0 AND fcp.pchid='BBBB') OR "
+                             "(tf.path=1 AND fcp.pchid='DDDD') OR "
+                             "(tf.path=2 AND fcp.pchid='EEEE') OR "
+                             "(tf.path=3 AND fcp.pchid='GGGG')")
+        sql = sql_string[:].format(
+            fcp_template_id, pchid_path_filter)
+        for i in range(5):
+            # call
+            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            # verify final_pchid_per_path by sql
+            mock_conn.execute.assert_called_with(sql)
+            # verify result
+            final_pchid_per_path = {0: 'BBBB', 1: 'DDDD',
+                                    2: 'EEEE', 3: 'GGGG'}
+            for fcp in result:
+                final_pchid_per_path.pop(fcp['path'])
+                self.assertIn(fcp, all_fcps_with_uppercase)
+            self.assertEqual(final_pchid_per_path, {})
+        mock_warning.assert_not_called()
+        mock_error.assert_not_called()
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count, mock_error, mock_warning)
 
     def test_create_fcp_template_with_name_and_desc(self):
         """Create a FCP Multipath Template only with name and description, other parameters are all default values"""
@@ -1764,7 +1897,27 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         expected = {'02E0': '1A02, 1A09 - 1A0B, 1A11',
                     '03FC': '1B1F - 1B21, 1C03 - 1C04'}
         result = self.db_op.get_pchids_of_all_inuse_fcp_devices()
+        self.assertDictEqual(expected, result)
+
+    @patch('zvmsdk.database._FCP_CONN')
+    def test_get_free_pchids_by_fcp_template(self, mock_conn):
+        """test get_free_pchids_by_fcp_template"""
+        mock_conn.execute().fetchall.side_effect = [
+            [],
+            [{'pchid': '01e0', 'path': '1'},
+             {'pchid': '02A0', 'path': '1'},
+             {'pchid': '02a0', 'path': '3'},
+             {'pchid': '03fc', 'path': '3'}]
+        ]
+        # case1: no free fcp
+        expected = {}
+        result = self.db_op.get_free_pchids_by_fcp_template('fake_id')
         self.assertEqual(expected, result)
+        # case2: has free fcp
+        expected = {'1': ['01E0', '02A0'],
+                    '3': ['02A0', '03FC']}
+        result = self.db_op.get_free_pchids_by_fcp_template('fake_id')
+        self.assertDictEqual(expected, result)
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):

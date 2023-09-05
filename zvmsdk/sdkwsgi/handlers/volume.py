@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -60,10 +60,10 @@ class VolumeAction(object):
 
     @validation.query_schema(volume.get_volume_connector)
     def get_volume_connector(self, req, userid, reserve, fcp_template_id,
-                             sp_name):
+                             sp_name, pchid_info):
         conn = self.client.send_request('get_volume_connector',
                                         userid, reserve, fcp_template_id,
-                                        sp_name)
+                                        sp_name, pchid_info)
         return conn
 
     @validation.query_schema(volume.get_fcp_templates)
@@ -235,17 +235,19 @@ def volume_refresh_bootmap(req):
 @util.SdkWsgify
 @tokens.validate
 def get_volume_connector(req):
-    def _get_volume_conn(req, userid, reserve, fcp_template_id, sp_name):
+    def _get_volume_conn(req, userid, reserve, fcp_template_id, sp_name, pchid_info):
         action = get_action()
         return action.get_volume_connector(req, userid, reserve,
-                                           fcp_template_id, sp_name)
-
+                                           fcp_template_id, sp_name, pchid_info)
+    # extract param userid from url path
     userid = util.wsgi_path_item(req.environ, 'userid')
+    # extract other params from req.body into python objects
     body = util.extract_json(req.body)
     reserve = body['info']['reserve']
     fcp_template_id = body['info'].get('fcp_template_id', None)
     sp_name = body['info'].get('storage_provider', None)
-    conn = _get_volume_conn(req, userid, reserve, fcp_template_id, sp_name)
+    pchid_info = body['info'].get('pchid_info', dict())
+    conn = _get_volume_conn(req, userid, reserve, fcp_template_id, sp_name, pchid_info)
     conn_json = json.dumps(conn)
 
     req.response.content_type = 'application/json'

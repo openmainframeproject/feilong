@@ -102,10 +102,10 @@ class VolumeOperatorAPI(object):
                                             fcp_template_id=fcp_template_id)
 
     def get_volume_connector(self, assigner_id, reserve,
-                             fcp_template_id=None, sp_name=None):
+                             fcp_template_id=None, sp_name=None, pchid_info=dict()):
         return self._volume_manager.get_volume_connector(
             assigner_id, reserve, fcp_template_id=fcp_template_id,
-            sp_name=sp_name)
+            sp_name=sp_name, pchid_info=pchid_info)
 
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
         return self._volume_manager.check_fcp_exist_in_db(fcp, raise_exec)
@@ -624,27 +624,48 @@ class FCPManager(object):
         """
         self.db.unreserve_fcps(fcp_list)
 
-    def allocate_fcp_devices(self, assigner_id, fcp_template_id, sp_name):
-        """
-        Allocate and reserve FCP devices by assigner_id and fcp_template_id. In this method:
-        1. If fcp_template_id is specified, then use it. If not, get the sp
-           default FCP Multipath Template, if no sp default template, use host default
-           FCP Multipath Template.
+    def allocate_fcp_devices(self, assigner_id, fcp_template_id,
+                                        sp_name, pchid_info):
+        """ Allocate and reserve FCP devices by assigner_id and fcp_template_id
+        In this method:
+        1. If fcp_template_id is specified, then use it.
+           If not, get the sp default FCP Multipath Template,
+           if no sp default template, use host default Template.
            If host default template is not found, then raise error.
-        2. Get FCP list from db by assigner and fcp_template whose reserve=1
-        3. If fcp_list is not empty, just to use them.
-        4. If fcp_list is empty, get one from each path,
-           then update 'reserved' and 'tmpl_id' in fcp table.
+        2. Get existing fcp_list from db by assigner and fcp_template_id whose reserve=1.
+           If fcp_list is not empty, just to use them.
+           If fcp_list is empty, allocate new fcp_list and
+                then update 'reserved' and 'tmpl_id' in fcp table.
 
-        Returns: fcp_list and fcp_template_id.
-                 The fcp list data structure: [(fcp_id, wwpn_npiv, wwpn_phy)].
-                 An example of fcp_list:
-                 [('1c10', 'c12345abcdefg1', 'c1234abcd33002641'),
-                 ('1d10', 'c12345abcdefg2', 'c1234abcd33002641')]
+        @param assigner_id: instance userid
+        @param fcp_template_id: FCP multipath template ID
+        @param sp_name: storage provider hostname
+        @param pchid_info: (dict) PCHID as key,
+            'allocated' means the count of allocated FCP devices from the PCHID
+            'max' means the maximum allowable count of FCP devices that can be allocated from the PCHID
+            example:
+            {'AAAA': {'allocated': 128, 'max': 128},
+             'BBBB': {'allocated': 109, 'max': 110},
+             'CCCC': {'allocated': 111, 'max': 128},
+             'DDDD': {'allocated': 113, 'max': 110},
+             'EEEE': {'allocated': 70,  'max': 90}}
+        @return: (is_reserved_changed, fcp_list, fcp_template_id)
+            case1: existing fcp_list is not empty
+                (False, [{'fcp_id':'1B02'...}...], 'tmpl_id')
+            case2: existing fcp_list is empty, new fcp_list is not empty
+                (True, [{'fcp_id':'1B02'...}...], 'tmpl_id')
+            case3: both existing and fcp_list fcp_list is empty
+                (False, [], 'tmpl_id')
+            An example of non-empty fcp_list:
+            [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+             {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+             {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
         """
+        is_reserved_changed = False
         with database.get_fcp_conn():
-            fcp_tmpl_id = fcp_template_id
-            if not fcp_tmpl_id:
+
+            # try getting a default template if no specified template
+            if not fcp_template_id:
                 LOG.info("FCP Multipath Template id is not specified when reserving FCP "
                          "devices for assigner %s." % assigner_id)
                 if sp_name:
@@ -658,8 +679,8 @@ class FCPManager(object):
                                                               assigner_id))
                     default_tmpl = self.db.get_host_default_fcp_template()
                 if default_tmpl:
-                    fcp_tmpl_id = default_tmpl[0][0]
-                    LOG.info("The default FCP Multipath Template id is %s." % fcp_tmpl_id)
+                    fcp_template_id = default_tmpl[0][0]
+                    LOG.info("The default FCP Multipath Template id is %s." % fcp_template_id)
                 else:
                     errmsg = ("No FCP Multipath Template is specified and "
                               "no default FCP Multipath Template is found.")
@@ -669,67 +690,69 @@ class FCPManager(object):
                                                             msg=errmsg)
 
             try:
-                # go here, means try to attach volumes
-                # first check whether this userid already has a FCP device
-                # get the FCP devices belongs to assigner_id
+                # get the FCP devices allocated to the userid if any
                 fcp_list = self.db.get_allocated_fcps_from_assigner(
-                    assigner_id, fcp_tmpl_id)
-                LOG.info("Previously allocated records %s for "
+                    assigner_id, fcp_template_id)
+                LOG.info("Previously allocated FCP devices %s for "
                          "instance %s in FCP Multipath Template %s." %
                          ([f['fcp_id'] for f in fcp_list],
-                          assigner_id, fcp_tmpl_id))
+                          assigner_id, fcp_template_id))
                 if not fcp_list:
                     # Sync DB to update FCP state,
                     # so that allocating new FCPs is based on the latest FCP state
                     self._sync_db_with_zvm()
                     # allocate new ones if fcp_list is empty
-                    LOG.info("There is no allocated FCP devices for virtual machine %s, "
+                    LOG.info("There is no previously allocated FCP devices for the instance %s, "
                              "allocating new ones." % assigner_id)
                     if CONF.volume.get_fcp_pair_with_same_index:
                         '''
                         If use get_fcp_pair_with_same_index,
-                        then fcp pair is randomly selected from below combinations.
+                        then FCP devices are randomly selected from below combinations,
+                        one FCP device per path, ex:
                         [fa00,fb00],[fa01,fb01],[fa02,fb02]
                         '''
-                        free_unreserved = self.db.get_fcp_devices_with_same_index(
-                            fcp_tmpl_id)
+                        fcp_list = self.db.get_fcp_devices_with_same_index(
+                            fcp_template_id)
                     else:
                         '''
                         If use get_fcp_pair,
-                        then fcp pair is randomly selected from below combinations.
+                        then FCP devices are randomly selected from below combinations,
+                        one FCP device per path, ex:
                         [fa00,fb00],[fa01,fb00],[fa02,fb00]
                         [fa00,fb01],[fa01,fb01],[fa02,fb01]
                         [fa00,fb02],[fa01,fb02],[fa02,fb02]
                         '''
-                        free_unreserved = self.db.get_fcp_devices(fcp_tmpl_id)
-                    if not free_unreserved:
-                        return [], fcp_tmpl_id
-                    available_list = free_unreserved
-                    fcp_ids = [fcp[0] for fcp in free_unreserved]
+                        fcp_list = self.db.get_fcp_devices(fcp_template_id, pchid_info)
+                    # process empty fcp_list
+                    if not fcp_list:
+                        return is_reserved_changed, [], fcp_template_id
                     # record the assigner id in the fcp DB so that
                     # when the vm provision with both root and data volumes
                     # the root and data volume would get the same FCP devices
                     # with the get_volume_connector call.
+                    fcp_ids = [fcp['fcp_id'] for fcp in fcp_list]
                     assigner_id = assigner_id.upper()
-                    self.db.reserve_fcps(fcp_ids, assigner_id, fcp_tmpl_id)
-                    LOG.info("Newly allocated %s fcp for %s assigner "
+                    self.db.reserve_fcps(fcp_ids, assigner_id, fcp_template_id)
+                    is_reserved_changed = True
+                    LOG.info("Newly allocated %s FCP devices for instance %s "
                              "and FCP Multipath Template %s" %
-                             (fcp_ids, assigner_id, fcp_tmpl_id))
+                             (fcp_ids, assigner_id, fcp_template_id))
                 else:
                     # reuse the old ones if fcp_list is not empty
-                    LOG.info("Found allocated fcps %s for %s in FCP Multipath Template %s, "
+                    LOG.info("Found previously allocated FCP devices %s "
+                             "for instance %s in FCP Multipath Template %s, "
                              "will reuse them."
                              % ([f['fcp_id'] for f in fcp_list],
-                                assigner_id, fcp_tmpl_id))
-                    path_count = self.db.get_path_count(fcp_tmpl_id)
+                                assigner_id, fcp_template_id))
+                    path_count = self.db.get_path_count(fcp_template_id)
                     if len(fcp_list) != path_count:
-                        LOG.warning("FCPs previously assigned to %s includes %s, "
-                                    "it is not equal to the path count: %s." %
+                        LOG.warning("FCP devices previously allocated to instance %s are %s, "
+                                    "it is not equal to the total path count (%s) "
+                                    "of the FCP Multipath Template." %
                                     (assigner_id, fcp_list, path_count))
                     self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
-                    # we got it from db, let's reuse it
-                    available_list = fcp_list
-                return available_list, fcp_tmpl_id
+                # return
+                return is_reserved_changed, fcp_list, fcp_template_id
             except Exception as err:
                 errmsg = ("Failed to reserve FCP devices "
                           "for assigner %s by FCP Multipath Template %s error: %s"
@@ -740,23 +763,30 @@ class FCPManager(object):
                                                         msg=errmsg)
 
     def release_fcp_devices(self, assigner_id, fcp_template_id):
-        """
-        Release FCP devices that belongs to the assigner_id and fcp_template_id.
+        """ Release FCP devices related to the assigner_id and fcp_template_id.
         In this method:
         1. Get FCP list from db by assigner and
-           fcp_template whose reserved=1
+           fcp_template_id whose reserved=1
         2. If fcp_list is not empty,
            choose the ones with connections=0,
-           and then set reserved=0 in fcp table in db
+           and then set reserved=0 in fcp table
         3. If fcp_list is empty, return empty list
 
-        Returns: The fcp list data structure:
-           [(fcp_id, wwpn_npiv, wwpn_phy, connections)].
+        Returns: (is_reserved_changed, fcp_list)
+            case1: fcp_list is not empty and connections != 0
+                (False, [{'fcp_id':'1B02'...}...])
+            case2: fcp_list is not empty and connections = 0
+                (True, [{'fcp_id':'1B02'...}...])
+            case3: fcp_list is not empty
+                (False, [])
+            The fcp_list is a list of sqlite3.Row objects that can be accessed in dict-style
+                [(fcp_id, wwpn_npiv, wwpn_phy, connections, path, pchid), ...].
             An example of fcp_list:
-            [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 1),
-             ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
-            If no fcp can be gotten from db, return empty list.
+                [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 2, 0, 'AAAA'),
+                 ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0, 1, 'BBBB')]
+                If no fcp can be gotten from db, return empty list.
         """
+        is_reserved_changed = False
         with database.get_fcp_conn():
             try:
                 if fcp_template_id is None:
@@ -771,17 +801,19 @@ class FCPManager(object):
                 if fcp_list:
                     self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
                     # the data structure of fcp_list is
-                    # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
+                    # [(fcp_id, wwpn_npiv, wwpn_phy, connections, path, pchid)]
                     # only unreserve the fcp with connections=0
                     fcp_ids = [fcp['fcp_id'] for fcp in fcp_list
                                if fcp['connections'] == 0]
                     if fcp_ids:
                         self.db.unreserve_fcps(fcp_ids)
+                        is_reserved_changed = True
                         LOG.info("Unreserve fcp device %s from "
                                  "instance %s and FCP Multipath Template %s."
                                  % (fcp_ids, assigner_id, fcp_template_id))
-                    return fcp_list
-                return []
+                    return is_reserved_changed, fcp_list
+                else:
+                    return is_reserved_changed, []
             except Exception as err:
                 errmsg = ("Failed to unreserve FCP devices for "
                           "assigner %s by FCP Multipath Template %s. Error: %s"
@@ -2470,100 +2502,176 @@ class FCPVolumeManager(object):
 
     @utils.synchronized('volumeAttachOrDetach-{assigner_id}')
     def get_volume_connector(self, assigner_id, reserve,
-                             fcp_template_id=None, sp_name=None):
-        """Get connector information of the instance for attaching to volumes.
+                             fcp_template_id=None, sp_name=None, pchid_info=dict()):
+        """Get connector information of the instance for attaching or detaching volumes.
 
-        Connector information is a dictionary representing the Fibre
-        Channel(FC) port(s) that will be making the connection.
-        The properties of FC port(s) are as follows::
-        {
-            'zvm_fcp': [fcp1, fcp2]
-            'wwpns': [npiv_wwpn1, npiv_wwpn2]
-            'phy_to_virt_initiators':{
-                npiv_wwpn1: phy_wwpn1,
-                npiv_wwpn2: phy_wwpn2,
+        @param assigner_id: (str) instance userid in z/VM
+        @param reserve: (bool) True for attach-volume process, False for detach-volume
+        @param fcp_template_id: (str) FCP multipath template ID
+        @param sp_name: (str) storage provider hostname
+        @param pchid_info: (dict) it is only needed when reserve is True.
+            PCHID as key,
+            'allocated' means the count of allocated FCP devices from the PCHID,
+            'max' means the maximum allowable count of FCP devices that can be allocated from the PCHID
+            example:
+            {'AAAA': {'allocated': 128, 'max': 128},
+             'BBBB': {'allocated': 109, 'max': 110},
+             'CCCC': {'allocated': 111, 'max': 128},
+             'DDDD': {'allocated': 113, 'max': 110},
+             'EEEE': {'allocated': 70,  'max': 90}}
+        @return: (dict)
+            example:
+            {
+                'zvm_fcp': [fcp1, fcp2, fcp3]
+                'wwpns': [npiv_wwpn1, npiv_wwpn2, npiv_wwpn3]
+                'phy_to_virt_initiators':{
+                    npiv_wwpn1: phy_wwpn1,
+                    npiv_wwpn2: phy_wwpn2,
+                    npiv_wwpn3: phy_wwpn3
+                }
+                'host': LPARname_VMuserid, # the name to be used by storage provider
+                'fcp_paths': 3,            # the count of fcp paths
+                'fcp_template_id': '123',  # if user doesn't specify it,
+                                             it is either the SP default or the host
+                                             default template id
+                'cpc_sn': '8257',
+                'cpc_name': 'M54',
+                'lpar': 'ZVM4OCP1',
+                "hypervisor_hostname": "BOEM5401",
+                'pchid_fcp_map': {
+                    'A': [fcp1, fcp2],
+                    'B': [fcp3]
+                },
+                'is_reserved_changed': True  # True for either attaching 1st volume to
+                                               or detaching last volume from
+                                               the VM (assigner_id)
+                                               through this template (fcp_template_id)
             }
-            'host': LPARname_VMuserid,
-            'fcp_paths': 2,            # the count of fcp paths
-            'fcp_template_id': fcp_template_id # if user doesn't specify it,
-                               it is either the SP default or the host
-                               default template id
-        }
         """
-        with database.get_fcp_conn():
-            if fcp_template_id and \
-                    not self.db.fcp_template_exist_in_db(fcp_template_id):
+
+        # hypervisor_hostname is set in _precheck()
+        hypervisor_hostname = None
+
+        def _precheck():
+            # verify z/VM hypervisor name of the userid
+            nonlocal hypervisor_hostname
+            hypervisor_hostname = zvmutils.get_zvm_name()
+            if not hypervisor_hostname:
+                errmsg = "failed to get z/VM hypervisor name."
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(
+                    rs=11, userid=assigner_id, msg=errmsg)
+            # verify fcp_template_id:
+            # DB operation fcp_template_exist_in_db() must be inside the with-block,
+            # because it is related with other DB operations:
+            # allocate_fcp_devices() and release_fcp_devices()
+            if fcp_template_id and not self.db.fcp_template_exist_in_db(fcp_template_id):
                 errmsg = ("FCP Multipath Template (id: %s) does not exist." % fcp_template_id)
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(
                     rs=11, userid=assigner_id, msg=errmsg)
 
-            # get z/VM name of the userid,
-            # if no host name got, raise exception
-            zvm_host = zvmutils.get_zvm_name()
-            if zvm_host == '':
-                errmsg = "failed to get z/VM LPAR name."
-                LOG.error(errmsg)
-                raise exception.SDKVolumeOperationError(
-                    rs=11, userid=assigner_id, msg=errmsg)
-            """
-            Reserve or unreserve FCP device
-            according to assigner id and FCP Multipath Template id.
-            """
+            if reserve:
+                nonlocal pchid_info
+                # uppercase the keys (PCHIDs) in pchid_info
+                pchid_info = {pchid.upper(): pchid_info[pchid] for pchid in pchid_info}
+                LOG.info("pchid_info: {}".format(pchid_info))
+                # verify pchid_info
+                pchids_in_template = set(self.db.get_pchids_by_fcp_template(fcp_template_id))
+                pchids_in_pchid_info = set(pchid_info)
+                missing_pchids = sorted(list(pchids_in_template - pchids_in_pchid_info))
+                if missing_pchids:
+                    errmsg = ('The PCHIDs {} are missing in the pchid_info {}, '
+                              'though are included in the FCP multipath template (id={}).'
+                              .format(missing_pchids, pchid_info, fcp_template_id))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(
+                        rs=11, userid=assigner_id, msg=errmsg)
+
+        with database.get_fcp_conn():
+            # precheck
+            _precheck()
+            # Reserve or unreserve FCP device
+            # according to assigner id and FCP Multipath Template id.
             if reserve:
                 LOG.info("get_volume_connector: Enter allocate_fcp_devices.")
-                # The data structure of fcp_list is:
-                # [(fcp_id, wwpn_npiv, wwpn_phy)]
-                fcp_list, fcp_template_id = self.fcp_mgr.allocate_fcp_devices(
-                    assigner_id, fcp_template_id, sp_name)
+                # fcp_list is a list of python built-in dict objects, ex:
+                # [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+                #  {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+                #  {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
+                is_reserved_changed, fcp_list, fcp_template_id = self.fcp_mgr.allocate_fcp_devices(
+                    assigner_id, fcp_template_id, sp_name, pchid_info)
                 LOG.info("get_volume_connector: Exit allocate_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
             else:
                 LOG.info("get_volume_connector: Enter release_fcp_devices.")
-                # The data structure of fcp_list is:
-                # [(fcp_id, wwpn_npiv, wwpn_phy, connections)]
-                # An example of fcp_list:
-                # [('1c10', 'c12345abcdefg1', 'c1234abcd33002641', 1),
-                #  ('1d10', 'c12345abcdefg2', 'c1234abcd33002641', 0)]
-                fcp_list = self.fcp_mgr.release_fcp_devices(
+                # fcp_list is a list of sqlite3.Row objects, it is similar as the example below:
+                # [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+                #  {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+                #  {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
+                is_reserved_changed, fcp_list = self.fcp_mgr.release_fcp_devices(
                     assigner_id, fcp_template_id)
                 LOG.info("get_volume_connector: Exit release_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
 
-        empty_connector = {'zvm_fcp': [],
-                           'wwpns': [],
-                           'host': '',
-                           'phy_to_virt_initiators': {},
-                           'fcp_paths': 0,
-                           'fcp_template_id': fcp_template_id}
-        if not fcp_list:
-            errmsg = ("Not enough available FCP devices found from "
-                      "FCP Multipath Template(id={})".format(fcp_template_id))
-            LOG.error(errmsg)
-            return empty_connector
+            # get zhypinfo
+            zhypinfo = utils.get_zhypinfo()
+            cpc_sn = utils.get_cpc_sn(zhypinfo=zhypinfo)
+            cpc_name = utils.get_cpc_name(zhypinfo=zhypinfo)
+            lpar = utils.get_lpar_name(zhypinfo=zhypinfo)
 
-        # get wwpns of fcp devices
-        wwpns = []
-        phy_virt_wwpn_map = {}
-        fcp_ids = []
-        for fcp in fcp_list:
-            wwpn_npiv = fcp[1]
-            fcp_ids.append(fcp[0])
-            wwpns.append(wwpn_npiv)
-            phy_virt_wwpn_map[wwpn_npiv] = fcp[2]
+            if not fcp_list:
+                errmsg = ("Not enough available FCP devices found from "
+                          "FCP Multipath Template(id={})".format(fcp_template_id))
+                LOG.error(errmsg)
+                connector = {'zvm_fcp': [],
+                                   'wwpns': [],
+                                   'host': '',
+                                   'phy_to_virt_initiators': {},
+                                   'fcp_paths': 0,
+                                   'fcp_template_id': fcp_template_id,
+                                   'cpc_sn': cpc_sn,
+                                   'cpc_name': cpc_name,
+                                   'lpar': lpar,
+                                   'hypervisor_hostname': hypervisor_hostname,
+                                   'pchid_fcp_map': {},
+                                   'is_reserved_changed': False}
+            else:
+                # get wwpns of fcp devices
+                wwpns = []
+                fcp_ids = []
+                pchid_fcp_map = {}
+                phy_virt_wwpn_map = {}
+                for fcp in fcp_list:
+                    fcp_ids.append(fcp['fcp_id'].lower())
+                    wwpn_npiv = fcp['wwpn_npiv']
+                    wwpns.append(wwpn_npiv)
+                    phy_virt_wwpn_map[wwpn_npiv] = fcp['wwpn_phy']
+                    # populate pchid_fcp_map
+                    if fcp['pchid'].upper() not in pchid_fcp_map:
+                        pchid_fcp_map[fcp['pchid'].upper()] = []
+                    pchid_fcp_map[fcp['pchid'].upper()].append(fcp['fcp_id'].upper())
 
-        # return the LPARname+VMuserid as host
-        ret_host = zvm_host + '_' + assigner_id
-        connector = {'zvm_fcp': fcp_ids,
-                     'wwpns': wwpns,
-                     'phy_to_virt_initiators': phy_virt_wwpn_map,
-                     'host': ret_host,
-                     'fcp_paths': len(fcp_list),
-                     'fcp_template_id': fcp_template_id}
-        LOG.info('get_volume_connector returns %s for '
-                 'assigner %s and FCP Multipath Template %s'
-                 % (connector, assigner_id, fcp_template_id))
-        return connector
+                # return the hypervisor_hostname+VMuserid
+                # as host to be used by storage provider
+                ret_host = hypervisor_hostname + '_' + assigner_id
+                connector = {'zvm_fcp': fcp_ids,
+                             'wwpns': wwpns,
+                             'phy_to_virt_initiators': phy_virt_wwpn_map,
+                             'host': ret_host,
+                             'fcp_paths': len(fcp_list),
+                             'fcp_template_id': fcp_template_id,
+                             'cpc_sn': cpc_sn,
+                             'cpc_name': cpc_name,
+                             'lpar': lpar,
+                             'hypervisor_hostname': hypervisor_hostname,
+                             'pchid_fcp_map': pchid_fcp_map,
+                             'is_reserved_changed': is_reserved_changed
+                             }
+                LOG.info('get_volume_connector returns %s for '
+                         'instance %s and FCP Multipath Template %s'
+                         % (connector, assigner_id, fcp_template_id))
+            return connector
 
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
         all_fcps_raw = self.db.get_all()
