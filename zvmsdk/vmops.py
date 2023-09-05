@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -70,30 +70,42 @@ class VMOps(object):
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
         perf_info = self._smtclient.get_image_performance_info(userid)
+        try:
+            is_rhcos = 'rhcos' in self._GuestDbOperator.get_guest_by_userid(
+                userid)[2].lower()
+        except (ValueError, AttributeError, IndexError, TypeError) as err:
+            msg = ('Failed to execute command on query the type of guest with'
+                   'userid %(userid)s and error shows with %(err)s'
+                   % {'userid': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
 
+        act_cpus_num = 0
+        os_distro = ''
+        kernel_info = ''
         # Get the online CPU number, OS distro and kernel version
         try:
-            act_cpus = self._smtclient.get_active_cpu_addrs(userid)
-            act_cpus_num = len(act_cpus)
-            LOG.debug('Online cpu info: %s, %d' % (act_cpus, act_cpus_num))
+            # Skip IUCV authorization and online cpu number for RHCOS guests
+            if not is_rhcos:
+                act_cpus = self._smtclient.get_active_cpu_addrs(userid)
+                act_cpus_num = len(act_cpus)
+                LOG.debug('Online cpu info: %s, %d' % (act_cpus, act_cpus_num))
         except exception.SDKSMTRequestFailed as err:
             msg = ('Failed to execute command on capture source vm %(vm)s '
                    'to get online cpu number with error %(err)s'
                    % {'vm': userid, 'err': err.results['response'][0]})
             LOG.error(msg)
-            act_cpus_num = 0
 
         try:
-            os_distro = self._smtclient.guest_get_os_version(userid)
-            kernel_info = self._smtclient.guest_get_kernel_info(userid)
-            LOG.debug('OS and kernel info: %s, %s' % (os_distro, kernel_info))
+            # Skip OS distro for RHCOS guests
+            if not is_rhcos:
+                os_distro = self._smtclient.guest_get_os_version(userid)
+                kernel_info = self._smtclient.guest_get_kernel_info(userid)
+                LOG.debug('OS and kernel info: %s, %s' % (os_distro, kernel_info))
         except exception.SDKSMTRequestFailed as err:
             msg = ('Failed to execute command on capture source vm %(vm)s '
                    'to get OS distro with error %(err)s'
                    % {'vm': userid, 'err': err.results['response'][0]})
             LOG.error(msg)
-            os_distro = ''
-            kernel_info = ''
 
         if perf_info:
             try:
