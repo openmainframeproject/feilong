@@ -1876,18 +1876,20 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         """test get_pchids_of_all_inuse_fcp_devices"""
         mock_conn.execute().fetchall.side_effect = [
             [],
-            [   # pchid: 02E0
+            [   # all the keys and values must be in lower case,
+                # because sqlite DB query always returns in lower case
+                # pchid: 02E0
                 {'pchid': '02e0', 'fcp_id': '1a0a'},
                 {'pchid': '02e0', 'fcp_id': '1a09'},
                 {'pchid': '02e0', 'fcp_id': '1a0b'},
-                {'pchid': '02e0', 'fcp_id': '1A02'},
-                {'pchid': '02E0', 'fcp_id': '1A11'},
+                {'pchid': '02e0', 'fcp_id': '1a02'},
+                {'pchid': '02e0', 'fcp_id': '1a11'},
                 # pchid: 03FC
                 {'pchid': '03fc', 'fcp_id': '1c03'},
                 {'pchid': '03fc', 'fcp_id': '1c04'},
                 {'pchid': '03fc', 'fcp_id': '1b1f'},
-                {'pchid': '03FC', 'fcp_id': '1B20'},
-                {'pchid': '03FC', 'fcp_id': '1B21'}]
+                {'pchid': '03fc', 'fcp_id': '1b20'},
+                {'pchid': '03fc', 'fcp_id': '1b21'}]
         ]
         # case1: no inuse fcp
         expected = {}
