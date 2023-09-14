@@ -36,7 +36,8 @@
 300;30;300;8;Failed to attach volume to instance %(userid)s with reason %(msg)s
 300;30;300;9;Failed to detach volume from instance %(userid)s with reason %(msg)s
 300;30;300;10;Failed to refresh bootmap for RHCOS: transportfiles are required
-300;30;300;11;Failed to get volume connector of %(userid)s because %(msg)s
+300;30;300;11;Failed to get volume connector of %(userid)s: %(msg)s
+300;30;300;12;PCHIDs info missing: %(msg)s
 **Operation on Image failed**
 300;40;300;1;Database operation failed, error: %(msg)s
 300;40;300;2;No image schema found for %(schema)s

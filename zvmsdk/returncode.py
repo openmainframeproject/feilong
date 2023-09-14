@@ -248,8 +248,10 @@ errors = {
                    "%(userid)s with reason %(msg)s",
                 10: "Failed to refresh bootmap for RHCOS: "
                     "transportfiles are required",
-                11: "Failed to get volume connector of %(userid)s "
-                    "because %(msg)s",
+                11: "Failed to get volume connector of %(userid)s: "
+                    "%(msg)s",
+                12: "PCHIDs info missing: "
+                    "%(msg)s",
                 },
                "Operation on Volume failed"
                ],
