@@ -612,6 +612,26 @@ class FCPManager(object):
                                                         userid=assigner_id,
                                                         msg=errmsg)
 
+    def _check_missing_pchids(self, assigner_id, fcp_template_id, pchid_info):
+        """
+        Check whether all the PCHIDs used by the FCP multipath template is contained in
+        the pchid_info. If not, report error.
+        """
+        # uppercase the keys (PCHIDs) in pchid_info
+        pchid_info = {pchid.upper(): pchid_info[pchid] for pchid in pchid_info}
+        LOG.info("Get pchid_info: {} when allocating FCP devices from template: {}"
+                 .format(pchid_info, fcp_template_id))
+        # verify pchid_info
+        pchids_in_template = set(self.db.get_pchids_by_fcp_template(fcp_template_id))
+        pchids_in_pchid_info = set(pchid_info)
+        missing_pchids = sorted(list(pchids_in_template - pchids_in_pchid_info))
+        if missing_pchids:
+            errmsg = ('The PCHIDs configured in the FCP multipath template (id={}) are {}, '
+                      'but the statistics of PCHIDs {} are missing.'
+                      .format(fcp_template_id, sorted(list(pchids_in_template)), missing_pchids))
+            LOG.error(errmsg)
+            raise exception.SDKVolumeOperationError(rs=12, msg=errmsg)
+
     def reserve_fcp_devices(self, fcp_list, assigner_id, fcp_template_id):
         """
         Reserve FCP devices in the FCP database and set fcp multipath template id.
@@ -698,6 +718,9 @@ class FCPManager(object):
                          ([f['fcp_id'] for f in fcp_list],
                           assigner_id, fcp_template_id))
                 if not fcp_list:
+                    # Check whether all the PCHIDs used by the FCP multipath template is contained in
+                    # the pchid_info
+                    self._check_missing_pchids(assigner_id, fcp_template_id, pchid_info)
                     # Sync DB to update FCP state,
                     # so that allocating new FCPs is based on the latest FCP state
                     self._sync_db_with_zvm()
@@ -2570,23 +2593,6 @@ class FCPVolumeManager(object):
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(
                     rs=11, userid=assigner_id, msg=errmsg)
-
-            if reserve:
-                nonlocal pchid_info
-                # uppercase the keys (PCHIDs) in pchid_info
-                pchid_info = {pchid.upper(): pchid_info[pchid] for pchid in pchid_info}
-                LOG.info("pchid_info: {}".format(pchid_info))
-                # verify pchid_info
-                pchids_in_template = set(self.db.get_pchids_by_fcp_template(fcp_template_id))
-                pchids_in_pchid_info = set(pchid_info)
-                missing_pchids = sorted(list(pchids_in_template - pchids_in_pchid_info))
-                if missing_pchids:
-                    errmsg = ('The PCHIDs {} are missing in the pchid_info {}, '
-                              'though are included in the FCP multipath template (id={}).'
-                              .format(missing_pchids, pchid_info, fcp_template_id))
-                    LOG.error(errmsg)
-                    raise exception.SDKVolumeOperationError(
-                        rs=11, userid=assigner_id, msg=errmsg)
 
         with database.get_fcp_conn():
             # precheck
