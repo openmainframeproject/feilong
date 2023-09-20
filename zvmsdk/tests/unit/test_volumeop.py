@@ -996,11 +996,34 @@ class TestFCPManager(base.SDKTestCase):
                       'desc1', 1),
                      ('fakehos2-1111-1111-1111-111111111111', 'name2',
                       'desc2', 0)]
-        zhypinfo = {"cpc": {"sequence_code": "0000000000082F57", 'layer_name': "M54"},
-                    "lpar": {"layer_name": "ZVM4OCP3"}}
 
-        mock_get_zhypinfo.return_value = zhypinfo
+        zhypinfo = {
+                'cpc': {
+                    'layer_type_num': '1',
+                    'layer_category_num': '2',
+                    'layer_type': 'CEC',
+                    'layer_category': 'HOST',
+                    'layer_name': 'M54',
+                    'manufacturer': 'IBM',
+                    'type': '3906',
+                    'model_capacity': '701',
+                    'model': 'M04',
+                    'type_name': 'IBM z14',
+                    'sequence_code': '0000000000082F57',
+                    },
+                'lpar': {
+                    'layer_type_num': '2',
+                    'layer_category_num': '1',
+                    'layer_type': 'LPAR',
+                    'layer_category': 'GUEST',
+                    'partition_number': '14',
+                    'partition_char': 'Shared',
+                    'partition_char_num': '2',
+                    'layer_name': 'ZVM4OCP3',
+                    }
+                }
         mock_get_zvm_name.return_value = 'BOEM5403'
+        mock_get_zhypinfo.return_value = zhypinfo
         template_id_list = [tmpl[0] for tmpl in templates]
         self._insert_data_into_template_table(templates)
         # parameters of new template
@@ -1109,6 +1132,33 @@ class TestFCPManager(base.SDKTestCase):
             'host_default': False,
             'default_sp_list': ['sp1'],
             'min_fcp_paths_count': 2}
+
+        zhypinfo = {
+                'cpc': {
+                    'layer_type_num': '1',
+                    'layer_category_num': '2',
+                    'layer_type': 'CEC',
+                    'layer_category': 'HOST',
+                    'layer_name': 'M54',
+                    'manufacturer': 'IBM',
+                    'type': '3906',
+                    'model_capacity': '701',
+                    'model': 'M04',
+                    'type_name': 'IBM z14',
+                    'sequence_code': '0000000000082F57',
+                    },
+                'lpar': {
+                    'layer_type_num': '2',
+                    'layer_category_num': '1',
+                    'layer_type': 'LPAR',
+                    'layer_category': 'GUEST',
+                    'partition_number': '14',
+                    'partition_char': 'Shared',
+                    'partition_char_num': '2',
+                    'layer_name': 'ZVM4OCP3',
+                    }
+                }
+        mock_get_zhypinfo.return_value = zhypinfo
         mock_zvm_name.return_value = 'BOEM5403'
         self.fcpops.edit_fcp_template(tmpl_id, **kwargs)
         mock_db_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)

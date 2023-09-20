@@ -1436,7 +1436,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 default_sp_list=[])
             fcp_info = [
                 ('1a02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1'),
-                ('1b02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1')]
+                ('1b02', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e4', 'active', 'user1'),
+                ('1c03', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e3', 'active', 'user1'),
+                ('1d04', 'wwpn_npiv_1', 'wwpn_phy_1', '27', '02e1', 'active', 'user1')]
             self.db_op.bulk_insert_zvm_fcp_info_into_fcp_table(fcp_info)
             reserve_info = (('1a02', '1b02'), 'user1', 'fake_id_1111')
             self.db_op.reserve_fcps(*reserve_info)
@@ -1444,7 +1446,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.increase_connections('1b02')
             # case-3.1:
             # delete (1a01,1b03) from 'fake_id_0000' must fail
-            fcp_device_list = '1A00,1A02-1A03;1B00-1B02'
+            fcp_device_list = '1A00,1A02-1A03;1B00-1B02, 1C03, 1D04'
             not_allow_for_del = {'1a01', '1b03'}
             detail = ("The FCP devices ({}) are missing from the FCP device list."
                       .format(utils.shrink_fcp_list(list(not_allow_for_del))))
@@ -1453,8 +1455,20 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertIn(detail, str(cm.exception))
             # case-3.2:
             # delete (1a01,1b03) from 'fake_id_1111' must success
-            self.db_op.edit_fcp_template('fake_id_1111', fcp_devices=fcp_device_list)
-
+            ret_val = self.db_op.edit_fcp_template('fake_id_1111', fcp_devices=fcp_device_list)
+            pchids_add = ret_val.get('fcp_template').get('pchids').get('add')
+            pchids_all = ret_val.get('fcp_template').get('pchids').get('all')
+            pchids_del = ret_val.get('fcp_template').get('pchids').get('delete')
+            expect_add = {'all': ['02E1', '02E3'], 'first_used_by_templates': ['02E1', '02E3']}
+            expect_add['all'].sort()
+            pchids_add['all'].sort()
+            expect_add['first_used_by_templates'].sort()
+            pchids_add['first_used_by_templates'].sort()
+            pchids_all.sort()
+            self.assertListEqual(expect_add['all'], pchids_add['all'])
+            self.assertListEqual(expect_add['first_used_by_templates'], pchids_add['first_used_by_templates'])
+            self.assertEqual({'all': [], 'not_exist_in_any_template': []}, pchids_del)
+            self.assertEqual(['02E1', '02E3', '02E4'], pchids_all)
             # case4
             # DML: table template_fcp_mapping
             # (based on the preparation done in case2)
@@ -1463,9 +1477,16 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # c. update fcp path   :
             #      change 1a01,1a03 from path0 to path1
             #      change 1b01,1b03 from path1 to path0
-            kwargs['fcp_devices'] = '1A00,1B01,1B03;1B00,1A01,1A03'
-            self.db_op.edit_fcp_template(
-                tmpl_id, fcp_devices=kwargs['fcp_devices'])
+            kwargs['fcp_devices'] = '1A00,1B01,1B03;1B00,1A01,1A03, 1C03'
+            ret_val = self.db_op.edit_fcp_template(tmpl_id, fcp_devices=kwargs['fcp_devices'])
+            pchids_add = ret_val.get('fcp_template').get('pchids').get('add')
+            pchids_all = ret_val.get('fcp_template').get('pchids').get('all')
+            pchids_del = ret_val.get('fcp_template').get('pchids').get('delete')
+            expect_add = {'all': ['02E3'], 'first_used_by_templates': []}
+            self.assertListEqual(expect_add['all'], pchids_add['all'])
+            self.assertListEqual(expect_add['first_used_by_templates'], pchids_add['first_used_by_templates'])
+            self.assertEqual({'all': [], 'not_exist_in_any_template': []}, pchids_del)
+            self.assertListEqual(['02E4', '02E3'], pchids_all)
             expected = utils.expand_fcp_list(kwargs['fcp_devices'])
             _, fcp_detail = self.db_op.get_fcp_templates_details([tmpl_id])
             fcp_in_db = {0: set(), 1: set()}
@@ -1499,7 +1520,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 'pchids': {
                         'add': add_pchids,
                         'delete': delete_dict,
-                        'all': ['02E4']
+                        'all': ['02E4', '02E3']
                 }
             }}
             self.assertEqual(expected, tmpl_basic)
