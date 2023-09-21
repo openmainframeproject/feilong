@@ -4596,7 +4596,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         size = '4g'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEFINE STORAG RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4615,7 +4615,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         size = '10240M'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEFINE STORAGE RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4642,7 +4642,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         size = '2g'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEFIN ST RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4672,7 +4672,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_default_max_reserved_memory', '64G')
         sample_definition = [u'USER TESTUID LBYONLY 65536M 128G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 65536M',
+                             u'COMMAND DEFINE STOR RESERVED 65536M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4702,7 +4702,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_default_max_reserved_memory', '65536M')
         sample_definition = [u'USER TESTUID LBYONLY 65536M 128G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 65536M',
+                             u'COMMAND DEFINE STORAGE RESERVED 65536M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4732,7 +4732,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_default_max_reserved_memory', '128G')
         sample_definition = [u'USER TESTUID LBYONLY 1024M 256G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 131072M',
+                             u'COMMAND DEFI STORAGE RESERVED 131072M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4759,7 +4759,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         size = '2g'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF ST RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4781,7 +4781,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         size = '2g'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEFINE ST RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4838,7 +4838,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G 64',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'COMMAND DEF STORA RESERVED 61440M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
@@ -4872,7 +4872,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         user_entry = [u'USER TESTUID LBYONLY 4096M 64G G',
                      u'INCLUDE OSDFLT',
-                     u'COMMAND DEF STOR RESERVED 61440M',
+                     u'COMMAND DEFI STORA RESERVED 61440M',
                      u'CPU 00 BASE',
                      u'IPL 0100',
                      u'MDISK 0100 3390 5501 5500 OMB1BA MR',

@@ -4238,7 +4238,7 @@ class SMTClient(object):
                             new_ent += (str(size) + 'M ')
                     # remove the last space
                     new_ent = new_ent.strip()
-                elif ent.startswith("COMMAND DEF STOR RESERVED"):
+                elif re.match(const.RESERVED_STOR_PATTERN, ent):
                     new_ent = ("COMMAND DEF STOR INITIAL STANDBY REMAINDER")
                 else:
                     new_ent = ent
@@ -4351,7 +4351,7 @@ class SMTClient(object):
             # If the user direct include DEF STOR RESERVED statement,
             # then need define standby storage
             # Step1: Define new standby storage
-            if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+            if any(re.match(const.RESERVED_STOR_PATTERN, ent) for ent in user_direct):
                 # 'DEF STOR RESERVED' statement in Legacy user direct is replace to
                 # 'COMMAND DEFINE STORAGE INITIAL STANDBY REMAINDER', so here def all
                 # reserved memory to standby
@@ -4393,7 +4393,7 @@ class SMTClient(object):
                 LOG.error(msg1)
                 # Start to do rollback
                 LOG.info("Start to do revert.")
-                if any(ent.startswith("COMMAND DEF STOR RESERVED") for ent in user_direct):
+                if any(re.match(const.RESERVED_STOR_PATTERN, ent) for ent in user_direct):
                     LOG.debug("Reverting the standby memory.")
                     try:
                         self.execute_cmd(userid, "vmcp def storage standby 0M")
