@@ -728,23 +728,19 @@ class FCPManager(object):
                     LOG.info("There is no previously allocated FCP devices for the instance %s, "
                              "allocating new ones." % assigner_id)
                     if CONF.volume.get_fcp_pair_with_same_index:
-                        '''
-                        If use get_fcp_pair_with_same_index,
-                        then FCP devices are randomly selected from below combinations,
-                        one FCP device per path, ex:
-                        [fa00,fb00],[fa01,fb01],[fa02,fb02]
-                        '''
+                        # If use get_fcp_pair_with_same_index,
+                        # then FCP devices are randomly selected from below combinations,
+                        # one FCP device per path, ex:
+                        # [fa00,fb00],[fa01,fb01],[fa02,fb02]
                         fcp_list = self.db.get_fcp_devices_with_same_index(
-                            fcp_template_id)
+                            fcp_template_id, pchid_info)
                     else:
-                        '''
-                        If use get_fcp_pair,
-                        then FCP devices are randomly selected from below combinations,
-                        one FCP device per path, ex:
-                        [fa00,fb00],[fa01,fb00],[fa02,fb00]
-                        [fa00,fb01],[fa01,fb01],[fa02,fb01]
-                        [fa00,fb02],[fa01,fb02],[fa02,fb02]
-                        '''
+                        # If use get_fcp_pair,
+                        # then FCP devices are randomly selected from below combinations,
+                        # one FCP device per path, ex:
+                        # [fa00,fb00],[fa01,fb00],[fa02,fb00]
+                        # [fa00,fb01],[fa01,fb01],[fa02,fb01]
+                        # [fa00,fb02],[fa01,fb02],[fa02,fb02]
                         fcp_list = self.db.get_fcp_devices(fcp_template_id, pchid_info)
                     # process empty fcp_list
                     if not fcp_list:

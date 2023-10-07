@@ -602,7 +602,7 @@ class TestFCPManager(base.SDKTestCase):
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
-        pchid_info = {'02e4': {'allocated': 128, 'max': 128}}
+        pchid_info = {'02e4': {'allocated': 126, 'max': 128}}
         fcp_info_list = [('1a10', '', 0, 0, 'c05076de3300a83c',
                           'c05076de33002641', '27', '02e4', 'free', '',
                           ''),
@@ -616,7 +616,6 @@ class TestFCPManager(base.SDKTestCase):
                           'c05076de33002641', '27', '02e4', 'free', '',
                           '')
                          ]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
         # insert data into template_fcp_mapping table
         template_fcp = [('1a10', template_id, 0),
@@ -624,9 +623,8 @@ class TestFCPManager(base.SDKTestCase):
         self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
         # insert data into template table to add a default template
         templates = [(template_id, 'name1', 'desc1', 1)]
-        template_id_list = [tmpl[0] for tmpl in templates]
         self._insert_data_into_template_table(templates)
-
+        # insert data into template_sp_mapping table
         template_sp_mapping = [(sp_name, template_id)]
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
         config.CONF.volume.get_fcp_pair_with_same_index = 1
@@ -637,14 +635,12 @@ class TestFCPManager(base.SDKTestCase):
             for fcp in available_list:
                 # fcp_id, wwpn_npiv, wwpn_phy, path, pchid = fcp
                 actual_fcp_list.append(fcp)
-            self.assertEqual(is_reserved_changed, True)
-            self.assertEqual(template_id, fcp_tmpl_id)
-            self.assertEqual(2, len(actual_fcp_list))
+            self.assertEqual(
+                (is_reserved_changed, template_id, 2),
+                (True, fcp_tmpl_id, len(actual_fcp_list)))
             mock_check_pchids.assert_called_once_with(assinger_id, template_id, pchid_info)
         finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self._delete_from_template_table(template_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+            _purge_fcp_db()
 
     def test_allocate_fcp_devices_without_default_template(self):
         """

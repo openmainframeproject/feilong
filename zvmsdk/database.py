@@ -888,14 +888,31 @@ class FCPDbOperator(object):
 
         return fcp_list
 
-    def get_fcp_devices_with_same_index(self, fcp_template_id):
+    def get_fcp_devices_with_same_index(self, fcp_template_id, pchid_info):
         """ Get a group of available FCPs with the same index,
-            which also need satisfy the following conditions:
+        which also satisfy the following conditions:
             a. connections = 0
             b. reserved = 0
             c. state = 'free'
+            d. wwpn_npiv IS NOT ''
+            e. wwpn_phy IS NOT ''
+            f. ignore min_fcp_paths_count
 
-        :return fcp_list: (list)
+        @param fcp_template_id: (str) FCP multipath template ID
+        @param pchid_info: (dict) PCHID as key,
+            'allocated' means the count of allocated FCP devices from the PCHID
+            'max' means the maximum allowable count of FCP devices that can be allocated from the PCHID
+            example:
+            {'AAAA': {'allocated': 128, 'max': 128},
+             'BBBB': {'allocated': 109, 'max': 110},
+             'CCCC': {'allocated': 111, 'max': 128},
+             'DDDD': {'allocated': 113, 'max': 110},
+             'EEEE': {'allocated': 70,  'max': 90}}
+        @return fcp_list: (list)
+        example:
+          [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+           {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+           {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
         case 1
             an empty list(i.e. [])
             if no fcp exist in DB
@@ -903,25 +920,23 @@ class FCPDbOperator(object):
            an empty list(i.e. [])
            if no expected pair found
         case 3
-           randomly choose a pair of below combinations:
-           [1a00,1b00] ,[1a01,1b01] ,[1a02,1b02]...
+           randomly choose one of the following combinations:
+                [1a00,1b00] ,[1a01,1b01] ,[1a02,1b02]...
            rather than below combinations:
-           [1a00,1b02] ,[1a03,1b00]
-           [1a02], [1b03]
+               [1a00,1b02] ,[1a03,1b00]
+               [1a02], [1b03]
         """
         fcp_list = []
         fcp_pair_map = {}
         with get_fcp_conn() as conn:
-            '''
-            count_per_path examples:
-            in normal cases, all path has same count, eg.
-            4 paths: [7, 7, 7, 7]
-            2 paths: [7, 7]
-            we can also handle rare abnormal cases,
-            where path count differs, eg.
-            4 paths: [7, 4, 5, 6]
-            2 paths: [7, 6]
-            '''
+            # count_per_path examples:
+            # in normal cases, all path has same count, eg.
+            #   4 paths: [7, 7, 7, 7]
+            #   2 paths: [7, 7]
+            # we can also handle rare abnormal cases,
+            # where path count differs, eg.
+            #   4 paths: [7, 4, 5, 6]
+            #   2 paths: [7, 6]
             result = conn.execute("SELECT COUNT(path) "
                                   "FROM template_fcp_mapping "
                                   "WHERE tmpl_id=? "
@@ -930,7 +945,8 @@ class FCPDbOperator(object):
             count_per_path = [a[0] for a in result.fetchall()]
             # case1: return [] if no fcp found in FCP DB
             if not count_per_path:
-                LOG.error("Not enough FCPs available, return empty list.")
+                LOG.error('Because the FCP template ({}) does not include any FCP device, '
+                          'return empty list.'.format(fcp_template_id))
                 return fcp_list
             result = conn.execute(
                 "SELECT COUNT(template_fcp_mapping.path) "
@@ -951,27 +967,25 @@ class FCPDbOperator(object):
                 # For get_fcp_pair_with_same_index, we will not check the
                 # CONF.volume.min_fcp_paths_count, the returned fcp count
                 # should always equal to the total paths count
-                LOG.error("Available paths count: %s, total paths count: "
-                          "%s." %
-                          (len(free_count_per_path), len(count_per_path)))
+                LOG.error('Because available path count ({}) is less than '
+                          'total path count ({}), return empty list.'
+                          .format(len(free_count_per_path), len(count_per_path)))
                 return fcp_list
-            '''
-            fcps 2 paths example:
-               fcp  conn reserved state path pchid wwpn_npiv wwpn_phy
-              ------------------
-            [('1a00', 1, 1, 'active', ...),
-             ('1a01', 0, 0, 'free', ...),
-             ('1a02', 0, 0, 'free', ...),
-             ('1a03', 0, 0, 'free', ...),
-             ('1a04', 0, 0, 'offline', ...),
-             ...
-             ('1b00', 1, 0, 'active', ...),
-             ('1b01', 2, 1, 'active', ...),
-             ('1b02', 0, 0, 'free', ...),
-             ('1b03', 0, 0, 'free', ...),
-             ('1b04', 0, 0, 'free', ...),
-             ...]
-            '''
+            # fcps 2 paths example:
+            #    fcp  conn reserved state path pchid wwpn_npiv wwpn_phy
+            #   ------------------
+            # [('1a00', 1, 1, 'active', ...),
+            #  ('1a01', 0, 0, 'free', ...),
+            #  ('1a02', 0, 0, 'free', ...),
+            #  ('1a03', 0, 0, 'free', ...),
+            #  ('1a04', 0, 0, 'offline', ...),
+            #  ...
+            #  ('1b00', 1, 0, 'active', ...),
+            #  ('1b01', 2, 1, 'active', ...),
+            #  ('1b02', 0, 0, 'free', ...),
+            #  ('1b03', 0, 0, 'free', ...),
+            #  ('1b04', 0, 0, 'free', ...),
+            #  ...]
             result = conn.execute(
                 "SELECT fcp.fcp_id, fcp.connections, tf.path, fcp.pchid, "
                 "fcp.reserved, fcp.state, fcp.wwpn_npiv, fcp.wwpn_phy "
@@ -981,29 +995,26 @@ class FCPDbOperator(object):
                 "WHERE tf.tmpl_id=? "
                 "ORDER BY tf.path, tf.fcp_id", (fcp_template_id,))
             fcps = result.fetchall()
-        '''
-        get all free fcps from 1st path
-        fcp_pair_map example:
-         idx    fcp_pair
-         ----------------
-        { 1 : [('1a01', 'c0507...', 'c0604...', 0, 'AAAA')],
-          2 : [('1a02', ...)],
-          3 : [('1a03', ...)]}
-        '''
+        # get all free fcps from 1st path
+        # fcp_pair_map example:
+        #  idx    fcp_pair
+        #  ----------------
+        # { 1 : [('1a01', 'c0507...', 'c0604...', 0, 'AAAA')],
+        #   2 : [('1a02', ...)],
+        #   3 : [('1a03', ...)]}
+        #
         # The FCP count of 1st path
         for i in range(count_per_path[0]):
             (fcp_no, connections, path, pchid, reserved,
              state, wwpn_npiv, wwpn_phy) = fcps[i]
             if connections == reserved == 0 and state == 'free':
                 fcp_pair_map[i] = [(fcp_no, wwpn_npiv, wwpn_phy, path, pchid)]
-        '''
-        select out pairs if member count == path count
-        fcp_pair_map example:
-         idx    fcp_pair
-         ----------------------
-        { 2 : [('1a02', ...), ('1b02', ...)],
-          3 : [('1a03', ...), ('1b03', ...)]}
-        '''
+        # select out pairs if member count == path count
+        # fcp_pair_map example:
+        #  idx    fcp_pair
+        #  ----------------------
+        # { 2 : [('1a02', ...), ('1b02', ...)],
+        #   3 : [('1a03', ...), ('1b03', ...)]}
         for idx in fcp_pair_map.copy():
             s = 0
             for i, c in enumerate(count_per_path[:-1]):
@@ -1019,22 +1030,70 @@ class FCPDbOperator(object):
                 else:
                     fcp_pair_map.pop(idx)
                     break
-        '''
-        case3: return one group randomly chosen from fcp_pair_map
-        fcp_list example:
-        [('1a03', ...), ('1b03', ...)]
-        '''
-        LOG.info("Print at most 5 available FCP groups: {}".format(
-            list(fcp_pair_map.values())[:5]))
-        if fcp_pair_map:
+        # fcp_combinations ex:
+        # [ [('1a02', ...), ('1b02', ...), ('1c02', ...)],
+        #   [('1a03', ...), ('1b03', ...), ('1c03', ...)] ]
+        fcp_combinations = list(fcp_pair_map.values())
+
+        def _remove_invalid_combinations():
+            """remove the combinations whose weight is less than 1"""
+            # free_count_in_pchid_info:
+            # PCHID as key, free-FCP-device-count as value. Ex:
+            # {'AAAA': 0, 'BBBB': 1, 'CCCC': 1, 'DDDD': -3, 'EEEE': 3}
+            free_count_in_pchid_info = dict()
+            for pchid in pchid_info:
+                free_fcp_count = (pchid_info[pchid]['max'] -
+                                  pchid_info[pchid]['allocated'])
+                free_count_in_pchid_info[pchid.upper()] = free_fcp_count
+            LOG.info('free_count_in_pchid_info: {}'.format(free_count_in_pchid_info))
+            # comb ex:
+            # [(fcp_no, wwpn_npiv, wwpn_phy, path, pchid)
+            #  ('1a03', '.......', '......', 0,   'eeee'),
+            #  ('1b03', '.......', '......', 1,   'cccc'),
+            #  ('1c03', '.......', '......', 2,   'cccc')]
+            for comb in fcp_combinations:
+                # pchids ex:
+                # ['EEEE', 'CCCC', 'CCCC]
+                pchids = [item[-1].upper() for item in comb]
+                # comb_fcp_count_per_pchid:
+                # PCHID as key, occurance-count-in-comb as value. Ex:
+                # {'EEEE': 1, 'CCCC': 2}
+                # In the example, for this comb
+                # it means PCHID 'EEEE' occurs once, PCHID 'CCCC' occurs twice;
+                # it indicates 1 FCP device is from 'EEEE' and 2 from 'CCCC'
+                # will be consumed to satisfy one time of FCP device allocation.
+                comb_fcp_count_per_pchid = {
+                    pchid: pchids.count(pchid)
+                    for pchid in set(pchids)}
+                # weight:
+                # In a way, the weight reflects the capability of how many times
+                # of FCP device allocation can be done if choosing this comb.
+                # take PCHIDs 'EEEE' and 'CCCC' as example:
+                # min(3/1, 1/2) -> min(3, 0.5) -> 0.5
+                weight = min(
+                    free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
+                    for p in comb_fcp_count_per_pchid)
+                # remove invalid comb
+                if weight < 1:
+                    fcp_combinations.remove(comb)
+
+        _remove_invalid_combinations()
+        # case3: return one group randomly chosen from fcp_combinations
+        # fcp_list example:
+        # [('1a03', ...), ('1b03', ...), ('1c01', ...)]
+        LOG.info("Print at most 5 available FCP device combinations: {}".format(
+            fcp_combinations[:5]))
+        if fcp_combinations:
             # tmp_list ex:
             # [(fcp_no, wwpn_npiv, wwpn_phy, path, pchid)
             #  ('1a03', '.......', '......', 0,   'AAAA'),
-            #  ('1b03', '.......', '......', 1,   'BBBB')]
-            tmp_list = random.choice(sorted(fcp_pair_map.values()))
+            #  ('1b03', '.......', '......', 1,   'BBBB'),
+            #  ('1c03', '.......', '......', 1,   'CCCC')]
+            tmp_list = random.choice(sorted(fcp_combinations))
             # fcp_list ex:
             # [{'fcp_id':'1A03', 'path':0, 'pchid':'AAAA', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
-            #  {'fcp_id':'1B03', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
+            #  {'fcp_id':'1B03', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'},
+            #  {'fcp_id':'1C03', 'path':2, 'pchid':'CCCC', 'wwpn_npiv':'dd', 'wwpn_phy':'yy'}]
             for fcp in tmp_list:
                 item = {
                     'fcp_id': fcp[0].upper(),
@@ -1045,7 +1104,7 @@ class FCPDbOperator(object):
                 }
                 fcp_list.append(item)
         else:
-            LOG.error("Not eligible FCP group found in FCP DB.")
+            LOG.error("No eligible FCP device combination with the same index is found.")
         return fcp_list
 
     def get_fcp_devices(self, fcp_template_id, pchid_info):
@@ -1088,7 +1147,7 @@ class FCPDbOperator(object):
             for pchid in pchid_info:
                 free_fcp_count = (pchid_info[pchid]['max'] -
                                   pchid_info[pchid]['allocated'])
-                free_count_in_pchid_info[pchid] = free_fcp_count
+                free_count_in_pchid_info[pchid.upper()] = free_fcp_count
             LOG.info('free_count_in_pchid_info: {}'.format(free_count_in_pchid_info))
             # comb:
             # path as key, PCHID as value. Ex:
