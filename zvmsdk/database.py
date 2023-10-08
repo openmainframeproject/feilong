@@ -512,7 +512,7 @@ class FCPDbOperator(object):
                                       "assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                                     "connections, reserved, wwpn_npiv, "
+                                      "connections, reserved, wwpn_npiv, "
                                       "wwpn_phy, chpid, pchid, state, owner, "
                                       "tmpl_id FROM fcp")
             fcp_info = result.fetchall()
@@ -530,7 +530,9 @@ class FCPDbOperator(object):
         connections = 0
         reserved = 0
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp "
+            result = conn.execute("SELECT assigner_id, reserved, "
+                                  "connections, tmpl_id "
+                                  "FROM fcp "
                                   "WHERE fcp_id=?", (fcp_id,))
             fcp_info = result.fetchone()
             if not fcp_info:
@@ -562,8 +564,9 @@ class FCPDbOperator(object):
         :return connections: (dict) the connections of the FCP device
         """
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT * FROM fcp WHERE fcp_id=? "
-                                  "AND assigner_id=?", (fcp, assigner_id))
+            result = conn.execute("SELECT connections FROM fcp "
+                                  "WHERE fcp_id=? AND assigner_id=?",
+                                  (fcp, assigner_id))
             fcp_info = result.fetchone()
             if not fcp_info:
                 msg = 'FCP with id: %s does not exist in DB.' % fcp
@@ -589,16 +592,16 @@ class FCPDbOperator(object):
         """
         with get_fcp_conn() as conn:
 
-            result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "fcp_id=?", (fcp,))
-            fcp_list = result.fetchall()
+            result = conn.execute("SELECT connections FROM fcp "
+                                  "WHERE fcp_id=?", (fcp,))
+            fcp_list = result.fetchone()
             if not fcp_list:
                 msg = 'FCP with id: %s does not exist in DB.' % fcp
                 LOG.error(msg)
                 obj_desc = "FCP with id: %s" % fcp
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
-            connections = fcp_list[0][2]
+            connections = fcp_list['connections']
             if connections == 0:
                 msg = 'FCP with id: %s no connections in DB.' % fcp
                 LOG.error(msg)
@@ -640,7 +643,18 @@ class FCPDbOperator(object):
     def get_all(self):
         with get_fcp_conn() as conn:
 
-            result = conn.execute("SELECT * FROM fcp")
+            result = conn.execute("SELECT fcp_id, "
+                                  "assigner_id, "
+                                  "connections, "
+                                  "reserved, "
+                                  "wwpn_npiv, "
+                                  "wwpn_phy, "
+                                  "chpid, "
+                                  "pchid, "
+                                  "state, "
+                                  "owner, "
+                                  "tmpl_id "
+                                  "FROM fcp")
             fcp_list = result.fetchall()
 
         return fcp_list
@@ -649,7 +663,7 @@ class FCPDbOperator(object):
     def get_inuse_fcp_device_by_fcp_template(fcp_template_id):
         """ Get the FCP devices allocated from the template """
         with get_fcp_conn() as conn:
-            query_sql = conn.execute("SELECT * FROM fcp "
+            query_sql = conn.execute("SELECT fcp_id FROM fcp "
                                      "WHERE tmpl_id=?",
                                      (fcp_template_id,))
             result = query_sql.fetchall()
