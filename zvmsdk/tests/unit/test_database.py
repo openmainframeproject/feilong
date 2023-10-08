@@ -952,55 +952,44 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
            an empty list(i.e. [])
            if no expected pair found
         '''
+
+        # delete dirty data from other test cases
+        self._purge_fcp_db()
         # prepare data for FCP Multipath Template "1111;2222"
         template_id = 'fakehost-1111-1111-1111-111111111111'
         # insert test data into table fcp
         # Usage in test data:
         #   1a00 usage is connections == 2, reserved == 0
-        #   1a02 usage is connections == 1, reserved == 1
         #   1b00 usage is connections == 0, reserved == 1
         #   others are connections ==0, reserved == 0
         # State in test data:
-        #   1a01, 1a03, 1a04, 1b01, 1b03 are free
-        #   1a00, 1b04 are active
+        #   free:
+        #       1a01/1b01/1c01 ~ 1a03/1b03/1c03
+        #       1a04 1c00 1c04
+        #   active:
+        #       1a00 1b04
         #   others are ''
-        # WWPNs in test data:
-        #   1b02 wwpns are empty, others are normal
-        fcp_info_list = [('1a00', '', 2, 0, 'c05076de33000a00',
-                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
-                          ''),
-                         ('1a01', '', 0, 0, 'c05076de33000a01',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1a02', '', 1, 1, 'c05076de33000a02',
-                          'c05076de33002641', '27', '02e4', '', 'owner1',
-                          ''),
-                         ('1a03', '', 0, 0, 'c05076de33000a03',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1a04', '', 0, 0, 'c05076de33000a04',
-                          'c05076de33002641', '27', '02e4', 'free', 'owner1',
-                          ''),
-                         ('1b00', '', 0, 1, 'c05076de33000b00',
-                          'c05076de33002642', '30', '021c', '', 'owner1',
-                          ''),
-                         ('1b01', '', 0, 0, 'c05076de33000b01',
-                          'c05076de33002642', '30', '021c', 'free', 'owner1',
-                          ''),
-                         ('1b02', '', 0, 0, '',
-                          '', '30', '021c', 'notfound', 'owner1',
-                          ''),
-                         ('1b03', '', 0, 0, 'c05076de33000b03',
-                          'c05076de33002642', '30', '021c', 'free', 'owner1',
-                          ''),
-                         ('1b04', '', 0, 0, 'c05076de33000b04',
-                          'c05076de33002642', '30', '021c', 'active', 'owner1',
-                          '')]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
-        # delete dirty data from other test cases
-        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        fcp_info_list = [
+            # fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner, tmpl_id
+            ('1a00', '', 2, 0, 'wwpn_npiv', 'wwpn_phy', '27', '1111', 'active', 'owner1', ''),
+            ('1a01', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', 'aaaa', 'free', 'none', ''),
+            ('1a02', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', 'aaaa', 'free', 'none', ''),
+            ('1a03', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', 'aaaa', 'free', 'none', ''),
+            ('1a04', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', '1111', 'free', 'none', ''),
+
+            ('1b00', '', 0, 1, 'wwpn_npiv', 'wwpn_phy', '30', '2222', '', '', ''),
+            ('1b01', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', 'aaaa', 'free', 'none', ''),
+            ('1b02', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', 'bbbb', 'free', 'none', ''),
+            ('1b03', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', 'dddd', 'free', 'none', ''),
+            ('1b04', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', '2222', 'active', 'owner1', ''),
+
+            ('1c00', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', '3333', 'free', 'none', ''),
+            ('1c01', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', 'cccc', 'free', 'none', ''),
+            ('1c02', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', 'cccc', 'free', 'none', ''),
+            ('1c03', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', 'dddd', 'free', 'none', ''),
+            ('1c04', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', '3333', 'free', 'none', '')]
         self._insert_data_into_fcp_table(fcp_info_list)
-        # insert test data into table template_fcp_mapping
+        # insert test data into table template_fcp_mapping with 3 paths
         template_fcp = [('1a00', template_id, 0),
                         ('1a01', template_id, 0),
                         ('1a02', template_id, 0),
@@ -1010,33 +999,45 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                         ('1b01', template_id, 1),
                         ('1b02', template_id, 1),
                         ('1b03', template_id, 1),
-                        ('1b04', template_id, 1)]
-        self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+                        ('1b04', template_id, 1),
+                        ('1c00', template_id, 2),
+                        ('1c01', template_id, 2),
+                        ('1c02', template_id, 2),
+                        ('1c03', template_id, 2),
+                        ('1c04', template_id, 2)]
         self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        # The following pchid_info results in
+        # free_count_in_pchid_info =
+        # {'AAAA': 1, 'BBBB': 3, 'CCCC': 2, 'DDDD': 2, 'EEEE': -9}
+        pchid_info = {
+            'AAAA': {'allocated': 127, 'max': 128},
+            'BBBB': {'allocated': 107, 'max': 110},
+            'CCCC': {'allocated': 126, 'max': 128},
+            'DDDD': {'allocated': 108, 'max': 110},
+            # EEEE is not used
+            'EEEE': {'allocated': 99, 'max': 90}}
         try:
-            # test case1
-            fcp_list = self.db_op.get_fcp_devices_with_same_index('fakeid')
+            # case1: non-existing template id
+            fcp_list = self.db_op.get_fcp_devices_with_same_index('fakeid', pchid_info)
             self.assertEqual([], fcp_list)
-            # test case2
-            # expected result:
-            # it can not return 1a04 because
-            # it does not have 1bxx with same index
-            expected_results = {('1A01', '1B01'), ('1A03', '1B03')}
-            result = set()
+            # case2:
+            #                       AAAA BBBB CCCC DDDD     weight  valid
+            # 1a01/1b01/1c01    min(0.5       2        )    0.5     No
+            # 1a02/1b02/1c02    min(1    3    2        )    1       Yes
+            # 1a03/1b03/1c03    min(1              1   )    1       Yes
+            expected_set = {('1A02', '1B02', '1C02'), ('1A03', '1B03', '1C03')}
+            result_set = set()
             for i in range(10):
-                fcp_list = self.db_op.get_fcp_devices_with_same_index(
-                    template_id)
-                result.add(tuple([fcp['fcp_id'] for fcp in fcp_list]))
-            self.assertEqual(result, expected_results)
-            # test case3:
-            self.db_op.reserve_fcps(['1a01', '1b03'], '', template_id)
+                fcp_list = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+                result_set.add(tuple(fcp['fcp_id'] for fcp in fcp_list))
+            self.assertEqual(result_set, expected_set)
+            # test case3: No eligible FCP device combination with the same index
             # after reserve_fcps, no available pair records with same index
-            fcp_list = self.db_op.get_fcp_devices_with_same_index(
-                template_id)
+            self.db_op.reserve_fcps(['1a02', '1b03'], '', template_id)
+            fcp_list = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
             self.assertEqual(fcp_list, [])
         finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+            self._purge_fcp_db()
 
     @mock.patch("zvmsdk.log.LOG.warning")
     @mock.patch("zvmsdk.log.LOG.error")
