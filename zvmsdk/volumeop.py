@@ -699,7 +699,7 @@ class FCPManager(object):
                                                               assigner_id))
                     default_tmpl = self.db.get_host_default_fcp_template()
                 if default_tmpl:
-                    fcp_template_id = default_tmpl[0][0]
+                    fcp_template_id = default_tmpl[0]['id']
                     LOG.info("The default FCP Multipath Template id is %s." % fcp_template_id)
                 else:
                     errmsg = ("No FCP Multipath Template is specified and "
@@ -896,7 +896,7 @@ class FCPManager(object):
                    "the exception.")
             LOG.warning(msg)
 
-        fcp_dict_in_db = {fcp[0].lower(): fcp for fcp in fcp_in_db}
+        fcp_dict_in_db = {fcp['fcp_id'].lower(): fcp for fcp in fcp_in_db}
         return fcp_dict_in_db
 
     def get_fcp_dict_in_zvm(self):
@@ -2679,7 +2679,7 @@ class FCPVolumeManager(object):
         all_fcps_raw = self.db.get_all()
         all_fcps = []
         for item in all_fcps_raw:
-            all_fcps.append(item[0].lower())
+            all_fcps.append(item['fcp_id'].lower())
         if fcp not in all_fcps:
             if raise_exec:
                 LOG.error("fcp %s not exist in db!", fcp)
