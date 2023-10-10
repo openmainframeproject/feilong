@@ -922,8 +922,9 @@ class FCPDbOperator(object):
              'CCCC': {'allocated': 111, 'max': 128},
              'DDDD': {'allocated': 113, 'max': 110},
              'EEEE': {'allocated': 70,  'max': 90}}
-        @return fcp_list: (list)
-        example:
+        @return: fcp_list, empty_fcp_list_reason
+          empty_fcp_list_reason: (str) the reason of why fcp_list is empty
+          fcp_list example:
           [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
            {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
            {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
@@ -941,6 +942,7 @@ class FCPDbOperator(object):
                [1a02], [1b03]
         """
         fcp_list = []
+        empty_fcp_list_reason = ''
         fcp_pair_map = {}
         with get_fcp_conn() as conn:
             # count_per_path examples:
@@ -961,7 +963,14 @@ class FCPDbOperator(object):
             if not count_per_path:
                 LOG.error('Because the FCP template ({}) does not include any FCP device, '
                           'return empty list.'.format(fcp_template_id))
-                return fcp_list
+                empty_fcp_list_reason = (
+                    'No FCP device exists in FCP multipath template (id={}). '
+                    'To use this template, '
+                    'you must add more free FCP devices by editing the template. '
+                    'For load balance across multiple PCHIDs, '
+                    'suggest adding the same amount of '
+                    'FCP devices per PCHID.'.format(fcp_template_id))
+                return [], empty_fcp_list_reason
             result = conn.execute(
                 "SELECT COUNT(template_fcp_mapping.path) "
                 "FROM template_fcp_mapping "
@@ -981,10 +990,21 @@ class FCPDbOperator(object):
                 # For get_fcp_pair_with_same_index, we will not check the
                 # CONF.volume.min_fcp_paths_count, the returned fcp count
                 # should always equal to the total paths count
-                LOG.error('Because available path count ({}) is less than '
+                LOG.error('Because free path count ({}) is less than '
                           'total path count ({}), return empty list.'
                           .format(len(free_count_per_path), len(count_per_path)))
-                return fcp_list
+                empty_fcp_list_reason = (
+                    'As the option get_fcp_pair_with_same_index is enabled on this host, '
+                    'when you choose an FCP multipath template of this host for '
+                    'attaching volume or booting from volume, '
+                    'all the paths of the template must have free FCP devices. '
+                    'However, {} path(s) of template (id={}) does not have free FCP devices. '
+                    'To use this template, you must add more free FCP devices '
+                    'by editing the template to meet the requirement.'
+                    .format(
+                        len(count_per_path) - len(free_count_per_path),
+                        fcp_template_id))
+                return [], empty_fcp_list_reason
             # fcps 2 paths example:
             #    fcp  conn reserved state path pchid wwpn_npiv wwpn_phy
             #   ------------------
@@ -1049,7 +1069,18 @@ class FCPDbOperator(object):
         #   [('1a03', ...), ('1b03', ...), ('1c03', ...)] ]
         fcp_combinations = list(fcp_pair_map.values())
 
-        def _remove_invalid_combinations():
+        if not fcp_combinations:
+            empty_fcp_list_reason = (
+                'No FCP device combination of FCP multipath template (id={}) '
+                'matches the same index policy. '
+                'To use this template, '
+                'you must add more free FCP devices '
+                'by editing the template to meet the above requirement.'
+                .format(fcp_template_id))
+            LOG.error(empty_fcp_list_reason)
+            return [], empty_fcp_list_reason
+
+        def _remove_invalid_combinations(pchids_without_enough_free_cap):
             """remove the combinations whose weight is less than 1"""
             # free_count_in_pchid_info:
             # PCHID as key, free-FCP-device-count as value. Ex:
@@ -1065,9 +1096,9 @@ class FCPDbOperator(object):
             #  ('1a03', '.......', '......', 0,   'eeee'),
             #  ('1b03', '.......', '......', 1,   'cccc'),
             #  ('1c03', '.......', '......', 2,   'cccc')]
-            for comb in fcp_combinations:
+            for comb in fcp_combinations.copy():
                 # pchids ex:
-                # ['EEEE', 'CCCC', 'CCCC]
+                # ['EEEE', 'CCCC', 'CCCC']
                 pchids = [item[-1].upper() for item in comb]
                 # comb_fcp_count_per_pchid:
                 # PCHID as key, occurance-count-in-comb as value. Ex:
@@ -1079,25 +1110,47 @@ class FCPDbOperator(object):
                 comb_fcp_count_per_pchid = {
                     pchid: pchids.count(pchid)
                     for pchid in set(pchids)}
+                # weights ex:
+                # {'EEEE': 3/1, 'CCCC': 1/2}
+                weights = {p: free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
+                           for p in comb_fcp_count_per_pchid}
+                for pchid in weights:
+                    # if a PCHID's weight < 1,
+                    # indicating not enough free capacity for allocating FCP device
+                    if weights[pchid] < 1:
+                        pchids_without_enough_free_cap[pchid] = free_count_in_pchid_info[pchid]
                 # weight:
                 # In a way, the weight reflects the capability of how many times
                 # of FCP device allocation can be done if choosing this comb.
                 # take PCHIDs 'EEEE' and 'CCCC' as example:
                 # min(3/1, 1/2) -> min(3, 0.5) -> 0.5
-                weight = min(
-                    free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
-                    for p in comb_fcp_count_per_pchid)
+                weight = min(weights.values())
                 # remove invalid comb
                 if weight < 1:
                     fcp_combinations.remove(comb)
+        # pchids_without_enough_free_cap ex:
+        # {'CCCC': 1, 'EEEE': 0}
+        pchids_without_enough_free_cap = dict()
+        _remove_invalid_combinations(pchids_without_enough_free_cap)
 
-        _remove_invalid_combinations()
-        # case3: return one group randomly chosen from fcp_combinations
-        # fcp_list example:
-        # [('1a03', ...), ('1b03', ...), ('1c01', ...)]
-        LOG.info("Print at most 5 available FCP device combinations: {}".format(
-            fcp_combinations[:5]))
-        if fcp_combinations:
+        if not fcp_combinations:
+            empty_fcp_list_reason = (
+                'Not enough free capacity of the following PCHIDs left. '
+                'Their free capacity is {}. '
+                'To use this FCP multipath template (id={}), '
+                'you must either increase free capacity of above PCHIDs '
+                'or add more free FCP devices '
+                'whose PCHIDs have enough free capacity by editing the template.'
+                .format(sorted(pchids_without_enough_free_cap.items()),
+                        fcp_template_id))
+            LOG.error(empty_fcp_list_reason)
+            return [], empty_fcp_list_reason
+        else:
+            # case3: return one group randomly chosen from fcp_combinations
+            # fcp_list example:
+            # [('1a03', ...), ('1b03', ...), ('1c01', ...)]
+            LOG.info("Print at most 5 available FCP device combinations: {}".format(
+                fcp_combinations[:5]))
             # tmp_list ex:
             # [(fcp_no, wwpn_npiv, wwpn_phy, path, pchid)
             #  ('1a03', '.......', '......', 0,   'AAAA'),
@@ -1117,9 +1170,7 @@ class FCPDbOperator(object):
                     'pchid': fcp[4].upper()
                 }
                 fcp_list.append(item)
-        else:
-            LOG.error("No eligible FCP device combination with the same index is found.")
-        return fcp_list
+            return fcp_list, empty_fcp_list_reason
 
     def get_fcp_devices(self, fcp_template_id, pchid_info):
         """ Get a group of available FCPs,
@@ -1140,14 +1191,15 @@ class FCPDbOperator(object):
              'CCCC': {'allocated': 111, 'max': 128},
              'DDDD': {'allocated': 113, 'max': 110},
              'EEEE': {'allocated': 70,  'max': 90}}
-        @return:
-          example:
+        @return: fcp_list, empty_fcp_list_reason
+          empty_fcp_list_reason: (str) the reason of why fcp_list is empty
+          fcp_list example:
           [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
            {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
            {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
         """
 
-        def _calculate_weight(pchid_info, pchids_per_path_combinations):
+        def _calculate_weight(pchid_info, pchids_per_path_combinations, pchids_without_enough_free_cap):
             """ Calculate the weight based on PCHID info
             In a way, the weight reflects the capability
             of how many times of FCP device allocation can be done.
@@ -1156,7 +1208,7 @@ class FCPDbOperator(object):
 
             # free_count_in_pchid_info:
             # PCHID as key, free-FCP-device-count as value. Ex:
-            # {'AAAA': 0, 'BBBB': 1, 'CCCC': 17, 'DDDD': -3, 'EEEE': 20}
+            # {'AAAA': 1, 'BBBB': 1, 'CCCC': 17, 'DDDD': -3, 'EEEE': 20}
             free_count_in_pchid_info = dict()
             for pchid in pchid_info:
                 free_fcp_count = (pchid_info[pchid]['max'] -
@@ -1177,14 +1229,21 @@ class FCPDbOperator(object):
                 comb_fcp_count_per_pchid = {
                     pchid: (list(comb.values()).count(pchid))
                     for pchid in set(comb.values())}
+                # weights ex:
+                # {'EEEE': 20/1, 'CCCC': 17/2}
+                weights = {p: free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
+                           for p in comb_fcp_count_per_pchid}
+                for pchid in weights:
+                    # if a PCHID's weight < 1,
+                    # indicating not enough free capacity for allocating FCP device
+                    if weights[pchid] < 1:
+                        pchids_without_enough_free_cap[pchid] = free_count_in_pchid_info[pchid]
                 # weight:
                 # In a way, the weight reflects the capability of how many times
                 # of FCP device allocation can be done if choosing this comb.
                 # take PCHIDs 'EEEE' and 'CCCC' as example:
                 # min(20/1, 17/2) -> min(20, 8.5) -> 8.5
-                weight = min(
-                    free_count_in_pchid_info[p] / comb_fcp_count_per_pchid[p]
-                    for p in comb_fcp_count_per_pchid)
+                weight = min(weights.values())
                 # comb ex:
                 # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}
                 comb['weight'] = weight
@@ -1235,8 +1294,7 @@ class FCPDbOperator(object):
                 'after _select_most_distributed_pchids, pchids_per_path_combinations: '
                 '{}'.format(pchids_per_path_combinations))
 
-        def _get_one_random_fcp_combinations(fcp_template_id,
-                                             final_pchid_per_path):
+        def _get_one_random_fcp_combinations(fcp_template_id, final_pchid_per_path):
             """ randomly choose one FCP device per path
             @param fcp_template_id:
             @param final_pchid_per_path:
@@ -1297,34 +1355,9 @@ class FCPDbOperator(object):
                 'fcp_list: {}'.format(fcp_comb))
             return fcp_comb
 
-        def _log_for_path_count_comparison():
-            """log for total_path_count, min_path_count, free_fcp_path_count"""
-            free_fcp_path_count = len(free_pchids_per_path)
-            total_path_count = self.get_path_count(fcp_template_id)
-            if free_fcp_path_count < total_path_count:
-                LOG.info("Not all paths of FCP Multipath Template (id={}) "
-                         "have available FCP devices. "
-                         "The count of minimum FCP device path is {}. "
-                         "The count of total paths is {}. "
-                         "The count of paths with available FCP devices is {}, "
-                         "which is less than the total path count."
-                         .format(fcp_template_id, min_path_count,
-                                 total_path_count, free_fcp_path_count))
-                if free_fcp_path_count >= min_path_count:
-                    LOG.warning("The count of paths with available FCP devices "
-                                "is less than that of total path, but not less "
-                                "than that of minimum FCP device path. "
-                                "Return the FCP devices {} from the available "
-                                "paths to continue.".format(fcp_list))
-                else:
-                    LOG.error("The count of paths with available FCP devices "
-                              "must not be less than that of minimum FCP device "
-                              "path, return empty list to abort the volume attachment.")
-
         fcp_list = []
+        empty_fcp_list_reason = ''
         with get_fcp_conn():
-            # min_path_count ex: 2
-            min_path_count = self.get_min_fcp_paths_count(fcp_template_id)
             # free_pchids_per_path:
             # path as key, PCHID (that have free FCP devices) as value. Ex:
             #   { 1: ['AAAA', 'BBBB'],
@@ -1337,131 +1370,181 @@ class FCPDbOperator(object):
             # because, for each template, one FCP device can only belong to one path.
             free_pchids_per_path = self.get_free_pchids_by_fcp_template(fcp_template_id)
             LOG.info('free_pchids_per_path: {}'.format(free_pchids_per_path))
-            # free_path_count ex: 4
-            free_path_count = len(free_pchids_per_path)
-            # free_path_idx ex: [1, 3, 4, 5]
-            free_path_idx = sorted(list(free_pchids_per_path))
-            # path_count_choices:
-            # if min_path_count > free_path_count:
-            #   []
-            # otherwise for example:
-            #   [4, 3, 2] rather than [2, 3, 4]
-            #   because we want to select FCP devices on as more paths as possible
-            path_count_choices = reversed(range(min_path_count, free_path_count + 1))
-            # loop for each possible path count, bigest first,
-            # because we want to select FCP devices on as more paths as possible
-            for path_cnt in path_count_choices:
-                # path_cnt      path_idx_combinations
-                # -----------------------------------
-                # 4             [(1, 3, 4, 5)]
-                # 3             [(1, 3, 4), (1, 3, 5), (1, 4, 5), (3, 4, 5)]
-                # 2             ...
-                path_idx_combinations = list(
-                    itertools.combinations(free_path_idx, path_cnt))
-                # pchids_per_path_combinations:
-                # a list of dicts with path as key and PCHID as value
-                # path_cnt      pchids_per_path_combinations
-                # -----------------------------------
-                # 3            [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC'},
-                #               {1: 'AAAA', 3: 'CCCC', 4: 'DDDD'},
-                #               {1: 'BBBB', 3: 'CCCC', 4: 'CCCC'},
-                #               {1: 'BBBB', 3: 'CCCC', 4: 'DDDD'},
-                #               {1: 'AAAA', 3: 'CCCC', 5: 'EEEE'},
-                #               {1: 'BBBB', 3: 'CCCC', 5: 'EEEE'},
-                #               {1: 'AAAA', 4: 'CCCC', 5: 'EEEE'},
-                #               {1: 'AAAA', 4: 'DDDD', 5: 'EEEE'},
-                #               {1: 'BBBB', 4: 'CCCC', 5: 'EEEE'},
-                #               {1: 'BBBB', 4: 'DDDD', 5: 'EEEE'},
-                #               {3: 'CCCC', 4: 'CCCC', 5: 'EEEE'},
-                #               {3: 'CCCC', 4: 'DDDD', 5: 'EEEE'}]
-                pchids_per_path_combinations = list()
-                for path_idx_comb in path_idx_combinations:
-                    # path_idx_comb  pchids_per_path_comb
-                    # -------------------------------
-                    # (1, 3, 4)      [['AAAA', 'BBBB'],
-                    #                 ['CCCC'],
-                    #                 ['CCCC', 'DDDD']]
-                    pchids_per_path_comb = [free_pchids_per_path[idx]
-                                            for idx in path_idx_comb]
-                    # path_idx_comb     tmp_pchid_comb
-                    # -------------------------------
-                    # (1, 3, 4)         [('AAAA', 'CCCC', 'CCCC'),
-                    #                    ('AAAA', 'CCCC', 'DDDD'),
-                    #                    ('BBBB', 'CCCC', 'CCCC'),
-                    #                    ('BBBB', 'CCCC', 'DDDD')]
-                    tmp_pchid_comb = list(itertools.product(*pchids_per_path_comb))
-                    # tmp_pchid_comb_with_path:
-                    # a list of dicts with path as key and PCHID as value
-                    # path_idx_comb     tmp_pchid_comb_with_path
-                    # -------------------------------
-                    # (1, 3, 4)         [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC'},
-                    #                    {1: 'AAAA', 3: 'CCCC', 4: 'DDDD'},
-                    #                    {1: 'BBBB', 3: 'CCCC', 4: 'CCCC'},
-                    #                    {1: 'BBBB', 3: 'CCCC', 4: 'DDDD'}]
-                    tmp_pchid_comb_with_path = [
-                        dict(zip(path_idx_comb, comb)) for comb in tmp_pchid_comb]
-                    pchids_per_path_combinations.extend(tmp_pchid_comb_with_path)
-                # calculate weight for each combination,
-                # afterwards, weight is added, ex:
-                # path_cnt pchids_per_path_combinations
-                # -----------------------------------
-                # 3        [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC', 'weight': 0.0},
-                #           {1: 'AAAA', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
-                #           {1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
-                #           {1: 'BBBB', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
-                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
-                #           {1: 'AAAA', 4: 'CCCC', 5: 'EEEE', 'weight': 0.0},
-                #           {1: 'AAAA', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
-                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                #           {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
-                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                #           {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0}]
-                _calculate_weight(pchid_info, pchids_per_path_combinations)
-                # remove the combinations
-                # whose weight is less than 1, ex:
-                # path_cnt pchids_per_path_combinations
-                # -----------------------------------
-                # 3        [{1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
-                #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
-                #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
-                _remove_invalid_weight(pchids_per_path_combinations)
-                # _select_max_weight must be called before
-                # _select_most_distributed_pchids, because we treat
-                # _select_max_weight with higher priority
-                if pchids_per_path_combinations:
-                    # keep only the combinations with max weight
-                    # path_cnt pchids_per_path_combinations
-                    # -----------------------------------
-                    # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                    #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
-                    #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
-                    _select_max_weight(pchids_per_path_combinations)
-                    # keep only the combinations with most distributed PCHIDs
-                    # path_cnt pchids_per_path_combinations
-                    # -----------------------------------
-                    # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE'},
-                    #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE'}]
-                    _select_most_distributed_pchids(pchids_per_path_combinations)
-                    # random select one from the final candidate combinations
-                    # path_cnt final_pchid_per_path
-                    # -----------------------------------
-                    # 3        {1: 'BBBB', 4: 'CCCC', 5: 'EEEE'}
-                    final_pchid_per_path = random.choice(pchids_per_path_combinations)
-                    # randomly choose one FCP device per path
-                    # fcp_list ex:
-                    # [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
-                    #  {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
-                    #  {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
-                    fcp_list = _get_one_random_fcp_combinations(
-                        fcp_template_id, final_pchid_per_path)
-                    break
-            # Log for different path count comparison
-            _log_for_path_count_comparison()
+            if not free_pchids_per_path:
+                msg = (
+                    'No free FCP device left in FCP multipath template (id={}). '
+                    'To use this template, '
+                    'you must add more free FCP devices by editing the template. '
+                    'For load balance across multiple PCHIDs, '
+                    'suggest adding the same amount of '
+                    'FCP devices per PCHID.'.format(fcp_template_id))
+                LOG.error(msg)
+                empty_fcp_list_reason = msg
+            else:
+                # min_path_count ex: 2
+                min_path_count = self.get_min_fcp_paths_count(fcp_template_id)
+                # free_path_count ex: 4
+                free_path_count = len(free_pchids_per_path)
+                # total_path_count
+                total_path_count = self.get_path_count(fcp_template_id)
+                # compaire total_path_count, min_path_count, free_path_count
+                LOG.info('minimum path count is {}. '
+                         'total paths count is {}. '
+                         'free path count is {}.'
+                         .format(min_path_count, total_path_count, free_path_count))
+                if free_path_count < min_path_count:
+                    empty_fcp_list_reason = (
+                        'When you choose an FCP multipath template for '
+                        'attaching volume or booting from volume, '
+                        'the count of paths with free FCP devices '
+                        'must not be less than the minimum path count. '
+                        'However, free path count of template (id={}) is {}, '
+                        'which is less than its minimum path count {}. '
+                        'To use this template, '
+                        'you must either modify the minimum path count '
+                        'or add more free FCP devices '
+                        'by editing the template to meet the requirement.'
+                        .format(fcp_template_id, free_path_count, min_path_count))
+                    LOG.error(empty_fcp_list_reason)
+                else:
+                    # free_path_idx ex: [1, 3, 4, 5]
+                    free_path_idx = sorted(list(free_pchids_per_path))
+                    # path_count_choices:
+                    # if min_path_count > free_path_count:
+                    #   []
+                    # otherwise for example:
+                    #   [4, 3, 2] rather than [2, 3, 4]
+                    #   because we want to select FCP devices on as more paths as possible
+                    path_count_choices = reversed(range(min_path_count, free_path_count + 1))
+                    # the for-loop will alwyas be entered.
+                    # go through each possible path count, bigest first,
+                    # because we want to select FCP devices on as more paths as possible
+                    for path_cnt in path_count_choices:
+                        # path_cnt      path_idx_combinations
+                        # -----------------------------------
+                        # 4             [(1, 3, 4, 5)]
+                        # 3             [(1, 3, 4), (1, 3, 5), (1, 4, 5), (3, 4, 5)]
+                        # 2             ...
+                        path_idx_combinations = list(
+                            itertools.combinations(free_path_idx, path_cnt))
+                        # pchids_per_path_combinations:
+                        # a list of dicts with path as key and PCHID as value
+                        # path_cnt      pchids_per_path_combinations
+                        # -----------------------------------
+                        # 3            [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC'},
+                        #               {1: 'AAAA', 3: 'CCCC', 4: 'DDDD'},
+                        #               {1: 'BBBB', 3: 'CCCC', 4: 'CCCC'},
+                        #               {1: 'BBBB', 3: 'CCCC', 4: 'DDDD'},
+                        #               {1: 'AAAA', 3: 'CCCC', 5: 'EEEE'},
+                        #               {1: 'BBBB', 3: 'CCCC', 5: 'EEEE'},
+                        #               {1: 'AAAA', 4: 'CCCC', 5: 'EEEE'},
+                        #               {1: 'AAAA', 4: 'DDDD', 5: 'EEEE'},
+                        #               {1: 'BBBB', 4: 'CCCC', 5: 'EEEE'},
+                        #               {1: 'BBBB', 4: 'DDDD', 5: 'EEEE'},
+                        #               {3: 'CCCC', 4: 'CCCC', 5: 'EEEE'},
+                        #               {3: 'CCCC', 4: 'DDDD', 5: 'EEEE'}]
+                        pchids_per_path_combinations = list()
+                        for path_idx_comb in path_idx_combinations:
+                            # path_idx_comb  pchids_per_path_comb
+                            # -------------------------------
+                            # (1, 3, 4)      [['AAAA', 'BBBB'],
+                            #                 ['CCCC'],
+                            #                 ['CCCC', 'DDDD']]
+                            pchids_per_path_comb = [free_pchids_per_path[idx]
+                                                    for idx in path_idx_comb]
+                            # path_idx_comb     tmp_pchid_comb
+                            # -------------------------------
+                            # (1, 3, 4)         [('AAAA', 'CCCC', 'CCCC'),
+                            #                    ('AAAA', 'CCCC', 'DDDD'),
+                            #                    ('BBBB', 'CCCC', 'CCCC'),
+                            #                    ('BBBB', 'CCCC', 'DDDD')]
+                            tmp_pchid_comb = list(itertools.product(*pchids_per_path_comb))
+                            # tmp_pchid_comb_with_path:
+                            # a list of dicts with path as key and PCHID as value
+                            # path_idx_comb     tmp_pchid_comb_with_path
+                            # -------------------------------
+                            # (1, 3, 4)         [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC'},
+                            #                    {1: 'AAAA', 3: 'CCCC', 4: 'DDDD'},
+                            #                    {1: 'BBBB', 3: 'CCCC', 4: 'CCCC'},
+                            #                    {1: 'BBBB', 3: 'CCCC', 4: 'DDDD'}]
+                            tmp_pchid_comb_with_path = [
+                                dict(zip(path_idx_comb, comb)) for comb in tmp_pchid_comb]
+                            pchids_per_path_combinations.extend(tmp_pchid_comb_with_path)
+
+                        # pchids_without_enough_free_cap ex:
+                        # {'AAAA': 1, 'DDDD': -3}
+                        pchids_without_enough_free_cap = dict()
+                        # calculate weight for each combination,
+                        # afterwards, weight is added, ex:
+                        # path_cnt pchids_per_path_combinations
+                        # -----------------------------------
+                        # 3        [{1: 'AAAA', 3: 'CCCC', 4: 'CCCC', 'weight': 0.0},
+                        #           {1: 'AAAA', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+                        #           {1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
+                        #           {1: 'BBBB', 3: 'CCCC', 4: 'DDDD', 'weight': -3.0},
+                        #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                        #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
+                        #           {1: 'AAAA', 4: 'CCCC', 5: 'EEEE', 'weight': 0.0},
+                        #           {1: 'AAAA', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+                        #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                        #           {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
+                        #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                        #           {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0}]
+                        _calculate_weight(
+                            pchid_info, pchids_per_path_combinations, pchids_without_enough_free_cap)
+                        # remove the combinations
+                        # whose weight is less than 1, ex:
+                        # path_cnt pchids_per_path_combinations
+                        # -----------------------------------
+                        # 3        [{1: 'BBBB', 3: 'CCCC', 4: 'CCCC', 'weight': 1.0},
+                        #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                        #           {1: 'BBBB', 3: 'CCCC', 5: 'EEEE', 'weight': 1.0},
+                        #           {1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                        #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
+                        _remove_invalid_weight(pchids_per_path_combinations)
+                        # _select_max_weight must be called before
+                        # _select_most_distributed_pchids, because we treat
+                        # _select_max_weight with higher priority
+                        if pchids_per_path_combinations:
+                            # keep only the combinations with max weight
+                            # path_cnt pchids_per_path_combinations
+                            # -----------------------------------
+                            # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                            #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE', 'weight': 8.5},
+                            #           {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}]
+                            _select_max_weight(pchids_per_path_combinations)
+                            # keep only the combinations with most distributed PCHIDs
+                            # path_cnt pchids_per_path_combinations
+                            # -----------------------------------
+                            # 3        [{1: 'BBBB', 4: 'CCCC', 5: 'EEEE'},
+                            #           {1: 'AAAA', 3: 'CCCC', 5: 'EEEE'}]
+                            _select_most_distributed_pchids(pchids_per_path_combinations)
+                            # random select one from the final candidate combinations
+                            # path_cnt final_pchid_per_path
+                            # -----------------------------------
+                            # 3        {1: 'BBBB', 4: 'CCCC', 5: 'EEEE'}
+                            final_pchid_per_path = random.choice(pchids_per_path_combinations)
+                            # randomly choose one FCP device per path
+                            # fcp_list ex:
+                            # [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
+                            #  {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
+                            #  {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
+                            fcp_list = _get_one_random_fcp_combinations(fcp_template_id, final_pchid_per_path)
+                            break
+                    # check
+                    if not fcp_list:
+                        empty_fcp_list_reason = (
+                            'Not enough free capacity of the following PCHIDs left. '
+                            'Their free capacity is {}. '
+                            'To use this FCP multipath template (id={}), '
+                            'you must either increase free capacity of above PCHIDs '
+                            'or add more free FCP devices '
+                            'whose PCHIDs have enough free capacity by editing the template.'
+                            .format(sorted(pchids_without_enough_free_cap.items()),
+                                    fcp_template_id))
+                        LOG.error(empty_fcp_list_reason)
         # return
-        return fcp_list
+        return fcp_list, empty_fcp_list_reason
 
     def create_fcp_template(self, fcp_template_id, name, description,
                             fcp_devices_by_path, host_default,
