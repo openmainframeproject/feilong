@@ -42,6 +42,7 @@ from zvmsdk import constants
 from zvmsdk import exception
 from zvmsdk import log
 
+
 CONF = config.CONF
 LOG = log.LOG
 # maximum I knew is 60019, so make it double
@@ -787,11 +788,105 @@ def check_userid_on_others(userid):
         raise exception.SDKInternalError(msg=msg)
 
 
-def get_pchid_by_chpid(chpid):
+def is_chpid_virtualization_enabled():
+    """Return True if chpid virtualization is on
+    otherwise, return False.
+    """
+    cmd = ["sudo", "/sbin/vmcp", "query chpidv"]
+    # Sample output:
+    # When enabled, the output is:
+    #     One path CHPID Virtualization is on
+    # When disabled, the output is:
+    #     CHPID Virtualization is off
+    try:
+        chpidv = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        chpidv = bytes.decode(chpidv)
+        if re.search('CHPID Virtualization is on', chpidv):
+            return True
+        elif re.search('CHPID Virtualization is off', chpidv):
+            return False
+        else:
+            raise Exception("Unknown output '%s' of command: '%s'" % (chpidv, cmd))
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        msg = ("Failed to check whether the CHPID virtualization is enabled. "
+               "Return code is '%s', error is '%s'.") % (rc, err_info.strip())
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to check whether the CHPID virtualization is enabled. "
+               "Error is '%s'.") % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+
+
+def get_pchid(chpid):
     """Get pchid of FCP device from its chpid
 
     :param chpid: Channel path ID of FCP device, for example: 10
     :return pchid: Physical channel ID of FCP device, for example: 0240
+    """
+    if is_chpid_virtualization_enabled():
+        pchid = get_pchid_by_vmcp_query(chpid)
+    else:
+        pchid = get_pchid_by_lschp(chpid)
+    return pchid
+
+
+def get_pchid_by_vmcp_query(chpid):
+    """Get pchid of FCP device from its chpid via command: vmcp q chpid xx pchid
+    """
+    pchid = ""
+    cmd = ["sudo", "/sbin/vmcp", "query chpid", chpid, "pchid"]
+    # Some sample output:
+    # Normal output:
+    #     Path 10 is associated with physical channel 0240
+    # When subcommand pchid is not authorized for user in class G:
+    #     HCPQPV003E Invalid option - PCHID
+    # When an invalid chpid is specified:
+    #     HCPQPA846E Invalid channel path identifier.
+    # When the specified chpid does not exist:
+    #     Path 48 is not associated with a physical channel
+    try:
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        if re.search(' is associated with physical channel ', output):
+            pchid = output.split()[-1]
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        # If error is "Invalid option", remind user to authorize the z/VM userid
+        if "Invalid option - PCHID" in err_info:
+            msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+                   "Check the z/VM userid '%s' on the z/VM '%s' is authorized "
+                   "to run the CP command: 'QUERY CHPID yy PCHID'.") % (
+                   chpid, cmd, get_smt_userid(), get_zvm_name())
+        else:
+            msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+                   "Return code is '%s', error is '%s'.") % (chpid, cmd, rc, err_info.strip())
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Error is '%s'.") % (chpid, cmd, six.text_type(err))
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    # raise error if PCHID not in the output, to avoid returning an empty PCHID
+    if pchid == "":
+        msg = ("PCHID for the CHPID '%s' is not found with command '%s', "
+               "output is '%s'.") % (chpid, cmd, output)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    return pchid
+
+
+def get_pchid_by_lschp(chpid):
+    """Get pchid of FCP device from its chpid via command: lschp
     """
     try:
         pchid = ""
@@ -814,10 +909,25 @@ def get_pchid_by_chpid(chpid):
             if column_list[0][2:4] == chpid:
                 pchid = column_list[6]
                 break
-        return pchid
-    except Exception as err:
-        msg = ("Could not find the pchid: %s") % err
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Return code is '%s', error is '%s'.") % (chpid, cmd, rc, err_info.strip())
+        LOG.error(msg)
         raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Error is '%s'.") % (chpid, cmd, six.text_type(err))
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    # raise error if PCHID not in the output, to avoid returning an empty PCHID
+    if pchid == "":
+        msg = ("PCHID for the CHPID '%s' not found in the output of command '%s', "
+               "output is '%s'.") % (chpid, cmd, output)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    return pchid
 
 
 def print_all_pchids():

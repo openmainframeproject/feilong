@@ -472,7 +472,7 @@ class FCP(object):
                                  "invalid!" % (self._chpid, self._dev_no))
                     else:
                         # get pchid from linux command lschp
-                        self._pchid = zvmutils.get_pchid_by_chpid(self._chpid)
+                        self._pchid = zvmutils.get_pchid(self._chpid)
                 elif 'Physical world wide port numbe' in line:
                     self._physical_port = self._get_value_from_line(line)
                 elif 'Owner' in line:
