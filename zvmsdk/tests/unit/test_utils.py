@@ -400,13 +400,71 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         results = zvmutils.translate_disk_pool_info_to_dict(poolname, diskpool_info)
         self.assertDictEqual(expect, results)
 
+    @mock.patch('zvmsdk.utils.get_zvm_name')
+    @mock.patch('zvmsdk.utils.get_smt_userid')
     @mock.patch.object(subprocess, 'check_output')
-    def test_get_pchid_by_chpid(self, lschp):
+    def test_get_pchid_by_vmcp_query(self, mock_vmcp, smt_userid, zvm_name):
+        # Normal case
+        chpid = '10'
+        mock_vmcp.return_value = (b'Path 10 is associated with physical channel 0130')
+        pchid = zvmutils.get_pchid_by_vmcp_query(chpid)
+        self.assertEqual('0130', pchid)
+        # CHPID not exist in this z/VM
+        mock_vmcp.reset_mock()
+        chpid = '48'
+        mock_vmcp.return_value = (b'Path 48 is not associated with a physical channel')
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "PCHID for the CHPID '48' is not found with command ",
+                               zvmutils.get_pchid_by_vmcp_query,
+                               chpid)
+        # CHPID invalid
+        mock_vmcp.reset_mock()
+        chpid = '100'
+        mock_vmcp.side_effect = subprocess.CalledProcessError(returncode=1,
+                                                              cmd=['sudo', '/sbin/vmcp', 'query chpid', chpid, 'pchid'],
+                                                              output=b"HCPQPA846E Invalid channel path identifier")
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "Return code is '1', error is 'HCPQPA846E Invalid channel path identifier",
+                               zvmutils.get_pchid_by_vmcp_query,
+                               chpid)
+        # `vmcp q yy pchid` is not authorized
+        mock_vmcp.reset_mock()
+        chpid = '10'
+        zvm_name.return_value = 'fakezvm'
+        smt_userid.return_value = 'fakesmt'
+        mock_vmcp.side_effect = subprocess.CalledProcessError(returncode=1,
+                                                              cmd=['sudo', '/sbin/vmcp', 'query chpid', chpid, 'pchid'],
+                                                              output=b"HCPQPV003E Invalid option - PCHID")
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "Check the z/VM userid 'fakesmt' on the z/VM 'fakezvm' is authorized "
+                               "to run the CP command: 'QUERY CHPID yy PCHID'.",
+                               zvmutils.get_pchid_by_vmcp_query,
+                               chpid)
+
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_pchid_by_lschp(self, lschp):
+        # Normal case
         lschp.return_value = (b'CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID\n============================'
                                    b'===============\n0.27   1     1     25    -    -       02e4 \n')
         chpid = '27'
-        pchid = zvmutils.get_pchid_by_chpid(chpid)
+        pchid = zvmutils.get_pchid_by_lschp(chpid)
         self.assertEqual('02e4', pchid)
+        # CHPID not exist in this z/VM
+        lschp.reset_mock()
+        lschp.return_value = (b'CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID\n============================')
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "PCHID for the CHPID '27' not found in the output of command ",
+                               zvmutils.get_pchid_by_lschp,
+                               '27')
+        # CHPID invalid
+        lschp.reset_mock()
+        lschp.side_effect = subprocess.CalledProcessError(returncode=1,
+                                                          cmd=["lschp"],
+                                                          output=b"lschp: 100 is not a valid channel-path ID")
+        self.assertRaisesRegex(exception.SDKInternalError,
+                               "Return code is '1', error is 'lschp: 100 is not a valid channel-path ID'.",
+                               zvmutils.get_pchid_by_lschp,
+                               '100')
 
     @mock.patch.object(subprocess, 'check_output')
     @mock.patch("zvmsdk.log.LOG.info")

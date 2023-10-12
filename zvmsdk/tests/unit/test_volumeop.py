@@ -378,15 +378,15 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
 
 class TestFCP(base.SDKTestCase):
 
-    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
-    def test_parse_normal(self, get_pchid_by_chpid):
+    @mock.patch("zvmsdk.utils.get_pchid")
+    def test_parse_normal(self, get_pchid):
         info = ['opnstk1: FCP device number: B83D',
                 'opnstk1:   Status: Free',
                 'opnstk1:   NPIV world wide port number: NONE',
                 'opnstk1:   Channel path ID: 59',
                 'opnstk1:   Physical world wide port number: 20076D8500005181',
                 'Owner: NONE']
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp = volumeop.FCP(info)
         self.assertEqual('b83d', fcp.get_dev_no())
         self.assertEqual('free', fcp.get_dev_status())
@@ -399,15 +399,15 @@ class TestFCP(base.SDKTestCase):
                           'free', 'none'),
                          fcp.to_tuple())
 
-    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
-    def test_parse_npiv(self, get_pchid_by_chpid):
+    @mock.patch("zvmsdk.utils.get_pchid")
+    def test_parse_npiv(self, get_pchid):
         info = ['opnstk1: FCP device number: B83D',
                 'opnstk1:   Status: Active',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
                 'opnstk1:   Physical world wide port number: 20076D8500005181',
                 'Owner: UNIT0001']
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp = volumeop.FCP(info)
         self.assertEqual('b83d', fcp.get_dev_no())
         self.assertEqual('active', fcp.get_dev_status())
@@ -792,10 +792,10 @@ class TestFCPManager(base.SDKTestCase):
                                fcp_list_2, assigner_id)
 
     @mock.patch("zvmsdk.utils.print_all_pchids")
-    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
+    @mock.patch("zvmsdk.utils.get_pchid")
     @mock.patch("zvmsdk.utils.get_smt_userid", mock.Mock())
     @mock.patch("zvmsdk.volumeop.FCPManager.get_all_fcp_pool")
-    def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info, get_pchid_by_chpid, print_all_pchids):
+    def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info, get_pchid, print_all_pchids):
         """Test get_fcp_dict_in_zvm"""
         _purge_fcp_db()
         print_all_pchids.return_value = None
@@ -815,10 +815,10 @@ class TestFCPManager(base.SDKTestCase):
             '20076D8500005185',
             'Owner: UNIT0001']
         info_1a01 = raw_fcp_info_from_zvm[0:6]
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp_1a01 = volumeop.FCP(info_1a01)
         info_1b03 = raw_fcp_info_from_zvm[6:12]
-        get_pchid_by_chpid.return_value = '02e6'
+        get_pchid.return_value = '02e6'
         fcp_1b03 = volumeop.FCP(info_1b03)
 
         mock_zvm_fcp_info.return_value = {
@@ -863,11 +863,11 @@ class TestFCPManager(base.SDKTestCase):
         fcp_dict_in_zvm.assert_called_once()
         sync_fcp_table_with_zvm.assert_called_once_with(zvm_fcp_dict)
 
-    @mock.patch("zvmsdk.utils.get_pchid_by_chpid")
-    def test_sync_fcp_table_with_zvm(self, get_pchid_by_chpid):
+    @mock.patch("zvmsdk.utils.get_pchid")
+    def test_sync_fcp_table_with_zvm(self, get_pchid):
         """Test sync_fcp_table_with_zvm"""
         _purge_fcp_db()
-        get_pchid_by_chpid.return_value = '021c'
+        get_pchid.return_value = '021c'
         # fcp info in original database
         template_id = ''
         fcp_info_list = [('1a01', 'user1', 0, 0, 'c05076de33000001',
@@ -927,19 +927,19 @@ class TestFCPManager(base.SDKTestCase):
             '20076D8500005185',
             'Owner: UNIT0001']
         info_1a01 = fcp_info_in_zvm[0:6]
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp_1a01 = volumeop.FCP(info_1a01)
 
         info_1b01 = fcp_info_in_zvm[6:12]
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp_1b01 = volumeop.FCP(info_1b01)
 
         info_1b02 = fcp_info_in_zvm[12:18]
-        get_pchid_by_chpid.return_value = '02e4'
+        get_pchid.return_value = '02e4'
         fcp_1b02 = volumeop.FCP(info_1b02)
 
         info_1b03 = fcp_info_in_zvm[18:24]
-        get_pchid_by_chpid.return_value = '021c'
+        get_pchid.return_value = '021c'
         fcp_1b03 = volumeop.FCP(info_1b03)
 
         fcp_dict_in_zvm = {
