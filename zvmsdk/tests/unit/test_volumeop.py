@@ -550,7 +550,6 @@ class TestFCPManager(base.SDKTestCase):
                           'c05076de33002641', '27', '02e4', 'active', 'owner2',
                           template_id)
                          ]
-        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
         self._insert_data_into_fcp_table(fcp_info_list)
         # insert data into template_fcp_mapping table
         template_fcp = [('1a10', template_id, 0),
@@ -558,14 +557,13 @@ class TestFCPManager(base.SDKTestCase):
         self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(template_fcp)
         # insert data into template table to add a default template
         templates = [(template_id, 'name1', 'desc1', 1)]
-        template_id_list = [tmpl[0] for tmpl in templates]
         self._insert_data_into_template_table(templates)
 
         template_sp_mapping = [(sp_name, template_id)]
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
 
         try:
-            is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
+            is_reserved_changed, available_list, fcp_tmpl_id, empty_reson = self.fcpops.allocate_fcp_devices(
                 assinger_id, template_id, sp_name, pchid_info)
             new_list = []
             for fcp in available_list:
@@ -587,9 +585,7 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(expected_fcp_list, new_list)
             mock_check_pchids.assert_not_called()
         finally:
-            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
-            self._delete_from_template_table(template_id_list)
-            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+            _purge_fcp_db()
 
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
     @mock.patch("zvmsdk.volumeop.FCPManager._check_missing_pchids")
@@ -629,7 +625,7 @@ class TestFCPManager(base.SDKTestCase):
         self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
         config.CONF.volume.get_fcp_pair_with_same_index = 1
         try:
-            is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
+            is_reserved_changed, available_list, fcp_tmpl_id, empty_reson = self.fcpops.allocate_fcp_devices(
                 assinger_id, template_id, sp_name, pchid_info)
             actual_fcp_list = []
             for fcp in available_list:
@@ -654,7 +650,6 @@ class TestFCPManager(base.SDKTestCase):
         pchid_info = dict()
         # insert data into template table to add a default template
         templates = [('0001', 'name1', 'desc1', 0)]
-        template_id_list = [tmpl[0] for tmpl in templates]
         self._insert_data_into_template_table(templates)
         try:
             self.assertRaisesRegex(exception.SDKVolumeOperationError,
@@ -663,7 +658,7 @@ class TestFCPManager(base.SDKTestCase):
                                    self.fcpops.allocate_fcp_devices,
                                    assinger_id, template_id, sp_name, pchid_info)
         finally:
-            self._delete_from_template_table(template_id_list)
+            _purge_fcp_db()
 
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
     @mock.patch("zvmsdk.database.FCPDbOperator.get_allocated_fcps_from_assigner")
@@ -674,18 +669,21 @@ class TestFCPManager(base.SDKTestCase):
                                                           mocked_get_allocated_fcps):
         _purge_fcp_db()
         config.CONF.volume.get_fcp_pair_with_same_index = None
-        mocked_get_fcp_devices.return_value = []
+        mocked_get_fcp_devices.return_value = [], 'fake_empty_fcp_list_reason'
         mocked_get_allocated_fcps.return_value = []
         template_id = "fake_fcp_template_00"
         assinger_id = "wxy0001"
         sp_name = "fake_sp_name"
         pchid_info = dict()
         mock_check_pchids.return_value = None
-        is_reserved_changed, available_list, fcp_tmpl_id = self.fcpops.allocate_fcp_devices(
-            assinger_id, template_id, sp_name, pchid_info)
-        self.assertEqual(is_reserved_changed, False)
-        self.assertEqual(template_id, fcp_tmpl_id)
-        self.assertEqual(0, len(available_list))
+        try:
+            is_reserved_changed, available_list, fcp_tmpl_id, empty_reson = self.fcpops.allocate_fcp_devices(
+                assinger_id, template_id, sp_name, pchid_info)
+            self.assertEqual(is_reserved_changed, False)
+            self.assertEqual(template_id, fcp_tmpl_id)
+            self.assertEqual(0, len(available_list))
+        finally:
+            _purge_fcp_db()
 
     def test_release_fcp_devices_without_fcp_template(self):
         """
@@ -1886,6 +1884,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         result = self.volumeops.get_volume_connector(
             'fakeuser', False, fcp_template_id=fcp_template_id)
         expected = {'zvm_fcp': [],
+                    'empty_fcp_list_reason': '',
                     'wwpns': [],
                     'phy_to_virt_initiators': {},
                     'host': '',
@@ -1928,6 +1927,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         m_get_cpc_name.return_value = 'fake_cpc_name'
         m_get_lpar_name.return_value = 'fake_lpar_name'
         fcp_template_id = 'fake_tmpl_id'
+        fake_empty_fcp_list_reason = 'fake_reason'
         fcp_list = [
             # all the values of 'fcp_id' and 'pchid' are uppercase
             # returned by allocate_fcp_devices
@@ -1938,13 +1938,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
             # (is_reserved_changed, fcp_list, fcp_template_id)
             # case1: existing fcp_list is not empty
             #     (False, [{'fcp_id':'1B02'...}...], 'tmpl_id')
-            (False, fcp_list, fcp_template_id),
+            (False, fcp_list, fcp_template_id, fake_empty_fcp_list_reason),
             # case2: existing fcp_list is empty, new fcp_list is not empty
             #     (True, [{'fcp_id':'1B02'...}...], 'tmpl_id')
-            (True, fcp_list, fcp_template_id),
+            (True, fcp_list, fcp_template_id, fake_empty_fcp_list_reason),
             # case3: both existing and fcp_list fcp_list is empty
             #     (False, [], 'tmpl_id')
-            (False, [], fcp_template_id)]
+            (False, [], fcp_template_id, fake_empty_fcp_list_reason)]
         # prepare param
         pchid_info = {
             '02E4': {'allocated': 128, 'max': 128},
@@ -2002,6 +2002,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         result = self.volumeops.get_volume_connector(
             'fakeuser', True, fcp_template_id=fcp_template_id, pchid_info=pchid_info)
         expected = {'zvm_fcp': [],
+                    'empty_fcp_list_reason': fake_empty_fcp_list_reason,
                     'wwpns': [],
                     'phy_to_virt_initiators': {},
                     'host': '',
