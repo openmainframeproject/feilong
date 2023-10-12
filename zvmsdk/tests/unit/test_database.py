@@ -990,16 +990,19 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             ('1c04', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '31', '3333', 'free', 'none', '')]
         self._insert_data_into_fcp_table(fcp_info_list)
         # insert test data into table template_fcp_mapping with 3 paths
-        template_fcp = [('1a00', template_id, 0),
+        template_fcp = [  # path 0
+                        ('1a00', template_id, 0),
                         ('1a01', template_id, 0),
                         ('1a02', template_id, 0),
                         ('1a03', template_id, 0),
                         ('1a04', template_id, 0),
+                          # path 1
                         ('1b00', template_id, 1),
                         ('1b01', template_id, 1),
                         ('1b02', template_id, 1),
                         ('1b03', template_id, 1),
                         ('1b04', template_id, 1),
+                          # path 2
                         ('1c00', template_id, 2),
                         ('1c01', template_id, 2),
                         ('1c02', template_id, 2),
@@ -1018,36 +1021,66 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             'EEEE': {'allocated': 99, 'max': 90}}
         try:
             # case1: non-existing template id
-            fcp_list = self.db_op.get_fcp_devices_with_same_index('fakeid', pchid_info)
+            LOG.info('--------- case1 ---------')
+            fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index('fakeid', pchid_info)
             self.assertEqual([], fcp_list)
+            self.assertTrue('No FCP device exists in FCP multipath template (id={})'
+                            .format('fakeid') in empty_reason)
+
             # case2:
-            #                       AAAA BBBB CCCC DDDD     weight  valid
+            # path0/path1/path2     AAAA BBBB CCCC DDDD     weight  valid
             # 1a01/1b01/1c01    min(0.5       2        )    0.5     No
             # 1a02/1b02/1c02    min(1    3    2        )    1       Yes
             # 1a03/1b03/1c03    min(1              1   )    1       Yes
+            LOG.info('--------- case2 ---------')
             expected_set = {('1A02', '1B02', '1C02'), ('1A03', '1B03', '1C03')}
             result_set = set()
-            for i in range(10):
-                fcp_list = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+            for i in range(8):
+                fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
                 result_set.add(tuple(fcp['fcp_id'] for fcp in fcp_list))
             self.assertEqual(result_set, expected_set)
+            self.assertEqual(empty_reason, '')
+
             # test case3: No eligible FCP device combination with the same index
-            # after reserve_fcps, no available pair records with same index
+            # after the following reserve_fcps, no available pair records with same index
+            LOG.info('--------- case3 ---------')
             self.db_op.reserve_fcps(['1a02', '1b03'], '', template_id)
-            fcp_list = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+            fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
             self.assertEqual(fcp_list, [])
+            self.assertTrue('Not enough free capacity of the following PCHIDs left. '
+                            'Their free capacity is {}.'
+                            .format(sorted(dict(AAAA=1).items()))
+                            in empty_reason)
+
+            # test case4: No FCP device combination matches the same index policy
+            # after the following reserve_fcps,
+            # only 1a04 is free in path 0, however, 1b04 & 1c04 are not free
+            LOG.info('--------- case4 ---------')
+            self.db_op.reserve_fcps(['1a00', '1a01', '1a02', '1a03'], '', template_id)
+            fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+            self.assertEqual(fcp_list, [])
+            self.assertTrue('No FCP device combination of FCP multipath template (id={}) '
+                            'matches the same index policy.'
+                            .format(template_id) in empty_reason)
+
+            # test case5: free path count < total path count
+            # after the following reserve_fcps, no free FCP left in path 0
+            LOG.info('--------- case5 ---------')
+            self.db_op.reserve_fcps(['1a00', '1a01', '1a02', '1a03', '1a04'], '', template_id)
+            fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+            self.assertEqual(fcp_list, [])
+            self.assertTrue('{} path(s) of template (id={}) does not have free FCP devices'
+                            .format(1, template_id) in empty_reason)
         finally:
             self._purge_fcp_db()
 
-    @mock.patch("zvmsdk.log.LOG.warning")
-    @mock.patch("zvmsdk.log.LOG.error")
     @patch('zvmsdk.database.FCPDbOperator.get_path_count')
     @patch('zvmsdk.database._FCP_CONN')
     @patch("zvmsdk.database.FCPDbOperator.get_free_pchids_by_fcp_template")
     @patch("zvmsdk.database.FCPDbOperator.get_min_fcp_paths_count")
     def test_get_fcp_devices(self, mock_min_path_count,
                              mock_free_pchids_per_path, mock_conn,
-                             mock_total_path_count, mock_error, mock_warning):
+                             mock_total_path_count):
         '''Test get_fcp_devices'''
         fcp_template_id = 'fake_id'
         sql_string = (
@@ -1064,19 +1097,21 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             "AND ({}) "
             "ORDER BY tf.path, fcp.pchid, fcp.fcp_id")
         # case1: total_path_count > min_path_count > free_path_count
+        LOG.info('----- case1 ------')
         mock_min_path_count.return_value = 2
         mock_free_pchids_per_path.return_value = {1: ['AAAA', 'BBBB']}
         mock_total_path_count.return_value = 3
         pchid_info = {}
         expect = []
         # call
-        result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+        result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
         # verify
         self.assertEqual(expect, result)
-        mock_error.assert_called_once()
-        mock_warning.assert_not_called()
+        self.assertTrue('However, free path count of template (id={}) is {}, '
+                        'which is less than its minimum path count {}.'
+                        .format(fcp_template_id, 1, 2) in empty_reason)
         mock_reset(mock_min_path_count, mock_free_pchids_per_path,
-                   mock_total_path_count, mock_error, mock_warning)
+                   mock_total_path_count)
 
         # case2: min_path_count(2) < free_path_count(4) < total_path_count(6)
         #        and final_pchid_per_path is on 3 paths
@@ -1095,6 +1130,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # {1: 'BBBB', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0},
         # {3: 'CCCC', 4: 'CCCC', 5: 'EEEE', 'weight': 8.5}, <----
         # {3: 'CCCC', 4: 'DDDD', 5: 'EEEE', 'weight': -3.0}]
+        LOG.info('----- case2 ------')
         mock_min_path_count.return_value = 2
         mock_free_pchids_per_path.return_value = {
             1: ['AAAA', 'BBBB'],
@@ -1131,9 +1167,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                              "(tf.path=5 AND fcp.pchid='EEEE')")
         sql = sql_string[:].format(
             fcp_template_id, pchid_path_filter)
-        for i in range(5):
+        for i in range(8):
             # call
-            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
             # verify final_pchid_per_path by sql
             mock_conn.execute.assert_called_with(sql)
             # verify result
@@ -1142,10 +1178,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 final_pchid_per_path.pop(fcp['path'])
                 self.assertIn(fcp, all_fcps_with_uppercase)
             self.assertEqual(final_pchid_per_path, {})
-        mock_warning.assert_called()
-        mock_error.assert_not_called()
+            self.assertEqual(empty_reason, '')
         mock_reset(mock_min_path_count, mock_free_pchids_per_path,
-                   mock_total_path_count, mock_error, mock_warning)
+                   mock_total_path_count)
 
         # case3: min_path_count(4) = free_path_count(4) = total_path_count(4)
         #        and final_pchid_per_path is on 4 paths
@@ -1156,6 +1191,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         #  {0: 'AAAA', 1: 'CCCC', 2: 'DDDD', 3: 'EEEE', 'weight': 10.0},
         #  {0: 'BBBB', 1: 'CCCC', 2: 'CCCC', 3: 'EEEE', 'weight': 20.0},
         #  {0: 'BBBB', 1: 'CCCC', 2: 'DDDD', 3: 'EEEE', 'weight': 20.0}]
+        LOG.info('----- case3 ------')
         mock_min_path_count.return_value = 4
         mock_free_pchids_per_path.return_value = {
             0: ['AAAA', 'BBBB'],
@@ -1200,7 +1236,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             fcp_template_id, pchid_path_filter)
         for i in range(5):
             # call
-            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
             # verify final_pchid_per_path by sql
             mock_conn.execute.assert_called_with(sql)
             # verify result
@@ -1210,10 +1246,9 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 final_pchid_per_path.pop(fcp['path'])
                 self.assertIn(fcp, all_fcps_with_uppercase)
             self.assertEqual(final_pchid_per_path, {})
-        mock_warning.assert_not_called()
-        mock_error.assert_not_called()
+            self.assertEqual(empty_reason, '')
         mock_reset(mock_min_path_count, mock_free_pchids_per_path,
-                   mock_total_path_count, mock_error, mock_warning)
+                   mock_total_path_count)
 
         # case4: min_path_count(4) = free_path_count(4) = total_path_count(4)
         #        and final_pchid_per_path is on 4 paths
@@ -1228,6 +1263,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         # {0: 'BBBB', 1: 'CCCC', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0},
         # {0: 'BBBB', 1: 'DDDD', 2: 'EEEE', 3: 'GGGG', 'weight': 51.0},
         # {0: 'BBBB', 1: 'DDDD', 2: 'FFFF', 3: 'GGGG', 'weight': -2.0}]
+        LOG.info('----- case4 ------')
         mock_min_path_count.return_value = 4
         mock_free_pchids_per_path.return_value = {
             0: ['AAAA', 'BBBB'],
@@ -1272,7 +1308,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             fcp_template_id, pchid_path_filter)
         for i in range(5):
             # call
-            result = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+            result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
             # verify final_pchid_per_path by sql
             mock_conn.execute.assert_called_with(sql)
             # verify result
@@ -1282,10 +1318,61 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 final_pchid_per_path.pop(fcp['path'])
                 self.assertIn(fcp, all_fcps_with_uppercase)
             self.assertEqual(final_pchid_per_path, {})
-        mock_warning.assert_not_called()
-        mock_error.assert_not_called()
+            self.assertEqual(empty_reason, '')
         mock_reset(mock_min_path_count, mock_free_pchids_per_path,
-                   mock_total_path_count, mock_error, mock_warning)
+                   mock_total_path_count)
+
+        # case5: No free FCP device left in FCP multipath template
+        LOG.info('----- case5 ------')
+        mock_min_path_count.return_value = 3
+        mock_free_pchids_per_path.return_value = {}
+        mock_total_path_count.return_value = 3
+        # free_count_in_pchid_info =
+        # {'AAAA': 10, 'BBBB': 0, 'CCCC': 1}
+        pchid_info = {
+            'AAAA': {'allocated': 118, 'max': 128},
+            'BBBB': {'allocated': 128, 'max': 128},
+            'CCCC': {'allocated': 127, 'max': 128}
+        }
+        # call
+        result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+        # verify
+        self.assertEqual([], result)
+        self.assertTrue('No free FCP device left in FCP multipath template' in empty_reason)
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count)
+
+        # case6: min_path_count(3) = free_path_count(3) = total_path_count(3)
+        #        and final_pchid_per_path is on 3 paths
+        #        and all combinations are invalid       <-----
+        #        and no PCHIDs are shared across more than 1 path
+        # >>> pp(pchids_per_path_combinations)
+        # [{0: 'AAAA', 1: 'CCCC', 2: 'CCCC', 'weight': 0.5},
+        #  {0: 'BBBB', 1: 'CCCC', 2: 'CCCC', 'weight': 0}]
+        LOG.info('----- case6 ------')
+        mock_min_path_count.return_value = 3
+        mock_free_pchids_per_path.return_value = {
+            0: ['AAAA', 'BBBB'],
+            1: ['CCCC'],
+            2: ['CCCC']}
+        mock_total_path_count.return_value = 3
+        # free_count_in_pchid_info =
+        # {'AAAA': 10, 'BBBB': 0, 'CCCC': 1}
+        pchid_info = {
+            'AAAA': {'allocated': 118, 'max': 128},
+            'BBBB': {'allocated': 128, 'max': 128},
+            'CCCC': {'allocated': 127, 'max': 128}
+        }
+        # call
+        result, empty_reason = self.db_op.get_fcp_devices(fcp_template_id, pchid_info)
+        # verify
+        self.assertEqual([], result)
+        self.assertTrue('Not enough free capacity of the following PCHIDs left. '
+                        'Their free capacity is {}.'
+                        .format(sorted(dict(BBBB=0, CCCC=1).items()))
+                        in empty_reason)
+        mock_reset(mock_min_path_count, mock_free_pchids_per_path,
+                   mock_total_path_count)
 
     def test_create_fcp_template_with_name_and_desc(self):
         """Create a FCP Multipath Template only with name and description, other parameters are all default values"""

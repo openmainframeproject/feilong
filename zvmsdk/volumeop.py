@@ -669,7 +669,8 @@ class FCPManager(object):
              'CCCC': {'allocated': 111, 'max': 128},
              'DDDD': {'allocated': 113, 'max': 110},
              'EEEE': {'allocated': 70,  'max': 90}}
-        @return: (is_reserved_changed, fcp_list, fcp_template_id)
+        @return: (is_reserved_changed, fcp_list, fcp_template_id, empty_fcp_list_reason)
+            empty_fcp_list_reason: (str) the reason of why fcp_list is empty
             case1: existing fcp_list is not empty
                 (False, [{'fcp_id':'1B02'...}...], 'tmpl_id')
             case2: existing fcp_list is empty, new fcp_list is not empty
@@ -717,6 +718,7 @@ class FCPManager(object):
                          "instance %s in FCP Multipath Template %s." %
                          ([f['fcp_id'] for f in fcp_list],
                           assigner_id, fcp_template_id))
+                empty_fcp_list_reason = ''
                 if not fcp_list:
                     # Check whether all the PCHIDs used by the FCP multipath template is contained in
                     # the pchid_info
@@ -732,7 +734,7 @@ class FCPManager(object):
                         # then FCP devices are randomly selected from below combinations,
                         # one FCP device per path, ex:
                         # [fa00,fb00],[fa01,fb01],[fa02,fb02]
-                        fcp_list = self.db.get_fcp_devices_with_same_index(
+                        fcp_list, empty_fcp_list_reason = self.db.get_fcp_devices_with_same_index(
                             fcp_template_id, pchid_info)
                     else:
                         # If use get_fcp_pair,
@@ -741,10 +743,11 @@ class FCPManager(object):
                         # [fa00,fb00],[fa01,fb00],[fa02,fb00]
                         # [fa00,fb01],[fa01,fb01],[fa02,fb01]
                         # [fa00,fb02],[fa01,fb02],[fa02,fb02]
-                        fcp_list = self.db.get_fcp_devices(fcp_template_id, pchid_info)
+                        fcp_list, empty_fcp_list_reason = self.db.get_fcp_devices(
+                            fcp_template_id, pchid_info)
                     # process empty fcp_list
                     if not fcp_list:
-                        return is_reserved_changed, [], fcp_template_id
+                        return is_reserved_changed, [], fcp_template_id, empty_fcp_list_reason
                     # record the assigner id in the fcp DB so that
                     # when the vm provision with both root and data volumes
                     # the root and data volume would get the same FCP devices
@@ -771,7 +774,7 @@ class FCPManager(object):
                                     (assigner_id, fcp_list, path_count))
                     self._valid_fcp_devcie_wwpn(fcp_list, assigner_id)
                 # return
-                return is_reserved_changed, fcp_list, fcp_template_id
+                return is_reserved_changed, fcp_list, fcp_template_id, empty_fcp_list_reason
             except Exception as err:
                 errmsg = ("Failed to reserve FCP devices "
                           "for assigner %s by FCP Multipath Template %s error: %s"
@@ -1369,7 +1372,7 @@ class FCPManager(object):
                         statistics_usage[
                             template_id][path_id]["available"].append(fcp_id)
                         LOG.debug("Found "
-                                  "an available FCP device %s in "
+                                  "an free FCP device %s in "
                                   "database." % str(fcp_id))
                     # case E: (conn=0 and reserve=0 and state=active)
                     # this FCP is available in database but its state
@@ -2541,13 +2544,15 @@ class FCPVolumeManager(object):
         @return: (dict)
             example:
             {
-                'zvm_fcp': [fcp1, fcp2, fcp3]
-                'wwpns': [npiv_wwpn1, npiv_wwpn2, npiv_wwpn3]
+                'zvm_fcp': [fcp1, fcp2, fcp3],
+                'empty_fcp_list_reason': 'xxxx', # (only exist when zvm_fcp is [])
+                                                   the reason of why fcp_list is empty
+                'wwpns': [npiv_wwpn1, npiv_wwpn2, npiv_wwpn3],
                 'phy_to_virt_initiators':{
                     npiv_wwpn1: phy_wwpn1,
                     npiv_wwpn2: phy_wwpn2,
                     npiv_wwpn3: phy_wwpn3
-                }
+                },
                 'host': LPARname_VMuserid, # the name to be used by storage provider
                 'fcp_paths': 3,            # the count of fcp paths
                 'fcp_template_id': '123',  # if user doesn't specify it,
@@ -2601,7 +2606,8 @@ class FCPVolumeManager(object):
                 # [{'fcp_id':'1B02', 'path':1, 'pchid':'BBBB', 'wwpn_npiv':'aa', 'wwpn_phy':'xx'},
                 #  {'fcp_id':'1C04', 'path':4, 'pchid':'CCCC', 'wwpn_npiv':'bb', 'wwpn_phy':'yy'},
                 #  {'fcp_id':'1E05', 'path':5, 'pchid':'EEEE', 'wwpn_npiv':'cc', 'wwpn_phy':'zz'}]
-                is_reserved_changed, fcp_list, fcp_template_id = self.fcp_mgr.allocate_fcp_devices(
+                (is_reserved_changed, fcp_list,
+                 fcp_template_id, empty_fcp_list_reason) = self.fcp_mgr.allocate_fcp_devices(
                     assigner_id, fcp_template_id, sp_name, pchid_info)
                 LOG.info("get_volume_connector: Exit allocate_fcp_devices {}".format(
                     [f['fcp_id'] for f in fcp_list]))
@@ -2623,21 +2629,22 @@ class FCPVolumeManager(object):
             lpar = utils.get_lpar_name(zhypinfo=zhypinfo)
 
             if not fcp_list:
-                errmsg = ("Not enough available FCP devices found from "
+                errmsg = ("Not enough free FCP devices found from "
                           "FCP Multipath Template(id={})".format(fcp_template_id))
                 LOG.error(errmsg)
                 connector = {'zvm_fcp': [],
-                                   'wwpns': [],
-                                   'host': '',
-                                   'phy_to_virt_initiators': {},
-                                   'fcp_paths': 0,
-                                   'fcp_template_id': fcp_template_id,
-                                   'cpc_sn': cpc_sn,
-                                   'cpc_name': cpc_name,
-                                   'lpar': lpar,
-                                   'hypervisor_hostname': hypervisor_hostname,
-                                   'pchid_fcp_map': {},
-                                   'is_reserved_changed': False}
+                             'empty_fcp_list_reason': empty_fcp_list_reason if reserve else '',
+                             'wwpns': [],
+                             'host': '',
+                             'phy_to_virt_initiators': {},
+                             'fcp_paths': 0,
+                             'fcp_template_id': fcp_template_id,
+                             'cpc_sn': cpc_sn,
+                             'cpc_name': cpc_name,
+                             'lpar': lpar,
+                             'hypervisor_hostname': hypervisor_hostname,
+                             'pchid_fcp_map': {},
+                             'is_reserved_changed': False}
             else:
                 # get wwpns of fcp devices
                 wwpns = []
