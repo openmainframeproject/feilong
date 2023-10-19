@@ -1038,7 +1038,7 @@ class FCPDbOperator(object):
         #   3 : [('1a03', ...)]}
         #
         # The FCP count of 1st path
-        for i in range(count_per_path[0]):
+        for i in range(count_per_path[count_per_path.index(min(count_per_path))]):
             (fcp_no, connections, path, pchid, reserved,
              state, wwpn_npiv, wwpn_phy) = fcps[i]
             if connections == reserved == 0 and state == 'free':
