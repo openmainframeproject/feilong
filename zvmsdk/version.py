@@ -20,7 +20,7 @@ import sys
 
 
 __all__ = ['__version__']
-__version__ = '1.6.5'
+__version__ = '1.6.6'
 
 
 # Check supported Python versions

@@ -1074,6 +1074,46 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self._purge_fcp_db()
 
+    def test_get_fcp_devices_with_same_index_FCP_count_different(self):
+        '''Test get_fcp_devices_with_same_index
+
+        get_fcp_pair_with_same_index() only returns
+        1 possible value since the fcp template has 2 paths, but the first path has 2 fcp and the second has 1:
+        '''
+
+        # delete dirty data from other test cases
+        self._purge_fcp_db()
+        # prepare data for FCP Multipath Template "1111;2222"
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        fcp_info_list = [
+            # fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy, chpid, pchid, state, owner, tmpl_id
+            ('1a00', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', 'AAAA', 'free', 'none', ''),
+            ('1a01', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '27', 'AAAA', 'free', 'none', ''),
+
+            ('1b00', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', 'BBBB', 'free', '', ''),
+            ('1b01', '', 0, 0, 'wwpn_npiv', 'wwpn_phy', '30', 'BBBB', 'free', 'none', '')
+           ]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert test data into table template_fcp_mapping with 2 paths
+        template_fcp = [  # path 0
+                        ('1a00', template_id, 0),
+                        ('1a01', template_id, 0),
+
+                          # path 1
+                        ('1b00', template_id, 1)]
+        self._insert_data_into_template_fcp_mapping_table(template_fcp)
+        pchid_info = {
+            'AAAA': {'allocated': 120, 'max': 128},
+            'BBBB': {'allocated': 107, 'max': 110}
+        }
+
+        try:
+            fcp_list, empty_reason = self.db_op.get_fcp_devices_with_same_index(template_id, pchid_info)
+            fcp_device_list = [fcp['fcp_id'] for fcp in fcp_list]
+            self.assertEqual(['1A00', '1B00'], fcp_device_list)
+        finally:
+            self._purge_fcp_db()
+
     @patch('zvmsdk.database.FCPDbOperator.get_path_count')
     @patch('zvmsdk.database._FCP_CONN')
     @patch("zvmsdk.database.FCPDbOperator.get_free_pchids_by_fcp_template")
