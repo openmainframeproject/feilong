@@ -33,6 +33,9 @@ CPUMEM_SAMPLE1 = {
             'max_memory': '2097152 KB',
             'min_memory': '0 KB',
             'shared_memory': '5222192 KB',
+            'total_mem': '2097152',
+            'available_mem': '200232',
+            'free_mem': '210232'
             }
 CPUMEM_SAMPLE2 = {
             'userid': 'USERID2',
@@ -47,6 +50,9 @@ CPUMEM_SAMPLE2 = {
             'max_memory': '2097152 KB',
             'min_memory': '0 KB',
             'shared_memory': '5222190 KB',
+            'total_mem': '2097152',
+            'available_mem': '200232',
+            'free_mem': '210232'
             }
 
 MEM_KEYS = ['used_mem_kb', 'max_mem_kb', 'min_mem_kb', 'shared_mem_kb']
@@ -284,18 +290,21 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_vm_list")
     @mock.patch("zvmsdk.smtclient.SMTClient.namelist_query")
-    def test_private_update_cpumem_data_cache_enabled(self, namelist_query,
-                                               get_vm_list,
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    def test_private_update_cpumem_data_cache_enabled(self, mock_cmd,
+                                               namelist_query, get_vm_list,
                                                cache_enabled,
                                                image_performance_query):
         cache_enabled.return_value = True
+        mock_cmd.return_value = ['MemTotal: 3561052 kB', 'MemFree: 2200060 kB',
+                                 'MemAvailable: 2309768 kB']
         namelist_query.return_value = ['USERID1', 'USERID2']
         get_vm_list.return_value = ['USERID1', 'USERID2']
         image_performance_query.return_value = {
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor._update_cpumem_data(['userid1'])
+        rdata = self._monitor._update_cpumem_data(['USERID1'])
         image_performance_query.assert_called_once_with('TSTNLIST')
         namelist_query.assert_called_once_with('TSTNLIST')
         get_vm_list.assert_called_once_with()
@@ -312,9 +321,12 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.smtclient.SMTClient.get_vm_list")
     @mock.patch("zvmsdk.smtclient.SMTClient.namelist_query")
     @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
-    def test_private_update_cpumem_data_cache_not_in_namelist(self,
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    def test_private_update_cpumem_data_cache_not_in_namelist(self, mock_cmd,
                                 cache_enabled, namelist_query, get_vm_list,
                                 namelist_add, image_performance_query):
+        mock_cmd.return_value = ['MemTotal: 3561052 kB', 'MemFree: 2200060 kB',
+                                 'MemAvailable: 2309768 kB']
         cache_enabled.return_value = True
         namelist_query.return_value = ['USERID1']
         get_vm_list.return_value = ['USERID1', 'USERID2']
