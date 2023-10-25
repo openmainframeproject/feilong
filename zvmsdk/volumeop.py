@@ -809,6 +809,7 @@ class FCPManager(object):
                 If no fcp can be gotten from db, return empty list.
         """
         is_reserved_changed = False
+        fcp_ids = []
         with database.get_fcp_conn():
             try:
                 if fcp_template_id is None:
@@ -833,12 +834,6 @@ class FCPManager(object):
                         LOG.info("Unreserve fcp device %s from "
                                  "instance %s and FCP Multipath Template %s."
                                  % (fcp_ids, assigner_id, fcp_template_id))
-                        # Sync DB to update FCP state,
-                        # so that released FCPs are set to free
-                        self._sync_db_with_zvm()
-                    return is_reserved_changed, fcp_list
-                else:
-                    return is_reserved_changed, []
             except Exception as err:
                 errmsg = ("Failed to unreserve FCP devices for "
                           "assigner %s by FCP Multipath Template %s. Error: %s"
@@ -847,6 +842,15 @@ class FCPManager(object):
                 raise exception.SDKVolumeOperationError(rs=11,
                                                         userid=assigner_id,
                                                         msg=errmsg)
+        if fcp_ids:
+            with zvmutils.ignore_errors():
+                # Sync DB to update FCP state,
+                # so that released FCPs are set to free
+                self._sync_db_with_zvm()
+        if fcp_list:
+            return is_reserved_changed, fcp_list
+        else:
+            return is_reserved_changed, []
 
     def get_all_fcp_pool(self, assigner_id):
         """Return a dict of all FCPs in ZVM
