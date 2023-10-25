@@ -833,6 +833,9 @@ class FCPManager(object):
                         LOG.info("Unreserve fcp device %s from "
                                  "instance %s and FCP Multipath Template %s."
                                  % (fcp_ids, assigner_id, fcp_template_id))
+                        # Sync DB to update FCP state,
+                        # so that released FCPs are set to free
+                        self._sync_db_with_zvm()
                     return is_reserved_changed, fcp_list
                 else:
                     return is_reserved_changed, []
