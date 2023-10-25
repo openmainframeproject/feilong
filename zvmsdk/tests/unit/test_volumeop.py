@@ -698,7 +698,8 @@ class TestFCPManager(base.SDKTestCase):
                                self.fcpops.release_fcp_devices,
                                assigner_id, None)
 
-    def test_release_fcp_devices_return_empty_fcp_list(self):
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_release_fcp_devices_return_empty_fcp_list(self, mock_sync):
         """If not found any fcp devices to release, return empty list"""
         _purge_fcp_db()
         template_id = "fake_fcp_template_00"
@@ -726,12 +727,14 @@ class TestFCPManager(base.SDKTestCase):
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            mock_sync.assert_not_called()
             self.assertEqual((is_reserved_changed, fcp_list), (False, []))
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
-
-    def test_release_fcp_devices_return_nonempty_fcp_list(self):
+    
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_release_fcp_devices_return_nonempty_fcp_list(self, mock_sync):
         """If found any fcp devices to release, return the fcp list"""
         _purge_fcp_db()
         template_id = "fake_fcp_template_00"
@@ -761,6 +764,7 @@ class TestFCPManager(base.SDKTestCase):
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            mock_sync.assert_called_once()
             new_list = []
             for fcp in fcp_list:
                 item = {
