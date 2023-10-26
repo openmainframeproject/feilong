@@ -698,7 +698,8 @@ class TestFCPManager(base.SDKTestCase):
                                self.fcpops.release_fcp_devices,
                                assigner_id, None)
 
-    def test_release_fcp_devices_return_empty_fcp_list(self):
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_release_fcp_devices_return_empty_fcp_list(self, mock_sync):
         """If not found any fcp devices to release, return empty list"""
         _purge_fcp_db()
         template_id = "fake_fcp_template_00"
@@ -726,12 +727,14 @@ class TestFCPManager(base.SDKTestCase):
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            mock_sync.assert_not_called()
             self.assertEqual((is_reserved_changed, fcp_list), (False, []))
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
 
-    def test_release_fcp_devices_return_nonempty_fcp_list(self):
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_release_fcp_devices_return_nonempty_fcp_list(self, mock_sync):
         """If found any fcp devices to release, return the fcp list"""
         _purge_fcp_db()
         template_id = "fake_fcp_template_00"
@@ -761,6 +764,7 @@ class TestFCPManager(base.SDKTestCase):
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            mock_sync.assert_called_once()
             new_list = []
             for fcp in fcp_list:
                 item = {
@@ -772,6 +776,54 @@ class TestFCPManager(base.SDKTestCase):
                 {'fcp_id': '1a10', 'connections': 0},
                 {'fcp_id': '1b10', 'connections': 0}]
             self.assertEqual((is_reserved_changed, new_list), (True, expect_list))
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+            self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_release_fcp_devices_return_nonempty_fcp_list_but_sync_fails(self, mock_sync):
+        """If found any fcp devices to release, return the fcp list"""
+        _purge_fcp_db()
+        template_id = "fake_fcp_template_00"
+        assinger_id = "wxy0001"
+        fcp_info_list = [('1a10', assinger_id, 0, 1, 'c05076de3300a83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner1',
+                          template_id),
+                         ('1b10', assinger_id, 0, 1, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id),
+                         ('1a11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id),
+                         ('1b11', '', 0, 0, 'c05076de3300b83c',
+                          'c05076de33002641', '27', '02e4', 'active', 'owner2',
+                          template_id)
+                         ]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        # insert data into template_fcp_mapping table
+        template_fcp = [('1a10', template_id, 0),
+                        ('1a11', template_id, 0),
+                        ('1b10', template_id, 1),
+                        ('1b11', template_id, 1)]
+        self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
+            template_fcp)
+
+        try:
+            mock_sync.side_effect = Exception("fake exception")
+            is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
+            new_list = []
+            for fcp in fcp_list:
+                item = {
+                    'fcp_id': fcp['fcp_id'],
+                    'connections': fcp['connections']
+                }
+                new_list.append(item)
+            expect_list = [
+                {'fcp_id': '1a10', 'connections': 0},
+                {'fcp_id': '1b10', 'connections': 0}]
+            self.assertEqual((is_reserved_changed, new_list), (True, expect_list))
+            mock_sync.assert_called_once()
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list, template_id)
