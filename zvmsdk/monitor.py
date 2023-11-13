@@ -22,7 +22,6 @@ from zvmsdk import config
 from zvmsdk import log
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
-from zvmsdk import exception
 
 _MONITOR = None
 CONF = config.CONF
@@ -63,11 +62,6 @@ class ZVMMonitor(object):
                     min_mem = int(user_data['min_memory'].partition(' ')[0])
                     shared_mem = int(
                         user_data['shared_memory'].partition(' ')[0])
-                    # Adding Memory util data collected from free command
-                    # along with system_image_performance_query data.
-                    total_memory = int(user_data['total_mem'])
-                    available_memory = int(user_data['available_mem'])
-                    free_memory = int(user_data['free_mem'])
 
                 stats_data[uid] = {
                     'guest_cpus': guest_cpus,
@@ -80,11 +74,7 @@ class ZVMMonitor(object):
                     'used_mem_kb': used_mem,
                     'max_mem_kb': max_mem,
                     'min_mem_kb': min_mem,
-                    'shared_mem_kb': shared_mem,
-                    # Adding Memory util data fetched from free command.
-                    'total_memory': total_memory,
-                    'available_memory': available_memory,
-                    'free_memory': free_memory
+                    'shared_mem_kb': shared_mem
                     }
 
         return stats_data
@@ -145,19 +135,6 @@ class ZVMMonitor(object):
         if self._cache_enabled():
             rdata = self._smtclient.system_image_performance_query(
                 self._namelist)
-            # system_image_performance_query does not return correct memory usage.
-            # Get memory usage from /proc/meminfo
-            for inst in uid_list:
-                try:
-                    mem = self._smtclient.execute_cmd(inst, 'cat /proc/meminfo')
-                    rdata[inst]['total_mem'] = mem[0].split()[1]
-                    rdata[inst]['free_mem'] = mem[1].split()[1]
-                    rdata[inst]['available_mem'] = mem[2].split()[1]
-                except exception.SDKSMTRequestFailed as err:
-                    msg = "SMT error: %s" % err.format_message()
-                    LOG.error(msg)
-                    raise exception.SDKSMTRequestFailed(err.results, msg)
-
             self._cache.refresh('cpumem', rdata)
         else:
             rdata = self._smtclient.system_image_performance_query(
