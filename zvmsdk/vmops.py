@@ -133,7 +133,7 @@ class VMOps(object):
             dict_info = self._smtclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
-                'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
+                'max_mem_kb': int(self._get_max_memory_from_user_dict(dict_info)),
                 'mem_kb': 0,
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
                 'cpu_time_us': 0,
