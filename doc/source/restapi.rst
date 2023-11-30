@@ -92,21 +92,19 @@ you can think as a combination of username and password.
 
   Please refer to :ref:`TokenUsage` to get more details.
 
-SMAPI Healthy
-=============
+SMAPI Health
+============
 
-Report healthy of SMAPI
------------------------
+Report health of SMAPI
+----------------------
 
 **GET /smapi-healthy**
 
-Get healthy of the SMAPI status.
+Get health status of the SMAPI.
 
 * Request:
 
-.. restapi_parameters:: parameters.yaml
-
-  - X-Admin-Token: token_admin
+  None
 
 * Response code:
 
@@ -116,13 +114,18 @@ Get healthy of the SMAPI status.
 
 .. restapi_parameters:: parameters.yaml
 
-  - smapi_healthy: smapi_healthy
+  - SMAPI: SMAPI
   - totalSuccess: totalSuccess
   - totalFail: totalFail
   - lastSuccess: lastSuccess
   - lastFail: lastFail
-  - continueousFail: continueousFail
+  - continuousFail: continuousFail
   - healthy: healthy
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_smapi_health.tpl
+   :language: javascript
 
 Guest(s)
 ========

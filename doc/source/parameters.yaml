@@ -1328,9 +1328,9 @@ fcp_connections:
   in: body
   required: true
   type: integer
-smapi_healthy:
+SMAPI:
   description: |
-    Status of SMAPI healthy
+    Status of SMAPI health
   in: body
   required: true
   type: dict
@@ -1358,9 +1358,9 @@ lastFail:
   in: body
   required: true
   type: string
-continueousFail:
+continuousFail:
   description: |
-    The count of continueous fail.
+    The count of continuous fail.
   in: body
   required: true
   type: integer
@@ -1369,4 +1369,4 @@ healthy:
     Whether SMAPI is healthy.
   in: body
   required: true
-  type: integer
+  type: boolean
