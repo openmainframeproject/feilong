@@ -760,7 +760,7 @@ function update_zipl_bootloader_rhcos {
     blockdev --flushbufs ${DEST_DEV} > /dev/null
 } #update_zipl_bootloader_rhcos{}
 
-function updaterdzfcp_with_fcp_only {
+function update_rdzfcp_to_fcp_only {
 	: SOURCE: ${BASH_SOURCE}
 	: STACK:  ${FUNCNAME[@]}
 	# @Description:
@@ -768,8 +768,7 @@ function updaterdzfcp_with_fcp_only {
   # before function: rd_zfcp="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
   # after function: rd_zfcp="rd.zfcp=0.0.$fcp "
     rd_zfcp=""
-    valid_fcps=$(echo ${!valid_paths_dict[*]})
-    for fcp in ${valid_fcps[@]}
+    for fcp in "${INPUT_FCPS[@]}"
     do
       rd_zfcp+="rd.zfcp=0.0.$fcp "
     done
@@ -907,7 +906,7 @@ function refreshZIPL {
   	truncaterdzfcp
   fi
   if [[ ($os == rhel8*) || ($os == rhel9*) ]]; then
-    updaterdzfcp_with_fcp_only
+    update_rdzfcp_to_fcp_only
   fi
   inform "Final rd.zfcp value is: $rd_zfcp."
 
