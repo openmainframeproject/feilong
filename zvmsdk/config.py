@@ -266,7 +266,7 @@ The port number of remotehost sshd.
 '''),
     Opt('bypass_smapiout',
         section='zvm',
-        default=False,
+        default=True,
         help='''
 Only used for SMAPIOUT is not ready.
 '''),
