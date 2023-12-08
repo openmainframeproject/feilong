@@ -330,7 +330,7 @@
 # Only used for SMAPIOUT is not ready.
 # 
 # This param is optional
-#bypass_smapiout=False
+#bypass_smapiout=True
 
 
 # 
