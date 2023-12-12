@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017 IBM Corp.
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -102,7 +102,7 @@ def validate(function):
         token_file_path = CONF.wsgi.token_path
         admin_token = get_admin_token(token_file_path)
         try:
-            jwt.decode(req.headers['X-Auth-Token'], admin_token)
+            jwt.decode(req.headers['X-Auth-Token'], admin_token, algorithms="HS256")
         except jwt.ExpiredSignatureError:
             LOG.debug('token validation failed because it is expired')
             raise exception.ZVMUnauthorized()
