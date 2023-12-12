@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017 IBM Corp.
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -54,8 +54,9 @@ class RequestLog(object):
                     size = value
             for index, value in enumerate(headers):
                 if value[0] == 'X-Auth-Token':
-                    headers[index] = ('X-Auth-Token', value[1].decode('utf-8'))
-                    break
+                    if isinstance(value[1], bytes):
+                        headers[index] = ('X-Auth-Token', value[1].decode('utf-8'))
+                        break
 
             self._write_log(environ, req_uri, status, size, headers,
                             exc_info)
