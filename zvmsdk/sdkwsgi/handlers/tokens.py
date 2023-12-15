@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017 IBM Corp.
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -62,7 +62,7 @@ def create(req):
         return req.response
     # Validation is open, so start to validate the admin-token
     if 'X-Admin-Token' not in req.headers:
-        LOG.debug('no X-Admin-Token given in reqeust header')
+        LOG.debug('no X-Admin-Token given in request header')
         raise exception.ZVMUnauthorized()
     token_file_path = CONF.wsgi.token_path
     admin_token = get_admin_token(token_file_path)
@@ -96,13 +96,13 @@ def validate(function):
 
         # so, this is for token validation
         if 'X-Auth-Token' not in req.headers:
-            LOG.debug('no X-Auth-Token given in reqeust header')
+            LOG.debug('no X-Auth-Token given in request header')
             raise exception.ZVMUnauthorized()
 
         token_file_path = CONF.wsgi.token_path
         admin_token = get_admin_token(token_file_path)
         try:
-            jwt.decode(req.headers['X-Auth-Token'], admin_token)
+            jwt.decode(req.headers['X-Auth-Token'], admin_token, algorithms="HS256")
         except jwt.ExpiredSignatureError:
             LOG.debug('token validation failed because it is expired')
             raise exception.ZVMUnauthorized()
@@ -110,7 +110,7 @@ def validate(function):
             LOG.debug('token not valid')
             raise exception.ZVMUnauthorized()
         except Exception:
-            LOG.debug('unknown exception occur during token validation')
+            LOG.debug('unknown exception occurred during token validation')
             raise exception.ZVMUnauthorized()
 
         return function(req, *args, **kwargs)

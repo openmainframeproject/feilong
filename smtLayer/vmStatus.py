@@ -67,7 +67,7 @@ class SMAPIStatus():
                   'totalFail': self.totalFail,
                   'lastSuccess': self.lastSuccess,
                   'lastFail': self.lastFail,
-                  'continueousFail': self.continueFail,
+                  'continuousFail': self.continueFail,
                   'healthy': self.IsHealthy()}
                  }
         return status

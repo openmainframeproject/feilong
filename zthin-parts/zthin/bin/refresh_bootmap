@@ -760,6 +760,20 @@ function update_zipl_bootloader_rhcos {
     blockdev --flushbufs ${DEST_DEV} > /dev/null
 } #update_zipl_bootloader_rhcos{}
 
+function update_rdzfcp_to_fcp_only {
+	: SOURCE: ${BASH_SOURCE}
+	: STACK:  ${FUNCNAME[@]}
+	# @Description:
+  # remove wwpn and lun from rd.zfcp
+  # before function: rd_zfcp="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
+  # after function: rd_zfcp="rd.zfcp=0.0.$fcp "
+    rd_zfcp=""
+    for fcp in "${INPUT_FCPS[@]}"
+    do
+      rd_zfcp+="rd.zfcp=0.0.$fcp "
+    done
+} #updaterdzfcp_with_fcp_only
+
 function refreshZIPL {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
@@ -887,9 +901,12 @@ function refreshZIPL {
   # Due to the kernel command line length limitation of RHEL, we will limit the rd.zfcp
   # items count to 8. so if the valid paths count is greater than 8, we need to do truncation.
   # otherwise we can use the rd_zfcp string we get while finding the valid paths.
-  if [[ $valid_paths_count -gt 8 ]]; then
+  if [[ ($valid_paths_count -gt 8) && ($os == rhel7*) ]]; then
   	inform "valid paths count $valid_paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
   	truncaterdzfcp
+  fi
+  if [[ ($os == rhel8*) || ($os == rhel9*) ]]; then
+    update_rdzfcp_to_fcp_only
   fi
   inform "Final rd.zfcp value is: $rd_zfcp."
 
