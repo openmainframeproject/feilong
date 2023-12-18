@@ -4,7 +4,7 @@
         "totalFail": 0,
         "lastSuccess": "",
         "lastFail": "",
-        "continueousFail": 0,
+        "continuousFail": 0,
         "healthy": True
     }
 }

@@ -33,7 +33,7 @@ class SMAPIStatus():
         self.lastFail = ''
 
         # latest call status, 0 means success
-        # >0 means continueous failure
+        # >0 means continuous failure
 
         self.continueFail = 0
 
