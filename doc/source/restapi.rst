@@ -487,7 +487,7 @@ Set the FCP usage in database for z/VM.
 .. restapi_parameters:: parameters.yaml
 
   - fcp_id: fcp_id
-  - userid: guest_userid
+  - userid: fcp_userid
   - reserved: fcp_reserve
   - connections: fcp_connections
 
@@ -1921,7 +1921,7 @@ Grant an user to access vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - grant_userid: guest_userid
+  - grant_userid: grant_userid
 
 * Request sample:
 
@@ -1949,7 +1949,7 @@ Revoke the user access from vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - revoke_userid: guest_userid
+  - revoke_userid: grant_userid
 
 * Request sample:
 
@@ -1978,7 +1978,7 @@ Set vlan id for user when connecting to the vswitch
   - name: vswitch_name
   - vswitch: vswitch_info
   - user_vlan_id: user_vlan_id
-  - userid: guest_userid
+  - userid: grant_userid
   - vlanid: vlan_id
 
 * Request sample:
