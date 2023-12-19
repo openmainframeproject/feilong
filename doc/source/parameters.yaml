@@ -931,6 +931,12 @@ vswitch_list:
   in: body
   required: true
   type: list
+grant_userid:
+  description: |
+    Guest userid.
+  in: body
+  required: true
+  type: string
 imagename:
   description: |
     Retrieve the specified image information, if not specified,
@@ -1260,6 +1266,12 @@ fcp_id:
   description: |
     ID of FCP device.
   in: path
+  required: true
+  type: string
+fcp_userid:
+  description: |
+    Guest userid.
+  in: body
   required: true
   type: string
 fcp_usage:
