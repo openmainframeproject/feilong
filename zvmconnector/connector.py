@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017 IBM Corp.
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -41,9 +41,9 @@ class socketConnection(baseConnection):
 class restConnection(baseConnection):
 
     def __init__(self, ip_addr='127.0.0.1', port=8080, ssl_enabled=False,
-                 verify=False, token_path=None):
+                 verify=False, token_path=None, auth=None):
         self.client = restclient.RESTClient(ip_addr, port, ssl_enabled, verify,
-                                            token_path)
+                                            token_path, auth)
 
     def request(self, api_name, *api_args, **api_kwargs):
         return self.client.call(api_name, *api_args, **api_kwargs)
@@ -53,7 +53,7 @@ class ZVMConnector(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
                  connection_type=None, ssl_enabled=False, verify=False,
-                 token_path=None):
+                 token_path=None, auth=None):
         """
         :param str ip_addr:         IP address of SDK server
         :param int port:            Port of SDK server daemon
@@ -68,6 +68,7 @@ class ZVMConnector(object):
                                     case it must be a path to a CA bundle
                                     to use. Default to False.
         :param str token_path:      The path of token file.
+        :param str auth:            Type of authentication ('none' or 'token')
         """
         if (connection_type is not None and
                 connection_type.lower() == CONN_TYPE_SOCKET):
@@ -76,18 +77,18 @@ class ZVMConnector(object):
             connection_type = CONN_TYPE_REST
         self.conn = self._get_connection(ip_addr, port, timeout,
                                          connection_type, ssl_enabled, verify,
-                                         token_path)
+                                         token_path, auth)
 
     def _get_connection(self, ip_addr, port, timeout,
                         connection_type, ssl_enabled, verify,
-                        token_path):
+                        token_path, auth):
         if connection_type == CONN_TYPE_SOCKET:
             return socketConnection(ip_addr or '127.0.0.1', port or 2000,
                                     timeout)
         else:
             return restConnection(ip_addr or '127.0.0.1', port or 8080,
                                   ssl_enabled=ssl_enabled, verify=verify,
-                                  token_path=token_path)
+                                  token_path=token_path, auth=auth)
 
     def send_request(self, api_name, *api_args, **api_kwargs):
         """Refer to SDK API documentation.
