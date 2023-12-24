@@ -815,7 +815,7 @@ Create one or more network interfaces on giving guest.
 
   - userid: guest_userid
   - interface: network_interface_info
-  - os_version: guest_os_version_all
+  - os_version: guest_os_version
   - guest_networks: guest_networks_list
   - active: active_flag
 
@@ -1684,7 +1684,7 @@ Get the list of image info in image repository.
 
   - output: image_info
   - imagename: image_name
-  - imageosdistro: guest_os_version_all
+  - imageosdistro: guest_os_version
   - md5sum: image_md5sum
   - disk_size_units: root_disk_size_image
   - image_size_in_bytes: physical_disk_size_image
