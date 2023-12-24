@@ -698,10 +698,11 @@ image_export_url:
   type: string
 image_metadata:
   description: |
-    The metadata which describes image, the valid keys are os_version, md5sum and disk_type,
-    os_version is required key, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, rhcos4.X, all case insensitive, please contact with your cloud administrator
-    if you don't know the image's os version. disk_type is required if os_version is rhcos4,
+    The metadata which describes the image, the valid keys are os_version, md5sum and disk_type.
+    os_version is a required key, the valid values are: rhel6.x, rhel7.x, rhel8.x,
+    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    all case insensitive. Please contact your cloud administrator
+    if you don't know the image's OS version. disk_type is required if os_version is rhcos4,
     the valid disk_type values are: DASD, SCSI.
   in: body
   required: true
@@ -1039,17 +1040,10 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your
-    cloud administrator if you don't know the guest's os version
-  in: body
-  required: true
-  type: string
-guest_os_version_all:
-  description: |
-    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, rhcos4.x, all case insensitive, please contact with your
-    cloud administrator if you don't know the guest's os version
+    Operating system version, the valid alues are: rhel6.x, rhel7.x, rhel8.x,
+    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    all case insensitive. Please contact your cloud administrator if you don't know
+    the guest's OS version.
   in: body
   required: true
   type: string
