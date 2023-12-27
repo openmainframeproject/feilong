@@ -184,7 +184,7 @@ user_profile_guest:
   type: string
 user_direct_guest:
   description: |
-    Dictionary describing user direct and check info result
+    Dictionary with only one entry describing user directory.
   in: body
   required: true
   type: dict
