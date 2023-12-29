@@ -640,7 +640,7 @@ class SDKAPI(object):
         :param userid: (str) the userid of the vm to be relocated or tested
         :param meta: (str) the metadata of the vm to be relocated or tested
         :param net_set: (str) the net_set of the vm, default is 1.
-        :param port_macs: (dir) the virtual interface port id maps with mac id
+        :param port_macs: (dict) the virtual interface port id maps with mac id
                      Format: { macid1 : portid1, macid2 : portid2}.
                      For example,
                      {
