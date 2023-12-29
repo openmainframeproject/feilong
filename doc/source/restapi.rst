@@ -346,7 +346,6 @@ Attach volume to a vm in z/VM
   - mount_point: mount_point
   - is_root_volume: root_volume
 
-
 * Request sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
@@ -382,7 +381,6 @@ Detach volume from a vm in z/VM
   - mount_point: mount_point
   - is_root_volume: root_volume
 
-
 * Request sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
@@ -402,6 +400,8 @@ Refresh Volume Bootmap Info
 **PUT /volumes/volume_refresh_bootmap**
 
 Refresh a volume's bootmap info.
+
+* Request:
 
 .. restapi_parameters:: parameters.yaml
 
@@ -1111,7 +1111,7 @@ Register guest to be managed by Feilong.
   - userid: guest_userid
   - action: action_register_guest
   - meta: guest_register_meta
-  - net_set: guest_register_net_set  
+  - net_set: guest_register_net_set
   - port: guest_register_port_macs
 
 * Request sample:
@@ -1523,7 +1523,7 @@ Get host information.
 
 * Request:
 
-  No parameters needed. 
+  No parameters needed.
 
 * Response code:
 

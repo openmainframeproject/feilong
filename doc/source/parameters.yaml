@@ -142,13 +142,13 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    Meemory size used by the guest, in KBytes.
+    Memory size used by the guest, in KBytes.
   in: body
   required: true
   type: integer
 guest_memory_kb_max:
   description: |
-    The maximum memory in KBytes can be allocated for this guest.
+    The maximum memory in KBytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
@@ -255,7 +255,7 @@ guest_max_cpu:
 guest_max_mem:
   description: |
     The maximum size of memory the user can define.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     a whole number, eg. 512M, 4G.
   in: body
@@ -561,7 +561,7 @@ action_resize_mem_of_guest:
 mem_size:
   description: |
     The size of memory that the guest should have after resize.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     an integer, eg. 512M, 4G.
   in: body
@@ -1109,7 +1109,7 @@ nic_comments:
   type: string
 nic_port:
   description: |
-    nic identyifier.
+    nic identifier.
   in: body
   required: true
   type: string
@@ -1194,13 +1194,13 @@ volume_fcp:
   type: string
 volume_wwpn:
   description: |
-    World Wide Port Number, must be start with ``0x``, for example ``0x50050763050b073d``
+    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``
   in: body
   required: true
   type: string
 volume_lun:
   description: |
-    Logical Unit Number, must be start with ``0x``, for example ``0x4020400100000000``
+    Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``
   in: body
   required: true
   type: string
