@@ -154,7 +154,8 @@ guest_memory_kb_max:
   type: integer
 guest_vnics:
   description: |
-    vNICs statistics of one guest.
+    vNIC statistics of guests, as a dictionary where the key is
+    the userid and the value is a list of vNIC statistics.
   in: body
   required: true
   type: dict
@@ -1376,3 +1377,51 @@ healthy:
   in: body
   required: true
   type: boolean
+nic_fr_rx:
+  description: |
+    Number of received frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx:
+  description: |
+    Number of transmitted frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_dsc:
+  description: |
+    Number of received frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_dsc:
+  description: |
+    Number of transmitted frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_err:
+  description: |
+    Number of received frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_err:
+  description: |
+    Number of transmitted frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_rx:
+  description: |
+    Number of received bytes.
+  in: body
+  required: true
+  type: integer
+nic_tx:
+  description: |
+    Number of transmitted bytes.
+  in: body
+  required: true
+  type: integer

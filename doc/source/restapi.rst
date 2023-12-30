@@ -550,6 +550,16 @@ Get guests network interface statistics.
 .. restapi_parameters:: parameters.yaml
 
   - output: guest_vnics
+  - vswitch_name: vswitch_name_opt
+  - nic_vdev: nic_interface
+  - nic_fr_rx: nic_fr_rx
+  - nic_fr_tx: nic_fr_tx
+  - nic_fr_rx_dsc: nic_fr_rx_dsc
+  - nic_fr_tx_dsc: nic_fr_tx_dsc
+  - nic_fr_rx_err: nic_fr_rx_err
+  - nic_fr_tx_err: nic_fr_tx_err
+  - nic_rx: nic_rx
+  - nic_tx: nic_tx
 
 * Response sample:
 
