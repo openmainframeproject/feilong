@@ -522,6 +522,20 @@ Get guests cpu, memory information.
 .. restapi_parameters:: parameters.yaml
 
   - output: stats_guest
+  - guest_cpus: guest_cpus
+  - used_cpu_time_us: used_cpu_time_us
+  - elapsed_cpu_time_us: elapsed_cpu_time_us
+  - min_cpu_count: min_cpu_count
+  - max_cpu_limit: max_cpu_limit
+  - samples_cpu_in_use: samples_cpu_in_use
+  - samples_cpu_delay: samples_cpu_delay
+  - used_mem_kb: used_mem_kb
+  - max_mem_kb: max_mem_kb
+  - min_mem_kb: min_mem_kb
+  - shared_mem_kb: shared_mem_kb
+  - total_memory: total_memory
+  - available_memory: available_memory
+  - free_memory: free_memory
 
 * Response sample:
 
