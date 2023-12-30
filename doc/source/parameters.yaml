@@ -356,7 +356,8 @@ userid_list_guest:
   type: string
 stats_guest:
   description: |
-    cpu and memory statics of guest
+    CPU and memory statistics of guests, as a dictionary where the
+    key is the userid and the value is the CPU and memory statistics.
   in: body
   required: true
   type: dict
@@ -1377,6 +1378,90 @@ healthy:
   in: body
   required: true
   type: boolean
+guest_cpus:
+  description: |
+    The count of virtual CPUs for the guest.
+  in: body
+  required: true
+  type: integer
+used_cpu_time_us:
+  description: |
+    The CPU time used in microseconds.
+  in: body
+  required: true
+  type: integer
+elapsed_cpu_time_us:
+  description: |
+    The CPU time elapsed in microseconds.
+  in: body
+  required: true
+  type: integer
+min_cpu_count:
+  description: |
+    The minimal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+max_cpu_limit:
+  description: |
+    The maximal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+samples_cpu_in_use:
+  description: |
+    Samples CPU in use.
+  in: body
+  required: true
+  type: integer
+samples_cpu_delay:
+  description: |
+    Samples CPU delay.
+  in: body
+  required: true
+  type: integer
+used_mem_kb:
+  description: |
+    Memory size used by the guest, in KBytes.
+  in: body
+  required: true
+  type: integer
+max_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+min_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+shared_mem_kb:
+  description: |
+    Shared memory in KBytes.
+  in: body
+  required: true
+  type: integer
+total_memory:
+  description: |
+    Total memory.
+  in: body
+  required: true
+  type: integer
+available_memory:
+  description: |
+    Available memory.
+  in: body
+  required: true
+  type: integer
+free_memory:
+  description: |
+    Free memory.
+  in: body
+  required: true
+  type: integer
 nic_fr_rx:
   description: |
     Number of received frames.
