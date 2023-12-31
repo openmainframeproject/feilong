@@ -1063,6 +1063,7 @@ guest_networks_list:
     - ``mac_addr``: mac address
     - ``nic_id``: nic identifier
     - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
+    - ``hostname``: host name
   in: body
   required: true
   type: list
