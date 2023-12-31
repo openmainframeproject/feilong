@@ -2307,11 +2307,7 @@ class FCPVolumeManager(object):
         wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id'].upper()
-        multipath = connection_info['multipath'].lower()
-        if multipath == 'true':
-            multipath = True
-        else:
-            multipath = False
+        multipath = connection_info.get('multipath', False)
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
         is_root_volume = connection_info.get('is_root_volume', False)
@@ -2497,14 +2493,9 @@ class FCPVolumeManager(object):
         wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id'].upper()
-        multipath = connection_info['multipath'].lower()
+        multipath = connection_info.get('multipath', False)
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
-        if multipath == 'true':
-            multipath = True
-        else:
-            multipath = False
-
         is_root_volume = connection_info.get('is_root_volume', False)
         update_connections_only = connection_info.get(
                 'update_connections_only', False)
