@@ -346,7 +346,6 @@ Attach volume to a vm in z/VM
   - mount_point: mount_point
   - is_root_volume: root_volume
 
-
 * Request sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
@@ -382,7 +381,6 @@ Detach volume from a vm in z/VM
   - mount_point: mount_point
   - is_root_volume: root_volume
 
-
 * Request sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
@@ -402,6 +400,8 @@ Refresh Volume Bootmap Info
 **PUT /volumes/volume_refresh_bootmap**
 
 Refresh a volume's bootmap info.
+
+* Request:
 
 .. restapi_parameters:: parameters.yaml
 
@@ -522,6 +522,20 @@ Get guests cpu, memory information.
 .. restapi_parameters:: parameters.yaml
 
   - output: stats_guest
+  - guest_cpus: guest_cpus
+  - used_cpu_time_us: used_cpu_time_us
+  - elapsed_cpu_time_us: elapsed_cpu_time_us
+  - min_cpu_count: min_cpu_count
+  - max_cpu_limit: max_cpu_limit
+  - samples_cpu_in_use: samples_cpu_in_use
+  - samples_cpu_delay: samples_cpu_delay
+  - used_mem_kb: used_mem_kb
+  - max_mem_kb: max_mem_kb
+  - min_mem_kb: min_mem_kb
+  - shared_mem_kb: shared_mem_kb
+  - total_memory: total_memory
+  - available_memory: available_memory
+  - free_memory: free_memory
 
 * Response sample:
 
@@ -550,6 +564,16 @@ Get guests network interface statistics.
 .. restapi_parameters:: parameters.yaml
 
   - output: guest_vnics
+  - vswitch_name: vswitch_name_opt
+  - nic_vdev: nic_interface
+  - nic_fr_rx: nic_fr_rx
+  - nic_fr_tx: nic_fr_tx
+  - nic_fr_rx_dsc: nic_fr_rx_dsc
+  - nic_fr_tx_dsc: nic_fr_tx_dsc
+  - nic_fr_rx_err: nic_fr_rx_err
+  - nic_fr_tx_err: nic_fr_tx_err
+  - nic_rx: nic_rx
+  - nic_tx: nic_tx
 
 * Response sample:
 
@@ -1111,7 +1135,7 @@ Register guest to be managed by Feilong.
   - userid: guest_userid
   - action: action_register_guest
   - meta: guest_register_meta
-  - net_set: guest_register_net_set  
+  - net_set: guest_register_net_set
   - port: guest_register_port_macs
 
 * Request sample:
@@ -1523,7 +1547,7 @@ Get host information.
 
 * Request:
 
-  No parameters needed. 
+  No parameters needed.
 
 * Response code:
 

@@ -1569,12 +1569,12 @@ class FCPDbOperator(object):
                                     to template table as default value.
         :return: NULL
         """
-        # The following multiple DQLs(Database query)
+        # The following multiple DQLs (Database query)
         # are put into the with-block with DMLs
-        # because the consequent DMLs(Database modification)
+        # because the consequent DMLs (Database modification)
         # depend on the result of the DQLs.
-        # So that, other threads can NOT begin a sqlite transacation
-        # util current thread exits the with-block.
+        # So that, other threads can NOT begin a sqlite transaction
+        # until current thread exits the with-block.
         # Refer to 'def get_fcp_conn' for thread lock
         with get_fcp_conn() as conn:
             # first check the template exist or not
@@ -1733,12 +1733,12 @@ class FCPDbOperator(object):
               }
             }
         """
-        # The following multiple DQLs(Database query)
+        # The following multiple DQLs (Database query)
         # are put into the with-block with DMLs
-        # because the consequent DMLs(Database modification)
+        # because the consequent DMLs (Database modification)
         # depend on the result of the DQLs.
-        # So that, other threads can NOT begin a sqlite transacation
-        # util current thread exits the with-block.
+        # So that, other threads can NOT begin a sqlite transaction
+        # until current thread exits the with-block.
         # Refer to 'def get_fcp_conn' for thread lock
         with get_fcp_conn():
             # DQL: validate: FCP Multipath Template

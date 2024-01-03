@@ -142,19 +142,20 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    Meemory size used by the guest, in KBytes.
+    Memory size used by the guest, in KBytes.
   in: body
   required: true
   type: integer
 guest_memory_kb_max:
   description: |
-    The maximum memory in KBytes can be allocated for this guest.
+    The maximum memory in KBytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
 guest_vnics:
   description: |
-    vNICs statistics of one guest.
+    vNIC statistics of guests, as a dictionary where the key is
+    the userid and the value is a list of vNIC statistics.
   in: body
   required: true
   type: dict
@@ -255,7 +256,7 @@ guest_max_cpu:
 guest_max_mem:
   description: |
     The maximum size of memory the user can define.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     a whole number, eg. 512M, 4G.
   in: body
@@ -355,7 +356,8 @@ userid_list_guest:
   type: string
 stats_guest:
   description: |
-    cpu and memory statics of guest
+    CPU and memory statistics of guests, as a dictionary where the
+    key is the userid and the value is the CPU and memory statistics.
   in: body
   required: true
   type: dict
@@ -561,7 +563,7 @@ action_resize_mem_of_guest:
 mem_size:
   description: |
     The size of memory that the guest should have after resize.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     an integer, eg. 512M, 4G.
   in: body
@@ -1109,7 +1111,7 @@ nic_comments:
   type: string
 nic_port:
   description: |
-    nic identyifier.
+    nic identifier.
   in: body
   required: true
   type: string
@@ -1194,13 +1196,13 @@ volume_fcp:
   type: string
 volume_wwpn:
   description: |
-    World Wide Port Number, must be start with ``0x``, for example ``0x50050763050b073d``
+    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``
   in: body
   required: true
   type: string
 volume_lun:
   description: |
-    Logical Unit Number, must be start with ``0x``, for example ``0x4020400100000000``
+    Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``
   in: body
   required: true
   type: string
@@ -1376,3 +1378,135 @@ healthy:
   in: body
   required: true
   type: boolean
+guest_cpus:
+  description: |
+    The count of virtual CPUs for the guest.
+  in: body
+  required: true
+  type: integer
+used_cpu_time_us:
+  description: |
+    The CPU time used in microseconds.
+  in: body
+  required: true
+  type: integer
+elapsed_cpu_time_us:
+  description: |
+    The CPU time elapsed in microseconds.
+  in: body
+  required: true
+  type: integer
+min_cpu_count:
+  description: |
+    The minimal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+max_cpu_limit:
+  description: |
+    The maximal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+samples_cpu_in_use:
+  description: |
+    Samples CPU in use.
+  in: body
+  required: true
+  type: integer
+samples_cpu_delay:
+  description: |
+    Samples CPU delay.
+  in: body
+  required: true
+  type: integer
+used_mem_kb:
+  description: |
+    Memory size used by the guest, in KBytes.
+  in: body
+  required: true
+  type: integer
+max_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+min_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+shared_mem_kb:
+  description: |
+    Shared memory in KBytes.
+  in: body
+  required: true
+  type: integer
+total_memory:
+  description: |
+    Total memory.
+  in: body
+  required: true
+  type: integer
+available_memory:
+  description: |
+    Available memory.
+  in: body
+  required: true
+  type: integer
+free_memory:
+  description: |
+    Free memory.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx:
+  description: |
+    Number of received frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx:
+  description: |
+    Number of transmitted frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_dsc:
+  description: |
+    Number of received frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_dsc:
+  description: |
+    Number of transmitted frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_err:
+  description: |
+    Number of received frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_err:
+  description: |
+    Number of transmitted frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_rx:
+  description: |
+    Number of received bytes.
+  in: body
+  required: true
+  type: integer
+nic_tx:
+  description: |
+    Number of transmitted bytes.
+  in: body
+  required: true
+  type: integer

@@ -21,6 +21,6 @@
           "mac_addr": "02:00:00:12:34:78",
           "nic_id": "444-555-666"
       }],
-      "active": "True"
+      "active": True
   }
 }
