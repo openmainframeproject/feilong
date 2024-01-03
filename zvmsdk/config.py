@@ -40,7 +40,7 @@ zvm_opts = [
 Directory where log file to be put into.
 
 SDK has a set of logs to help administrator to debug
-and aduit actions performed through SDK. Edit this option
+and audit actions performed through SDK. Edit this option
 if you want to put logs into specified place.
 
 Please ensure the service running on the consume which
@@ -345,7 +345,7 @@ to be False.
 The maximum time waiting until the guest reachable after started.
 
 When starting a guest, specify the timeout value will check the guest status
-untils it becames reachable or timeout.
+until it becomes reachable or timeout.
     '''),
     Opt('softstop_timeout',
         section='guest',
@@ -457,7 +457,7 @@ exhaustion.
         default='127.0.0.1',
         opt_type='str',
         help='''
-The IP address that the SDK server is listen on.
+The IP address that the SDK server is listening on.
 
 When the SDK server deamon starts, it will try to bind to
 this address and port bind_port, and wait for the SDK client
@@ -469,7 +469,7 @@ connection to handle API request.
         opt_type='int',
         default=2000,
         help='''
-The port that the SDK server is listen on.
+The port that the SDK server is listening on.
 
 This will work as a pair with bind_addr when the SDK server daemon
 starts, more info can be found in that configuration description.
@@ -484,7 +484,7 @@ The size of request queue in SDK server.
 
 SDK server maintains a queue to keep all the accepted but not handled requests,
 and the SDK server workers fetch requests from this queue.
-To some extend, this queue size decides the max socket opened in SDK server.
+To some extent, this queue size decides the max socket opened in SDK server.
 This value should be adjusted according to the system resource.
 '''
         ),
