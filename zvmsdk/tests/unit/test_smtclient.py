@@ -1391,6 +1391,49 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(ret[1]['mac_ip_version'], '4')
         self.assertEqual(ret[1]['mac_address'], '02:55:36:5D:48:57')
 
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_disks_info(self, request):
+        userid = 'FakeID'
+        rd = ' '.join((
+            "SMAPI %s API Image_Disk_Query" % userid,
+            "--operands",
+            "-k 'vdasd_id=all'"))
+        data = [
+            "DASD VDEV: 0100",
+            "  RDEV: 6018",
+            "  Access type: R/W",
+            "  Device type: 3390",
+            "  Device size: 17477",
+            "  Device units: Cylinders",
+            "  Device volume label: VM6018",
+            "",
+            "DASD VDEV: 0190",
+            "  RDEV: 6000",
+            "  Access type: R/O",
+            "  Device type: 3390",
+            "  Device size: 214",
+            "  Device units: Cylinders",
+            "  Device volume label: M01RES",
+            ""]
+        request.return_value = {'response': data}
+        ret = self._smtclient.get_disks_info('FakeID')
+        self.assertEqual(1, request.call_count)
+        request.assert_called_once_with(rd)
+        self.assertEqual(ret[0]['vdev'], '0100')
+        self.assertEqual(ret[0]['rdev'], '6018')
+        self.assertEqual(ret[0]['access_type'], 'R/W')
+        self.assertEqual(ret[0]['device_type'], '3390')
+        self.assertEqual(ret[0]['device_size'], 17477)
+        self.assertEqual(ret[0]['device_units'], 'Cylinders')
+        self.assertEqual(ret[0]['volume_label'], 'VM6018')
+        self.assertEqual(ret[1]['vdev'], '0190')
+        self.assertEqual(ret[1]['rdev'], '6000')
+        self.assertEqual(ret[1]['access_type'], 'R/O')
+        self.assertEqual(ret[1]['device_type'], '3390')
+        self.assertEqual(ret[1]['device_size'], 214)
+        self.assertEqual(ret[1]['device_units'], 'Cylinders')
+        self.assertEqual(ret[1]['volume_label'], 'M01RES')
+
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'query_vswitch')

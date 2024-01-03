@@ -387,6 +387,41 @@ class SMTClient(object):
                 found_mac = False
         return adapters_info
 
+    def get_disks_info(self, userid):
+        rd = ' '.join((
+            "SMAPI %s API Image_Disk_Query" % userid,
+            "--operands",
+            "-k 'vdasd_id=all'"))
+        results = None
+        action = "get disk info of all disks"
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+            ret = results['response']
+            disks_info = []
+            disk = dict()
+            for line in ret:
+                if line != "":
+                    key = line.split(':')[0].strip()
+                    value = line.split(':')[-1].strip()
+                    if key == 'DASD VDEV':
+                        disk['vdev'] = value
+                    elif key == 'RDEV':
+                        disk['rdev'] = value
+                    elif key == 'Access type':
+                        disk['access_type'] = value
+                    elif key == 'Device type':
+                        disk['device_type'] = value
+                    elif key == 'Device size':
+                        disk['device_size'] = int(value)
+                    elif key == 'Device units':
+                        disk['device_units'] = value
+                    elif key == 'Device volume label':
+                        disk['volume_label'] = value
+                else:
+                    disks_info.append(disk)
+                    disk = dict()
+        return disks_info
+
     def _parse_vswitch_inspect_data(self, rd_list):
         """ Parse the Virtual_Network_Vswitch_Query_Byte_Stats data to get
         inspect data.

@@ -116,6 +116,7 @@ ROUTE_LIST = (
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,
         'PUT': guest.guest_config_disks,
+        'GET': guest.guest_get_disks_info,
     }),
     ('/smapi-healthy', {
         'GET': healthy.healthy,

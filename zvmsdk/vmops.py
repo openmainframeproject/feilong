@@ -149,6 +149,14 @@ class VMOps(object):
             raise exception.SDKInternalError(msg=msg, modID='guest')
         return {'adapters': adapters_info}
 
+    def get_disks_info(self, userid):
+        disks_info = self._smtclient.get_disks_info(userid)
+        if not disks_info:
+            msg = 'Get disks information failed on: %s' % userid
+            LOG.error(msg)
+            raise exception.SDKInternalError(msg=msg, modID='guest')
+        return {'minidisks': disks_info}
+
     def instance_metadata(self, instance, content, extra_md):
         pass
 
