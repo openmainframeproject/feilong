@@ -198,6 +198,14 @@ disk_list_guest:
   in: body
   required: false
   type: list
+minidisks_guest:
+  description: |
+    A list of disks info for the guest.
+    Each entry in this list describes a minidisk and is a dictionary
+    that contains some of the below keys.
+  in: body
+  required: false
+  type: list
 add_mdisk_disk_vdev:
   description: |
     when adding mdisk (either add after create or during create guest)
@@ -206,6 +214,12 @@ add_mdisk_disk_vdev:
     direct has something like `MDISK 0123`
   in: body
   required: false
+  type: string
+get_mdisk_disk_vdev:
+  description:
+    the virtual device number of the disk.
+  in: body
+  required: true
   type: string
 guest_ipl_from:
   description: |
@@ -1239,6 +1253,18 @@ vdev_disk:
   in: body
   required: true
   type: string
+rdev_disk:
+  description: |
+    the real device number of the disk.
+  in: body
+  required: true
+  type: string
+access_type:
+  description: |
+    type of access to the disk, either ``R/O`` or ``R/W``.
+  in: body
+  required: true
+  type: string
 disk_pool_output:
   description: |
     disk pool, the format is ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
@@ -1249,6 +1275,24 @@ size_output:
   description: |
     size of disk, case insensitive, the unit can be in Megabytes (M),
     Gigabytes (G), for example, please ``512M``, ``1g``.
+  in: body
+  required: true
+  type: string
+size_no_unit:
+  description: |
+    the size of the disk, without unit.
+  in: body
+  required: true
+  type: integer
+device_units:
+  description: |
+    the unit for the size of the disk, for example ``Cylinders``.
+  in: body
+  required: true
+  type: string
+volume_label:
+  description: |
+    the volume label of the disk.
   in: body
   required: true
   type: string

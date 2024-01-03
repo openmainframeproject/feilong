@@ -216,6 +216,39 @@ Create a vm in z/VM
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_output.tpl
    :language: javascript
 
+Get guest minidisks info
+------------------------
+
+**GET /guests/{userid}/disks**
+
+List characteristics of all disks of a guest
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - minidisks: minidisks_guest
+  - vdev: get_mdisk_disk_vdev
+  - rdev: rdev_disk
+  - access_type: access_type
+  - device_size: size_no_unit
+  - device_units: device_units
+  - volume_label: volume_label
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_info_output.tpl
+   :language: javascript
+
 Guest add disks
 ---------------
 
