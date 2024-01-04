@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017, 2022 IBM Corp.
+# Copyright 2017, 2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -652,8 +652,9 @@ class RESTClientTestCase(unittest.TestCase):
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
+        # **kwargs accepts the key=val arguments
         self.client.call("guest_create_network_interface", self.fake_userid,
-                         'rhel7.2', networks, active=False)
+                         'rhel7.2', networks, False)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

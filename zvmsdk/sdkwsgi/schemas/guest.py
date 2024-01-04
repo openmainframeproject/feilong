@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -95,7 +95,7 @@ create_network_interface = {
                 'guest_networks': parameter_types.network_list,
                 'active': parameter_types.boolean,
             },
-            'required': ['os_version', 'guest_networks'],
+            'required': ['os_version', 'guest_networks', 'active'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
