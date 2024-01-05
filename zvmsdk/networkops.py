@@ -106,6 +106,9 @@ class NetworkOPS(object):
         self._smtclient.delete_nic(userid, vdev,
                                     active=active)
 
+    def get_switch_info(self, portid):
+        return self._smtclient.get_switch_info(portid)
+
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
         if self._smtclient.is_rhcos(os_version):

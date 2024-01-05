@@ -907,7 +907,7 @@ class HandlersGuestTest(SDKWSGITest):
         os_version = 'rhel6'
         vdev = '1000'
         bstr = """{"interface": {"os_version": "rhel6",
-                                 "vdev": "1000"}}"""
+                                 "vdev": "1000", "active": "True"}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -918,7 +918,7 @@ class HandlersGuestTest(SDKWSGITest):
             FAKE_USERID,
             os_version,
             vdev,
-            active=False)
+            active=True)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
