@@ -2103,3 +2103,27 @@ Export file from Feilong, internal use only.
 
 The response body contains the raw binary data that represents the actual file.
 The Content-Type header contains the application/octet-stream value.
+
+
+Get Switch information based on port id
+--------------------
+
+**GET /switch
+
+Get Switch information based on port id.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - portid: port id
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_switch_record.tpl
+   :language: javascript
+

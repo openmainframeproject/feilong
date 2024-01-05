@@ -1471,6 +1471,9 @@ class SMTClient(object):
                    image_file, transportfiles, image_disk_type, nic_id,
                    fixed_ip_parameter]
 
+    def get_switch_info(self, portid):
+        return self._NetDbOperator.switch_select_record(nic_id=portid)
+
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
         smt_userid = zvmutils.get_smt_userid()
