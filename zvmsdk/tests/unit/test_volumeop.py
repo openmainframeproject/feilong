@@ -2103,7 +2103,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2166,7 +2166,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182'],
                            'target_lun': '2222',
                            'zvm_fcp': ['E83C', 'D83C'],
@@ -2194,7 +2194,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2258,7 +2258,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2313,7 +2313,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076d8500005182',
                                            '20076d8500005183'],
                            'target_lun': '2222',
@@ -2323,14 +2323,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'fcp_template_id': 'tmpl_id',
                            'is_root_volume': False}
         mock_check_userid.return_value = True
-        multipath = True
         # case1: do_rollback as False
         connection_info['do_rollback'] = False
         self.volumeops.attach(connection_info)
         mock_do_attach.assert_called_once_with(
             connection_info['zvm_fcp'], connection_info['assigner_id'].upper(),
             connection_info['target_wwpn'], connection_info['target_lun'],
-            multipath, connection_info['os_version'],
+            connection_info['multipath'], connection_info['os_version'],
             connection_info['mount_point'], connection_info['is_root_volume'],
             connection_info['fcp_template_id'], do_rollback=False
         )
@@ -2341,7 +2340,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_do_attach.assert_called_once_with(
             connection_info['zvm_fcp'], connection_info['assigner_id'].upper(),
             connection_info['target_wwpn'], connection_info['target_lun'],
-            multipath, connection_info['os_version'],
+            connection_info['multipath'], connection_info['os_version'],
             connection_info['mount_point'], connection_info['is_root_volume'],
             connection_info['fcp_template_id'], do_rollback=True
         )
@@ -2357,7 +2356,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2401,7 +2400,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2462,7 +2461,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2524,7 +2523,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2588,7 +2587,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'false',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2650,7 +2649,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'False',
+                           'multipath': False,
                            'target_wwpn': ['20076D8500005181',
                                            '20076D8500005182'],
                            'target_lun': '2222',
@@ -2723,7 +2722,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2784,7 +2783,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076d8500005182',
                                            '20076d8500005183'],
                            'target_lun': '2222',
@@ -2795,12 +2794,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info['do_rollback'] = False
         connection_info['is_root_volume'] = False
         connection_info['update_connections_only'] = False
-        multipath = True
         self.volumeops.detach(connection_info)
         mock_do_detach.assert_called_once_with(
             connection_info['zvm_fcp'], connection_info['assigner_id'].upper(),
             connection_info['target_wwpn'], connection_info['target_lun'],
-            multipath, connection_info['os_version'],
+            connection_info['multipath'], connection_info['os_version'],
             connection_info['mount_point'], connection_info['is_root_volume'],
             connection_info['update_connections_only'], do_rollback=False
         )
@@ -2811,7 +2809,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_do_detach.assert_called_once_with(
             connection_info['zvm_fcp'], connection_info['assigner_id'].upper(),
             connection_info['target_wwpn'], connection_info['target_lun'],
-            multipath, connection_info['os_version'],
+            connection_info['multipath'], connection_info['os_version'],
             connection_info['mount_point'], connection_info['is_root_volume'],
             connection_info['update_connections_only'], do_rollback=True
         )
@@ -2827,7 +2825,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2878,7 +2876,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'True',
+                           'multipath': True,
                            'target_wwpn': ['20076D8500005182',
                                            '20076D8500005183'],
                            'target_lun': '2222',
@@ -2928,7 +2926,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
-                           'multipath': 'False',
+                           'multipath': False,
                            'target_wwpn': ['1111'],
                            'target_lun': '2222',
                            'zvm_fcp': ['283c'],
