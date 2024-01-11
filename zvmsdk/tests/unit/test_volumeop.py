@@ -1408,7 +1408,7 @@ class TestFCPManager(base.SDKTestCase):
                             template_id_2),
                             # unallocated_but_active
                             ('1b01', '', 0, 0, 'c05076de3300d83c',
-                            'c05076de33002641', '35', '02a4', 'active', 'owner2',
+                            'c05076de33002642', '35', '02a4', 'active', 'owner2',
                             ''),
                             ('1b02', 'user2', 1, 1, 'c05076de3300d83c',
                             'c05076de33002641', '27', '02e4', 'active', '',
@@ -1420,7 +1420,7 @@ class TestFCPManager(base.SDKTestCase):
                             template_id_2),
                             # unallocated_but_active
                             ('1c02', '', 0, 0, 'c05076de3300d83c',
-                            'c05076de33002641', '35', '02a4', 'active', 'owner3',
+                            'c05076de33002642', '35', '02a4', 'active', 'owner3',
                             '')]
             fcp_id_list_1 = [fcp_info[0] for fcp_info in fcp_info_list_1]
             fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
@@ -1458,6 +1458,7 @@ class TestFCPManager(base.SDKTestCase):
                 "lpar": "fake_lpar_name",
                 "hypervisor_hostname": "fake_hypervisor_hostname",
                 "pchids": ["02E4"],
+                'pchid_to_phy_wwpn': {'02E4': 'c05076de33002641'},
                 "statistics": {
                     0: {
                             "total": "1A00, 1F00",
@@ -1505,6 +1506,8 @@ class TestFCPManager(base.SDKTestCase):
                 "lpar": "fake_lpar_name",
                 "hypervisor_hostname": "fake_hypervisor_hostname",
                 "pchids": ["02A4", "02E4"],
+                'pchid_to_phy_wwpn': {'02A4': 'c05076de33002642',
+                                      '02E4': 'c05076de33002641'},
                 "statistics": {
                     0: {
                             "total": "1B00",
@@ -1553,6 +1556,8 @@ class TestFCPManager(base.SDKTestCase):
                 "lpar": "fake_lpar_name",
                 "hypervisor_hostname": "fake_hypervisor_hostname",
                 "pchids": ["02A4", "02E4"],
+                'pchid_to_phy_wwpn': {'02A4': 'c05076de33002642',
+                                      '02E4': 'c05076de33002641'},
                 "statistics": {
                     0: {
                             "total": "1C00, 1C02",
@@ -1572,6 +1577,20 @@ class TestFCPManager(base.SDKTestCase):
                             'pchids': {'02E4': '27', '02A4': '35'}}
                 }
             }
+            expected_4 = {
+                "id": template_id_1,
+                "name": "name1",
+                "description": "desc1",
+                "host_default": True,
+                "storage_providers": ["sp1"],
+                'min_fcp_paths_count': 2,
+                "cpc_sn": "fake_cpc_sn",
+                "cpc_name": "fake_cpc_name",
+                "lpar": "fake_lpar_name",
+                "hypervisor_hostname": "fake_hypervisor_hostname",
+                "pchids": ["02E4"],
+                'pchid_to_phy_wwpn': {'02E4': 'c05076de33002641'}
+                }
             expected_all = {
                 "fcp_templates": [expected_1, expected_2, expected_3]}
             result_all = self.fcpops.get_fcp_templates_details(raw=False,
@@ -1595,6 +1614,14 @@ class TestFCPManager(base.SDKTestCase):
                                                     sync_with_zvm=True)
             mock_raw.assert_called()
             mock_sync.assert_called()
+
+            # case4: get_fcp_templates_details when statistics is False
+            result = self.fcpops.get_fcp_templates_details(template_id_list=[template_id_1],
+                                                             raw=False,
+                                                             statistics=False,
+                                                             sync_with_zvm=False)
+            expected = {'fcp_templates': [expected_4]}
+            self.assertDictEqual(result, expected)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
