@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1957,7 +1957,14 @@ class SMTClient(object):
                                     nic=vdev, userid=userid,
                                     create_err=msg1, revoke_err=msg2)
 
-        self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
+        # Add vm active info to comments field to be consumed by
+        # neutron-zvm-agent. python uses True/False but json uses true/false.
+        if active:
+            comments = "{\"active\": true}"
+        else:
+            comments = "{\"active\": false}"
+        LOG.info("Set comments to be %s in _create_nic." % comments)
+        self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id, comments=comments)
         msg = ('Create nic device %(vdev)s for guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
@@ -3459,8 +3466,17 @@ class SMTClient(object):
                 def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
                 att_OSA_device = str(hex(int(att_OSA_device, 16) + 1))[2:]
 
-        OSA_desc = 'OSA=%s' % OSA_device
-        self._NetDbOperator.switch_add_record(userid, vdev, comments=OSA_desc)
+        # OSA_desc = 'OSA=%s' % OSA_device
+        # Add vm active info to comments field to be consumed by
+        # neutron-zvm-agent. python uses True/False but json uses true/false.
+        # OSA_desc isn't used currently, so comment it out. Later we can add
+        # it back if needed.
+        if active:
+            comments = "{\"active\": true}"
+        else:
+            comments = "{\"active\": false}"
+        LOG.info("Set comments to be %s in _dedicate_OSA." % comments)
+        self._NetDbOperator.switch_add_record(userid, vdev, comments=comments)
         msg = ('Dedicate nic device %(vdev)s of guest %(vm)s '
                'to OSA device %(osa)s successfully'
                 % {'vdev': vdev, 'vm': userid, 'osa': OSA_device})
