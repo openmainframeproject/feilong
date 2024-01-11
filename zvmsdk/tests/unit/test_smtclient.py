@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -2105,7 +2105,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      mac_addr='11:22:33:44:55:66',
                                      active=True)
         add_record.assert_called_once_with("fakenode", "fake_vdev",
-                                            port="fake_nic")
+                                            port="fake_nic",
+                                            comments='{"active": true}')
         rd1 = ' '.join((
             'SMAPI fakenode API Virtual_Network_Adapter_Create_Extended_DM',
             "--operands",
@@ -2140,7 +2141,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      mac_addr='11:22:33:44:55:66',
                                      active=False)
         add_record.assert_called_once_with("fakenode", "fake_vdev",
-                                            port="fake_nic")
+                                            port="fake_nic",
+                                            comments='{"active": false}')
         cnie.assert_called_once_with(mock.ANY, 'fakenode', 'fake_vdev')
         rd1 = ' '.join((
             'SMAPI fakenode API Virtual_Network_Adapter_Create_Extended_DM',
@@ -3689,7 +3691,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 "--operands -v 1001 -r f001")
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
                                 "--operands -v 1002 -r f002")
-        add_rec.assert_called_once_with('userid', '1000', comments='OSA=f000')
+        add_rec.assert_called_once_with('userid', '1000', comments='{"active": false}')
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_private_dedicate_OSA_notActive_Fail_Input(self, request):
@@ -3759,7 +3761,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 "--operands -v 1001 -r f001")
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
                                 "--operands -v 1002 -r f002")
-        add_rec.assert_called_once_with('userid', '1000', comments='OSA=f000')
+        add_rec.assert_called_once_with('userid', '1000', comments='{"active": true}')
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, 'get_power_state')
