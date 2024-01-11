@@ -1908,19 +1908,10 @@ class FCPManager(object):
                 if template_id in statistics_usage:
                     base_info.update(
                         {"statistics": statistics_usage[template_id]})
-                    # Add pchids info
-                    pchids = []
-                    for _, path_detail in statistics_usage[template_id].items():
-                        if path_detail['pchids']:
-                            pchids.extend(list(path_detail['pchids'].keys()))
-                    pchids = list(set(pchids))
-                    pchids.sort()
-                    base_info.update({"pchids": pchids})
                 else:
                     # some templates do not have fcp devices or do not have
                     # valid fcp in zvm, so do not have statistics_usage data
                     base_info.update({"statistics": {}})
-                    base_info.update({"pchids": []})
             # after join statistics info, template_info format is like this:
             # {
             #     temlate_id: {
@@ -1951,6 +1942,12 @@ class FCPManager(object):
         # Get hypervisor_hostname
         hypervisor_hostname = zvmutils.get_zvm_name()
         for item in ret:
+            # Add pchids info
+            pchids = self.db.get_pchids_by_fcp_template(item["id"])
+            pchids.sort()
+            item["pchids"] = pchids
+            # Add pchid_to_phy_wwpn info
+            item["pchid_to_phy_wwpn"] = self.db.get_wwpn_phy_from_pchids(pchids)
             # Add cpc_sn info
             item["cpc_sn"] = cpc_sn
             # Add cpc_name info
