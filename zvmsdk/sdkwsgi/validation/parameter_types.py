@@ -261,7 +261,7 @@ userid = {
     'type': ['string'],
     'minLength': 1,
     'maxLength': 8,
-    'pattern': '^(\w{,8})$'
+    'pattern': '^[a-zA-Z0-9]{1,8}$'
 }
 
 
@@ -301,7 +301,7 @@ userid_or_None = {
     'oneOf': [
         {'type': 'null'},
         {'type': ['string'], 'minLength': 1,
-         'maxLength': 8, 'pattern': '^(\w{,8})$'}
+         'maxLength': 8, 'pattern': '^[a-zA-Z0-9]{1,8}$'}
     ]
 }
 
@@ -334,14 +334,14 @@ cidr = {
 userid_list = {
     'type': ['string'],
     # TODO:validate userid_list in inspect APIs
-    'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
+    'pattern': '^(\s*[a-zA-Z0-9]{1,8}\s*)(,\s*[a-zA-Z0-9]{1,8}\s*){0,}$'
 }
 
 userid_list_array = {
     'items': {
         'type': ['string'],
         'minLength': 1,
-        'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
+        'pattern': '^(\s*[a-zA-Z0-9]{1,8}\s*)(,\s*[a-zA-Z0-9]{1,8}\s*){0,}$'
 
     },
     'type': 'array'
