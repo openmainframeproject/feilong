@@ -665,8 +665,7 @@ class RESTClientTestCase(unittest.TestCase):
         method = 'DELETE'
         url = '/guests/%s/interface' % self.fake_userid
         body = {'interface': {'os_version': 'rhel7.2',
-                              'vdev': '123',
-                              'active': False}}
+                              'vdev': '123'}}
         body = json.dumps(body)
         header = self.headers
         full_uri = self.base_url + url
@@ -674,7 +673,19 @@ class RESTClientTestCase(unittest.TestCase):
         get_token.return_value = self._tmp_token()
 
         self.client.call("guest_delete_network_interface", self.fake_userid,
-                         'rhel7.2', '123', active=False)
+                         'rhel7.2', '123', False)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+        request.reset_mock()
+        kwargs = {'active': True}
+        self.client.call("guest_delete_network_interface", self.fake_userid,
+                         'rhel7.2', '123', **kwargs)
+        body = {'interface': {'os_version': 'rhel7.2',
+                              'vdev': '123',
+                              'active': True}}
+        body = json.dumps(body)
+        request.return_value = self.response
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

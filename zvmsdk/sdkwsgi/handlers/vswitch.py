@@ -104,6 +104,10 @@ class VswitchAction(object):
                                             name, userid, vlanid)
             return info
 
+    def host_get_switch_info(self, portid):
+        info = self.client.send_request('get_switch_info', portid)
+        return info
+
 
 def get_action():
     global _VSWITCHACTION
@@ -205,4 +209,23 @@ def vswitch_query(req):
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_switch_info(req):
+
+    def _get_switch_info(req):
+        action = get_action()
+        req_str = req.body.decode('utf-8')
+        json_data = json.loads(req_str)
+        portid = json_data.get('portid', None)
+        return action.host_get_switch_info(portid)
+
+    info = _get_switch_info(req)
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
     return req.response
