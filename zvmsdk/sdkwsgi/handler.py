@@ -165,6 +165,9 @@ ROUTE_LIST = (
         'DELETE': vswitch.vswitch_delete,
         'PUT': vswitch.vswitch_update,
     }),
+    ('/vswitch', {
+        'GET': vswitch.get_switch_info,
+    }),
 )
 
 
