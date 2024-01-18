@@ -2271,6 +2271,32 @@ class FCPDbOperator(object):
                      "template, template_sp_mapping and "
                      "template_fcp_mapping tables" % template_id)
 
+    def get_wwpn_phy_from_pchids(self, pchids):
+        """Get wwpn_phy info of multiple pchids.
+
+        :param pchids: (list) Physical channel ID list of FCP devices
+
+        :return pchid_to_phy_wwpn_dict: (dict) PCHID as key, Physical WWPN as value
+            for example:
+            {
+                '02E4': 'c05076de33002e41',
+                '021C': 'c05076de330021c1'
+            }
+        """
+        pchid_to_phy_wwpn_dict = {}
+        with get_fcp_conn() as conn:
+            result = conn.execute(
+                    "SELECT DISTINCT pchid, wwpn_phy "
+                    "FROM fcp "
+                    "WHERE pchid IN (%s)" %
+                    ','.join('?' * len(pchids)),
+                    pchids)
+
+            raw = result.fetchall()
+        for item in raw:
+            pchid_to_phy_wwpn_dict.update({item['pchid'].upper(): item['wwpn_phy']})
+        return pchid_to_phy_wwpn_dict
+
 
 class ImageDbOperator(object):
 

@@ -1416,6 +1416,16 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
+    def get_switch_info(self, portid):
+        """get switch information based on portid
+
+        :param str portid: the id of the port
+        :returns: list includes  switch db record information.
+                  [{'userid': 'WGNZ0046', 'interface': '4000', 'switch': 'VSICIC',
+                  'port': '61343f8c-dc88-41b2-be74-ad81fe018856', 'comments': None}]
+        """
+        return self._networkops.get_switch_info(portid)
+
     @check_guest_exist(check_index=1)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch

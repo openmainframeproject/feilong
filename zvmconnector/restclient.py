@@ -666,6 +666,13 @@ def req_vswitch_create(start_index, *args, **kwargs):
     return url, body
 
 
+def req_get_switch_info(start_index, *args, **kwargs):
+    url = '/vswitch'
+    body = {'portid': args[start_index]}
+    fill_kwargs_in_body(body, **kwargs)
+    return url, body
+
+
 def req_vswitch_delete(start_index, *args, **kwargs):
     url = '/vswitches/%s'
     body = None
@@ -886,6 +893,7 @@ DATABASE = {
     'guest_delete_network_interface': {
         'method': 'DELETE',
         'args_required': 3,
+        'args_optional': 1,
         'params_path': 1,
         'request': req_guest_delete_network_interface},
     'guest_get_power_state': {
@@ -1055,6 +1063,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 0,
         'request': req_vswitch_create},
+    'get_switch_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_get_switch_info},
     'vswitch_delete': {
         'method': 'DELETE',
         'args_required': 1,

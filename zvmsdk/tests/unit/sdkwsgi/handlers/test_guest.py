@@ -581,10 +581,64 @@ class HandlersGuestTest(SDKWSGITest):
                                             1, 1, user_profile="profile1")
 
     def test_guest_create_invalid_userid(self):
+        body_str = '{"guest": {"userid": "name_1", "vcpus": 1, "memory": 1}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+        body_str = '{"guest": {"userid": "name@1", "vcpus": 1, "memory": 1}}'
+        self.req.body = body_str
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
         body_str = '{"guest": {"userid": ""}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    @mock.patch('zvmsdk.sdkwsgi.handlers.guest._get_userid_list')
+    def test_guest_get_stats_with_invalid_array_useridlist(self, mock_useridlist):
+        # Test invalie userid list
+        fake_userid_list = {'userid': ['name_1', 'name2']}
+        mock_useridlist.reture_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_stats,
+                          self.req)
+
+        mock_useridlist.reset()
+        fake_userid_list = {'userid': ['name@1', 'name2']}
+        mock_useridlist.return_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_stats,
+                          self.req)
+
+        mock_useridlist.reset()
+        fake_userid_list = {'userid': ['name12345', 'name2']}
+        mock_useridlist.reture_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_stats,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_get_power_state_with_invalid_useridlist(self, mock_wsig_item):
+        fake_userid_list = {'userid': 'name_1, name2'}
+        mock_wsig_item.return_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_power_state,
+                          self.req)
+
+        mock_wsig_item.reset()
+        fake_userid_list = {'userid': 'name@1, name2'}
+        mock_wsig_item.return_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_power_state,
+                          self.req)
+
+        fake_userid_list = {'userid': 'name12345, name2'}
+        mock_wsig_item.return_value = fake_userid_list
+        self.req.environ = {'wsgiorg.routing_args': [False, fake_userid_list]}
+        self.assertRaises(exception.ValidationError, guest.guest_get_power_state,
                           self.req)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
@@ -853,7 +907,7 @@ class HandlersGuestTest(SDKWSGITest):
         os_version = 'rhel6'
         vdev = '1000'
         bstr = """{"interface": {"os_version": "rhel6",
-                                 "vdev": "1000"}}"""
+                                 "vdev": "1000", "active": "True"}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -864,7 +918,7 @@ class HandlersGuestTest(SDKWSGITest):
             FAKE_USERID,
             os_version,
             vdev,
-            active=False)
+            active=True)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')

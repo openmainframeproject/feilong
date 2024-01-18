@@ -1135,21 +1135,6 @@ function refreshFCPBootmap {
       inform "The number of online FCP devices: $onlinefcpscount satisfies the required minimum FCP path count: $minfcp."
   fi
 
-  # use the `lszfcp -P` cmd to get the valid combinations of (fcp,wwpn)
-  # sample output:
-  #[root@112-cmp-ydy ~]# lszfcp -P
-  # 0.0.1c04/0x5005076306105388 rport-0:0-0
-  # 0.0.1c04/0x5005076306035388 rport-0:0-1
-  # 0.0.1c04/0x500507680b22bac7 rport-0:0-10
-  # 0.0.1c04/0x500507680d760027 rport-0:0-2
-  
-  # sample lszfcp_output:
-  # 0.0.1c04 0x5005076306105388
-  # 0.0.1c04 0x5005076306035388
-  # 0.0.1c04 0x500507680b22bac7
-  # 0.0.1c04 0x500507680d760027
-  lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-  inform "Output of 'lszfcp -P': $lszfcp_output."
   declare -A valid_paths_dict
   valid_paths_count=0
   rd_zfcp=""
@@ -1158,30 +1143,66 @@ function refreshFCPBootmap {
   # (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
   for fcp in "${INPUT_FCPS[@]}"
   do
-      # match accessable target wwpns of this fcp
-      for wwpn in "${INPUT_WWPNS[@]}"
+      # Retry each FCP device to make sure there are matched WWPNs for it
+      retry_num=10
+      while [[ $retry_num -gt 0 ]]
       do
-          fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
-          if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
-              # add this combination into valid paths
-              inform "Found one valid path: ($fcp,0x$wwpn)."
-              if [[ -z ${valid_paths_dict[$fcp]} ]]; then
-                  valid_paths_dict+=([$fcp]="$wwpn")
-              else
-                  old_value=${valid_paths_dict[$fcp]}
-                  new_value=${old_value}" "$wwpn
-                  valid_paths_dict[$fcp]=$new_value
+          # use the `lszfcp -P` cmd to get the valid combinations of (fcp,wwpn)
+          # sample output:
+          #[root@112-cmp-ydy ~]# lszfcp -P
+          # 0.0.1c04/0x5005076306105388 rport-0:0-0
+          # 0.0.1c04/0x5005076306035388 rport-0:0-1
+          # 0.0.1c04/0x500507680b22bac7 rport-0:0-10
+          # 0.0.1c04/0x500507680d760027 rport-0:0-2
+          # sample lszfcp_output:
+          # 0.0.1c04 0x5005076306105388
+          # 0.0.1c04 0x5005076306035388
+          # 0.0.1c04 0x500507680b22bac7
+          # 0.0.1c04 0x500507680d760027
+          lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
+          inform "Output of 'lszfcp -P': $lszfcp_output."
+          # Get WWPNs under /sys/bus/ccw/drivers/zfcp/.
+          wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
+          inform "Target WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/: $wwpns_shown_in_sys"
+          # Try to find match between system WWPNs(from lszfcp output or under /sys) and input WWPNs
+          found_match=0
+
+          # match accessable target wwpns of this fcp
+          for wwpn in "${INPUT_WWPNS[@]}"
+          do
+              fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
+              if [[ $lszfcp_output =~ $fcp_wwpn_str || $wwpns_shown_in_sys =~ $wwpn ]]; then
+                  found_match=1
+                  # add this combination into valid paths
+                  inform "Found one valid path: ($fcp,0x$wwpn)."
+                  if [[ -z ${valid_paths_dict[$fcp]} ]]; then
+                      valid_paths_dict+=([$fcp]="$wwpn")
+                  else
+                      old_value=${valid_paths_dict[$fcp]}
+                      new_value=${old_value}" "$wwpn
+                      valid_paths_dict[$fcp]=$new_value
+                  fi
+                  # increase valid_paths_count
+                  ((valid_paths_count=$valid_paths_count+1))
+                  # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
+                  # set the kernel command line in zipl.conf to refresh zipl
+                  rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
               fi
-              # increase valid_paths_count
-              ((valid_paths_count=$valid_paths_count+1))
-              # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
-              # set the kernel command line in zipl.conf to refresh zipl
-              rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
+          done
+
+          # If no matched wwpn found, need retry
+          if [[ $found_match -eq 0 ]]; then
+              sleep 1
+              retry_num=$((retry_num-1))
+              inform "Retrying to get the target WWPNs for FCP device $fcp, $retry_num times left..."
+          else
+              inform "Found target WWPNs ${valid_paths_dict[$fcp]} for FCP device $fcp."
+              break
           fi
       done
   done
 
-  # check whether there is valid combination of FCP and target wwpns found from the `lszfcp -P`
+  # check whether there is valid combination of FCP and target wwpns found from either `lszfcp -P` or wwpns_shown_in_sys
   if [[ $valid_paths_count -le 1 ]]; then
       printError "Exit MSG: At least 2 paths are required for the server to boot, but ${valid_paths_count} valid path found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}."
       exit 18
