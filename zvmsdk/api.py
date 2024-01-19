@@ -977,6 +977,11 @@ class SDKAPI(object):
 
         if not user_profile or len(user_profile) == 0:
             user_profile = CONF.zvm.user_profile
+            if not user_profile:
+                errmsg = ('Invalid "user_profile" input, user_profile  '
+                        'cannot be empty.')
+                LOG.error(errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
