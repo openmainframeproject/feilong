@@ -38,6 +38,7 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(2355.2, zvmutils.convert_to_mb('2.3G'))
         self.assertEqual(20, zvmutils.convert_to_mb('20M'))
         self.assertEqual(1153433.6, zvmutils.convert_to_mb('1.1T'))
+        self.assertEqual(16384, zvmutils.convert_to_mb('17179869184'))
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     def test_get_namelist(self, gsu):
