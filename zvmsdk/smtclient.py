@@ -4294,24 +4294,22 @@ class SMTClient(object):
 
     def _get_active_memory(self, userid):
         # Return an integer value representing the active memory size in mb
-        output = self.execute_cmd(userid, "lsmem")
+        output = self.execute_cmd(userid, "lsmem -b")
         active_mem = 0
         for e in output:
             # cmd output contains line starts with "Total online memory",
-            # its format can be like:
-            # "Total online memory : 8192 MB"
-            # or
-            # "Total online memory: 8G"
-            # need handle both formats
+            # its format is like:
+            # Total online memory:        17179869184
             if e.startswith("Total online memory"):
                 try:
-                    # sample mem_info_str: "8192MB" or "8G"
+                    # sample mem_info_str: 17179869184
                     mem_info_str = e.split(':')[1].replace(' ', '').upper()
-                    # make mem_info as "8192M" or "8G"
+                    # mem_info is in Bytes, convert to MB
                     if mem_info_str.endswith('B'):
                         mem_info = mem_info_str[:-1]
                     else:
                         mem_info = mem_info_str
+                    # get from lsmem -b output, must be aligned to memory block size(256M)
                     active_mem = int(zvmutils.convert_to_mb(mem_info))
                 except (IndexError, ValueError, KeyError, TypeError) as e:
                     errmsg = ("Failed to get active storage size for guest: %s"
@@ -4337,6 +4335,7 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
+        # As long as the input size is aligned to 256M, the increase_size is aligned to 256M
         increase_size = size - active_size
 
         # Static resize memory. (increase/decrease memory from user directory)

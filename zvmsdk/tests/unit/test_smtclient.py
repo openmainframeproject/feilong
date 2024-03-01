@@ -4901,54 +4901,37 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     def test_get_active_memory(self, execute_cmd):
         userid = 'testuid'
-        sample_lsmem = [u'Address Range                          Size (MB)  \
-                        State    Removable  Device',
-                        u'==================================================\
-                        =============================',
-                        u'0x0000000000000000-0x000000000fffffff        256  \
-                        online   no         0-1',
-                        u'0x0000000010000000-0x000000003fffffff        768  \
-                        online   yes        2-7',
-                        u'0x0000000040000000-0x000000007fffffff       1024  \
-                        online   no         8-15',
-                        u'0x0000000080000000-0x00000000ffffffff       2048  \
-                        online   yes        16-31',
-                        u'0x0000000100000000-0x0000000fffffffff      61440  \
-                        offline  -          32-511',
-                        u'',
-                        u'Memory device size  : 128 MB',
-                        u'Memory block size   : 256 MB',
-                        u'Total online memory : 4096 MB',
-                        u'Total offline memory: 61440 MB'
+        sample_lsmem = [u'RANGE                                        SIZE   \
+                            STATE REMOVABLE  BLOCK ',
+                        u'0x0000000000000000-0x000000040fffffff 17448304640 \
+                          online       yes   0-64',
+                        u'0x0000000410000000-0x0000000fffffffff 51271172096 \
+                          offline         - 65-255',
+                        u'Total online memory:        17448304640',
+                        u'Total online memory:        17448304640',
+                        u'Total offline memory:       51271172096'
                         ]
         execute_cmd.return_value = sample_lsmem
         active_mem = self._smtclient._get_active_memory(userid)
-        self.assertEqual(active_mem, 4096)
+        self.assertEqual(active_mem, 16640)
 
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    def test_get_active_memory_different_lsmem_output(self, execute_cmd):
+    def test_get_active_memory_exception(self, execute_cmd):
         userid = 'testuid'
-        sample_lsmem = [u'RANGE                           SIZE   \
-                        STATE REMOVABLE  BLOCK',
-                        u'0x0000000000000000-0x000000000fffffff  256M  \
-                        online        no      0',
-                        u'0x0000000010000000-0x000000004fffffff    1G  \
-                        online       yes    1-4',
-                        u'0x0000000050000000-0x000000008fffffff    1G  \
-                        online        no    5-8',
-                        u'0x0000000090000000-0x00000000cfffffff    1G  \
-                        online       yes   9-12'
-                        u'0x00000000d0000000-0x00000000ffffffff  768M  \
-                        online        no  13-15'
-                        u'0x0000000100000000-0x0000000fffffffff   60G \
-                        offline         - 16-255'
-                        u'Memory block size:       256M',
-                        u'Total online memory:      32G',
-                        u'Total offline memory:     32G'
+        sample_lsmem = [u'RANGE                                        SIZE   \
+                            STATE REMOVABLE  BLOCK ',
+                        u'0x0000000000000000-0x000000040fffffff 17448304640 \
+                          online       yes   0-64',
+                        u'0x0000000410000000-0x0000000fffffffff 51271172096 \
+                          offline         - 65-255',
+                        u'Memory block size: 268435456',
+                        u'Total online memory',
+                        u'Total offline memory: 51271172096'
                         ]
         execute_cmd.return_value = sample_lsmem
-        active_mem = self._smtclient._get_active_memory(userid)
-        self.assertEqual(active_mem, 32768)
+        self.assertRaises(exception.SDKInternalError,
+                          self._smtclient._get_active_memory,
+                          userid)
 
     @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
     @mock.patch.object(smtclient.SMTClient, 'resize_memory')
