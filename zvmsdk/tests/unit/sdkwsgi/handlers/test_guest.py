@@ -853,8 +853,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -939,8 +938,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -972,8 +970,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1006,7 +1003,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
                                       "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "True"}}"""
+                                      "active": "True"}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1038,8 +1035,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1071,8 +1067,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1097,8 +1092,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1119,8 +1113,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1141,8 +1134,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -1163,8 +1155,7 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
