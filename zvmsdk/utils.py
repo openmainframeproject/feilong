@@ -124,15 +124,18 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
 
 
 def convert_to_mb(s):
-    """Convert memory size from GB to MB."""
+    """Convert memory size to MB."""
     s = s.upper()
     try:
         if s.endswith('G'):
             return float(s[:-1].strip()) * 1024
         elif s.endswith('T'):
             return float(s[:-1].strip()) * 1024 * 1024
-        else:
+        elif s.endswith('M'):
             return float(s[:-1].strip())
+        else:
+            # s is in Bytes, convert to MB
+            return float(s.strip()) / 1024 / 1024
     except (IndexError, ValueError, KeyError, TypeError):
         errmsg = ("Invalid memory format: %s") % s
         raise exception.SDKInternalError(msg=errmsg)
