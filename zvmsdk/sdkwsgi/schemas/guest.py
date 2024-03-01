@@ -95,7 +95,7 @@ create_network_interface = {
                 'guest_networks': parameter_types.network_list,
                 'active': parameter_types.boolean,
             },
-            'required': ['os_version', 'guest_networks', 'active'],
+            'required': ['os_version', 'guest_networks'],
             'additionalProperties': False,
         },
         'additionalProperties': False,

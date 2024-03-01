@@ -654,7 +654,7 @@ class RESTClientTestCase(unittest.TestCase):
 
         # **kwargs accepts the key=val arguments
         self.client.call("guest_create_network_interface", self.fake_userid,
-                         'rhel7.2', networks, False)
+                         'rhel7.2', networks, active=False)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
