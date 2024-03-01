@@ -363,20 +363,23 @@ class SMTClient(object):
             if 'lan_name=' in line:
                 lan_name = line.strip().split('=')[-1]
                 adapter['lan_name'] = lan_name
-            if 'mac_address=' in line and not found_mac:
-                mac_addr = line.strip().split('=')[-1]
-                pattern = re.compile('.{2}')
-                mac_address = ':'.join(pattern.findall(mac_addr))
-                adapter['mac_address'] = mac_address
+            if 'mac_address=' in line:
+                if not found_mac:
+                    mac_addr = line.strip().split('=')[-1]
+                    pattern = re.compile('.{2}')
+                    mac_address = ':'.join(pattern.findall(mac_addr))
+                    adapter['mac_address'] = mac_address
             if 'mac_ip_version=' in line:
-                ip_version = line.strip().split('=')[-1]
-                adapter['mac_ip_version'] = ip_version
+                if not found_mac:
+                    ip_version = line.strip().split('=')[-1]
+                    adapter['mac_ip_version'] = ip_version
             if 'mac_ip_address=' in line:
                 # once we found mac_ip_address, assume this is the MAC
                 # we are using, then jump to next adapter
-                mac_ip = line.strip().split('=')[-1]
-                adapter['mac_ip_address'] = mac_ip
-                found_mac = True
+                if not found_mac:
+                    mac_ip = line.strip().split('=')[-1]
+                    adapter['mac_ip_address'] = mac_ip
+                    found_mac = True
             if 'adapter_info_end' in line:
                 adapters_info.append(adapter)
                 # clear adapter and process next
