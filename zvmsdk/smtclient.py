@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1479,6 +1479,17 @@ class SMTClient(object):
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
+        # Check if the userid has already been granted for the vswitch,
+        # if yes, then do nothing. Otherwise, it will cause the existing
+        # NICs in the VM down on the vswitch.
+        vsw_info = self.query_vswitch(vswitch_name)
+        if (userid in vsw_info['authorized_users'] or
+            userid.lower() in vsw_info['authorized_users'] or
+            userid.upper() in vsw_info['authorized_users']):
+            LOG.info("The userid %s has already been granted to "
+                     "vswitch %s. Do nothing." % (userid, vswitch_name))
+            return
+
         smt_userid = zvmutils.get_smt_userid()
         requestData = ' '.join((
             'SMAPI %s API Virtual_Network_Vswitch_Set_Extended' % smt_userid,

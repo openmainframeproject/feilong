@@ -1393,8 +1393,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
-    def test_grant_user_to_vswitch(self, request, userid):
+    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
+    def test_grant_user_to_vswitch(self, qvsw, request, userid):
         userid.return_value = 'FakeHostID'
+        qvsw.return_value = {'authorized_users': {'FakeID': 'fake data'}}
         vswitch_name = 'FakeVs'
         userid = 'FakeID'
         requestData = ' '.join((
@@ -1404,6 +1406,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             "-k grant_userid=FakeID",
             "-k persist=YES"))
         self._smtclient.grant_user_to_vswitch(vswitch_name, userid)
+        qvsw.assert_called_once_with(vswitch_name)
+        request.assert_not_called()
+        qvsw.reset_mock()
+        qvsw.return_value = {'authorized_users': {'FakeABC': 'fake data'}}
+        self._smtclient.grant_user_to_vswitch(vswitch_name, userid)
+        qvsw.assert_called_once_with(vswitch_name)
         request.assert_called_once_with(requestData)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
