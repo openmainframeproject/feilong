@@ -222,6 +222,21 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_disks_info")
+    def test_get_disks_info(self, get_disks_info):
+        minidisks = [{'vdev': '0100',
+                      'rdev': '6018',
+                      'access_type': 'R/W',
+                      'device_type': '3390',
+                      'device_size': 29128,
+                      'device_units': 'Cylinders',
+                      'volume_label': 'VM6018'}]
+        get_disks_info.return_value = minidisks
+        ret = self.vmops.get_disks_info('fakeid')
+        first_minidisk = ret['minidisks'][0]
+        self.assertEqual(first_minidisk['device_size'], 29128)
+        self.assertEqual(first_minidisk['device_units'], 'Cylinders')
+
     @mock.patch("zvmsdk.smtclient.SMTClient.get_adapters_info")
     def test_get_adapters_info(self, adapters_info):
         adapters = [{u'lan_owner': u'SYSTEM',

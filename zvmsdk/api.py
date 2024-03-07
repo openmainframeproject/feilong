@@ -251,6 +251,18 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_adapters_info(userid)
 
+    def guest_get_disks_info(self, userid):
+        """Get the disks information of a virtual machine.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                TODO
+        """
+        action = "get disks info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_disks_info(userid)
+
     def guest_get_user_direct(self, userid):
         """Get user direct of the specified guest vm
 

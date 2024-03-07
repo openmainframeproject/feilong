@@ -338,6 +338,12 @@ def req_guest_get_adapters_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_get_disks_info(start_index, *args, **kwargs):
+    url = '/guests/%s/disks'
+    body = None
+    return url, body
+
+
 def req_guest_create_nic(start_index, *args, **kwargs):
     url = '/guests/%s/nic'
     body = {'nic': {}}
@@ -915,6 +921,11 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_config_minidisks},
+    'guest_get_disks_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_disks_info},
     'volume_attach': {
         'method': 'POST',
         'args_required': 1,
