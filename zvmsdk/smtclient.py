@@ -4460,7 +4460,7 @@ class SMTClient(object):
                     self._revert_user_direct(userid, user_direct)
                 # Finally raise the exception
                 raise exception.SDKGuestOperationError(
-                    rs=7, userid=userid, err=err1.format_message())
+                    rs=17, userid=userid, err=err1.format_message())
 
         LOG.info("Live resize memory for guest: '%s' finished successfully."
                  % userid)
