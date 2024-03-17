@@ -62,13 +62,12 @@ class SMAPIStatus():
         self.lock.release()
 
     def Get(self):
-        status = {'SMAPI':
-                  {'totalSuccess': self.totalSuccess,
+        status = {'totalSuccess': self.totalSuccess,
                   'totalFail': self.totalFail,
                   'lastSuccess': self.lastSuccess,
                   'lastFail': self.lastFail,
                   'continuousFail': self.continueFail,
-                  'healthy': self.IsHealthy()}
+                  'healthy': self.IsHealthy()
                  }
         return status
 
