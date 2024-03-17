@@ -2139,9 +2139,9 @@ The Content-Type header contains the application/octet-stream value.
 
 
 Get Switch information based on port id
---------------------
+---------------------------------------
 
-**GET /switch
+**GET /switch**
 
 Get Switch information based on port id.
 
@@ -2149,7 +2149,7 @@ Get Switch information based on port id.
 
 .. restapi_parameters:: parameters.yaml
 
-  - portid: port id
+  - portid: port_id
 
 * Response code:
 
