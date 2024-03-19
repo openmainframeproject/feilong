@@ -260,6 +260,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', True)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
@@ -293,6 +294,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf('zvm', 'user_root_vdev', '0100')
         base.set_conf('zvm', 'disk_pool', None)
         base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', True)
         rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
               '--logonby lbyuser1:lbyuser2 --ipl 0100')
@@ -517,6 +519,147 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_default_with_mdisk(self, add_guest, request, add_mdisks):
+        # Test non-bfv case: swap_default_with_mdisk is True
+        # Verify create the swap device with mdisk
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:testpool',
+                      'format': 'ext3'},
+                     {'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', 'True')
+        add_mdisks.return_value = [{'size': '1g', 'is_boot_disk': True, 'format': 'ext3',
+                                    'vdev': '0100'}, {'size': '1g', 'format': 'swap',
+                                    'vdev': '0101'}]
+        rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
+              '--logonby lbyuser1:lbyuser2 --ipl 0100')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list,
+                                  profile, max_cpu, max_mem, '',
+                                  '', '', [], {}, '', [])
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '1g', 'is_boot_disk': True,
+                     'format': 'ext3',
+                     'vdev': '0100'}, {'size': '1g', 'format': 'swap', 'vdev': '0101'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_not_default_with_mdisk(self, add_guest, request, add_mdisks):
+        # Test non-bfv case: swap_default_with_mdisk is False
+        # Verify create the swap device with vdisk
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '10g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:testpool',
+                      'format': 'ext3'},
+                     {'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', False)
+        add_mdisks.return_value = [{'size': '10g', 'is_boot_disk': True, 'format': 'ext3',
+                                    'vdev': '0100'}]
+        rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
+              '--logonby lbyuser1:lbyuser2 --ipl 0100 --vdisk 0101:1G')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list,
+                                  profile, max_cpu, max_mem, '',
+                                  '', '', [], {}, '', [])
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '10g', 'is_boot_disk': True, 'format': 'ext3',
+                     'vdev': '0100'}, {'format': 'swap', 'size': '1g', 'vdev': '0101'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_only_but_disk_pool_not_None(self, add_guest, request, add_mdisks):
+        # Test the case: bfv with swap, but disk_pool is not None and swap_default_with_mdisk is True
+        # verify swap device is created by mdisk
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', True)
+        add_mdisks.return_value = [{'size': '1g', 'format': 'swap', 'vdev': '0100'}]
+        rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
+              '--logonby lbyuser1:lbyuser2')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list,
+                                  profile, max_cpu, max_mem, '',
+                                  '', '', [], {}, '', [])
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '1g', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_only(self, add_guest, request, add_mdisks):
+        # Test the case: bfv with swap, and disk_pool is None and swap_default_with_mdisk is True
+        # verify swap device is created by mdisk
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+        base.set_conf('zvm', 'swap_default_with_mdisk', True)
+        rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
+              '--logonby lbyuser1:lbyuser2 --vdisk 0100:1G')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list,
+                                  profile, max_cpu, max_mem, '',
+                                  '', '', [], {}, '', [])
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '1g', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
 
     @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
     @mock.patch.object(smtclient.SMTClient, '_request')

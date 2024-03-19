@@ -637,6 +637,31 @@ class SMTClient(object):
             LOG.error(msg)
             raise exception.SDKSMTRequestFailed(err.results, msg)
 
+    def _set_vdisk(self, disk, rd, offset):
+        """Check and set vdev for vdisk"""
+        vd = disk.get('vdev') or self.generate_disk_vdev(offset=offset)
+        disk['vdev'] = vd
+        sizeUpper = disk['size'].strip().upper()
+        sizeUnit = sizeUpper[-1]
+        # vdisk size is not allowed to be more than 2G
+        if sizeUnit != 'M' and sizeUnit != 'G':
+            errmsg = ("%s must has 'M' or 'G' suffix" % sizeUpper)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if sizeUnit == 'M':
+            size = int(sizeUpper[:-1])
+            if size > 2048:
+                errmsg = ("%s is great than 2048M" % sizeUpper)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if sizeUnit == 'G':
+            size = int(sizeUpper[:-1])
+            if size > 2:
+                errmsg = ("%s is great than 2G" % sizeUpper)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
+        rd += ' --vdisk %s:%s' % (vd, sizeUpper)
+        return disk, rd
+
     def _get_ipl_param(self, ipl_from):
         if len(ipl_from) > 0:
             ipl_param = ipl_from
@@ -745,36 +770,35 @@ class SMTClient(object):
         # disk in disk_list and that's swap
         vdisk = None
 
+        # If not swap only case and customer uses vdisk to create
+        # swap disk, we need handle the swap disk and non-swap disk
+        # seperately
+        swap_device = []
+
         # this is swap only case, which means, you only create a swap
         # disk (len disk_list is 1) and no other disks
         if len(disk_list) == 1:
             disk = disk_list[0]
             if 'format' in disk and disk['format'].lower() == 'swap':
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
-                if disk_pool is None:
-                    # if it's vdisk, then create user direct directly
-                    vd = disk.get('vdev') or self.generate_disk_vdev(offset=0)
-                    disk['vdev'] = vd
-                    sizeUpper = disk['size'].strip().upper()
-                    sizeUnit = sizeUpper[-1]
-                    if sizeUnit != 'M' and sizeUnit != 'G':
-                        errmsg = ("%s must has 'M' or 'G' suffix" % sizeUpper)
-                        raise exception.SDKInvalidInputFormat(msg=errmsg)
-
-                    if sizeUnit == 'M':
-                        size = int(sizeUpper[:-1])
-                        if size > 2048:
-                            errmsg = ("%s is great than 2048M" % sizeUpper)
-                            raise exception.SDKInvalidInputFormat(msg=errmsg)
-
-                    if sizeUnit == 'G':
-                        size = int(sizeUpper[:-1])
-                        if size > 2:
-                            errmsg = ("%s is great than 2G" % sizeUpper)
-                            raise exception.SDKInvalidInputFormat(msg=errmsg)
-
-                    rd += ' --vdisk %s:%s' % (vd, sizeUpper)
+                if disk_pool is None or not CONF.zvm.swap_default_with_mdisk:
+                    # If it's swap only case, or disk_pool is not None and the
+                    # user wants to create swap device with vdisk,
+                    # we create user direct directly
+                    disk, rd = self._set_vdisk(disk, rd, 0)
                     vdisk = disk
+        elif len(disk_list) > 1:
+            if not CONF.zvm.swap_default_with_mdisk:
+                # We create swap device with vdisk
+                for i in range(len(disk_list)):
+                    disk = disk_list[i]
+                    if 'format' in disk and disk['format'].lower() == 'swap':
+                        # if it's vdisk, then create user direct directly
+                        disk, rd = self._set_vdisk(disk, rd, len(disk_list) - 1)
+                        # Remove the vdisk from disk_list, then in the following
+                        # we will only add these remaining disks for the userid
+                        disk_list.pop(i)
+                        swap_device.append(disk)
 
         action = "create userid '%s'" % userid
 
@@ -804,14 +828,16 @@ class SMTClient(object):
             self._GuestDbOperator.add_guest(userid)
 
         # Continue to add disk, if vdisk is None, it means
-        # it's not vdisk routine and we need add disks
+        # it's not only one vdisk device and we need add disks.
+        # And we must return all the disks to make guest config handle
+        # other remaining jobs
         if vdisk is None and disk_list:
             # not perform mkfs against root disk
             if disk_list[0].get('is_boot_disk'):
                 disk_list[0].update({'format': 'none'})
-            return self.add_mdisks(userid, disk_list)
+            return self.add_mdisks(userid, disk_list) + swap_device
 
-        # we must return swap disk in order to make guest config
+        # For the swap only case, we must return swap disk in order to make guest config
         # handle other remaining jobs
         return disk_list
 
