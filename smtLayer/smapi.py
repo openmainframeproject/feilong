@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # SMAPI functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
@@ -157,6 +160,10 @@ def invokeSmapiApi(rh):
     parms = ["-T", userid]
     if 'operands' in rh.parms:
         parms.extend(rh.parms['operands'])
+
+    # SSI_Query does not need any param
+    if rh.parms['apiName'] == 'SSI_Query':
+        parms = []
 
     results = invokeSMCLI(rh, rh.parms['apiName'], parms)
     if results['overallRC'] == 0:

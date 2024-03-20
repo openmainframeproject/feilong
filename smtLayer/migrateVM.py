@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # MigrateVM functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
@@ -349,10 +352,10 @@ def moveVM(rh):
     if 'forcestorage' in rh.parms:
         forceOption = forceOption + "STORAGE "
     if forceOption != '':
-        parms.extend(["-k", "\'force=" + forceOption + "\'"])
+        parms.extend(["-k", "force=" + forceOption])
 
     if 'immediate' in rh.parms:
-        parms.extend(["-k", "\'immediate=YES"])
+        parms.extend(["-k", "immediate=YES"])
 
     if 'maxQuiesce' in rh.parms:
         if rh.parms['maxQuiesce'] == -1:

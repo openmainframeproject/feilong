@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -17,7 +20,7 @@ import sys
 
 
 __all__ = ['__version__']
-__version__ = '1.4.0'
+__version__ = '1.6.7'
 
 
 # Check supported Python versions

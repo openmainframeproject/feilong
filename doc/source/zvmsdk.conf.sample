@@ -39,10 +39,24 @@
 
 
 # 
+# Whether to automatically extend the partition and filesystem of guest.
+# 
+# If set to True, when deploying an image to a larger disk, zvmsdk
+# automatically extends the last partition and the file system to
+# use up the whole disk.
+# 
+# If do not want to do the extend action automaictly, you must set this option
+# to be False.
+#     
+# This param is optional
+#extend_partition_fs=True
+
+
+# 
 # The maximum time waiting until the guest reachable after started.
 # 
 # When starting a guest, specify the timeout value will check the guest status
-# untils it becames reachable or timeout.
+# until it becomes reachable or timeout.
 #     
 # This param is optional
 #reachable_timeout=180
@@ -98,7 +112,7 @@
 # Directory where log file to be put into.
 # 
 # SDK has a set of logs to help administrator to debug
-# and aduit actions performed through SDK. Edit this option
+# and audit actions performed through SDK. Edit this option
 # if you want to put logs into specified place.
 # 
 # Please ensure the service running on the consume which
@@ -166,7 +180,7 @@
 [sdkserver]
 
 # 
-# The IP address that the SDK server is listen on.
+# The IP address that the SDK server is listening on.
 # 
 # When the SDK server deamon starts, it will try to bind to
 # this address and port bind_port, and wait for the SDK client
@@ -177,7 +191,7 @@
 
 
 # 
-# The port that the SDK server is listen on.
+# The port that the SDK server is listening on.
 # 
 # This will work as a pair with bind_addr when the SDK server daemon
 # starts, more info can be found in that configuration description.
@@ -201,7 +215,7 @@
 # 
 # SDK server maintains a queue to keep all the accepted but not handled requests,
 # and the SDK server workers fetch requests from this queue.
-# To some extend, this queue size decides the max socket opened in SDK server.
+# To some extent, this queue size decides the max socket opened in SDK server.
 # This value should be adjusted according to the system resource.
 # 
 # This param is optional
@@ -209,15 +223,6 @@
 
 
 [volume]
-
-# 
-# volume fcp list.
-# 
-# SDK will only use the fcp devices in the scope of this value.
-# 
-# This param is optional
-#fcp_list=
-
 
 # 
 # fcp pair selection algorithm
@@ -244,13 +249,24 @@
 
 
 # 
+# The timeout value for waiting attach/detach punch scripts
+# execution, in seconds.
+# 
+# The default value is 1800 seconds, if the execution of punch scripts
+# reached the timeout, the attach/detach will fail.
+# 
+# This param is optional
+#punch_script_execution_timeout=1800
+
+
+# 
 # The timeout value for waiting refresh_bootmap execution, in seconds.
 # 
-# The default value is 600 seconds, if the execution of refresh_bootmap
+# The default value is 1200 seconds, if the execution of refresh_bootmap
 # reached the timeout, the process of refresh_bootmap will be stopped.
 # 
 # This param is optional
-#refresh_bootmap_timeout=600
+#refresh_bootmap_timeout=1200
 
 
 [wsgi]
@@ -309,6 +325,13 @@
 
 
 [zvm]
+
+# 
+# Only used for SMAPIOUT is not ready.
+# 
+# This param is optional
+#bypass_smapiout=True
+
 
 # 
 # Default LOGONBY userid(s) for the cloud.
@@ -451,7 +474,7 @@
 # The default maximum size of memory the user can define.
 # This value is used as the default value for maximum memory size when
 # create a guest with no max_mem specified.
-# The value can be specified by 1-4 bits of number suffixed by either
+# The value can be specified by 1-4 digits suffixed by either
 # M (Megabytes) or G (Gigabytes) and the number must be a whole number,
 # values such as 4096.8M or 32.5G are not supported.
 # 
@@ -465,7 +488,7 @@
 # The default maximum size of reserved memory in a vm's direct entry.
 # This value is used as the default value for maximum reserved memory
 # size for a guest.
-# The value can be specified by 1-4 bits of number suffixed by either
+# The value can be specified by 1-4 digits suffixed by either
 # M (Megabytes) or G (Gigabytes) and the number must be a whole number,
 # values such as 4096.8M or 32.5G are not supported.
 # 
@@ -477,6 +500,29 @@
 
 # This param is optional
 #user_default_password=None
+
+
+# 
+# The default SHARE settings configuration.
+# 
+# The recommend value of SHARE. From z/VM doc, SHARE is relative value of
+# virtual machine and if you set SHARE to 100 while virtual CPUs are 4,
+# then each vCPU get 25 entitlement.
+# 
+# So the mechanism currently is:
+# 
+# 1) If a share is given, set SHARE value to the VM
+# 2) If no SHARE is given during creation, check user_default_share_unit
+# 3) If user_default_share_unit is 0, do nothing
+# 4) If user_default_share_unit it not 0(current default is 100),
+# then insert statement `SHARE RELATIVE user_default_share_unit*vCPU`
+# into user direct, for example, with user_default_share_unit=100,
+# 4 vCPU will create `SHARE RELATIVE 400`.
+# 
+# This align the best practice of z/VM recommendation.
+# 
+# This param is optional
+#user_default_share_unit=100
 
 
 # 

@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -22,17 +25,24 @@ class SMTGetVMTestCase(base.SMTTestCase):
     """Test cases for getHost.py in smtLayer."""
     def test_extract_fcp_data(self):
         rh = mock.Mock()
+        # the last record 1B10 is not complete
+        # should stop there
+        # and skip the empty line and the line contains #
         fake_response = ['FCP device number: 1B0E',
                          'Status: Free',
                          'NPIV world wide port number: C05076DE330005EA',
                          'Channel path ID: 27',
                          'Physical world wide port number: C05076DE33002E41',
+                         'Owner: NONE',
                          'FCP device number: 1B0F',
                          'Status: Free',
                          'NPIV world wide port number: C05076DE330005EB',
                          'Channel path ID: 27',
                          'Physical world wide port number:',
-                         'Owner: turns', '']
+                         'Owner: turns',
+                         '#',
+                         '',
+                         'FCP device number: 1B10']
         raw_data = '\n'.join(fake_response)
         ret = getVM.extract_fcp_data(rh, raw_data, 'free')
-        self.assertEqual(ret, '\n'.join(fake_response[0:10]))
+        self.assertEqual(ret, '\n'.join(fake_response[0:12]))

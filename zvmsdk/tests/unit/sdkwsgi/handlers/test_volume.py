@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -19,6 +22,7 @@ import mock
 import unittest
 
 from zvmsdk import config
+from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import volume
 
 
@@ -45,6 +49,76 @@ class FakeReq(object):
 
     def __getitem__(self, name):
         return self.headers
+
+
+class VolumeActionTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.volume_action = volume.VolumeAction()
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_edit_fcp_template(self, mock_send_request):
+        """Test edit_fcp_template()"""
+        fcp_template_id = 'fake_id'
+        # case1: replace storage_providers with default_sp_list
+        kwargs = {
+            'fcp_template_id': fcp_template_id,
+            'storage_providers': ['sp8', 'sp9']}
+        self.volume_action.edit_fcp_template(body=kwargs)
+        mock_send_request.assert_called_with(
+            'edit_fcp_template',
+            fcp_template_id,
+            name=None,
+            description=None,
+            fcp_devices=None,
+            host_default=None,
+            min_fcp_paths_count=None,
+            default_sp_list=kwargs['storage_providers'])
+        # case2: host_default use boolean
+        kwargs = {
+            'fcp_template_id': fcp_template_id,
+            'host_default': True,
+            'name': 'fake_name'}
+        self.volume_action.edit_fcp_template(body=kwargs)
+        mock_send_request.assert_called_with(
+            'edit_fcp_template',
+            fcp_template_id,
+            name=kwargs['name'],
+            host_default=True,
+            description=None,
+            fcp_devices=None,
+            min_fcp_paths_count=None,
+            default_sp_list=None)
+        # case3: host_default use string 'true'
+        kwargs = {
+            'fcp_template_id': fcp_template_id,
+            'host_default': 'true',
+            'name': 'fake_name'}
+        self.volume_action.edit_fcp_template(body=kwargs)
+        mock_send_request.assert_called_with(
+            'edit_fcp_template',
+            fcp_template_id,
+            name=kwargs['name'],
+            host_default=True,
+            description=None,
+            fcp_devices=None,
+            min_fcp_paths_count=None,
+            default_sp_list=None)
+        # case4: host_default use string 'FALSE'
+        kwargs = {
+            'fcp_template_id': fcp_template_id,
+            'host_default': 'FALSE',
+            'name': 'fake_name'}
+        self.volume_action.edit_fcp_template(body=kwargs)
+        mock_send_request.assert_called_with(
+            'edit_fcp_template',
+            fcp_template_id,
+            name=kwargs['name'],
+            host_default=False,
+            description=None,
+            fcp_devices=None,
+            min_fcp_paths_count=None,
+            default_sp_list=None)
 
 
 class HandlersVolumeTest(unittest.TestCase):
@@ -91,18 +165,141 @@ class HandlersVolumeTest(unittest.TestCase):
             connection_info)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
-    def test_refresh_volume_bootmap(self, mock_detach):
-        mock_detach.return_value = {'overallRC': 0}
+    def test_refresh_volume_bootmap(self, mock_refresh_bootmap):
+        mock_refresh_bootmap.return_value = {'overallRC': 0}
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
+        wwid = '600507640083826de00000000000605b'
+        fcp_template_id = 'fake_fcp_tmpl_id'
         info = {"fcpchannel": fcpchannels,
                 "wwpn": wwpns,
-                "lun": lun}
+                "lun": lun,
+                "wwid": wwid,
+                "fcp_template_id": fcp_template_id}
         body_str = {"info": info}
         self.req.body = json.dumps(body_str)
 
         volume.volume_refresh_bootmap(self.req)
-        mock_detach.assert_called_once_with(
+        mock_refresh_bootmap.assert_called_once_with(
             'volume_refresh_bootmap',
-            fcpchannels, wwpns, lun, '', [])
+            fcpchannels, wwpns, lun, wwid, '', [], fcp_template_id)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_get_volume_connector(self, mock_send_request, mock_path_item):
+        mock_send_request.return_value = {'overallRC': 0}
+        mock_path_item.return_value = 'fakeuser'
+        info = {'reserve': True,
+                'fcp_template_id': 'faketmpl',
+                'pchid_info': dict()}
+        body_str = {"info": info}
+        self.req.body = json.dumps(body_str)
+        # to pass validataion.query_schema
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'userid': 'fakeuser'})
+        volume.get_volume_connector(self.req)
+        mock_send_request.assert_called_once_with(
+            'get_volume_connector', 'fakeuser', True, 'faketmpl', None, dict())
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_get_fcp_usage(self, mock_send_request, mock_path_item):
+        mock_send_request.return_value = {'overallRC': 0}
+        mock_path_item.return_value = '1a00'
+        # to pass validataion.query_schema
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'fcp_id': '1a00'})
+        volume.get_fcp_usage(self.req)
+        mock_send_request.assert_called_once_with('get_fcp_usage', '1a00')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_set_fcp_usage(self, mock_send_request, mock_path_item):
+        mock_send_request.return_value = {'overallRC': 0}
+        mock_path_item.return_value = '1a00'
+        info = {'userid': 'fakeuser',
+                'reserved': 1,
+                'connections': 2,
+                'fcp_template_id': 'faketmpl'}
+        body_str = {"info": info}
+        self.req.body = json.dumps(body_str)
+        volume.set_fcp_usage(self.req)
+        mock_send_request.assert_called_once_with('set_fcp_usage', '1a00', 'fakeuser', 1, 2, 'faketmpl')
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_create_fcp_template(self, mock_send_request):
+        mock_send_request.return_value = {'overallRC': 0}
+        body = {'name': 'tmpl name',
+                'description': 'desc text',
+                'fcp_devices': '1a00-1a0f;1b00, 1b05-1b0f',
+                'host_default': 'yes',
+                'storage_providers': [],
+                'min_fcp_paths_count': 2}
+        self.req.body = json.dumps(body)
+        volume.create_fcp_template(self.req)
+        mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name',
+                                                  description='desc text',
+                                                  fcp_devices='1a00-1a0f;1b00, 1b05-1b0f',
+                                                  host_default=True,
+                                                  default_sp_list=[], min_fcp_paths_count=2)
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_create_fcp_template_default_values(self, mock_send_request):
+        """Test the default values was set correctly when create a FCP Multipath Template."""
+        mock_send_request.return_value = {'overallRC': 0}
+        body = {'name': 'tmpl name'}
+        self.req.body = json.dumps(body)
+        volume.create_fcp_template(self.req)
+        mock_send_request.assert_called_once_with('create_fcp_template', 'tmpl name', description='',
+                                                  fcp_devices='', host_default=False, default_sp_list=[],
+                                                  min_fcp_paths_count=None)
+
+    @mock.patch('zvmsdk.sdkwsgi.handlers.volume.VolumeAction.edit_fcp_template')
+    def test_edit_fcp_template(self, mock_va_edit_template):
+        mock_va_edit_template.return_value = 'fake_value'
+        body_str = {
+            'storage_providers': ['sp8', 'sp9'],
+            'host_default': True,
+            'name': 'fake_name'}
+        self.req.body = json.dumps(body_str)
+        # tmpl_id length maxLength is 36 defined in
+        # zvmsdk/sdkwsgi/validation/parameter_types.py
+        tmpl_id = 'fake_template_id' + '0' * 20
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'template_id': tmpl_id})
+        body_str['fcp_template_id'] = tmpl_id
+        volume.edit_fcp_template(self.req)
+        mock_va_edit_template.assert_called_once_with(body=body_str)
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_get_fcp_templates(self, mock_send_request):
+        mock_send_request.return_value = {'overallRC': 0}
+        # To pass validataion.query_schema
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'template_id_list': ['id1', 'id2']})
+        self.req.GET = {'template_id_list': ['id1', 'id2'],
+                        'assigner_id': 'fakeuser',
+                        'storage_providers': ['v7k']}
+        volume.get_fcp_templates(self.req)
+        mock_send_request.assert_called_once_with('get_fcp_templates', ['id1', 'id2'],
+                                                  'fakeuser', ['v7k'], None)
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_get_fcp_templates_details(self, mock_send_request):
+        mock_send_request.return_value = {'overallRC': 0}
+        # To pass validataion.query_schema
+        self.req.environ['wsgiorg.routing_args'] = (
+            (), {'template_id_list': ['id1', 'id2']})
+        self.req.GET = {'template_id_list': ['id1', 'id2']}
+        volume.get_fcp_templates_details(self.req)
+        mock_send_request.assert_called_once_with('get_fcp_templates_details', ['id1', 'id2'],
+                                                  raw=False, statistics=True, sync_with_zvm=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_delete_fcp_template(self, mock_send_request, mock_path_item):
+        mock_send_request.return_value = {'overallRC': 0}
+        mock_path_item.return_value = 'fake tmpl id'
+        volume.delete_fcp_template(self.req)
+        mock_send_request.assert_called_once_with('delete_fcp_template', 'fake tmpl id')

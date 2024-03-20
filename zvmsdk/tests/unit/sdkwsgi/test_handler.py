@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -463,7 +466,7 @@ class GuestHandlerTest(unittest.TestCase):
     @testtools.skip('temply disable because of volume not support now')
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
-    def _test_guest_detach_volume(self, mock_validate, mock_json):
+    def test_guest_detach_volume(self, mock_validate, mock_json):
         mock_json.return_value = {}
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/1/volumes'
@@ -659,7 +662,7 @@ class HostHandlerTest(unittest.TestCase):
             get_disk_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_disk_info.assert_called_once_with(mock.ANY, None)
+            get_disk_info.assert_called_once_with(mock.ANY, None, False)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_diskpool_volumes(self, mock_validate):
@@ -768,3 +771,139 @@ class VswitchHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             update.assert_called_once_with('vsw1', body={})
+
+
+class VolumeHandlerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_get_volume_connector(self, mock_validate, mock_json):
+        mock_json.return_value = {
+            'info': {
+                'reserve': True
+            }
+        }
+        self.env['PATH_INFO'] = '/volumes/conn/test0001'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'get_volume_connector'
+        with mock.patch(function) as get_volume_connector:
+            get_volume_connector.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            get_volume_connector.assert_called_once_with(mock.ANY, 'test0001', True, None, None, {})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_create_fcp_template(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcptemplates'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'create_fcp_template'
+        with mock.patch(function) as create_fcp_template:
+            create_fcp_template.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            create_fcp_template.assert_called_once_with(body={})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_get_fcp_templates(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcptemplates'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'get_fcp_templates'
+        with mock.patch(function) as get_fcp_templates:
+            get_fcp_templates.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            get_fcp_templates.assert_called_once_with(mock.ANY, None, None, None, None)
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_get_fcp_templates_details(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcptemplates/detail'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'get_fcp_templates_details'
+        with mock.patch(function) as get_fcp_templates_details:
+            get_fcp_templates_details.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            get_fcp_templates_details.assert_called_once_with(mock.ANY, None, False, True, False)
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_delete_fcp_template(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcptemplates/fakeid'
+        self.env['REQUEST_METHOD'] = 'DELETE'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'delete_fcp_template'
+        with mock.patch(function) as delete_fcp_template:
+            delete_fcp_template.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            delete_fcp_template.assert_called_once_with('fakeid')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_edit_fcp_template(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcptemplates/fakeid'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'edit_fcp_template'
+        with mock.patch(function) as edit_fcp_template:
+            edit_fcp_template.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            edit_fcp_template.assert_called_once_with(body={'fcp_template_id': 'fakeid'})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_get_fcp_usage(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcp/1a00'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'get_fcp_usage'
+        with mock.patch(function) as get_fcp_usage:
+            get_fcp_usage.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            get_fcp_usage.assert_called_once_with(mock.ANY, '1a00')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_set_fcp_usage(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcp/1a00'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'set_fcp_usage'
+        with mock.patch(function) as set_fcp_usage:
+            set_fcp_usage.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            set_fcp_usage.assert_called_once_with('1a00', body={})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_volume_refresh_bootmap(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/volumes/fcp/1a00'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.' \
+                   'set_fcp_usage'
+        with mock.patch(function) as set_fcp_usage:
+            set_fcp_usage.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+            set_fcp_usage.assert_called_once_with('1a00', body={})

@@ -79,6 +79,37 @@ userid_create:
   in: body
   required: true
   type: string
+assigner_id:
+  description: |
+    The userid of the guest that the volume will be attached to or detached from.
+  in: body
+  required: true
+  type: string
+userid_in_params:
+  description: |
+    The userid of the guest specified in parameters of the url.
+    If specified, will only get data belongs to this guest.
+  in: parameter
+  required: false
+  type: string
+get_raw_data:
+  description: |
+    Whether to get raw FCP usage data from backend or not.
+  in: parameter
+  required: false
+  type: boolean
+get_statistics_data:
+  description: |
+    Whether to get statistics FCP usage data from backend.
+  in: parameter
+  required: false
+  type: boolean
+sync_with_zvm:
+  description: |
+    Whether to sync status of FCP devices with z/VM or not.
+  in: parameter
+  required: false
+  type: boolean
 guest_list:
   description: |
     Guests list
@@ -111,19 +142,20 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    Meemory size used by the guest, in KBytes.
+    Memory size used by the guest, in KBytes.
   in: body
   required: true
   type: integer
 guest_memory_kb_max:
   description: |
-    The maximum memory in KBytes can be allocated for this guest.
+    The maximum memory in KBytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
 guest_vnics:
   description: |
-    vNICs statistics of one guest.
+    vNIC statistics of guests, as a dictionary where the key is
+    the userid and the value is a list of vNIC statistics.
   in: body
   required: true
   type: dict
@@ -153,7 +185,7 @@ user_profile_guest:
   type: string
 user_direct_guest:
   description: |
-    Dictionary describing user direct and check info result
+    Dictionary with only one entry describing user directory.
   in: body
   required: true
   type: dict
@@ -166,6 +198,14 @@ disk_list_guest:
   in: body
   required: false
   type: list
+minidisks_guest:
+  description: |
+    A list of disks info for the guest.
+    Each entry in this list describes a minidisk and is a dictionary
+    that contains some of the below keys.
+  in: body
+  required: false
+  type: list
 add_mdisk_disk_vdev:
   description: |
     when adding mdisk (either add after create or during create guest)
@@ -174,6 +214,12 @@ add_mdisk_disk_vdev:
     direct has something like `MDISK 0123`
   in: body
   required: false
+  type: string
+get_mdisk_disk_vdev:
+  description:
+    the virtual device number of the disk.
+  in: body
+  required: true
   type: string
 guest_ipl_from:
   description: |
@@ -206,9 +252,10 @@ guest_dedicate_vdevs:
 
 guest_loaddev:
   description: |
-    The loaddev parms to add in the guest directory.Current supported key includes 'portname'
-    and 'lun'. Both the 'portname' and 'lun' can specify only one one- to
-    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF.
+    The loaddev parms to add in the guest directory.Current supported key includes 'portname',
+    'lun' and 'alterdev'. Both the 'portname' and 'lun' can specify only one one- to
+    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF. There is 'alterdev' added
+    only when the compute node z/VM supports multipath IPL feature.
   in: body
   required: false
   type: dict
@@ -223,7 +270,7 @@ guest_max_cpu:
 guest_max_mem:
   description: |
     The maximum size of memory the user can define.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     a whole number, eg. 512M, 4G.
   in: body
@@ -323,7 +370,8 @@ userid_list_guest:
   type: string
 stats_guest:
   description: |
-    cpu and memory statics of guest
+    CPU and memory statistics of guests, as a dictionary where the
+    key is the userid and the value is the CPU and memory statistics.
   in: body
   required: true
   type: dict
@@ -345,6 +393,24 @@ num_cpu_guest:
   in: body
   required: true
   type: integer
+online_cpu_num_guest:
+  description: |
+    The count of online virtual CPUs for the guest.
+  in: body
+  required: true
+  type: integer
+os_distro_guest:
+  description: |
+    The os distro information for the guest.
+  in: body
+  required: true
+  type: string
+kernel_info_guest:
+  description: |
+    The kernel information for the guest.
+  in: body
+  required: true
+  type: string
 action_start_guest:
   description: |
     Take ``start`` action on guest.
@@ -511,7 +577,7 @@ action_resize_mem_of_guest:
 mem_size:
   description: |
     The size of memory that the guest should have after resize.
-    The value should be specified by 1-4 bits of number suffixed by
+    The value should be specified by 1-4 digits suffixed by
     either M (Megabytes) or G (Gigabytes). And the number should be
     an integer, eg. 512M, 4G.
   in: body
@@ -553,6 +619,12 @@ disk_info_used:
   in: body
   required: true
   type: int
+details:
+  description: |
+    get the free space of all volumes on the disk pool or not.
+  in: path
+  required: false
+  type: boolean
 diskpool_volumes:
   description: |
     The volume list of the diskpool
@@ -577,6 +649,13 @@ volume_size:
   in: body
   required: true
   type: int
+host_ssi_info:
+  description: |
+    If the host is an SSI cluster member, it returns a list of SSI cluster
+    information. If current host is not an SSI cluster member, it returns an empty list.
+  in: body
+  required: true
+  type: list
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict
@@ -635,10 +714,11 @@ image_export_url:
   type: string
 image_metadata:
   description: |
-    The metadata which describes image, the valid keys are os_version, md5sum and disk_type,
-    os_version is required key, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, rhcos4.X, all case insensitive, please contact with your cloud administrator
-    if you don't know the image's os version. disk_type is required if os_version is rhcos4,
+    The metadata which describes the image, the valid keys are os_version, md5sum and disk_type.
+    os_version is a required key, the valid values are: rhel6.x, rhel7.x, rhel8.x,
+    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    all case insensitive. Please contact your cloud administrator
+    if you don't know the image's OS version. disk_type is required if os_version is rhcos4,
     the valid disk_type values are: DASD, SCSI.
   in: body
   required: true
@@ -868,6 +948,12 @@ vswitch_list:
   in: body
   required: true
   type: list
+grant_userid:
+  description: |
+    Guest userid.
+  in: body
+  required: true
+  type: string
 imagename:
   description: |
     Retrieve the specified image information, if not specified,
@@ -970,17 +1056,10 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your
-    cloud administrator if you don't know the guest's os version
-  in: body
-  required: true
-  type: string
-guest_os_version_all:
-  description: |
-    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, rhcos4.x, all case insensitive, please contact with your
-    cloud administrator if you don't know the guest's os version
+    Operating system version, the valid alues are: rhel6.x, rhel7.x, rhel8.x,
+    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    all case insensitive. Please contact your cloud administrator if you don't know
+    the guest's OS version.
   in: body
   required: true
   type: string
@@ -998,6 +1077,7 @@ guest_networks_list:
     - ``mac_addr``: mac address
     - ``nic_id``: nic identifier
     - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
+    - ``hostname``: host name
   in: body
   required: true
   type: list
@@ -1046,7 +1126,7 @@ nic_comments:
   type: string
 nic_port:
   description: |
-    nic identyifier.
+    nic identifier.
   in: body
   required: true
   type: string
@@ -1131,13 +1211,13 @@ volume_fcp:
   type: string
 volume_wwpn:
   description: |
-    World Wide Port Number, must be start with ``0x``, for example ``0x50050763050b073d``
+    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``
   in: body
   required: true
   type: string
 volume_lun:
   description: |
-    Logical Unit Number, must be start with ``0x``, for example ``0x4020400100000000``
+    Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``
   in: body
   required: true
   type: string
@@ -1173,6 +1253,18 @@ vdev_disk:
   in: body
   required: true
   type: string
+rdev_disk:
+  description: |
+    the real device number of the disk.
+  in: body
+  required: true
+  type: string
+access_type:
+  description: |
+    type of access to the disk, either ``R/O`` or ``R/W``.
+  in: body
+  required: true
+  type: string
 disk_pool_output:
   description: |
     disk pool, the format is ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
@@ -1183,6 +1275,24 @@ size_output:
   description: |
     size of disk, case insensitive, the unit can be in Megabytes (M),
     Gigabytes (G), for example, please ``512M``, ``1g``.
+  in: body
+  required: true
+  type: string
+size_no_unit:
+  description: |
+    the size of the disk, without unit.
+  in: body
+  required: true
+  type: integer
+device_units:
+  description: |
+    the unit for the size of the disk, for example ``Cylinders``.
+  in: body
+  required: true
+  type: string
+volume_label:
+  description: |
+    the volume label of the disk.
   in: body
   required: true
   type: string
@@ -1199,6 +1309,12 @@ fcp_id:
   in: path
   required: true
   type: string
+fcp_userid:
+  description: |
+    Guest userid.
+  in: body
+  required: true
+  type: string
 fcp_usage:
   description: |
     FCP usage, contains 3 values [userid, reserved, connections].
@@ -1213,7 +1329,7 @@ fcp_list:
     FCP devices list.
   in: body
   required: true
-  type: string
+  type: list
 wwpn_list:
   description: |
     World Wide Port Name IDs.
@@ -1265,3 +1381,183 @@ fcp_connections:
   in: body
   required: true
   type: integer
+SMAPI:
+  description: |
+    Status of SMAPI health
+  in: body
+  required: true
+  type: dict
+totalSuccess:
+  description: |
+    The total success calls for SMAPI.
+  in: body
+  required: true
+  type: integer
+totalFail:
+  description: |
+    The total fail calls for SMAPI.
+  in: body
+  required: true
+  type: integer
+lastSuccess:
+  description: |
+    The last success call for SMAPI.
+  in: body
+  required: true
+  type: string
+lastFail:
+  description: |
+    The last fail call for SMAPI.
+  in: body
+  required: true
+  type: string
+continuousFail:
+  description: |
+    The count of continuous fail.
+  in: body
+  required: true
+  type: integer
+healthy:
+  description: |
+    Whether SMAPI is healthy.
+  in: body
+  required: true
+  type: boolean
+guest_cpus:
+  description: |
+    The count of virtual CPUs for the guest.
+  in: body
+  required: true
+  type: integer
+used_cpu_time_us:
+  description: |
+    The CPU time used in microseconds.
+  in: body
+  required: true
+  type: integer
+elapsed_cpu_time_us:
+  description: |
+    The CPU time elapsed in microseconds.
+  in: body
+  required: true
+  type: integer
+min_cpu_count:
+  description: |
+    The minimal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+max_cpu_limit:
+  description: |
+    The maximal count of virtual CPUs allowed.
+  in: body
+  required: true
+  type: integer
+samples_cpu_in_use:
+  description: |
+    Samples CPU in use.
+  in: body
+  required: true
+  type: integer
+samples_cpu_delay:
+  description: |
+    Samples CPU delay.
+  in: body
+  required: true
+  type: integer
+used_mem_kb:
+  description: |
+    Memory size used by the guest, in KBytes.
+  in: body
+  required: true
+  type: integer
+max_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+min_mem_kb:
+  description: |
+    The maximum memory in KBytes that can be allocated for this guest.
+  in: body
+  required: true
+  type: integer
+shared_mem_kb:
+  description: |
+    Shared memory in KBytes.
+  in: body
+  required: true
+  type: integer
+total_memory:
+  description: |
+    Total memory.
+  in: body
+  required: true
+  type: integer
+available_memory:
+  description: |
+    Available memory.
+  in: body
+  required: true
+  type: integer
+free_memory:
+  description: |
+    Free memory.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx:
+  description: |
+    Number of received frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx:
+  description: |
+    Number of transmitted frames.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_dsc:
+  description: |
+    Number of received frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_dsc:
+  description: |
+    Number of transmitted frames that have been discarded.
+  in: body
+  required: true
+  type: integer
+nic_fr_rx_err:
+  description: |
+    Number of received frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_fr_tx_err:
+  description: |
+    Number of transmitted frames that were in error.
+  in: body
+  required: true
+  type: integer
+nic_rx:
+  description: |
+    Number of received bytes.
+  in: body
+  required: true
+  type: integer
+nic_tx:
+  description: |
+    Number of transmitted bytes.
+  in: body
+  required: true
+  type: integer
+switch:
+  description: |
+    Get Switch information based on port id.
+  in: body
+  required: true
+  type: string

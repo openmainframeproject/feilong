@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -19,6 +22,12 @@ import six
 import tempfile
 import threading
 import uuid
+
+from zvmsdk import config
+
+
+CONF = config.CONF
+
 
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_LOCK = threading.Lock()
@@ -329,6 +338,12 @@ def req_guest_get_adapters_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_get_disks_info(start_index, *args, **kwargs):
+    url = '/guests/%s/disks'
+    body = None
+    return url, body
+
+
 def req_guest_create_nic(start_index, *args, **kwargs):
     url = '/guests/%s/nic'
     body = {'nic': {}}
@@ -416,15 +431,19 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     fcpchannel = kwargs.get('fcpchannels', None)
     wwpn = kwargs.get('wwpn', None)
     lun = kwargs.get('lun', None)
+    wwid = kwargs.get('wwid', '')
     transportfiles = kwargs.get('transportfiles', '')
     guest_networks = kwargs.get('guest_networks', [])
+    fcp_template_id = kwargs.get('fcp_template_id', None)
     body = {'info':
         {
             "fcpchannel": fcpchannel,
             "wwpn": wwpn,
             "lun": lun,
+            "wwid": wwid,
             "transportfiles": transportfiles,
             "guest_networks": guest_networks,
+            "fcp_template_id": fcp_template_id
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
@@ -434,20 +453,57 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     reserve = kwargs.get('reserve', False)
+    fcp_template_id = kwargs.get('fcp_template_id', None)
+    sp_name = kwargs.get('storage_provider', None)
     body = {'info':
         {
-            "reserve": reserve
+            "reserve": reserve,
+            "fcp_template_id": fcp_template_id,
+            "storage_provider": sp_name
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
     return url, body
 
 
-def req_get_all_fcp_usage(start_index, *args, **kwargs):
-    url = '/volumes/fcp'
-    userid = kwargs.get('userid', None)
-    if userid:
-        url += "?userid=%s" % userid
+def req_get_fcp_templates(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    template_id_list = kwargs.get('template_id_list', None)
+    assigner_id = kwargs.get('assigner_id', None)
+    default_sp_list = kwargs.get('storage_providers', None)
+    host_default = kwargs.get('host_default', False)
+
+    if template_id_list:
+        url += "?template_id_list=%s" % template_id_list
+    elif assigner_id:
+        url += "?assigner_id=%s" % assigner_id
+    elif default_sp_list:
+        url += "?storage_providers=%s" % default_sp_list
+    elif host_default:
+        url += "?host_default=%s" % host_default
+    body = None
+    return url, body
+
+
+def req_get_fcp_templates_details(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates/detail'
+    template_id_list = kwargs.get('template_id_list', None)
+    raw = kwargs.get('raw', False)
+    statistics = kwargs.get('statistics', True)
+    sync_with_zvm = kwargs.get('sync_with_zvm', False)
+    if template_id_list:
+        url += "?template_id_list=%s&" % template_id_list
+    else:
+        url += "?"
+    url += "raw=%s&" % raw
+    url += "statistics=%s&" % statistics
+    url += "sync_with_zvm=%s" % sync_with_zvm
+    body = None
+    return url, body
+
+
+def req_delete_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates/%s'
     body = None
     return url, body
 
@@ -462,8 +518,27 @@ def req_set_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp/%s'
     body = {'info': {'userid': args[start_index],
                      'reserved': args[start_index + 1],
-                     'connections': args[start_index + 2]}}
+                     'connections': args[start_index + 2],
+                     'fcp_template_id': args[start_index + 3]}}
     fill_kwargs_in_body(body['info'], **kwargs)
+    return url, body
+
+
+def req_create_fcp_template(start_index, *args, **kwargs):
+    url = '/volumes/fcptemplates'
+    body = {'name': args[start_index]}
+    fill_kwargs_in_body(body, **kwargs)
+    return url, body
+
+
+def req_edit_fcp_template(start_index, *args, **kwargs):
+    # the function is called by _get_url_body_headers()
+    url = '/volumes/fcptemplates/%s'
+    body = dict()
+    # no other args except fcp_templated_id in url path,
+    # param in url path is set by _get_url_body_headers().
+    # hence, only save kwargs in body
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
@@ -493,9 +568,13 @@ def req_host_get_diskpool_volumes(start_index, *args, **kwargs):
 def req_host_diskpool_get_info(start_index, *args, **kwargs):
     url = '/host/diskpool'
     poolname = kwargs.get('disk_pool', None)
+    details = kwargs.get('details', False)
     append = ''
     if poolname is not None:
-        append += "?poolname=%s" % poolname
+        append += "?poolname=%s&" % poolname
+    else:
+        append += "?"
+    append += "details=%s" % details
     url += append
     body = None
     return url, body
@@ -508,6 +587,12 @@ def req_host_get_volume_info(start_index, *args, **kwargs):
     if volumename is not None:
         append += "?volumename=%s" % volumename
     url += append
+    body = None
+    return url, body
+
+
+def req_host_get_ssi_info(start_index, *args, **kwargs):
+    url = '/host/ssi'
     body = None
     return url, body
 
@@ -583,6 +668,13 @@ def req_vswitch_create(start_index, *args, **kwargs):
     url = '/vswitches'
     body = {'vswitch': {'name': args[start_index]}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
+    return url, body
+
+
+def req_get_switch_info(start_index, *args, **kwargs):
+    url = '/vswitch'
+    body = {'portid': args[start_index]}
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
@@ -806,6 +898,7 @@ DATABASE = {
     'guest_delete_network_interface': {
         'method': 'DELETE',
         'args_required': 3,
+        'args_optional': 1,
         'params_path': 1,
         'request': req_guest_delete_network_interface},
     'guest_get_power_state': {
@@ -828,6 +921,11 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_config_minidisks},
+    'guest_get_disks_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_disks_info},
     'volume_attach': {
         'method': 'POST',
         'args_required': 1,
@@ -848,11 +946,22 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_get_volume_connector},
-    'get_all_fcp_usage': {
+    'get_fcp_templates': {
+        'method': 'GET',
+        'args_required': 0,
+        'args_optional': 1,
+        'params_path': 0,
+        'request': req_get_fcp_templates},
+    'get_fcp_templates_details': {
         'method': 'GET',
         'args_required': 0,
         'params_path': 0,
-        'request': req_get_all_fcp_usage},
+        'request': req_get_fcp_templates_details},
+    'delete_fcp_template': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_delete_fcp_template},
     'get_fcp_usage': {
         'method': 'GET',
         'args_required': 1,
@@ -860,9 +969,30 @@ DATABASE = {
         'request': req_get_fcp_usage},
     'set_fcp_usage': {
         'method': 'PUT',
-        'args_required': 4,
+        'args_required': 5,
         'params_path': 1,
         'request': req_set_fcp_usage},
+    'create_fcp_template': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_create_fcp_template},
+    'edit_fcp_template': {
+        'method': 'PUT',
+        # args_required and args_optional are used for args rather than kwargs,
+        # refer to 'def _check_arguments' for details.
+        # In total,
+        #   1 args: fcp_template_id
+        #   5 kwargs: name, desc, fcp_devices, host_default, storage_providers
+        # args_required : 1
+        #   fcp_template_id
+        'args_required': 1,
+        # params_path is the count of params in url path,
+        # url path is '/volumes/fcptemplates/%s'
+        #   %s is for fcp_template_id
+        #   %s is from args
+        'params_path': 1,
+        'request': req_edit_fcp_template},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,
@@ -888,6 +1018,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_volume_info},
+    'host_get_ssi_info': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_ssi_info},
     'image_import': {
         'method': 'POST',
         'args_required': 3,
@@ -938,6 +1073,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 0,
         'request': req_vswitch_create},
+    'get_switch_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_get_switch_info},
     'vswitch_delete': {
         'method': 'DELETE',
         'args_required': 1,
@@ -975,7 +1115,7 @@ class RESTClient(object):
 
     def __init__(self, ip='127.0.0.1', port=8888,
                  ssl_enabled=False, verify=False,
-                 token_path=None):
+                 token_path=None, auth=None):
         # SSL enable or not
         if ssl_enabled:
             self.base_url = "https://" + ip + ":" + str(port)
@@ -988,6 +1128,9 @@ class RESTClient(object):
                 raise CACertNotFound('CA certificate file not found.')
         self.verify = verify
         self.token_path = token_path
+        # need send token to validate
+        # This is client, so must NOT use zvmsdk.conf file setting
+        self.auth = auth
 
     def _check_arguments(self, api_name, *args, **kwargs):
         # check api_name exist or not
@@ -1000,10 +1143,10 @@ class RESTClient(object):
         if 'args_optional' in DATABASE[api_name].keys():
             optional = DATABASE[api_name]['args_optional']
         if len(args) < count:
-            msg = "Missing some args,please check:%s." % args
+            msg = "Missing some args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
         if len(args) > count + optional:
-            msg = "Too many args,please check:%s." % args
+            msg = "Too many args,please check:%s." % str(args)
             raise ArgsFormatError(msg)
 
     def _get_admin_token(self, path):
@@ -1090,7 +1233,7 @@ class RESTClient(object):
                 # if data is a file-like object
                 body = body
 
-        if self.token_path is not None:
+        if self.auth == 'token' and self.token_path is not None:
             _headers['X-Auth-Token'] = self._get_token()
 
         content_type = headers['Content-Type']
@@ -1115,7 +1258,7 @@ class RESTClient(object):
 
             # get url,body with api_name and method
             url, body, headers = self._get_url_body_headers(api_name,
-                                                        *args, **kwargs)
+                                                            *args, **kwargs)
             response = self.api_request(url, method, body=body,
                                         headers=headers)
 

@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017-2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,8 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import configparser
 import os
-from six.moves import configparser
 
 
 class Opt(object):
@@ -37,7 +40,7 @@ zvm_opts = [
 Directory where log file to be put into.
 
 SDK has a set of logs to help administrator to debug
-and aduit actions performed through SDK. Edit this option
+and audit actions performed through SDK. Edit this option
 if you want to put logs into specified place.
 
 Please ensure the service running on the consume which
@@ -85,6 +88,29 @@ Sample NIC definitions in the z/VM user directory:
     NICDEF 1003 TYPE QDIO LAN SYSTEM <vswitch2> MACID <macid2>
         '''
         ),
+    Opt('user_default_share_unit',
+        section='zvm',
+        opt_type='int',
+        default=100,
+        help='''
+The default SHARE settings configuration.
+
+The recommend value of SHARE. From z/VM doc, SHARE is relative value of
+virtual machine and if you set SHARE to 100 while virtual CPUs are 4,
+then each vCPU get 25 entitlement.
+
+So the mechanism currently is:
+
+1) If a share is given, set SHARE value to the VM
+2) If no SHARE is given during creation, check user_default_share_unit
+3) If user_default_share_unit is 0, do nothing
+4) If user_default_share_unit it not 0(current default is 100),
+then insert statement `SHARE RELATIVE user_default_share_unit*vCPU`
+into user direct, for example, with user_default_share_unit=100,
+4 vCPU will create `SHARE RELATIVE 400`.
+
+This align the best practice of z/VM recommendation.
+'''),
     Opt('default_admin_userid',
         section='zvm',
         help='''
@@ -238,6 +264,12 @@ VDISK will not be used and in turn it will fail check.
         help='''
 The port number of remotehost sshd.
 '''),
+    Opt('bypass_smapiout',
+        section='zvm',
+        default=True,
+        help='''
+Only used for SMAPIOUT is not ready.
+'''),
     # image options
     Opt('default_compress_level',
         section='image',
@@ -292,6 +324,19 @@ Console logs might be transferred to sdk user, this option controls how
 large each file can be. A smaller size may mean more calls will be needed
 to transfer large consoles, which may not be desirable for performance reasons.
     '''),
+    Opt('extend_partition_fs',
+        section='guest',
+        default='True',
+        help='''
+Whether to automatically extend the partition and filesystem of guest.
+
+If set to True, when deploying an image to a larger disk, zvmsdk
+automatically extends the last partition and the file system to
+use up the whole disk.
+
+If do not want to do the extend action automaictly, you must set this option
+to be False.
+    '''),
     Opt('reachable_timeout',
         section='guest',
         default=180,
@@ -300,7 +345,7 @@ to transfer large consoles, which may not be desirable for performance reasons.
 The maximum time waiting until the guest reachable after started.
 
 When starting a guest, specify the timeout value will check the guest status
-untils it becames reachable or timeout.
+until it becomes reachable or timeout.
     '''),
     Opt('softstop_timeout',
         section='guest',
@@ -412,7 +457,7 @@ exhaustion.
         default='127.0.0.1',
         opt_type='str',
         help='''
-The IP address that the SDK server is listen on.
+The IP address that the SDK server is listening on.
 
 When the SDK server deamon starts, it will try to bind to
 this address and port bind_port, and wait for the SDK client
@@ -424,7 +469,7 @@ connection to handle API request.
         opt_type='int',
         default=2000,
         help='''
-The port that the SDK server is listen on.
+The port that the SDK server is listening on.
 
 This will work as a pair with bind_addr when the SDK server daemon
 starts, more info can be found in that configuration description.
@@ -439,7 +484,7 @@ The size of request queue in SDK server.
 
 SDK server maintains a queue to keep all the accepted but not handled requests,
 and the SDK server workers fetch requests from this queue.
-To some extend, this queue size decides the max socket opened in SDK server.
+To some extent, this queue size decides the max socket opened in SDK server.
 This value should be adjusted according to the system resource.
 '''
         ),
@@ -468,26 +513,27 @@ tell SDK where to store the database files, make sure the process
 running SDK is able to read write and execute the directory.
 '''
         ),
-    # volume options
-    Opt('fcp_list',
-        section='volume',
-        default='',
-        opt_type='str',
-        help='''
-volume fcp list.
-
-SDK will only use the fcp devices in the scope of this value.
-'''
-        ),
     Opt('refresh_bootmap_timeout',
         section='volume',
-        default=600,
+        default=1200,
         opt_type='int',
         help='''
 The timeout value for waiting refresh_bootmap execution, in seconds.
 
-The default value is 600 seconds, if the execution of refresh_bootmap
+The default value is 1200 seconds, if the execution of refresh_bootmap
 reached the timeout, the process of refresh_bootmap will be stopped.
+'''
+        ),
+    Opt('punch_script_execution_timeout',
+        section='volume',
+        default=1800,
+        opt_type='int',
+        help='''
+The timeout value for waiting attach/detach punch scripts
+execution, in seconds.
+
+The default value is 1800 seconds, if the execution of punch scripts
+reached the timeout, the attach/detach will fail.
 '''
         ),
     Opt('get_fcp_pair_with_same_index',

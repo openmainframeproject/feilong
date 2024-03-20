@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -74,7 +77,8 @@ diskname = {
 diskpool = {
     'type': 'object',
     'properties': {
-        'poolname': parameter_types.disk_pool_list
+        'poolname': parameter_types.disk_pool_list,
+        'details': parameter_types.single_param(parameter_types.boolean)
     },
     'additionalProperties': False
 }

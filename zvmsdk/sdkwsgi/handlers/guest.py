@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017-2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -73,6 +76,14 @@ class VMHandler(object):
             kwargs_list['loaddev'] = guest['loaddev']
         if 'account' in guest_keys:
             kwargs_list['account'] = guest['account']
+        if 'cschedule' in guest_keys:
+            kwargs_list['cschedule'] = guest['cschedule']
+        if 'cshare' in guest_keys:
+            kwargs_list['cshare'] = guest['cshare']
+        if 'rdomain' in guest_keys:
+            kwargs_list['rdomain'] = guest['rdomain']
+        if 'pcif' in guest_keys:
+            kwargs_list['pcif'] = guest['pcif']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)
@@ -102,6 +113,11 @@ class VMHandler(object):
     @validation.query_schema(guest.userid_list_query)
     def get_adapters(self, req, userid):
         info = self.client.send_request('guest_get_adapters_info', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
+    def get_disks(self, req, userid):
+        info = self.client.send_request('guest_get_disks_info', userid)
         return info
 
     @validation.query_schema(guest.userid_list_query)
@@ -546,6 +562,25 @@ def guest_get_adapters_info(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_adapters_info(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_disks_info(req):
+
+    def _guest_get_disks_info(req, userid):
+        action = get_handler()
+        return action.get_disks(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_disks_info(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

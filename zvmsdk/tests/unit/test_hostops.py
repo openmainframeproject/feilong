@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -27,10 +30,27 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self._hostops = hostops.get_hostops()
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.host_get_ssi_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_all_user_direct")
-    def test_guest_list(self, get_all_user_direct):
+    def test_guest_list(self, host_get_ssi_info, get_all_user_direct):
+        host_get_ssi_info.return_value = []
         self._hostops.guest_list()
         get_all_user_direct.assert_called_once_with()
+        host_get_ssi_info.assert_called_once()
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.host_get_ssi_info")
+    @mock.patch("zvmsdk.utils.check_userid_on_others")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_all_user_direct")
+    def test_guest_list_ssi_host(self, host_get_ssi_info,
+                                 check_userid_on_others, get_all_user_direct):
+        res_ssi = ['ssi_name = SSI',
+                   'ssi_mode = Stable',
+                   'ssi_pdr = IAS7CM_on_139E']
+        host_get_ssi_info.return_value = res_ssi
+        self._hostops.guest_list()
+        get_all_user_direct.assert_called_once_with()
+        host_get_ssi_info.assert_called_once()
+        check_userid_on_others.assert_called()
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
@@ -80,19 +100,60 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             "disk_available": "38842.7M",
             }
         dp_info = self._hostops.diskpool_get_info("fakepool")
-        get_diskpool_info.assert_called_once_with("fakepool")
+        get_diskpool_info.assert_called_once_with("fakepool", False)
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_info")
+    def test_get_diskpool_details_info(self, get_diskpool_info):
+        diskpool_info = [{'volume_name': 'VOL1',
+                                    'device_type': 'TYPE1',
+                                    'start_cylinder': 13456,
+                                    'free_size': 2345,
+                                    'dasd_group': 'POOL1'},
+                                   {'volume_name': 'VOL2',
+                                    'device_type': 'TYPE1',
+                                    'start_cylinder': '22456',
+                                    'free_size': 12980,
+                                    'dasd_group': 'POOL1'}]
+        diskpool_info_results = {'POOL1': diskpool_info}
+        get_diskpool_info.return_value = diskpool_info_results
+        dp_info = self._hostops.diskpool_get_info("fakepool", True)
+        get_diskpool_info.assert_called_once_with("fakepool", True)
+        self.assertEqual(dp_info['POOL1'], diskpool_info)
+
+    @mock.patch("time.time")
+    @mock.patch("zvmsdk.hostops.HOSTOps._cache_enabled")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_volumes")
-    def test_diskpool_get_volumes(self, get_diskpool_vols):
-        get_diskpool_vols.return_value = {
-            'diskpool_volumes': 'IAS100 IAS101',
-            }
-        diskpool_vols = self._hostops.diskpool_get_volumes("fakepool")
-        get_diskpool_vols.assert_called_once_with("fakepool")
+    def test_diskpool_get_volumes(self, get_diskpool_vols,
+            cache_enable, mock_time):
+        self._hostops._volumes = {}
+        volumes = {'diskpool_volumes': 'IAS100 IAS101'}
+        get_diskpool_vols.return_value = volumes
+        cache_enable.return_value = True
+        mock_time.return_value = 1
+        diskpool_vols = self._hostops.diskpool_get_volumes("eckd:fakepool")
+        get_diskpool_vols.assert_called_once_with("FAKEPOOL")
         self.assertEqual(diskpool_vols['diskpool_volumes'], 'IAS100 IAS101')
+        self.assertEqual(self._hostops.disk_pool, "eckd:fakepool")
+
+        # Test has cache data
+        volumes = {'diskpool_volumes': 'IAS400 IAS501'}
+        base.set_conf('monitor', 'cache_interval', '60')
+        self._hostops._volumes = volumes
+        diskpool_vols = self._hostops.diskpool_get_volumes("eckd:fakepool")
+        self.assertEqual(1, get_diskpool_vols.call_count)
+        self.assertEqual(diskpool_vols['diskpool_volumes'], 'IAS400 IAS501')
+        self.assertEqual(self._hostops.disk_pool, "eckd:fakepool")
+
+        # Test CONF.zvm.disk_pool has changed
+        volumes = {'diskpool_volumes': 'IAS401 IAS601'}
+        get_diskpool_vols.return_value = volumes
+        base.set_conf('monitor', 'cache_interval', '60')
+        diskpool_vols = self._hostops.diskpool_get_volumes("eckd:fakepool2")
+        self.assertEqual(diskpool_vols['diskpool_volumes'], 'IAS401 IAS601')
+        self.assertEqual(self._hostops.disk_pool, "eckd:fakepool2")
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_volume_info")
     def test_get_volume_info(self, get_vol_infos):
@@ -118,3 +179,60 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             if "Not found the volume info in " in exc:
                 pass
         self.assertEqual(2, get_vol_infos.call_count)
+
+    @mock.patch('os.path.exists', mock.MagicMock(return_value=True))
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_host_suffix(self, get_host_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 6.1.0",
+            "hypervisor_name": "FAKENODE",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            }
+        suffix = '1\n'
+        mockopen = mock.mock_open(read_data=suffix)
+        with mock.patch('builtins.open', mockopen):
+            host_info = self._hostops.get_info()
+        get_host_info.assert_called_once_with()
+        self.assertEqual(host_info['vcpus'], 10)
+        self.assertEqual(host_info['hypervisor_version'], 610)
+        self.assertEqual(host_info['disk_used'], 0)
+        self.assertEqual(host_info['hypervisor_hostname'], "FAKENODE.1")
+        self.assertEqual(host_info['zvm_host'], "FAKENODE.1")
+
+    @mock.patch('os.path.exists', mock.MagicMock(return_value=True))
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_host_suffix_empty(self, get_host_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 6.1.0",
+            "hypervisor_name": "FAKENODE",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            }
+        suffix = ''
+        mockopen = mock.mock_open(read_data=suffix)
+        with mock.patch('builtins.open', mockopen):
+            host_info = self._hostops.get_info()
+        get_host_info.assert_called_once_with()
+        self.assertEqual(host_info['hypervisor_hostname'], "FAKENODE")
+        self.assertEqual(host_info['zvm_host'], "FAKENODE")

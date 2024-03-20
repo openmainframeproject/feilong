@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
 #
@@ -132,7 +135,8 @@ loaddev = {
                 'minLength': 1,
                 'maxLength': 16,
                 'pattern': '^[0-9a-fA-F]{,16}$'},
-    },
+        'alterdev': {'type': 'string'}
+                },
     'additionalProperties': False
 }
 
@@ -248,8 +252,8 @@ mac_address = {
 
 remotehost = {
     'type': ['string'],
-    'pattern': '^[a-zA-Z0-9\-]+\@([0-9]{1,3}(.[0-9]{1,3}){3}$|'
-    '[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-]){1,}$)'
+    'pattern': '^[a-zA-Z0-9\-]+\@([0-9]{1,3}(\.[0-9]{1,3}){3}$|'
+    '[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+){1,}$)'
 }
 
 
@@ -257,7 +261,39 @@ userid = {
     'type': ['string'],
     'minLength': 1,
     'maxLength': 8,
+    'pattern': '^[a-zA-Z0-9]{1,8}$'
+}
+
+
+cpupool = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 8,
     'pattern': '^(\w{,8})$'
+}
+
+
+share = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 64,
+    'pattern': '^(\w{,64})$'
+}
+
+
+rdomain = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 8,
+    'pattern': '^(\w{,8})$'
+}
+
+
+pcif = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 9,
+    'pattern': '^(\w{,9})$'
 }
 
 
@@ -265,7 +301,7 @@ userid_or_None = {
     'oneOf': [
         {'type': 'null'},
         {'type': ['string'], 'minLength': 1,
-         'maxLength': 8, 'pattern': '^(\w{,8})$'}
+         'maxLength': 8, 'pattern': '^[a-zA-Z0-9]{1,8}$'}
     ]
 }
 
@@ -298,15 +334,29 @@ cidr = {
 userid_list = {
     'type': ['string'],
     # TODO:validate userid_list in inspect APIs
-    'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
+    'pattern': '^(\s*[a-zA-Z0-9]{1,8}\s*)(,\s*[a-zA-Z0-9]{1,8}\s*){0,}$'
 }
 
 userid_list_array = {
     'items': {
         'type': ['string'],
         'minLength': 1,
-        'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
+        'pattern': '^(\s*[a-zA-Z0-9]{1,8}\s*)(,\s*[a-zA-Z0-9]{1,8}\s*){0,}$'
 
+    },
+    'type': 'array'
+}
+
+fcp_template_id = {
+   'oneOf': [
+        {'type': 'null'},
+        {'type': 'string', 'maxLength': 36}
+    ]
+}
+
+fcp_template_id_list = {
+    'items': {
+        'type': 'string'
     },
     'type': 'array'
 }
@@ -406,7 +456,7 @@ os_version = {
 'oneOf': [
 {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(e|E)(l|L))(6|7|8){1}([.][0-9])?$'},
+ '^((r|R)(h|H)(e|E)(l|L))(6|7|8|9){1}([.][0-9])?$'},
 {'type': 'string',
  'pattern':
  '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(6|7){1}([.][0-9])?$'},
@@ -418,7 +468,7 @@ os_version = {
  '^((s|S)(u|U)(s|S)(e|E))(11|12|15){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16|20){1}([.][0-9]{2})?([.][0-9])?$'},
+ '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16|20|22){1}([.][0-9]{2})?([.][0-9])?$'},
  {'type': 'string',
  'pattern':
  '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}([.][0-9]{1,2})?([.][0-9]{1,2})?$'}
@@ -537,12 +587,15 @@ connection_info = {
     'properties': {
         'assigner_id': userid,
         'zvm_fcp': fcp,
+        'fcp_template_id': fcp_template_id,
         'target_wwpn': wwpn,
         'target_lun': lun,
         'os_version': os_version,
         'multipath': boolean,
         'mount_point': {'type': 'string'},
         'is_root_volume': boolean,
+        'update_connections_only': boolean,
+        'do_rollback': boolean
     },
     'required': ['assigner_id', 'zvm_fcp', 'target_wwpn',
                  'target_lun', 'multipath', 'os_version',

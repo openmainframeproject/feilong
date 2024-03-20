@@ -1,4 +1,7 @@
 /**
+ * Copyright Contributors to the Feilong Project.
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Copyright 2017 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -225,7 +228,7 @@ void printAndLogProcessingErrors(const char * class, int rc, struct _vmApiIntern
     } else if(rc == SOCKET_NOT_CONNECTED_ERROR) {
         sprintf(errMsg, "ULGSMC6010E Socket not connected error\n");
     } else if(rc == SOCKET_RETRY_NO_DATA) {
-        sprintf(errMsg, "ULGSMC6011E SMAPI response_recovery retry has no data error\n");
+        sprintf(errMsg, "ULGSMC6011E SMAPI is not responding, contact with z/VM administrator for SMAPI fixing\n");
     } else if(rc == MEMORY_ERROR) {
         sprintf(errMsg, "ULGSMC6012E Memory error\n");
     } else if(rc == PARSER_ERROR_INVALID_TABLE) {

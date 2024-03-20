@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -115,7 +118,7 @@ ModRCs = {
     # The 'zvmsdk' is used as the default module if module is not specified
     # when raising exception
     'zvmsdk': 400
-    }
+}
 
 errors = {
     # Each entry defined here corresponds to a kind of error indicated by the
@@ -124,7 +127,7 @@ errors = {
     # 2. the dict containing all the possible rs and its error message
     # 3. The general error description. This should be used for doc generation
 
-# Invalid input error
+    # Invalid input error
     'input': [{'overallRC': 100, 'modID': ModRCs['zvmsdk'], 'rc': 100},
               {1: ("Invalid API arg count, API: %(api)s, %(expected)d expected"
                    " while %(provided)d provided."),
@@ -134,9 +137,9 @@ errors = {
                4: ("Missing required option: %(msg)s"),
                },
               "Invalid API Input",
-             ],
-# General Errors for each module, same overallRC = 300
-# Guest Operation failed
+              ],
+    # General Errors for each module, same overallRC = 300
+    # Guest Operation failed
     'guest': [{'overallRC': 300, 'modID': ModRCs['guest'], 'rc': 300},
               {1: "Database operation failed, error: %(msg)s",
                2: "Failed to add mdisks when creating guest, error: %(msg)s",
@@ -160,23 +163,25 @@ errors = {
                    "error: lock user entry failed with "
                    "smt error: '%(err)s'."),
                10: ("Failed to resize memory of guest: '%(userid)s', "
-                   "error: replace user entry failed with "
-                   "smt error: '%(err)s'."),
+                    "error: replace user entry failed with "
+                    "smt error: '%(err)s'."),
                11: ("Failed to live resize memory of guest: '%(userid)s', "
-                   "error: define standby memory failed with "
-                   "smt error: '%(err)s'."),
+                    "error: define standby memory failed with "
+                    "smt error: '%(err)s'."),
                12: ("Failed to deploy image to userid: '%(userid)s', "
-                   "get unpackdiskimage cmd failed: %(err)s"),
+                    "get unpackdiskimage cmd failed: %(err)s"),
                13: ("Failed to deploy image to userid: '%(userid)s', "
-                   "ignition file is required when deploying RHCOS image"),
+                    "ignition file is required when deploying RHCOS image"),
                14: ("Failed to deploy image to userid: '%(userid)s', %(msg)s"),
                15: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: enable new defined cpus failed: '%(err)s'."),
-               16: ("Failed to start the guest: '%(userid)s', %(msg)s")
-              },
+                    "error: enable new defined cpus failed: '%(err)s'."),
+               16: ("Failed to start the guest: '%(userid)s', %(msg)s"),
+               17: ("Failed to live resize memory of guest: '%(userid)s', "
+                    "error: chmem command failed: '%(err)s'.")
+               },
               "Operation on Guest failed"
               ],
-# Network Operation failed
+    # Network Operation failed
     'network': [{'overallRC': 300, 'modID': ModRCs['network'], 'rc': 300},
                 {1: "Database operation failed, error: %(msg)s",
                  2: "ZVMSDK network error: %(msg)s",
@@ -193,7 +198,7 @@ errors = {
                  },
                 "Operation on Network failed"
                 ],
-# Image Operation failed
+    # Image Operation failed
     'image': [{'overallRC': 300, 'modID': ModRCs['image'], 'rc': 300},
               {1: "Database operation failed, error: %(msg)s",
                2: "No image schema found for %(schema)s",
@@ -228,7 +233,7 @@ errors = {
                },
               "Operation on Image failed"
               ],
-# Volume Operation failed
+    # Volume Operation failed
     'volume': [{'overallRC': 300, 'modID': ModRCs['volume'], 'rc': 300},
                {1: "Database operation failed, error: %(msg)s",
                 3: "Volume %(vol)s has already been attached on instance "
@@ -245,32 +250,36 @@ errors = {
                    "%(userid)s with reason %(msg)s",
                 10: "Failed to refresh bootmap for RHCOS: "
                     "transportfiles are required",
+                11: "Failed to get volume connector of %(userid)s: "
+                    "%(msg)s",
+                12: "PCHIDs info missing: "
+                    "%(msg)s",
                 },
                "Operation on Volume failed"
                ],
-# Monitor Operation failed
+    # Monitor Operation failed
     'monitor': [{'overallRC': 300, 'modID': ModRCs['monitor'], 'rc': 300},
                 {1: "Database operation failed, error: %(msg)s",
                  },
                 "Operation on Monitor failed"
                 ],
-# File Operation failed
+    # File Operation failed
     'file': [{'overallRC': 300, 'modID': ModRCs['file'], 'rc': 300},
              {1: "File import operation failed",
               2: "File export operation failed"},
              "Operation on file failed"
-            ],
-# REST API Request error (Only used by sdkwsgi)
-# 'modID' would be set to ModRC['sdkwsgi']
+             ],
+    # REST API Request error (Only used by sdkwsgi)
+    # 'modID' would be set to ModRC['sdkwsgi']
     'RESTAPI': [{'overallRC': 400, 'modID': ModRCs['sdkwsgi'], 'rc': 400},
                 {1: "Invalid request",
                  },
                 "REST API Request error"
                 ],
-# Object not exist
-# Used when the operated object does not exist.
-# 'modID' would be set to each module rc when raise the exception
-# 'rs' is always 1
+    # Object not exist
+    # Used when the operated object does not exist.
+    # 'modID' would be set to each module rc when raise the exception
+    # 'rs' is always 1
     'notExist': [{'overallRC': 404, 'modID': None, 'rc': 404},
                  {1: "%(obj_desc)s does not exist.",
                   2: "Not found error: '%(msg)s'",
@@ -279,7 +288,10 @@ errors = {
                       "deleted out of z/VM Cloud Connector.")},
                  "The operated object does not exist"
                  ],
-# Conflict Error (The to-be-updated object status conflict)
+    'alreadyExist': [{'overallRC': 409, 'modID': None, 'rc': 409},
+                     {1: "%(obj_desc)s already exists."}
+                     ],
+    # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
                  {1: "Guest '%(userid)s' is not in active status.",
                   2: ("Failed to live resize cpus of guest: '%(userid)s', "
@@ -317,57 +329,63 @@ errors = {
                   17: ("Failed to delete dedicated device from guest "
                        "%(userid)s %(vdev)s, error: %(obj)s is locked"),
                   18: ("Failed to live resize memory of guest: '%(userid)s', "
-                      "error: current active memory size: '%(active)i'm is "
-                      "greater than requested size: '%(req)i'm."),
+                       "error: current active memory size: '%(active)i'm is "
+                       "greater than requested size: '%(req)i'm."),
                   19: ("Failed to resize memory of guest: '%(userid)s', "
-                      "error: user definition is not in expected format, "
-                      "cann't get the defined/max/reserved storage."),
+                       "error: user definition is not in expected format, "
+                       "cann't get the defined/max/reserved storage."),
                   20: ("Failed to resize memory of guest: '%(userid)s', "
-                      "error: the requested memory size: '%(req)im' exceeds "
-                      "the maximum memory size defined: '%(max)im'."),
+                       "error: the requested memory size: '%(req)im' exceeds "
+                       "the maximum memory size defined: '%(max)im'."),
                   21: ("Failed to live resize memory of guest: %(userid)s, "
-                      "error: the memory size to be increased: '%(inc)im' "
-                      "is greater than the maximum reserved memory size: "
-                      "'%(max)im'."),
+                       "error: the memory size to be increased: '%(inc)im' "
+                       "is greater than the maximum reserved memory size: "
+                       "'%(max)im'."),
+                  22: ("Failed to delete FCP Multipath Template, "
+                       "error: %(msg)s"),
+                  23: ("Failed to create or update FCP Multipath Template, "
+                       "error: %(msg)s"),
+                  24: ("Failed to edit FCP Multipath Template, "
+                       "error: %(msg)s")
                   },
                  "The operated object status conflict"
                  ],
-# Object deleted.
-# The operated object has been deleted and not exist any more.
-# This can be used for some module that support deleted=1 in DB.
+    # Object deleted.
+    # The operated object has been deleted and not exist any more.
+    # This can be used for some module that support deleted=1 in DB.
     'deleted': [{'overallRC': 410, 'modID': None, 'rc': 410},
                 {},
                 "The operated object is deleted"
                 ],
-# Internal error
-# Module Internal error, rc is not defined here, it will be set when raising
-# exception. when module id is not specified, the 'zvmsdk' module rc will be
-# used.
+    # Internal error
+    # Module Internal error, rc is not defined here, it will be set when raising
+    # exception. when module id is not specified, the 'zvmsdk' module rc will be
+    # used.
     'internal': [{'overallRC': 500, 'modID': None, 'rc': 500},
                  {1: "Unexpected internal error in ZVM SDK, error: %(msg)s"},
                  "ZVM SDK Internal Error"
                  ],
-# Service Unavailable
-# The SDK REST reject deploy/capture requests because of the concurrent
-# capture/deploy running exceeds the maximum number.
+    # Service Unavailable
+    # The SDK REST reject deploy/capture requests because of the concurrent
+    # capture/deploy running exceeds the maximum number.
     'serviceUnavail': [{'overallRC': 503, 'modID': ModRCs['sdkwsgi'],
                         'rc': 503},
                        {1: "Max concurrent deploy/capture requests received, "
-                        "request is rejected. %(req)s",
+                           "request is rejected. %(req)s",
                         },
                        "z/VM Cloud Connector service is unavailable"
                        ],
-# Service not support
-# The requested function has not been implemented in current release,
-# the 'modID' would be set to each module rc when raise the exception
-# 'rs' is always 1
+    # Service not support
+    # The requested function has not been implemented in current release,
+    # the 'modID' would be set to each module rc when raise the exception
+    # 'rs' is always 1
     'serviceNotSupport': [{'overallRC': 501, 'modID': None, 'rc': 501},
                           {1: "The requested function: %(func)s has not been "
-                           "implemented in current release",
-                          },
+                              "implemented in current release",
+                           },
                           "z/VM Cloud Connector function not implemented"
-                         ],
-    }
+                          ],
+}
 
 # smt internal error
 # This const defines the list of smt errors that should be converted to
@@ -376,7 +394,7 @@ errors = {
 # list of 'rs'
 # when the value is 'None', it means always match.
 SMT_INTERNAL_ERROR = [(4, 4, range(1, 18)),
-                       (2, 2, [99, ]),
-                       (25, None, None),
-                       (99, 99, [416, 417])
-                       ]
+                      (2, 2, [99, ]),
+                      (25, None, None),
+                      (99, 99, [416, 417])
+                      ]

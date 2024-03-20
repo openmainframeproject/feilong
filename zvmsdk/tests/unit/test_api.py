@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -32,10 +35,63 @@ class SDKAPITestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
         vmops.VMOps.check_guests_exist_in_db = mock.MagicMock()
+        patcher = mock.patch('zvmsdk.volumeop.FCPManager.sync_db')
+        self.addCleanup(patcher.stop)
+        self.mock_sync_db = patcher.start()
+        patcher_pchids = mock.patch("zvmsdk.utils.print_all_pchids", mock.Mock())
+        patcher_pchids.start()
+        self.addCleanup(patcher_pchids.stop)
         self.api = api.SDKAPI()
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.edit_fcp_template")
+    def test_edit_fcp_template(self, mock_edit_tmpl):
+        """ Test edit_fcp_template """
+        tmpl_id = 'fake_id'
+        kwargs = {
+            'name': 'new_name',
+            'description': 'new_desc',
+            'fcp_devices': '1A00-1A03;1B00-1B03',
+            'host_default': False,
+            'default_sp_list': ['sp1'],
+            'min_fcp_paths_count': 2}
+        self.api.edit_fcp_template(tmpl_id, **kwargs)
+        mock_edit_tmpl.assert_called_once_with(tmpl_id, **kwargs)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_fcp_templates")
+    def test_get_fcp_templates(self, mock_get_tmpl):
+        """ Test get_fcp_templates """
+        tmpl_list = ['fake_id']
+        assigner_id = 'fake_user'
+        host_default = True
+        default_sp_list = ['fake_sp']
+        self.api.get_fcp_templates(template_id_list=tmpl_list,
+                                   assigner_id=assigner_id,
+                                   default_sp_list=default_sp_list,
+                                   host_default=host_default)
+        mock_get_tmpl.assert_called_once_with(template_id_list=tmpl_list,
+                                              assigner_id=assigner_id,
+                                              default_sp_list=default_sp_list,
+                                              host_default=host_default)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_fcp_templates_details")
+    def test_get_fcp_templates_details(self, mock_get_tmpl_details):
+        """ Test get_fcp_templates_details """
+        tmpl_list = ['fake_id']
+        self.api.get_fcp_templates_details(template_id_list=tmpl_list,
+                                           raw=True, statistics=True,
+                                           sync_with_zvm=False)
+        mock_get_tmpl_details.assert_called_once_with(template_id_list=['fake_id'],
+                                                      raw=True,
+                                                      statistics=True,
+                                                      sync_with_zvm=False)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.delete_fcp_template")
+    def test_delete_fcp_template(self, mock_del_tmpl):
+        self.api.delete_fcp_template('fake_id')
+        mock_del_tmpl.assert_called_once_with('fake_id')
 
     @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
     def test_guest_get_power_state_real(self, gstate):
@@ -124,7 +180,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile, max_cpu, max_mem)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
-                                  '', '', '', [], {}, '', None)
+                                  '', '', '', [], {}, '', None, '', '', '',
+                                  '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_account(self, create_vm):
@@ -141,7 +198,80 @@ class SDKAPITestCase(base.SDKTestCase):
                               account=account)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
-                                  '', '', '', [], {}, account, None)
+                                  '', '', '', [], {}, account, None, '', '',
+                                  '', '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_cpupool(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        cschedule = 'POOL1'
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              cschedule=cschedule)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', None, cschedule, '',
+                                  '', '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_share(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        cshare = 'RELATIVE 125'
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              cshare=cshare)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', None, '', cshare, '',
+                                  '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_rdomain(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        rdomain = 'Z15ONLY'
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              rdomain=rdomain)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', None, '', '',
+                                  rdomain, '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_pcif(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        pcif = '100:200'
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              pcif=pcif)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', None, '', '',
+                                  '', pcif)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_comment(self, create_vm):
@@ -158,7 +288,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               comment_list=comment_list)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
-                                  '', '', '', [], {}, '', comment_list)
+                                  '', '', '', [], {}, '', comment_list, '',
+                                  '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_profile(self, create_vm):
@@ -174,7 +305,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile, max_cpu, max_mem)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, 'abc', max_cpu, max_mem,
-                                  '', '', '', [], {}, '', None)
+                                  '', '', '', [], {}, '', None, '', '', '',
+                                  '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_no_disk_pool(self, create_vm):
@@ -206,7 +338,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
-                                          '', '', '', [], {}, '', None)
+                                          '', '', '', [], {}, '', None, '',
+                                          '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_no_disk_pool_force_mdisk(self, create_vm):
@@ -251,7 +384,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
-                                          '', '', '', [], {}, '', None)
+                                          '', '', '', [], {}, '', None, '',
+                                          '', '', '')
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
@@ -438,9 +572,12 @@ class SDKAPITestCase(base.SDKTestCase):
         fcpchannel = ['5d71']
         wwpn = ['5005076802100c1b', '5005076802200c1b']
         lun = '01000000000000'
-        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
-        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun,
-                                    transportfiles=None, guest_networks=None)
+        wwid = '600507640083826de00000000000605b'
+        fcp_template_id = 'fake_tmpl_id'
+        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid, fcp_template_id=fcp_template_id)
+        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun, wwid=wwid,
+                                            transportfiles=None, guest_networks=None,
+                                            fcp_template_id=fcp_template_id)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")
@@ -617,11 +754,17 @@ class SDKAPITestCase(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         disk_pool = 'ECKD:IAS1PL'
         result = self.api.host_get_diskpool_volumes(disk_pool)
-        diskpool_vols.assert_called_once_with('IAS1PL')
+        diskpool_vols.assert_called_once_with('ECKD:IAS1PL')
         # Test disk_pool is None
         disk_pool = None
-        result = self.api.host_get_diskpool_volumes(disk_pool)
-        self.assertEqual(result, {})
+        try:
+            self.api.host_get_diskpool_volumes(disk_pool)
+        except Exception as exc:
+            errmsg = ("Invalid disk_pool input None, disk_pool should be"
+                      " configured for sdkserver.")
+            result = errmsg in six.text_type(exc)
+            self.assertEqual(result, True)
+            pass
 
     @mock.patch("zvmsdk.hostops.HOSTOps.get_volume_info")
     def test_host_get_volume_info(self, volume_info):

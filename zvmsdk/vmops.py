@@ -1,4 +1,7 @@
-# Copyright 2017,2020 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -67,6 +70,42 @@ class VMOps(object):
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
         perf_info = self._smtclient.get_image_performance_info(userid)
+        try:
+            is_rhcos = 'rhcos' in self._GuestDbOperator.get_guest_by_userid(
+                userid)[2].lower()
+        except (ValueError, AttributeError, IndexError, TypeError) as err:
+            msg = ('Failed to execute command on query the type of guest with'
+                   'userid %(userid)s and error shows with %(err)s'
+                   % {'userid': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
+
+        act_cpus_num = 0
+        os_distro = ''
+        kernel_info = ''
+        # Get the online CPU number, OS distro and kernel version
+        try:
+            # Skip IUCV authorization and online cpu number for RHCOS guests
+            if not is_rhcos:
+                act_cpus = self._smtclient.get_active_cpu_addrs(userid)
+                act_cpus_num = len(act_cpus)
+                LOG.debug('Online cpu info: %s, %d' % (act_cpus, act_cpus_num))
+        except exception.SDKSMTRequestFailed as err:
+            msg = ('Failed to execute command on capture source vm %(vm)s '
+                   'to get online cpu number with error %(err)s'
+                   % {'vm': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
+
+        try:
+            # Skip OS distro for RHCOS guests
+            if not is_rhcos:
+                os_distro = self._smtclient.guest_get_os_version(userid)
+                kernel_info = self._smtclient.guest_get_kernel_info(userid)
+                LOG.debug('OS and kernel info: %s, %s' % (os_distro, kernel_info))
+        except exception.SDKSMTRequestFailed as err:
+            msg = ('Failed to execute command on capture source vm %(vm)s '
+                   'to get OS distro with error %(err)s'
+                   % {'vm': userid, 'err': err.results['response'][0]})
+            LOG.error(msg)
 
         if perf_info:
             try:
@@ -85,16 +124,22 @@ class VMOps(object):
                     'max_mem_kb': max_mem_kb,
                     'mem_kb': mem_kb,
                     'num_cpu': num_cpu,
-                    'cpu_time_us': cpu_time_us}
+                    'cpu_time_us': cpu_time_us,
+                    'online_cpu_num': act_cpus_num,
+                    'os_distro': os_distro,
+                    'kernel_info': kernel_info}
         else:
             # virtual machine in shutdown state or not exists
             dict_info = self._smtclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
-                'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
+                'max_mem_kb': int(self._get_max_memory_from_user_dict(dict_info)),
                 'mem_kb': 0,
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
-                'cpu_time_us': 0}
+                'cpu_time_us': 0,
+                'online_cpu_num': act_cpus_num,
+                'os_distro': os_distro,
+                'kernel_info': kernel_info}
 
     def get_adapters_info(self, userid):
         adapters_info = self._smtclient.get_adapters_info(userid)
@@ -103,6 +148,14 @@ class VMOps(object):
             LOG.error(msg)
             raise exception.SDKInternalError(msg=msg, modID='guest')
         return {'adapters': adapters_info}
+
+    def get_disks_info(self, userid):
+        disks_info = self._smtclient.get_disks_info(userid)
+        if not disks_info:
+            msg = 'Get disks information failed on: %s' % userid
+            LOG.error(msg)
+            raise exception.SDKInternalError(msg=msg, modID='guest')
+        return {'minidisks': disks_info}
 
     def instance_metadata(self, instance, content, extra_md):
         pass
@@ -191,7 +244,7 @@ class VMOps(object):
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem, ipl_from,
                   ipl_param, ipl_loadparam, dedicate_vdevs, loaddev, account,
-                  comment_list):
+                  comment_list, cschedule, cshare, rdomain, pcif):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
@@ -200,7 +253,8 @@ class VMOps(object):
                                    max_cpu, max_mem, ipl_from,
                                    ipl_param, ipl_loadparam,
                                    dedicate_vdevs, loaddev, account,
-                                   comment_list)
+                                   comment_list, cschedule, cshare, rdomain,
+                                   pcif)
 
         # add userid into smapi namelist
         self._smtclient.namelist_add(self._namelist, userid)
@@ -249,6 +303,9 @@ class VMOps(object):
 
     def guest_grow_root_volume(self, userid, os_version):
         """ Punch the grow partition script to the target guest. """
+        # firstly check if user wants to extend the volume
+        if CONF.guest.extend_partition_fs.lower() != 'true':
+            return
         LOG.debug('Begin to punch grow partition commands to guest: %s',
                   userid)
         linuxdist = self._dist_manager.get_linux_dist(os_version)()

@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -20,6 +23,7 @@ from zvmsdk import log
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import file
 from zvmsdk.sdkwsgi.handlers import guest
+from zvmsdk.sdkwsgi.handlers import healthy
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -57,8 +61,16 @@ ROUTE_LIST = (
     ('/volumes/conn/{userid}', {
         'GET': volume.get_volume_connector,
     }),
-     ('/volumes/fcp', {
-        'GET': volume.get_all_fcp_usage,
+    ('/volumes/fcptemplates', {
+        'POST': volume.create_fcp_template,
+        'GET': volume.get_fcp_templates,
+    }),
+    ('/volumes/fcptemplates/detail', {
+        'GET': volume.get_fcp_templates_details,
+    }),
+    ('/volumes/fcptemplates/{template_id}', {
+        'DELETE': volume.delete_fcp_template,
+        'PUT': volume.edit_fcp_template
     }),
      ('/volumes/fcp/{fcp_id}', {
         'GET': volume.get_fcp_usage,
@@ -104,6 +116,10 @@ ROUTE_LIST = (
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,
         'PUT': guest.guest_config_disks,
+        'GET': guest.guest_get_disks_info,
+    }),
+    ('/smapi-healthy', {
+        'GET': healthy.healthy,
     }),
     ('/host', {
         'GET': host.host_get_info,
@@ -119,6 +135,9 @@ ROUTE_LIST = (
     }),
     ('/host/volume', {
         'GET': host.host_get_volume_info,
+    }),
+    ('/host/ssi', {
+        'GET': host.host_get_ssi_info,
     }),
     ('/images', {
         'POST': image.image_create,
@@ -146,6 +165,9 @@ ROUTE_LIST = (
         'GET': vswitch.vswitch_query,
         'DELETE': vswitch.vswitch_delete,
         'PUT': vswitch.vswitch_update,
+    }),
+    ('/vswitch', {
+        'GET': vswitch.get_switch_info,
     }),
 )
 

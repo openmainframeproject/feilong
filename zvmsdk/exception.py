@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -193,6 +196,18 @@ class SDKObjectNotExistError(SDKBaseException):
         results['rs'] = rs
         errormsg = rc[1][rs] % {'obj_desc': obj_desc}
         super(SDKObjectNotExistError, self).__init__(results=results,
+                                                     message=errormsg)
+
+
+class SDKObjectAlreadyExistError(SDKBaseException):
+    """The object to create or add is already exist in ZCC."""
+    def __init__(self, obj_desc, modID='zvmsdk', rs=1):
+        rc = returncode.errors['alreadyExist']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs[modID]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % {'obj_desc': obj_desc}
+        super(SDKObjectAlreadyExistError, self).__init__(results=results,
                                                      message=errormsg)
 
 

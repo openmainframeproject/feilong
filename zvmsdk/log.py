@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -32,10 +35,7 @@ class Logger():
     def setup(self, log_dir, log_level, log_file_name='zvmsdk.log'):
         # make sure target directory exists
         if not os.path.exists(log_dir):
-            if os.access(log_dir, os.W_OK):
-                os.makedirs(log_dir)
-            else:
-                log_dir = '/tmp/'
+            os.makedirs(log_dir)
 
         # Setup log level
         self.updateloglevel(log_level)

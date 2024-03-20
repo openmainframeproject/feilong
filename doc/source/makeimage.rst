@@ -1,3 +1,7 @@
+..
+ Copyright Contributors to the Feilong Project.
+ SPDX-License-Identifier: CC-BY-4.0
+
 Image and cloud-init Configuration
 **********************************
 
@@ -183,9 +187,9 @@ listed as below:
    by cfgdrive.iso to customize the VM
 
 The Feilong supports initiating changes to zLinux while it is shut
-down or the virtual machine is logged off.The changes to zLinux are implemented
+down or the virtual machine is logged off. The changes to zLinux are implemented
 using zvmguestconfigure that is run when Linux is booted the next time. The steps
-of how to install zvmguestconfigure is described in subsequence sections.
+of how to install zvmguestconfigure is described in subsequent sections.
 
 Configuration of zvmguestconfigure on RHEL6.x and SLES11.x
 ..........................................................

@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # MakeVM functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
@@ -74,15 +77,21 @@ keyOpsList = {
         '--profile': ['profName', 1, 2],
         '--maxCPU': ['maxCPU', 1, 1],
         '--setReservedMem': ['setReservedMem', 0, 0],
+        '--setIniStandbyRem': ['setIniStandbyRem', 0, 0],
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
         '--iplLoadparam': ['iplLoadparam', 1, 2],
         '--dedicate': ['dedicate', 1, 2],
         '--loadportname': ['loadportname', 1, 2],
         '--loadlun': ['loadlun', 1, 2],
+        '--alterdev': ['alterdev', 1, 2],
         '--vdisk': ['vdisk', 1, 2],
         '--account': ['account', 1, 2],
-        '--comment': ['comment', 1, 2]},
+        '--comment': ['comment', 1, 2],
+        '--commandSchedule': ['commandSchedule', 1, 2],
+        '--commandSetShare': ['commandSetShare', 1, 2],
+        '--commandRelocationDomain': ['commandRDomain', 1, 2],
+        '--commandPcif': ['commandSchedule', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -125,8 +134,30 @@ def createVM(rh):
         for i in range(1, rh.parms['cpuCnt']):
             dirLines.append("COMMAND DEFINE CPU %0.2X TYPE IFL" % i)
 
+    if 'commandSchedule' in rh.parms:
+        v = rh.parms['commandSchedule']
+        dirLines.append("COMMAND SCHEDULE * WITHIN POOL %s" % v)
+
+    if 'commandSetShare' in rh.parms:
+        v = rh.parms['commandSetShare']
+        dirLines.append("SHARE %s" % v)
+
+    if 'commandRDomain' in rh.parms:
+        v = rh.parms['commandRDomain']
+        dirLines.append("COMMAND SET VMRELOCATE * DOMAIN %s" % v)
+
+    if 'commandPcif' in rh.parms:
+        v = rh.parms['commandPcif']
+        s = v.split(':')
+        dirLines.append("COMMAND ATTACH PCIF %s * AS %s" % (s[0], s[1]))
+
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']
+        # only use IPL LOADDEV for BFV deploy when supports multipath IPL
+        # alter in parms means the zvm supports multipath IPL
+        if ('alterdev' in rh.parms and 'loadportname' in rh.parms and
+            'loadlun' in rh.parms):
+            ipl_string = "IPL LOADDEV"
 
         if 'iplParam' in rh.parms:
             ipl_string += ("PARM %s " % rh.parms['iplParam'])
@@ -136,9 +167,13 @@ def createVM(rh):
 
         dirLines.append(ipl_string)
 
+        if ('alterdev' in rh.parms and 'loadportname' in rh.parms and
+            'loadlun' in rh.parms):
+            dirLines.append("LOADDEV DEVICE %s " % rh.parms['ipl'])
+
     if 'byUsers' in rh.parms:
-        for user in rh.parms['byUsers']:
-            dirLines.append("LOGONBY " + user)
+        users = ' '.join(rh.parms['byUsers'])
+        dirLines.append("LOGONBY " + users)
 
     priMem = rh.parms['priMemSize'].upper()
     maxMem = rh.parms['maxMemSize'].upper()
@@ -156,6 +191,9 @@ def createVM(rh):
         # error due to it can't get the original reserved memory value.
         dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
 
+    if 'setIniStandbyRem' in rh.parms:
+        dirLines.append("COMMAND DEF STOR INITIAL STANDBY REMAINDER")
+
     if 'loadportname' in rh.parms:
         wwpn = rh.parms['loadportname'].replace("0x", "")
         dirLines.append("LOADDEV PORTname %s" % wwpn)
@@ -163,6 +201,13 @@ def createVM(rh):
     if 'loadlun' in rh.parms:
         lun = rh.parms['loadlun'].replace("0x", "")
         dirLines.append("LOADDEV LUN %s" % lun)
+
+    if 'alterdev' in rh.parms:
+        paths = rh.parms['alterdev'].split(',')
+        for path in paths:
+            device_port = path.split(':')
+            dirLines.append("LOADDEV SCSI ALTERNATE %s PORT %s" % (
+                device_port[0], device_port[1]))
 
     if 'dedicate' in rh.parms:
         vdevs = rh.parms['dedicate'].split()
@@ -339,7 +384,7 @@ def parseCmdline(rh):
 
     if 'byUsers' in rh.parms:
         users = []
-        for user in rh.parms['byUsers'].split(' '):
+        for user in rh.parms['byUsers'].split(':'):
             users.append(user)
         rh.parms['byUsers'] = []
         rh.parms['byUsers'].extend(users)
@@ -370,6 +415,7 @@ def showInvLines(rh):
         "--profile <profName>")
     rh.printLn("N", "                     --maxCPU <maxCPUCnt> " +
         "--setReservedMem")
+    rh.printLn("N", "                     --setIniStandbyRem")
     rh.printLn("N", "                     --dedicate <vdevs> ")
     rh.printLn("N", "                     --loadportname <wwpn> " +
         "--loadlun <lun>")
@@ -437,6 +483,8 @@ def showOperandLines(rh):
                    "Set the additional memory space (maxMemSize - priMemSize)")
         rh.printLn("N", "                              " +
                    "as reserved memory of the virtual machine.")
+        rh.printLn("N", "      --setIniStandbyRem      - " +
+                   "Specifies that the STANDBY storage size should be calculated.")
         rh.printLn("N", "      <password>            - " +
                    "Specifies the password for the new virtual")
         rh.printLn("N", "                              " +

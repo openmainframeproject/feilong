@@ -1,4 +1,7 @@
-# Copyright 2017 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017-2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -51,14 +54,24 @@ class RequestLog(object):
                     size = value
             for index, value in enumerate(headers):
                 if value[0] == 'X-Auth-Token':
-                    headers[index] = ('X-Auth-Token', value[1].decode('utf-8'))
-                    break
+                    if isinstance(value[1], bytes):
+                        headers[index] = ('X-Auth-Token', value[1].decode('utf-8'))
+                        break
 
             self._write_log(environ, req_uri, status, size, headers,
                             exc_info)
             return start_response(status, headers, exc_info)
 
         return self.application(environ, _local_response)
+
+    def _force_debug(self, method, uri):
+        if method == 'POST' and uri == '/token':
+            return True
+
+        if method == 'GET' and uri == '/guests/nics':
+            return True
+
+        return False
 
     def _write_log(self, environ, req_uri, status, size, headers, exc_info):
         if size is None:
@@ -69,10 +82,16 @@ class RequestLog(object):
                 'REQUEST_URI': req_uri,
                 'status': status.split(None, 1)[0],
                 'bytes': size,
-                'headers': headers,
+                'headers': util.mask_tuple_password(headers),
                 'exc_info': exc_info
         }
+
         if LOG.isEnabledFor(logging.INFO):
-            LOG.info(self.format, log_format)
+            # POST '/token' and GET '/guests/nics'
+            # too often, so we want to avoid them
+            if self._force_debug(environ['REQUEST_METHOD'], req_uri):
+                LOG.debug(self.format, log_format)
+            else:
+                LOG.info(self.format, log_format)
         else:
             LOG.debug(self.format, log_format)

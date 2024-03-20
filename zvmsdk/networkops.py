@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -102,6 +105,9 @@ class NetworkOPS(object):
     def delete_nic(self, userid, vdev, active=False):
         self._smtclient.delete_nic(userid, vdev,
                                     active=active)
+
+    def get_switch_info(self, portid):
+        return self._smtclient.get_switch_info(portid)
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):

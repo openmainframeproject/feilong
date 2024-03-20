@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # GetVM functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017,2021 IBM Corp.
@@ -569,6 +572,8 @@ def showOperandLines(rh):
 def extract_fcp_data(rh, raw_data, status):
     """
     extract data from smcli System_WWPN_Query output.
+    we always specify OWNER=YES.
+
     Input:
         raw data returned from smcli
     Output:
@@ -579,11 +584,13 @@ def extract_fcp_data(rh, raw_data, status):
        NPIV world wide port number: C05076DE330005EA\n
        Channel path ID: 27\n
        Physical world wide port number:C05076DE33002E41\n
+       Owner: TEST0008\n
      FCP device number: 1B0F\n
        Status: Active\n
        NPIV world wide port number: C05076DE330005EB\n
        Channel path ID: 27\n
        Physical world wide port number:C05076DE33002E41\n'
+       Owner: NONE\n
     """
     raw_data = raw_data.split('\n')
 
@@ -591,14 +598,31 @@ def extract_fcp_data(rh, raw_data, status):
     data = []
     for i in raw_data:
         i = i.strip(' \n')
-        if i == '':
+        if i == '' or i == '#':
+            """
+            sometimes the SMCLI output:
+            FCP device number: 1B07
+               Status: Free
+               NPIV world wide port number: C05076DE33000B47
+               Channel path ID: 19
+               Physical world wide port number: C05076DE33001981
+               Owner: NONElow
+            #
+
+            we dont know the reason, but in this scenario, we should skip the lines that:
+            1. only contains spaces
+            2. only contains #
+            """
+            msg = ("When extracting fcp data, skip one line: %s" % i)
+            rh.printSysLog(msg)
             continue
         else:
             data.append(i)
     # put matched data into one list of strings
     results = []
-    for i in range(0, len(data), 5):
-        if (i + 5) > len(data):
+    lines_per_item = 6
+    for i in range(0, len(data), lines_per_item):
+        if (i + lines_per_item) > len(data):
             # sometimes the SMCLI output:
             #
             # FCP device number: 1B0F
@@ -611,13 +635,13 @@ def extract_fcp_data(rh, raw_data, status):
             # which are more than 5 lines
             # we still do not know the reason, but we need handle this
             msg = ("extract_fcp_data interrupt because abnormal formatted "
-                   "output %s.", data)
-            rh.printLn("WS", msg)
+                   "output %s." % data)
+            rh.printSysLog(msg)
             break
         temp = data[i + 1].split(':')[-1].strip()
         # only return results match the status
-        if temp.lower() == status.lower():
-            results.extend(data[i:i + 5])
+        if status.lower() == "all" or temp.lower() == status.lower():
+            results.extend(data[i:i + lines_per_item])
 
     return '\n'.join(results)
 
@@ -639,7 +663,7 @@ def fcpinfo(rh):
     """
     rh.printSysLog("Enter changeVM.dedicate")
 
-    parms = ["-T", rh.userid]
+    parms = ["-T", rh.userid, "-k OWNER=YES"]
 
     hideList = []
     results = invokeSMCLI(rh,
@@ -647,18 +671,33 @@ def fcpinfo(rh):
                           parms,
                           hideInLog=hideList)
 
-    if results['overallRC'] != 0:
-        # SMAPI API failed.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-
     if results['overallRC'] == 0:
         # extract data from smcli return
         ret = extract_fcp_data(rh, results['response'], rh.parms['status'])
         # write the ret into results['response']
         rh.printLn("N", ret)
     else:
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 4 and results['rs'] == 28:
+            # In this case, Return buffer is empty. Means there is no FCP
+            # devices in z/VM, so we will reset results and return empty
+            # content, so that the upper layer can not sense the errors.
+            rh.printSysLog("In changeVM.dedicate, not found fcp "
+                           "devices in z/VM, will return empty.")
+            new_results = dict()
+            # Set overallRC to 0 to let upper layer ignore this error.
+            new_results['overallRC'] = 0
+            # The fcp info is in response, in this case, should be empty.
+            new_results['response'] = ''
+            # In case that the upper layer need to know the return code
+            # and reason code, so return them in results.
+            new_results['rc'] = results['rc']
+            new_results['rs'] = results['rs']
+            new_results['errno'] = results['errno']
+            new_results['strError'] = results['strError']
+            rh.updateResults(new_results)
+        else:
+            rh.printLn("ES", results['response'])
+            # Use results from invokeSMCLI
+            rh.updateResults(results)
 
     return rh.results['overallRC']

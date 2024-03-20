@@ -1,0 +1,168 @@
+#!/usr/bin/python
+#
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+#
+#    Copyright 2023, 2023 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+
+import json
+import logging
+import argparse
+from datetime import datetime
+from zvmsdk import database
+from zvmsdk import utils
+from zvmsdk import volumeop
+
+
+LOG = logging.getLogger(__name__)
+LOG_DIR = '/var/log/zvmsdk/'
+LOG_PREFIX = 'zvmsdk-getpchid'
+
+#################################################
+#            Common Utility Methods             #
+#################################################
+
+def _parse_arguments():
+    """Parses the arguments from the command line that was input"""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='The command is used to get the FCP devices \n'
+                    '(allocated from any FCP multipath template) \n'
+                    'and the PCHIDs information from all FCP multipath templates.\n\n'
+    )
+    return parser.parse_args()
+
+
+def setup_logging():
+    """Setup logging"""
+    timestamp = datetime.now().strftime('%Y-%m-%d-%H%M%S')
+    log_file = '{}{}_{}.log'.format(LOG_DIR, LOG_PREFIX, timestamp)
+    logging.basicConfig(
+        filename=log_file,
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+
+#################################################
+#            Main Operation Methods             #
+#################################################
+
+def get_fcp_devices_per_pchid():
+    """ Get PCHIDs and FCP devices from all FCP multipath templates
+
+    :return: (dict) PCHIDs are ordered by PCHID No.
+    example:
+        {
+            "cpc_sn": "0000000000082F57",
+            "cpc_name": "M54",
+            "lpar": "ZVM4OCP3",
+            "hypervisor_hostname": "BOEM5403",
+            "pchids": [
+                {
+                    "pchid": "0240",
+                    "fcp_devices": "",
+                    "fcp_devices_count": 0
+                },
+                {
+                    "pchid": "0260",
+                    "fcp_devices": "",
+                    "fcp_devices_count": 0
+                },
+                {
+                    "pchid": "02E0",
+                    "fcp_devices": "1A01 - 1A03",
+                    "fcp_devices_count": 3
+                },
+                {
+                    "pchid": "03FC",
+                    "fcp_devices": "1B02, 1B05",
+                    "fcp_devices_count": 2
+                }
+            ]
+        }
+    """
+
+    # init FCPManager, which sync FCP DB with the FCP info queried from zVM
+    fcp_mgr = volumeop.FCPManager()
+    # put all related DB queries in one DB session
+    with database.get_fcp_conn():
+        # get the PCHIDs of all the FCP devices
+        # that are included in any FCP multipath template
+        # all_pchids ex: a list of pchids
+        # ['03FC', '0240', '02E0', '0260']
+        all_pchids = fcp_mgr.db.get_pchids_from_all_fcp_templates()
+        # sort all_pchids to later append into pchids ordered by PCHID No.
+        # ['0240', '0260', '02E0', '03FC']
+        all_pchids.sort()
+        # get the PCHIDs of all the inuse FCP devices
+        # inuse_pchids ex:
+        # (dict) PCHIDs as keys, FCP devices as values
+        # {
+        #    '02E0': '1A01 - 1A03',
+        #    '03FC': '1B02, 1B05'
+        # }
+        inuse_pchids = fcp_mgr.db.get_pchids_of_all_inuse_fcp_devices()
+
+    # get the unused PCHIDs
+    # unuse_pchids ex:
+    # ['0240', '0260']
+    unuse_pchids = list(set(all_pchids) - set(inuse_pchids))
+    unuse_pchids.sort()
+    # log
+    LOG.info("all pchids in FCP multipath templates: {}".format(all_pchids))
+    LOG.info("inuse pchids in FCP multipath templates: {}".format(inuse_pchids))
+    LOG.info("unused pchids in FCP multipath templates: {}".format(unuse_pchids))
+    # get zhypinfo
+    zhypinfo = utils.get_zhypinfo()
+    cpc_sn = utils.get_cpc_sn(zhypinfo=zhypinfo)
+    cpc_name = utils.get_cpc_name(zhypinfo=zhypinfo)
+    lpar = utils.get_lpar_name(zhypinfo=zhypinfo)
+    hypervisor_hostname = utils.get_zvm_name()
+    # init result
+    result =  {'cpc_sn': cpc_sn,
+               'cpc_name': cpc_name,
+               'hypervisor_hostname': hypervisor_hostname,
+               'lpar': lpar,
+               'pchids': []}
+    # append into pchids ordered by pchid No.
+    for pd in all_pchids:
+        item = {'pchid': pd}
+        if pd in inuse_pchids:
+            # for inuse_pchids
+            item['fcp_devices'] = inuse_pchids[pd]
+            item['fcp_devices_count'] = len(
+                utils.expand_fcp_list(inuse_pchids[pd])[0])
+        else:
+            # for unused_pchids
+            item['fcp_devices'] = ''
+            item['fcp_devices_count'] = 0
+        result['pchids'].append(item)
+    return result
+
+#################################################
+#               Main Entry Point                #
+#################################################
+
+if __name__ == "__main__":
+    # Parse the arguments that were provided on the command line
+    _parse_arguments()
+    # setup_logging
+    setup_logging()
+    # Get PCHIDs and FCP devices from all FCP templates
+    result = get_fcp_devices_per_pchid()
+    print(json.dumps(result))

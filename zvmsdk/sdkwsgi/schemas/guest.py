@@ -1,4 +1,7 @@
-# Copyright 2017,2018 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -35,7 +38,11 @@ create = {
                 'dedicate_vdevs': parameter_types.dedicate_vdevs,
                 'loaddev': parameter_types.loaddev,
                 'account': parameter_types.account,
-                'comments': parameter_types.comment_list
+                'comments': parameter_types.comment_list,
+                'cschedule': parameter_types.cpupool,
+                'cshare': parameter_types.share,
+                'rdomain': parameter_types.rdomain,
+                'pcif': parameter_types.pcif
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
@@ -49,7 +56,7 @@ create = {
 live_migrate_vm = {
     'type': 'object',
     'properties': {
-        'dest_zcc_userid': parameter_types.userid,
+        'dest_zcc_userid': parameter_types.userid_or_None,
         'destination': parameter_types.userid,
         'parms': parameter_types.live_migrate_parms,
         'operation': parameter_types.name,

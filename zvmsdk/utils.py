@@ -1,4 +1,7 @@
-# Copyright 2017,2020 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2023 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # Copyright 2011 OpenStack Foundation.
 #
@@ -17,6 +20,8 @@
 import contextlib
 import errno
 import functools
+import inspect
+import json
 import netaddr
 import os
 import pwd
@@ -29,6 +34,8 @@ import sys
 import tempfile
 import time
 import traceback
+import threading
+import string
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -38,6 +45,8 @@ from zvmsdk import log
 
 CONF = config.CONF
 LOG = log.LOG
+# maximum I knew is 60019, so make it double
+maximumCyl = 130000
 
 
 def execute(cmd, timeout=None):
@@ -115,15 +124,18 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
 
 
 def convert_to_mb(s):
-    """Convert memory size from GB to MB."""
+    """Convert memory size to MB."""
     s = s.upper()
     try:
         if s.endswith('G'):
             return float(s[:-1].strip()) * 1024
         elif s.endswith('T'):
             return float(s[:-1].strip()) * 1024 * 1024
-        else:
+        elif s.endswith('M'):
             return float(s[:-1].strip())
+        else:
+            # s is in Bytes, convert to MB
+            return float(s.strip()) / 1024 / 1024
     except (IndexError, ValueError, KeyError, TypeError):
         errmsg = ("Invalid memory format: %s") % s
         raise exception.SDKInternalError(msg=errmsg)
@@ -336,6 +348,119 @@ def check_input_types(*types, **validkeys):
     return decorator
 
 
+def synchronized(lock_name):
+    """Synchronization decorator.
+
+    :param lock_name: (str) Lock name.
+
+    Decorating a method like so::
+
+        @synchronized('mylock')
+        def foo(self, *args):
+           ...
+
+    ensures that only one thread will execute the foo method at a time.
+
+    Different methods can share the same lock::
+
+        @synchronized('mylock')
+        def foo(self, *args):
+           ...
+
+        @synchronized('mylock')
+        def bar(self, *args):
+           ...
+
+    This way only one of either foo or bar can be executing at a time.
+
+    Lock name can be formatted using Python format string syntax::
+
+        @synchronized('volumeAttachOrDetach-{connection_info[assigner_id]}')
+        def attach(self, connection_info):
+           ...
+    """
+    # meta_lock:
+    # used for serializing concurrent threads to access lock_pool
+    meta_lock = vars(synchronized).setdefault(
+        '_meta_lock', threading.RLock())
+    LOG.info('synchronized: meta_lock {}, current thread {}'.format(
+        meta_lock, threading.current_thread().name))
+    # concurrent_thread_count:
+    # for each lock in lock_pool,
+    # count the number of concurrent threads, including
+    # the thread holding the lock, and the threads waiting for the lock
+    concurrent_thread_count = vars(synchronized).setdefault(
+        '_concurrent_thread_count', dict())
+    # lock_pool:
+    # store the locks with lock_name as key
+    lock_pool = vars(synchronized).setdefault(
+        '_lock_pool', dict())
+    LOG.info('synchronized: lock_pool {}, current thread {}'.format(
+        lock_pool, threading.current_thread().name))
+
+    def _decorator(func):
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            # Pre-process:
+            # format lock_name
+            call_args = inspect.getcallargs(func, *args, **kwargs)
+            formatted_name = lock_name.format(**call_args)
+            cur_thread = threading.current_thread()
+            # create only one lock per formatted_name
+            with meta_lock:
+                if formatted_name not in lock_pool:
+                    lock_pool[formatted_name] = threading.RLock()
+                    concurrent_thread_count[formatted_name] = 1
+                else:
+                    concurrent_thread_count[formatted_name] += 1
+            the_lock = lock_pool[formatted_name]
+            # acquire the_lock
+            LOG.info('synchronized: '
+                     'acquiring lock {}, '
+                     'concurrent thread count {}, '
+                     'current thread: {}'.format(
+                formatted_name,
+                concurrent_thread_count[formatted_name],
+                cur_thread.name))
+            t1 = time.time()
+            the_lock.acquire()
+            t2 = time.time()
+            LOG.info('synchronized: '
+                     'acquired lock {}, '
+                     'waited {:.2f} seconds, '
+                     'current thread: {}'.format(
+                formatted_name, t2 - t1, cur_thread.name))
+            try:
+                # Call decorated function
+                return func(*args, **kwargs)
+            finally:
+                # release the_lock
+                the_lock.release()
+                t3 = time.time()
+                LOG.info('synchronized: '
+                         'released lock {}, '
+                         'held {:.2f} seconds, '
+                         'current thread: {}'.format(
+                    formatted_name, t3 - t2, cur_thread.name))
+                # Post-process:
+                # delete/pop the lock if no concurrent thread for it
+                with meta_lock:
+                    if concurrent_thread_count[formatted_name] == 1:
+                        lock_pool.pop(formatted_name)
+                        concurrent_thread_count.pop(formatted_name)
+                    else:
+                        concurrent_thread_count[formatted_name] -= 1
+                    LOG.info('synchronized: '
+                             'after releasing lock {}, '
+                             'concurrent thread count {}, '
+                             'current thread: {}'.format(
+                        formatted_name,
+                        concurrent_thread_count.get(formatted_name, 0),
+                        cur_thread.name))
+        return _wrapper
+    return _decorator
+
+
 def import_class(import_str):
     """Returns a class from a string including module and class."""
     mod_str, _sep, class_str = import_str.rpartition('.')
@@ -433,8 +558,7 @@ def ignore_errors():
     try:
         yield
     except Exception as err:
-        msg = 'ignore an error:%s' % err.format_message()
-        LOG.debug(msg)
+        LOG.error('ignore an error: ' + str(err))
         pass
 
 
@@ -450,6 +574,21 @@ def get_smt_userid():
         return userid
     except Exception as err:
         msg = ("Could not find the userid of the smt server: %s") % err
+        raise exception.SDKInternalError(msg=msg)
+
+
+def get_zvm_name():
+    """Get the name of the LPAR that this vm is on."""
+    cmd = ["sudo", "/sbin/vmcp", "query userid"]
+    try:
+        userid = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        userid = bytes.decode(userid)
+        userid = userid.split()[-1]
+        return userid
+    except Exception as err:
+        msg = ("Failed to get the LPAR name for the smt server: %s") % err
         raise exception.SDKInternalError(msg=msg)
 
 
@@ -497,6 +636,50 @@ def translate_response_data_to_expect_dict(results, step):
             key, value = results[i + k].split(':')
             data[volume_name][key] = value
     return data
+
+
+def translate_disk_size(disk_type, disk_size):
+    size = 0
+
+    if disk_type[:4] == "3390":
+        size = int(disk_size) * 737280
+    elif disk_type[:4] == "9336":
+        size = int(disk_size) * 512
+    else:
+        # now we don't know the type, it might be caused
+        # by SMAPI layer and we got a ??? type
+        # then let's guess the type if > maximumCyl
+        # then think it's a 9336, otherwise, take as 3390
+        if int(disk_size) > maximumCyl:
+            size = int(disk_size) * 512
+        else:
+            size = int(disk_size) * 737280
+
+    return size
+
+
+def translate_disk_pool_info_to_dict(pool, results):
+    if isinstance(pool, list):
+        poolnames = [pool_name.upper() for pool_name in pool]
+    else:
+        poolnames = [pool.upper()]
+
+    # The directory for the translated infos
+    disk_pool_infos = {}
+    key_info = ['volume_name', 'device_type', 'start_cylinder', 'free_size', 'dasd_group', 'region_name']
+    for i in range(len(poolnames)):
+        disk_pool_infos[poolnames[i]] = []
+    for line in results.splitlines():
+        # For the volume info in each line
+        volume_info = {}
+        parts = line.split()
+        parts[3] = round(translate_disk_size(parts[1], parts[3]) / (1024 * 1024 * 1024))
+        poolname = parts[4].upper()
+        for i in range(len(key_info)):
+            volume_info[key_info[i]] = parts[i]
+        if poolname in poolnames:
+            disk_pool_infos[poolname].append(volume_info)
+    return disk_pool_infos
 
 
 @wrap_invalid_resp_data_error
@@ -606,3 +789,529 @@ def check_userid_on_others(userid):
     except Exception as err:
         msg = ("Could not find the userid: %s") % err
         raise exception.SDKInternalError(msg=msg)
+
+
+def is_chpid_virtualization_enabled():
+    """Return True if chpid virtualization is on
+    otherwise, return False.
+    """
+    cmd = ["sudo", "/sbin/vmcp", "query chpidv"]
+    # Sample output:
+    # When enabled, the output is:
+    #     One path CHPID Virtualization is on
+    # When disabled, the output is:
+    #     CHPID Virtualization is off
+    try:
+        chpidv = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        chpidv = bytes.decode(chpidv)
+        if re.search('CHPID Virtualization is on', chpidv):
+            return True
+        elif re.search('CHPID Virtualization is off', chpidv):
+            return False
+        else:
+            raise Exception("Unknown output '%s' of command: '%s'" % (chpidv, cmd))
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        msg = ("Failed to check whether the CHPID virtualization is enabled. "
+               "Return code is '%s', error is '%s'.") % (rc, err_info.strip())
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to check whether the CHPID virtualization is enabled. "
+               "Error is '%s'.") % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+
+
+def get_pchid(chpid):
+    """Get pchid of FCP device from its chpid
+
+    :param chpid: Channel path ID of FCP device, for example: 10
+    :return pchid: Physical channel ID of FCP device, for example: 0240
+    """
+    if is_chpid_virtualization_enabled():
+        pchid = get_pchid_by_vmcp_query(chpid)
+    else:
+        pchid = get_pchid_by_lschp(chpid)
+    return pchid
+
+
+def get_pchid_by_vmcp_query(chpid):
+    """Get pchid of FCP device from its chpid via command: vmcp q chpid xx pchid
+    """
+    pchid = ""
+    cmd = ["sudo", "/sbin/vmcp", "query chpid", chpid, "pchid"]
+    # Some sample output:
+    # Normal output:
+    #     Path 10 is associated with physical channel 0240
+    # When subcommand pchid is not authorized for user in class G:
+    #     HCPQPV003E Invalid option - PCHID
+    # When an invalid chpid is specified:
+    #     HCPQPA846E Invalid channel path identifier.
+    # When the specified chpid does not exist:
+    #     Path 48 is not associated with a physical channel
+    try:
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        if re.search(' is associated with physical channel ', output):
+            pchid = output.split()[-1]
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        # If error is "Invalid option", remind user to authorize the z/VM userid
+        if "Invalid option - PCHID" in err_info:
+            msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+                   "Check the z/VM userid '%s' on the z/VM '%s' is authorized "
+                   "to run the CP command: 'QUERY CHPID yy PCHID'.") % (
+                   chpid, cmd, get_smt_userid(), get_zvm_name())
+        else:
+            msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+                   "Return code is '%s', error is '%s'.") % (chpid, cmd, rc, err_info.strip())
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Error is '%s'.") % (chpid, cmd, six.text_type(err))
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    # raise error if PCHID not in the output, to avoid returning an empty PCHID
+    if pchid == "":
+        msg = ("PCHID for the CHPID '%s' is not found with command '%s', "
+               "output is '%s'.") % (chpid, cmd, output)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    return pchid
+
+
+def get_pchid_by_lschp(chpid):
+    """Get pchid of FCP device from its chpid via command: lschp
+    """
+    try:
+        pchid = ""
+        cmd = ["lschp", chpid]
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        list = output.split('\n')
+        for line in list:
+            # Example:
+            # CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID
+            # ===========================================
+            # 0.10   1     1     25    -    -       0240
+            # Split line by blank space
+            column_list = re.split('\s+', line)
+            # A CHPID is specified in hexadecimal notation in the form <cssid>.<id> where <cssid> is
+            # the channel-subsystem identifier and <id> is the CHPID-number (e.g. 0.10).
+            # So get CHPID-number from column_list[0][2:4]
+            if column_list[0][2:4] == chpid:
+                pchid = column_list[6]
+                break
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        err_info = bytes.decode(err.output)
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Return code is '%s', error is '%s'.") % (chpid, cmd, rc, err_info.strip())
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    except Exception as err:
+        msg = ("Failed to get PCHID for the CHPID '%s' with command '%s'. "
+               "Error is '%s'.") % (chpid, cmd, six.text_type(err))
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    # raise error if PCHID not in the output, to avoid returning an empty PCHID
+    if pchid == "":
+        msg = ("PCHID for the CHPID '%s' not found in the output of command '%s', "
+               "output is '%s'.") % (chpid, cmd, output)
+        LOG.error(msg)
+        raise exception.SDKInternalError(msg=msg)
+    return pchid
+
+
+def print_all_pchids():
+    # Print all available physical channel-paths.
+    try:
+        cmd = ["lschp"]
+        # Get available channel-paths from linux command lschp
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+        LOG.info("Available channel-paths are as below:")
+        # Log the info
+        # Information is shown as below format in log
+        # [2023-07-27 01:55:30] [INFO] CHPID  Vary  Cfg.  Type  Cmg  Shared  PCHID
+        # ===========================================
+        # 0.00   1     1     11    -    -      (ff00)
+        # 0.01   1     1     01    -    -      (ff01)
+        # 0.10   1     1     25    -    -       0240
+        # 0.11   1     1     25    -    -       0260
+        # 0.12   1     1     25    -    -       0244
+        # 0.13   1     1     25    -    -       0264
+        # 0.14   1     1     25    -    -       0248
+        # 0.15   1     1     25    -    -       0268
+        # 0.16   1     1     25    -    -       024c
+        # 0.17   1     1     25    -    -       026c
+        LOG.info(output)
+    except Exception as err:
+        msg = ("Error occurred when execute lschp: %s") % err
+        raise exception.SDKInternalError(msg=msg)
+
+
+def expand_fcp_list(fcp_list):
+    """Expand fcp list string into a python list object which contains
+    each fcp devices in the list string. A fcp list is composed of fcp
+    device addresses, range indicator '-', and split indicator ';'.
+
+    Example 1:
+    if fcp_list is "0011-0013;0015;0017-0018",
+    then the function will return
+    {
+      0: {'0011' ,'0012', '0013'}
+      1: {'0015'}
+      2: {'0017', '0018'}
+    }
+
+    Example 2:
+    if fcp_list is empty string: '',
+    then the function will return an empty dict: {}
+
+    ATTENTION: To support multipath, we expect fcp_list should be like
+    "0011-0014;0021-0024", "0011-0014" should have been on same physical
+    WWPN which we called path0, "0021-0024" should be on another physical
+    WWPN we called path1 which is different from "0011-0014".
+    path0 and path1 should have same count of FCP devices in their group.
+    When attach, we will choose one WWPN from path0 group, and choose
+    another one from path1 group. Then we will attach this pair of WWPNs
+    together to the guest as a way to implement multipath.
+    """
+    LOG.debug("Expand FCP list %s" % fcp_list)
+
+    if not fcp_list:
+        return dict()
+    fcp_list = fcp_list.strip()
+    fcp_list = fcp_list.replace(' ', '')
+    range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
+    match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                    {'range': range_pattern}
+
+    item_pattern = "(%(range)s)(,%(range)s?)*" % \
+                   {'range': range_pattern}
+
+    multi_match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                   {'range': item_pattern}
+
+    if not re.match(match_pattern, fcp_list) and \
+       not re.match(multi_match_pattern, fcp_list):
+        errmsg = ("Invalid FCP address %s") % fcp_list
+        raise exception.SDKInternalError(msg=errmsg)
+
+    fcp_devices = {}
+    path_no = 0
+    for _range in fcp_list.split(';'):
+        for item in _range.split(','):
+            # remove duplicate entries
+            devices = set()
+            if item != '':
+                if '-' not in item:
+                    # single device
+                    fcp_addr = int(item, 16)
+                    devices.add("%04x" % fcp_addr)
+                else:
+                    # a range of address
+                    (_min, _max) = item.split('-')
+                    _min = int(_min, 16)
+                    _max = int(_max, 16)
+                    for fcp_addr in range(_min, _max + 1):
+                        devices.add("%04x" % fcp_addr)
+                if fcp_devices.get(path_no):
+                    fcp_devices[path_no].update(devices)
+                else:
+                    fcp_devices[path_no] = devices
+        path_no = path_no + 1
+    return fcp_devices
+
+
+def shrink_fcp_list(fcp_list):
+    """ Transform a FCP list to a string.
+
+        :param fcp_list: (list) a list object contains FCPs.
+        Case 1: only one FCP in the list.
+            e.g. fcp_list = ['1A01']
+        Case 2: all the FCPs are continuous.
+            e.g. fcp_list =['1A01', '1A02', '1A03']
+        Case 3: not all the FCPs are continuous.
+            e.g. fcp_list = ['1A01', '1A02', '1A03',
+                            '1A05',
+                            '1AFF', '1B00', '1B01',
+                            '1B04']
+        Case 4: an empty list.
+            e.g. fcp_list = []
+
+        :return fcp_str: (str)
+        Case 1: fcp_str = '1A01'
+        Case 2: fcp_str = '1A01 - 1A03'
+        Case 3: fcp_str = '1A01 - 1A03, 1A05,
+                           1AFF - 1B01, 1B04'
+        Case 4: fcp_str = ''
+    """
+
+    def __transform_fcp_list_into_str(local_fcp_list):
+        """ Transform the FCP list into a string
+            by recursively do the transformation
+            against the first continuous range of the list,
+            which is being shortened by list.pop(0) on the fly
+
+            :param local_fcp_list:
+            (list) a list object contains FCPs.
+
+            In Python, hex is stored in the form of strings.
+            Because incrementing is done on integers,
+            we need to convert hex to an integer for doing math.
+        """
+        # Case 1: only one FCP in the list.
+        if len(local_fcp_list) == 1:
+            fcp_section.append(local_fcp_list[0])
+        else:
+            start_fcp = int(local_fcp_list[0], 16)
+            end_fcp = int(local_fcp_list[-1], 16)
+            count = len(local_fcp_list) - 1
+            # Case 2: all the FCPs are continuous.
+            if start_fcp + count == end_fcp:
+                # e.g. hex(int('1A01',16)) is '0x1a01'
+                section_str = '{} - {}'.format(
+                    hex(start_fcp)[2:], hex(end_fcp)[2:])
+                fcp_section.append(section_str)
+            # Case 3: not all the FCPs are continuous.
+            else:
+                start_fcp = int(local_fcp_list.pop(0), 16)
+                for idx, fcp in enumerate(local_fcp_list.copy()):
+                    next_fcp = int(fcp, 16)
+                    # pop the fcp if it is continuous with the last
+                    # e.g.
+                    # when start_fcp is '1A01',
+                    # pop '1A02' and '1A03'
+                    if start_fcp + idx + 1 == next_fcp:
+                        local_fcp_list.pop(0)
+                        continue
+                    # e.g.
+                    # when start_fcp is '1A01',
+                    # next_fcp '1A05' is NOT continuous with the last
+                    else:
+                        end_fcp = start_fcp + idx
+                        # e.g.
+                        # when start_fcp is '1A01',
+                        # end_fcp is '1A03'
+                        if start_fcp != end_fcp:
+                            # e.g. hex(int('1A01',16)) is '0x1a01'
+                            section_str = '{} - {}'.format(
+                                hex(start_fcp)[2:], hex(end_fcp)[2:])
+                        # e.g.
+                        # when start_fcp is '1A05',
+                        # end_fcp is '1A05'
+                        else:
+                            section_str = hex(start_fcp)[2:]
+                        fcp_section.append(section_str)
+                        break
+                # recursively transform if FCP list still not empty
+                if local_fcp_list:
+                    __transform_fcp_list_into_str(local_fcp_list)
+
+    fcp_section = list()
+    fcp_str = ''
+    if fcp_list:
+        # sort fcp_list in hex order, e.g.
+        # before sort: ['1E01', '1A02', '1D03']
+        # after sort:  ['1A02', '1D03', '1E01']
+        fcp_list.sort()
+        __transform_fcp_list_into_str(fcp_list)
+        # return a string contains all FCP
+        fcp_str = ', '.join(fcp_section).upper()
+    return fcp_str
+
+
+def verify_fcp_list_in_hex_format(fcp_list):
+    """Verify each FCP in the list is in Hex format
+    :param fcp_list: (list) a list object contains FCPs.
+    """
+    if not isinstance(fcp_list, list):
+        errmsg = ('fcp_list ({}) is not a list object.'
+                  '').format(fcp_list)
+        raise exception.SDKInvalidInputFormat(msg=errmsg)
+    # Verify each FCP should be a 4-digit hex
+    for fcp in fcp_list:
+        if not (len(fcp) == 4 and
+                all(char in string.hexdigits for char in fcp)):
+            errmsg = ('FCP list {} contains non-hex value.'
+                      '').format(fcp_list)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+
+def get_zhypinfo(filter='all'):
+    """
+    Filter the result of Linux command zhypinfo by filter.
+
+    :param filter: (str) possible values are cpc, lpar, zvm and all.
+
+    :return zhyp_info: (dict) contain the data specified by param filter
+
+    example zhyp_info with filter='cpc'
+    {
+        "cpc": {
+            "layer_name": "M54",
+            "manufacturer": "IBM",
+            "type": "3906",
+            "model_capacity": "701",
+            "model": "M04",
+            "type_name": "IBM z14",
+            "type_family": "0",
+            "sequence_code": "0000000000082F57",
+            ...
+        }
+    }
+
+    example zhyp_info with filter='lpar'
+    {
+      "lpar": {
+        "layer_type_num": "2",
+        "layer_type": "LPAR",
+        "layer_name": "ZVM4OCP1",
+        "layer_uuid": "5c20996c-9907-11ea-9d7b-00106f0dd8c9",
+        "secure": null,
+        ...
+      }
+    }
+
+    example zhyp_info with filter='zvm'
+    {
+          "zvm": {
+            "layer_type_num": "3",
+            "layer_type": "z/VM-hypervisor",
+            "layer_name": "BOEM5401",
+            "control_program_id": "z/VM    7.1.0",
+            ...
+    }
+    """
+
+    # Linux command zhypinfo prints information about virtualization layers on IBM Z.
+    # Example of zhypinfo json output:
+    #     $ zhypinfo -j
+    #     {
+    #       "Layer 0": {             <--- CPC layer
+    #         "layer_type_num": "1",
+    #         "layer_type": "CEC",
+    #         "layer_name": "M54",
+    #         "manufacturer": "IBM",
+    #         "type": "3906",
+    #         "model_capacity": "701",
+    #         "model": "M04",
+    #         "type_name": "IBM z14",
+    #         "sequence_code": "0000000000082F57",
+    #         "lic_identifier": "601b24ff63979b81",
+    #         "plant": "02",
+    #         ...
+    #       },
+    #       "Layer 1": {             <--- LPAR layer
+    #         "layer_type_num": "2",
+    #         "layer_type": "LPAR",
+    #         "layer_name": "ZVM4OCP1",
+    #         "layer_uuid": "5c20996c-9907-11ea-9d7b-00106f0dd8c9",
+    #         "secure": null,
+    #         ...
+    #       },
+    #       "Layer 2": {            <--- z/VM layer
+    #         "layer_type_num": "3",
+    #         "layer_type": "z/VM-hypervisor",
+    #         "layer_name": "BOEM5401",
+    #         "control_program_id": "z/VM    7.1.0",
+    #         ...
+    #       }
+    #     }
+    cmd = ["/usr/bin/zhypinfo", "-j"]
+    try:
+        output = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
+    except Exception as err:
+        msg = ("Failed to run command zhypinfo: {}. "
+               "To run zhypinfo, you must install the package of "
+               "qclib (Query Capacity Library)").format(err)
+        raise exception.SDKInternalError(msg=msg)
+    else:
+        output = json.loads(output)
+        zhyp_info = dict()
+        # Replace the key from 'Layer 0, Layer 1, ...'
+        # to the corresponding layer_type value.
+        # Values from the previous example
+        #   layer_type of Layer 0 is CEC
+        #   layer_type of Layer 1 is LPAR
+        #   layer_type of Layer 2 is z/VM-hypervisor
+        # To be more robust,
+        # code need to be compatible if output contains more than 3 layers,
+        for layer in output:
+            key = output[layer]['layer_type']
+            if key == 'CEC':
+                key = 'CPC'
+            elif key == 'z/VM-hypervisor':
+                key = 'zVM'
+            # lower key
+            zhyp_info[key.lower()] = output[layer]
+        # filter
+        filter = filter.lower()
+        if filter == 'all':
+            return zhyp_info
+        elif filter in zhyp_info:
+            return {filter: zhyp_info[filter]}
+        else:
+            return dict()
+
+
+def get_cpc_name(zhypinfo=None):
+    """get cpc name from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return cpc_name: str
+    """
+    if zhypinfo and 'cpc' in zhypinfo:
+        cpc_name = zhypinfo['cpc']['layer_name']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        cpc_name = zhypinfo['cpc']['layer_name']
+    return cpc_name
+
+
+def get_cpc_sn(zhypinfo=None):
+    """get cpc serial number from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return cpc_sn: str
+    """
+    if zhypinfo and 'cpc' in zhypinfo:
+        cpc_sn = zhypinfo['cpc']['sequence_code']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        cpc_sn = zhypinfo['cpc']['sequence_code']
+    return cpc_sn
+
+
+def get_lpar_name(zhypinfo=None):
+    """get lpar name from output of command zhypinfo
+
+    :param zhypinfo: None or A dict returned by get_zhypinfo()
+
+    :return lpar_name: str
+    """
+    if zhypinfo and 'lpar' in zhypinfo:
+        lpar_name = zhypinfo['lpar']['layer_name']
+    else:
+        zhypinfo = get_zhypinfo(filter='all')
+        lpar_name = zhypinfo['lpar']['layer_name']
+    return lpar_name

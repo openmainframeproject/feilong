@@ -1,3 +1,7 @@
+..
+ Copyright Contributors to the Feilong Project.
+ SPDX-License-Identifier: CC-BY-4.0
+
 Quick Start
 ***********
 
@@ -229,6 +233,20 @@ supported SDK APIs by communicating with the zthin backend.
 
          # cd python-zvm-sdk
          # python ./setup.py install
+
+Upgrade z/VM SDK
+----------------
+
+If the z/VM SDK was installed via ``python setup.py install``, you can fetch and
+checkout to new version, then upgrade it by issue ``python setup.py install`` again.
+
+.. note::
+   If upgrade from version equal or lower than 1.6.2, to **1.6.3** or newer version,
+   you have to add two new columns - **wwpn_npiv** and **wwpn_phy** into fcp table in
+   sdk_fcp database with type **`varchar(16)`**, which located at
+   ``/var/lib/zvmsdk/databases/sdk_fcp.sqlite``, for example, by sqlite3 command:
+   ``ALTER TABLE fcp ADD COLUMN wwpn_npiv varchar(16)`` and
+   ``ALTER TABLE fcp ADD COLUMN wwpn_phy varchar(16)``
 
 .. _`ssh_key`:
 

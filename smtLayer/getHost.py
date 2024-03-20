@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # GetHost functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017,2021 IBM Corp.
@@ -20,6 +23,8 @@ import subprocess
 from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
+
+from zvmsdk import config
 
 modId = 'GHO'
 version = "1.0.0"
@@ -54,7 +59,8 @@ information for the positional operands:
 """
 posOpsList = {
     'DISKPOOLSPACE': [
-                          ['Disk Pool Name', 'poolName', False, 2]
+                          ['Disk Pool Name', 'poolName', False, 2],
+                          ['Detail info required', 'details', False, 2]
                      ],
     'DISKPOOLVOLUMES': [
                           ['Disk Pool Name', 'poolName', False, 2]
@@ -277,8 +283,6 @@ def getDiskPoolSpace(rh):
 
     rh.printSysLog("Enter getHost.getDiskPoolSpace")
 
-    results = {'overallRC': 0}
-
     if 'poolName' not in rh.parms:
         poolNames = ["*"]
     else:
@@ -286,51 +290,89 @@ def getDiskPoolSpace(rh):
             poolNames = rh.parms['poolName']
         else:
             poolNames = [rh.parms['poolName']]
+    details = False
+    if 'details' in rh.parms:
+        if rh.parms['details'].lower() == 'true':
+            details = True
+
+    if not details:
+        getDiskPoolSpaceUsage(rh, poolNames)
+    else:
+        getDiskPoolRangeSpace(rh, poolNames)
+
+
+def getDiskPoolRangeSpace(rh, poolNames):
+    results = {'overallRC': 0}
+    parms = [
+        "-q", "2",
+        "-e", "3",
+        "-T", "DUMMY",
+        "-n", " ".join(poolNames)]
+
+    results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+    if results['overallRC'] == 0:
+        if not results['response']:
+            # No pool information found.
+            msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0402'][0])
+        else:
+            # Print the response
+            rh.printLn("N", results['response'])
+    else:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+    rh.printSysLog("Exit getHost.getDiskPoolSpace, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
+
+
+def getDiskPoolSpaceUsage(rh, poolNames):
+    results = {'overallRC': 0}
+    # Loop thru each pool getting total.  Do it for query 2 & 3
+    totals = {}
+    for qType in ["2", "3"]:
+        parms = [
+            "-q", qType,
+            "-e", "3",
+            "-T", "DUMMY",
+            "-n", " ".join(poolNames)]
+
+        results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+        if results['overallRC'] == 0:
+            for line in results['response'].splitlines():
+                parts = line.split()
+                if len(parts) == 9:
+                    poolName = parts[7]
+                else:
+                    poolName = parts[4]
+                if poolName not in totals:
+                    totals[poolName] = {"2": 0., "3": 0.}
+
+                totals[poolName][qType] += _getDiskSize(parts)
+        else:
+            # SMAPI API failed.
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            break
 
     if results['overallRC'] == 0:
-        # Loop thru each pool getting total.  Do it for query 2 & 3
-        totals = {}
-        for qType in ["2", "3"]:
-            parms = [
-                "-q", qType,
-                "-e", "3",
-                "-T", "DUMMY",
-                "-n", " ".join(poolNames)]
-
-            results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
-            if results['overallRC'] == 0:
-                for line in results['response'].splitlines():
-                    parts = line.split()
-                    if len(parts) == 9:
-                        poolName = parts[7]
-                    else:
-                        poolName = parts[4]
-                    if poolName not in totals:
-                        totals[poolName] = {"2": 0., "3": 0.}
-
-                    totals[poolName][qType] += _getDiskSize(parts)
-            else:
-                # SMAPI API failed.
-                rh.printLn("ES", results['response'])
-                rh.updateResults(results)    # Use results from invokeSMCLI
-                break
-
-        if results['overallRC'] == 0:
-            if len(totals) == 0:
-                # No pool information found.
-                msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
-                rh.printLn("ES", msg)
-                rh.updateResults(msgs.msg['0402'][0])
-            else:
-                # Produce a summary for each pool
-                for poolName in sorted(totals):
-                    total = totals[poolName]["2"] + totals[poolName]["3"]
-                    rh.printLn("N", poolName + " Total: " +
-                        generalUtils.cvtToMag(rh, total))
-                    rh.printLn("N", poolName + " Used: " +
-                        generalUtils.cvtToMag(rh, totals[poolName]["3"]))
-                    rh.printLn("N", poolName + " Free: " +
-                        generalUtils.cvtToMag(rh, totals[poolName]["2"]))
+        if len(totals) == 0:
+            # No pool information found.
+            msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0402'][0])
+        else:
+            # Produce a summary for each pool
+            for poolName in sorted(totals):
+                total = totals[poolName]["2"] + totals[poolName]["3"]
+                rh.printLn("N", poolName + " Total: " +
+                    generalUtils.cvtToMag(rh, total))
+                rh.printLn("N", poolName + " Used: " +
+                    generalUtils.cvtToMag(rh, totals[poolName]["3"]))
+                rh.printLn("N", poolName + " Free: " +
+                    generalUtils.cvtToMag(rh, totals[poolName]["2"]))
 
     rh.printSysLog("Exit getHost.getDiskPoolSpace, rc: " +
         str(rh.results['overallRC']))
@@ -365,6 +407,52 @@ def getFcpDevices(rh):
     rh.printSysLog("Exit getHost.getFcpDevices, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']
+
+
+def getCPUCount(rh):
+    """
+    Obtain general information about the host.
+
+    Input:
+       Request Handle
+
+    Output:
+       Request Handle updated with the results.
+       Return code - not 0: ok
+       Return code - 0,0: problem getting some info by System_Processor_Query
+    """
+
+    rh.printSysLog("Enter getHost.lparCPUCount")
+    rh.results['overallRC'] = 0
+
+    # LPAR CPUs total and used is not support mixed CP + IFL
+    # So get cpu num from System_Processor_Query
+    # to override LPAR CPUs total and used
+    parms = []
+    results = invokeSMCLI(rh, "System_Processor_Query", parms)
+    cpu_total = 0
+    cpu_use = 0
+    if results['overallRC'] == 0:
+        flag = 0
+        for line in results['response'].splitlines():
+            line_value = line.partition(' ')[2]
+            if not line_value.strip():
+                continue
+            else:
+                type_row = line_value.split(' ')
+                if len(type_row) > 1:
+                    type_row = line_value.split(' ')[1]
+                    if type_row == 'TYPE':
+                        flag = 1
+                    if flag == 1:
+                        status_row = line_value.split(' ')[0]
+                        if (status_row.find('MASTER') != -1 or
+                            status_row == 'ALTERNATE' or
+                            status_row == 'PARKED'):
+                            cpu_use = cpu_use + 1
+                        if (type_row == 'CP' or type_row == 'IFL'):
+                            cpu_total = cpu_total + 1
+    return cpu_total, cpu_use
 
 
 def getGeneralInfo(rh):
@@ -433,6 +521,14 @@ def getGeneralInfo(rh):
             # Get hypervisor type and version
             if "VM00 Control Program" in line:
                 hvInfo = line.split()[3] + " " + line.split()[4]
+    # update cpu number from getCPUCount by call API System_Processor_Query
+    cpu_total = 0
+    cpu_used = 0
+    cpu_total, cpu_used = getCPUCount(rh)
+    if (cpu_total != 0):
+        lparCpuTotal = str(cpu_total)
+    if (cpu_used != 0):
+        lparCpuUsed = str(cpu_used)
     if lparCpuTotal == "no info":
         msg = msgs.msg['0405'][1] % (modId, "LPAR CPUs Total",
                                      "cat /proc/sysinfo", "not found")
@@ -496,13 +592,18 @@ def getGeneralInfo(rh):
                 lparMemUsed = line.split("=")[1]
                 lparMemUsed = generalUtils.getSizeFromPage(rh, lparMemUsed)
     else:
-        # SMAPI API failed, so we put out messages
-        # 300 and 405 for consistency
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-        msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
-            "(see message 300)", results['response'])
-        rh.printLn("ES", msg)
+        if config.CONF.zvm.bypass_smapiout:
+            # we bypass the check of SMAPIOUT and use 0G directly
+            # This currently used for test when SMAPIOUT is not ready
+            lparMemUsed = '0G'
+        else:
+            # SMAPI API failed, so we put out messages
+            # 300 and 405 for consistency
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
+                "(see message 300)", results['response'])
+            rh.printLn("ES", msg)
 
     # Get IPL Time
     ipl = ""

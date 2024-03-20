@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -23,6 +26,9 @@ from zvmsdk import log
 
 LOG = log.LOG
 SDKWSGI_MODID = 120
+
+#  The following globals are used by `mask_tuple_password`
+_SANITIZE_KEYS = ['X-Auth-Token']
 
 
 def extract_json(body):
@@ -217,6 +223,19 @@ def handle_not_found_and_conflict(msg):
         return handle_conflict_state(msg)
 
     return err
+
+
+def mask_tuple_password(message_list, secret="***"):
+    """Replace password with *secret* in message."""
+    retval = []
+    for sani_key in _SANITIZE_KEYS:
+        for item in message_list:
+            item_lower = [x.lower() for x in item if isinstance(x, str)]
+            if isinstance(item, tuple) and sani_key.lower() in item_lower:
+                retval.append((sani_key, secret))
+            else:
+                retval.append(item)
+    return retval
 
 
 class SdkWsgify(wsgify):

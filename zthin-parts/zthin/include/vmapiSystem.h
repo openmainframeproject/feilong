@@ -1,5 +1,8 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright Contributors to the Feilong Project.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2017, 2022 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -358,6 +361,41 @@ static tableLayout System_Performance_Threshold_Enable_Layout = {
 
 int smSystem_Performance_Threshold_Enable(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength,
         char * password, char* targetIdentifier, char * eventType, vmApiSystemPerformanceThresholdEnableOutput** outData);
+
+
+/* System_Processor_Query */
+typedef struct _vmApiSystemProcessorArray {
+    char * systemProcessorInfo;
+} vmApiSystemProcessorArray;
+
+typedef struct _vmApiSystemProcessorQueryOutput {
+    commonOutputFields common;
+    char * partitionMode;
+    int systemProcessorArrayCount;
+    vmApiSystemProcessorArray * systemProcessorArray;
+    int errorDataLength;
+    char * errorData;
+} vmApiSystemProcessorQueryOutput;
+
+/* Parser table for System_Processor_Query */
+static tableLayout System_Processor_Query_Layout = {
+    { APITYPE_BASE_STRUCT_LEN,    4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, sizeof(vmApiSystemProcessorQueryOutput) },
+    { APITYPE_INT4,               4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, common.requestId) },
+    { APITYPE_RC_INT4,            4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, common.returnCode) },
+    { APITYPE_RS_INT4,            4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, common.reasonCode) },
+    { APITYPE_STRING_LEN,         4, 10,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, partitionMode) },
+    { APITYPE_ARRAY_LEN,          4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, systemProcessorArray) },
+    { APITYPE_ARRAY_STRUCT_COUNT, 4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, systemProcessorArrayCount) },
+    { APITYPE_NOBUFFER_STRUCT_LEN,4,  4,  STRUCT_INDX_1, NEST_LEVEL_1, sizeof(vmApiSystemProcessorArray) },
+    { APITYPE_STRING_LEN,       15, 31,  STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemProcessorArray, systemProcessorInfo) },
+    { APITYPE_ERROR_BUFF_PTR,     4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, errorData) },
+    { APITYPE_ERROR_BUFF_LEN,     4,  4,  STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemProcessorQueryOutput, errorDataLength) },
+    { APITYPE_END_OF_TABLE, 0, 0, 0, 0}
+};
+
+int smSystem_Processor_Query(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength,
+        char * password, char* targetIdentifier, vmApiSystemProcessorQueryOutput** outData);
+
 
 /* System_RDR_File_Manage */
 typedef struct _vmApiSystemRDRFileManageOutput {

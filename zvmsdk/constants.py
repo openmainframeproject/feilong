@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -20,6 +23,8 @@ ZVM_USER_DEFAULT_PRIVILEGE = 'G'
 CONFIG_DRIVE_FORMAT = 'tgz'
 DEFAULT_EPH_DISK_FMT = 'ext3'
 DISK_FUNC_NAME = 'setupDisk'
+# the count of lines that one FCP info has
+FCP_INFO_LINES_PER_ITEM = 6
 
 RINV_HOST_KEYWORDS = {
     "zcc_userid": "ZCC USERID:",
@@ -141,3 +146,7 @@ FILE_TYPE = {
 
 SDK_DATA_PATH = '/var/lib/zvmsdk/'
 IUCV_AUTH_USERID_PATH = '/etc/zvmsdk/iucv_authorized_userid'
+
+HYPERVISOR_HOSTNAME_SUFFIX_FILE = '.zvmsdk_hypervisor_hostname_suffix'
+
+RESERVED_STOR_PATTERN = 'COMMAND DEF(I|IN|INE)? ST(O|OR|ORA|ORAG|ORAGE)? RESERVED .+'

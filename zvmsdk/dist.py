@@ -1,4 +1,7 @@
-# Copyright 2017,2021 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -88,7 +91,9 @@ class LinuxDist(object):
             clean_cmd = ''
 
         file_name_dns = self._get_dns_filename()
-        for network in guest_networks:
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
             file_name = self._get_device_filename(base_vdev)
             (cfg_str, cmd_str, dns_str,
@@ -121,14 +126,15 @@ class LinuxDist(object):
     def _generate_network_configuration(self, network, vdev, active=False):
         ip_v4 = dns_str = gateway_v4 = ''
         ip_cidr = netmask_v4 = broadcast_v4 = ''
-        net_cmd = ''
+        net_cmd = mtu = ''
         dns_v4 = []
+
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
+            (network['gateway_addr'] is not None) and network['primary']):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
@@ -146,6 +152,10 @@ class LinuxDist(object):
             if broadcast_v4 == 'None':
                 broadcast_v4 = ''
 
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         device = self._get_device_name(vdev)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
@@ -156,7 +166,7 @@ class LinuxDist(object):
 
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4, address_read,
-                                    subchannels, dns_v4)
+                                    subchannels, dns_v4, mtu)
         cmd_str = self._get_cmd_str(address_read, address_write,
                                     address_data)
         route_str = self._get_route_str(gateway_v4)
@@ -331,7 +341,7 @@ class rhel(LinuxDist):
         return '/etc/sysconfig/network-scripts/'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4):
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = 'DEVICE=\"' + device + '\"\n'
         cfg_str += 'BOOTPROTO=\"static\"\n'
         cfg_str += 'BROADCAST=\"' + broadcast_v4 + '\"\n'
@@ -343,6 +353,7 @@ class rhel(LinuxDist):
         cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
         cfg_str += 'OPTIONS=\"layer2=1\"\n'
         cfg_str += 'SUBCHANNELS=\"' + subchannels + '\"\n'
+        cfg_str += 'MTU=\"' + mtu + '\"\n'
         if (dns_v4 is not None) and (len(dns_v4) > 0):
             i = 1
             for dns in dns_v4:
@@ -516,18 +527,19 @@ class rhel7(rhel):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point):
         """rhel7"""
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel7"""
@@ -537,10 +549,11 @@ class rhel7(rhel):
             is_last_volume = 0
         else:
             is_last_volume = 1
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
@@ -564,18 +577,19 @@ class rhel8(rhel7):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point):
         """rhel8 attach script generation"""
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel8_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel8 detach script generation"""
@@ -585,13 +599,18 @@ class rhel8(rhel7):
             is_last_volume = 0
         else:
             is_last_volume = 1
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel8_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
+
+
+class rhel9(rhel8):
+    pass
 
 
 class rhcos(LinuxDist):
@@ -613,11 +632,12 @@ class rhcos(LinuxDist):
                     for dns in vif['dns_addr']:
                         _dns[_index] = dns
                         _index += 1
+            mtu = vif['mtu']
             # transfor network info and hostname into form of
             # ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>
-            # :<interface>:none[:[<dns1>][:<dns2>]]
-            result = "%s::%s:%s:%s:%s:none:%s:%s" % (ip_addr, gateway_addr,
-                        netmask, hostname, nic_name, _dns[0], _dns[1])
+            # :<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+            result = "%s::%s:%s:%s:%s:none:%s:%s;%s" % (ip_addr, gateway_addr,
+                        netmask, hostname, nic_name, _dns[0], _dns[1], mtu)
             return result
         except Exception as err:
             LOG.error("Failed to create coreos parameter for userid '%s',"
@@ -738,7 +758,7 @@ class sles(LinuxDist):
         return '/etc/sysconfig/network/'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4):
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = "BOOTPROTO=\'static\'\n"
         cfg_str += "IPADDR=\'%s\'\n" % ip_v4
         cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
@@ -746,6 +766,7 @@ class sles(LinuxDist):
         cfg_str += "STARTMODE=\'onboot\'\n"
         cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
                     address_read)
+        cfg_str += "MTU=\'%s\'\n" % mtu
         if (dns_v4 is not None) and (len(dns_v4) > 0):
             self.dns_v4 = dns_v4
         else:
@@ -907,19 +928,20 @@ class sles(LinuxDist):
                                         '/boot/zipl/active_devices.txt')
         return cmd
 
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point):
         """sles attach script generation"""
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "sles_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         # TODO(bill): also consider is first attach or not
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         """sles detach script generation"""
@@ -929,10 +951,11 @@ class sles(LinuxDist):
             is_last_volume = 0
         else:
             is_last_volume = 1
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "sles_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
@@ -1080,7 +1103,9 @@ class ubuntu(LinuxDist):
             clean_cmd = ''
             network_cfg_str = ''
 
-        for network in guest_networks:
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
             network_hw_config_fname = self._get_device_filename(base_vdev)
             network_hw_config_str = self._get_network_hw_config_str(base_vdev)
@@ -1130,13 +1155,14 @@ class ubuntu(LinuxDist):
         return '/etc/network/interfaces'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4):
+                     netmask_v4, mtu):
         cfg_str = 'auto ' + device + '\n'
         cfg_str += 'iface ' + device + ' inet static\n'
         cfg_str += 'address ' + ip_v4 + '\n'
         cfg_str += 'netmask ' + netmask_v4 + '\n'
         cfg_str += 'broadcast ' + broadcast_v4 + '\n'
         cfg_str += 'gateway ' + gateway_v4 + '\n'
+        cfg_str += 'mtu ' + mtu + '\n'
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
@@ -1147,7 +1173,7 @@ class ubuntu(LinuxDist):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
+            (network['gateway_addr'] is not None) and network['primary']):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
@@ -1164,9 +1190,13 @@ class ubuntu(LinuxDist):
             if broadcast_v4 == 'None':
                 broadcast_v4 = ''
 
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
-                                    ip_v4, netmask_v4)
+                                    ip_v4, netmask_v4, mtu)
 
         return cfg_str, dns_str
 
@@ -1247,11 +1277,10 @@ class ubuntu(LinuxDist):
         target_lun = int(lun[2:6], 16)
         return target_lun
 
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point):
         """ubuntu attach script generation"""
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "ubuntu_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         # the parameter 'target_lun' is hex for either v7k or ds8k:
@@ -1282,12 +1311,14 @@ class ubuntu(LinuxDist):
         else:
             lun_id = target_lun
         # TODO(bill): also consider is first attach or not
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   lun_id=lun_id,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         """ubuntu detach script generation"""
@@ -1297,7 +1328,6 @@ class ubuntu(LinuxDist):
             is_last_volume = 0
         else:
             is_last_volume = 1
-        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "ubuntu_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         lun = self._format_lun(target_lun)
@@ -1305,7 +1335,9 @@ class ubuntu(LinuxDist):
             lun_id = lun
         else:
             lun_id = target_lun
-        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+        content = template.render(fcp_list=fcp_list,
+                                  wwpns=target_wwpns,
+                                  lun=target_lun,
                                   lun_id=lun_id,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
@@ -1370,11 +1402,40 @@ class ubuntu20(ubuntu):
         else:
             clean_cmd = ''
 
-        for network in guest_networks:
+        device_cfg = {}
+        for idx, network in enumerate(guest_networks):
+            # Mark 1st network in guest_networks as primary
+            network['primary'] = True if idx == 0 else False
+
             base_vdev = network['nic_vdev'].lower()
-            (cfg_str) = self._generate_network_configuration(network,
+            device = self._get_device_name(base_vdev)
+
+            device_cfg_str = self._generate_network_configuration(network,
                                     base_vdev)
-            LOG.debug('Network configure file content is: %s', cfg_str)
+            device_cfg[device] = device_cfg_str
+        # For Ubuntu20 and Ubuntu 22, when there are multi nics,
+        # there is still 1 network config yml file, all nics are
+        # written in this file, example is:
+        #  network:
+        #   ethernets:
+        #    enc1000:
+        #     addresses:
+        #     - 172.26.54.179/17
+        #     gateway4: 172.26.0.1
+        #     mtu: '1500'
+        #    enc1003:
+        #     addresses:
+        #     - 192.168.6.5/24
+        #     gateway4: '192.168.6.1'
+        #     mtu: '1500'
+        #  version: 2
+        cfg_str = {'network':
+                    {'version': 2,
+                     'ethernets': device_cfg
+                    }
+                  }
+        LOG.debug('Network configure file content is: %s', cfg_str)
+
         if first:
             cfg_files.append((network_config_file_name, cfg_str))
         else:
@@ -1386,7 +1447,7 @@ class ubuntu20(ubuntu):
 
     def _generate_network_configuration(self, network, vdev):
         ip_v4 = dns_str = gateway_v4 = ''
-        cidr = ''
+        cidr = mtu = ''
         dns_v4 = []
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
@@ -1407,32 +1468,27 @@ class ubuntu20(ubuntu):
             (network['cidr'] is not None)):
             cidr = network['cidr'].split('/')[1]
 
-        device = self._get_device_name(vdev)
+        if (('mtu' in network.keys()) and
+            (network['mtu'] is not None)):
+            mtu = str(network['mtu'])
+
         if dns_v4:
-            cfg_str = {'network':
-                            {'ethernets':
-                                {device:
-                                    {'addresses': [ip_v4 + '/' + cidr],
-                                     'gateway4': gateway_v4,
-                                     'nameservers':
-                                        {'addresses': dns_v4}
-                                    }
-                                },
-                            'version': 2
-                            }
-                        }
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                       'gateway4': gateway_v4,
+                       'mtu': mtu,
+                       'nameservers':
+                           {'addresses': dns_v4}
+                       }
         else:
-            cfg_str = {'network':
-                            {'ethernets':
-                                {device:
-                                    {'addresses': [ip_v4 + '/' + cidr],
-                                     'gateway4': gateway_v4
-                                    }
-                                },
-                            'version': 2
-                            }
-                        }
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                        'gateway4': gateway_v4,
+                        'mtu': mtu
+                       }
         return cfg_str
+
+
+class ubuntu22(ubuntu20):
+    pass
 
 
 class LinuxDistManager(object):
@@ -1441,9 +1497,9 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7', '8'],
+        supported = {'rhel': ['6', '7', '8', '9'],
                      'sles': ['11', '12', '15'],
-                     'ubuntu': ['16', '20'],
+                     'ubuntu': ['16', '20', '22'],
                      'rhcos': ['4']}
         releases = supported[distro]
 

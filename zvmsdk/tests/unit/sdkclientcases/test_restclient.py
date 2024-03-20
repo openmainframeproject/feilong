@@ -1,4 +1,7 @@
-# Copyright 2017 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017, 2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -51,6 +54,54 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_list(self, get_token, request):
+        method = 'GET'
+        url = '/guests'
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_list")
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_delete(self, get_token, request):
+        method = 'DELETE'
+        url = '/guests/%s' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_delete", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_get_definition_info(self, get_token, request):
+        method = 'GET'
+        url = '/guests/%s' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_get_definition_info", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_create(self, get_token, request):
         # method = 'POST'
         # url = '/guests'
@@ -73,22 +124,6 @@ class RESTClientTestCase(unittest.TestCase):
         # request.assert_called_with(method, full_uri,
         #                             data=body, headers=header,
         #                             verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_list(self, get_token, request):
-        method = 'GET'
-        url = '/guests'
-        body = None
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_list")
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
@@ -154,38 +189,6 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guests_get_nic_info", userid=self.fake_userid,
                          nic_id='1000', vswitch='xcatvsw1')
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_delete(self, get_token, request):
-        method = 'DELETE'
-        url = '/guests/%s' % self.fake_userid
-        body = None
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_delete", self.fake_userid)
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_get_definition_info(self, get_token, request):
-        method = 'GET'
-        url = '/guests/%s' % self.fake_userid
-        body = None
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_get_definition_info", self.fake_userid)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
@@ -346,6 +349,88 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_live_migrate(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_register(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_deregister(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_live_resize_cpus(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_resize_cpus(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_resize_mem(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/action' % self.fake_userid
+        body = {'action': 'resize_mem',
+                'size': '4g'}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_resize_mem", self.fake_userid,
+                         '4g')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_live_resize_mem(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/action' % self.fake_userid
+        body = {'action': 'live_resize_mem',
+                'size': '4g'}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_live_resize_mem", self.fake_userid,
+                         '4g')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_grow_root_volume(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/action' % self.fake_userid
+        body = {'action': 'grow_root_volume',
+                'os_version': 'RHEL7.8'}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_grow_root_volume", self.fake_userid,
+                         'RHEL7.8')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_capture(self, get_token, request):
         method = 'POST'
         url = '/guests/%s/action' % self.fake_userid
@@ -384,6 +469,22 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_get_power_state_real(self, get_token, request):
+        method = 'GET'
+        url = '/guests/%s/power_state_real' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_get_power_state_real", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_get_info(self, get_token, request):
         method = 'GET'
         url = '/guests/%s/info' % self.fake_userid
@@ -394,6 +495,22 @@ class RESTClientTestCase(unittest.TestCase):
         get_token.return_value = self._tmp_token()
 
         self.client.call("guest_get_info", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_get_info_ssl(self, get_token, request):
+        method = 'GET'
+        url = '/guests/%s/info' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url_ssl + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client_ssl.call("guest_get_info", self.fake_userid)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
@@ -416,19 +533,8 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_get_info_ssl(self, get_token, request):
-        method = 'GET'
-        url = '/guests/%s/info' % self.fake_userid
-        body = None
-        header = self.headers
-        full_uri = self.base_url_ssl + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client_ssl.call("guest_get_info", self.fake_userid)
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
+    def test_guest_get_adapters_info(self, get_token, request):
+        pass
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
@@ -546,6 +652,7 @@ class RESTClientTestCase(unittest.TestCase):
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
+        # **kwargs accepts the key=val arguments
         self.client.call("guest_create_network_interface", self.fake_userid,
                          'rhel7.2', networks, active=False)
         request.assert_called_with(method, full_uri,
@@ -558,8 +665,7 @@ class RESTClientTestCase(unittest.TestCase):
         method = 'DELETE'
         url = '/guests/%s/interface' % self.fake_userid
         body = {'interface': {'os_version': 'rhel7.2',
-                              'vdev': '123',
-                              'active': False}}
+                              'vdev': '123'}}
         body = json.dumps(body)
         header = self.headers
         full_uri = self.base_url + url
@@ -567,7 +673,19 @@ class RESTClientTestCase(unittest.TestCase):
         get_token.return_value = self._tmp_token()
 
         self.client.call("guest_delete_network_interface", self.fake_userid,
-                         'rhel7.2', '123', active=False)
+                         'rhel7.2', '123', False)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+        request.reset_mock()
+        kwargs = {'active': True}
+        self.client.call("guest_delete_network_interface", self.fake_userid,
+                         'rhel7.2', '123', **kwargs)
+        body = {'interface': {'os_version': 'rhel7.2',
+                              'vdev': '123',
+                              'active': True}}
+        body = json.dumps(body)
+        request.return_value = self.response
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
@@ -644,32 +762,235 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_host_get_guest_list(self, get_token, request):
+    def test_volume_attach(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_volume_detach(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_volume_refresh_bootmap(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_get_volume_connector(self, get_token, request):
         method = 'GET'
-        url = '/host/guests'
-        body = None
+        kwargs = {'reserve': True,
+                  'fcp_template_id': 'fake id',
+                  'storage_provider': 'v7k'}
+        url = '/volumes/conn/fakeuser'
         header = self.headers
+        body = {
+            "info": {
+                "reserve": True,
+                "fcp_template_id": 'fake id',
+                "storage_provider": "v7k"
+            }
+        }
         full_uri = self.base_url + url
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
-        self.client.call("host_get_guest_list")
+        self.client.call("get_volume_connector", 'fakeuser', **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=json.dumps(body), headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_get_fcp_templates(self, get_token, request):
+        method = 'GET'
+        template_list = ['fake_template_id' + '0' * 20]
+        url = '/volumes/fcptemplates?template_id_list=%s' % template_list
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'template_id_list': template_list}
+        args = []
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        body = None
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        assigner_id = 'assigner_id'
+        kwargs = {'assigner_id': assigner_id}
+        url = '/volumes/fcptemplates?assigner_id=%s' % assigner_id
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        default_sp_list = 'default_sp_list'
+        kwargs = {'storage_providers': default_sp_list}
+        url = '/volumes/fcptemplates?storage_providers=%s' % default_sp_list
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        host_default = 'host_default'
+        kwargs = {'host_default': host_default}
+        url = '/volumes/fcptemplates?host_default=%s' % host_default
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates",
+                         *args, **kwargs)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_get_power_state_real(self, get_token, request):
+    def test_get_fcp_templates_details(self, get_token, request):
         method = 'GET'
-        url = '/guests/%s/power_state_real' % self.fake_userid
-        body = None
+        template_list = ['fake_template_id' + '0' * 20]
+        url = '/volumes/fcptemplates/detail?template_id_list=%s&' % template_list
+        url += 'raw=False&statistics=True&sync_with_zvm=False'
+        full_uri = self.base_url + url
         header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'template_id_list': template_list}
+        args = []
+        self.client.call("get_fcp_templates_details",
+                         *args, **kwargs)
+        body = None
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        kwargs = {}
+        url = '/volumes/fcptemplates/detail?'
+        url += 'raw=False&statistics=True&sync_with_zvm=False'
+        full_uri = self.base_url + url
+        self.client.call("get_fcp_templates_details",
+                         *args, **kwargs)
+        body = None
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_delete_fcp_template(self, get_token, request):
+        method = 'DELETE'
+        url = '/volumes/fcptemplates/92ac944a-fb7a-11ec-870c-02553600000f'
+        header = self.headers
+        body = None
         full_uri = self.base_url + url
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
-        self.client.call("guest_get_power_state_real", self.fake_userid)
+        self.client.call("delete_fcp_template", '92ac944a-fb7a-11ec-870c-02553600000f')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_get_fcp_usage(self, get_token, request):
+        method = 'GET'
+        url = '/volumes/fcp/1a00'
+        header = self.headers
+        body = None
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("get_fcp_usage", '1a00')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_set_fcp_usage(self, get_token, request):
+        method = 'PUT'
+        url = '/volumes/fcp/1a00'
+        header = self.headers
+        body = {'info': {'userid': 'fakeuser',
+                         'reserved': 1,
+                         'connections': 2,
+                         'fcp_template_id': 'f0fd9e40-fb7a-11ec-ba2a-02553600000f'}}
+        body = json.dumps(body)
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("set_fcp_usage", '1a00', 'fakeuser', 1, 2, 'f0fd9e40-fb7a-11ec-ba2a-02553600000f')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        body = {'info': {'userid': 'fakeuser',
+                         'reserved': 0,
+                         'connections': 0,
+                         'fcp_template_id': ''}}
+        body = json.dumps(body)
+        self.client.call("set_fcp_usage", '1a00', 'fakeuser', 0, 0, '')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_create_fcp_template(self, get_token, request):
+        method = 'POST'
+        url = '/volumes/fcptemplates'
+        header = self.headers
+        body = {'name': 'tmpl name',
+                'description': 'desc text',
+                'fcp_devices': '1a00,1a03-1a04;1b00-1b05',
+                'host_default': True,
+                'default_sp_list': ['v5k', 'v7k', 'd8k']}
+        body = json.dumps(body)
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("create_fcp_template", 'tmpl name',
+                         description='desc text',
+                         fcp_devices='1a00,1a03-1a04;1b00-1b05',
+                         host_default=True, default_sp_list=['v5k', 'v7k', 'd8k'])
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        body = {'name': 'tmpl name',
+                'description': 'desc text',
+                'fcp_devices': '1a00,1a03-1a04;1b00-1b05'}
+        body = json.dumps(body)
+        self.client.call("create_fcp_template", 'tmpl name',
+                         description='desc text',
+                         fcp_devices='1a00,1a03-1a04;1b00-1b05')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_edit_fcp_template(self, get_token, request):
+        method = 'PUT'
+        fake_tmpl_id = 'fake_template_id' + '0' * 20
+        url = '/volumes/fcptemplates/%s' % fake_tmpl_id
+        full_uri = self.base_url + url
+        header = self.headers
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+        kwargs = {'name': 'fake_name', 'description': 'desc'}
+        self.client.call("edit_fcp_template",
+                         fake_tmpl_id, **kwargs)
+        body = json.dumps(kwargs)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
@@ -692,8 +1013,57 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_guest_list(self, get_token, request):
+        method = 'GET'
+        url = '/host/guests'
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("host_get_guest_list")
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_diskpool_volumes(self, get_token, request):
+        method = 'GET'
+        url = '/host/diskpool_volumes?poolname=pool1'
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("host_get_diskpool_volumes", disk_pool='pool1')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        url = '/host/diskpool_volumes'
+        full_uri = self.base_url + url
+        self.client.call("host_get_diskpool_volumes")
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_host_diskpool_get_info(self, get_token, request):
         # wait host_diskpool_get_info bug fixed
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_volume_info(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_ssi_info(self, get_token, request):
         pass
 
     @mock.patch.object(requests, 'request')
@@ -714,6 +1084,29 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("image_import", '100.img',
                          image_uri, image_meta)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_image_query(self, get_token, request):
+        method = 'GET'
+        url = '/images'
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("image_query")
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        url = '/images?imagename=test-name1'
+        full_uri = self.base_url + url
+        self.client.call("image_query", imagename='test-name1')
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
@@ -768,6 +1161,16 @@ class RESTClientTestCase(unittest.TestCase):
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_file_import(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_file_export(self, get_token, request):
+        pass
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
@@ -836,6 +1239,11 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_vswitch_query(self, get_token, request):
+        pass
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_vswitch_grant_user(self, get_token, request):
         method = 'PUT'
         url = '/vswitches/%s' % 'dummy'
@@ -883,63 +1291,6 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("vswitch_set_vlan_id_for_user",
                          'dummy', self.fake_userid, 'vlan_id')
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_resize_mem(self, get_token, request):
-        method = 'POST'
-        url = '/guests/%s/action' % self.fake_userid
-        body = {'action': 'resize_mem',
-                'size': '4g'}
-        body = json.dumps(body)
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_resize_mem", self.fake_userid,
-                         '4g')
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_live_resize_mem(self, get_token, request):
-        method = 'POST'
-        url = '/guests/%s/action' % self.fake_userid
-        body = {'action': 'live_resize_mem',
-                'size': '4g'}
-        body = json.dumps(body)
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_live_resize_mem", self.fake_userid,
-                         '4g')
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_grow_root_volume(self, get_token, request):
-        method = 'POST'
-        url = '/guests/%s/action' % self.fake_userid
-        body = {'action': 'grow_root_volume',
-                'os_version': 'RHEL7.8'}
-        body = json.dumps(body)
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_grow_root_volume", self.fake_userid,
-                         'RHEL7.8')
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

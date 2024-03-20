@@ -1,4 +1,7 @@
 #!/bin/bash
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 ###############################################################################
 # Copyright 2017,2020 IBM Corp.
 #
@@ -150,7 +153,7 @@ function parseArgs {
     fi
   fi
 
-  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
+  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/' | sed 's/:/_/g')
   logFile=/var/log/zthin/unpackdiskimage_trace_${timestamp}.txt
   if [[ $debug ]]; then
     exec 2> >(tee -a $logFile)
@@ -219,7 +222,7 @@ function checkSanity {
   # @Code:
   # Make sure the specified image file exists.
   if [[ $skipcopy != 'YES' && ! -f $imageFile ]]; then
-    printError 'The specified image file was not found.'
+    printError "The specified image file was not found: $imageFile."
     exit 3
   fi
 
@@ -324,6 +327,21 @@ function resizePartition {
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
       return 1
     fi
+  elif [[ $fs =~ "LVM2_member" ]]; then
+    inform "LVM partitions found, Resize physical volume(s) by pvresize."
+    output=$(which pvresize)
+    if [[ $? -ne 0 ]]; then
+      inform "(Warning):Resize abort for pvresize command not found. Please manually extend LVM partition"
+      return 0
+    fi
+
+    inform "Resize physical volume(s) type $fs lastPartition: $lastPartition with pvresize."
+    out=`pvresize  -v ${lastPartition}`
+    if [[ $? -ne 0 ]]; then
+      inform "(Warning):pvresize execution failed. Please check and manually resize LVM partition"
+    else
+      inform "Successful Resize physical volume(s), type $fs lastPartition: $lastPartition, out: $out."
+    fi
   else
     inform "(Warning) The file system type $fs is not support to be increased"
   fi
@@ -390,6 +408,8 @@ function resizeECKD {
     # Note: We will see a message indicating that "device is not fully formatted".
     #       We will ignore that because we are redoing the parition to take 
     #       advantage of the increased size.
+    # Add dasdview to debug, currently zCC only supports CDL disk layout.
+    dasdview -x ${devNode}
     out=`fdasd -a ${devNode}`
     rc=$?
     if (( rc != 0 )); then
@@ -560,6 +580,7 @@ function deployDiskImage {
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
         if (( gzipCompression == 0 )); then
           declare -a stages=('overall_placeholder' 'dd' 'ckddecode')
           dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
@@ -580,7 +601,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image, required:$targetDiskSize cylinders, given:$diskSize cylinders"
+        printError "Target disk is too small for specified image, deploy to target disk:$targetDiskSize cylinders, image need minimum:$diskSize cylinders"
         exit 3
       fi
 
@@ -617,16 +638,18 @@ function deployDiskImage {
     if [[ $(vmcp q v $alias | grep 'BLK ON DASD') ]]; then
       local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
                         awk '{print $1}')"
+      local targetDiskSize=`vmcp q v $alias | awk '{print $6}'`
       if [[ $diskSize -eq 0 ]]; then
           printError "$imageFile does not contain block information.  This appears to be a dummy image file."
           exit 3
       fi
-      if [[ ${diskSize} -le $(vmcp q v $alias | awk '{print $6}') ]]; then
+      if [[ ${diskSize} -le ${targetDiskSize} ]]; then
         errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
         if (( $? )); then
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
         if (( gzipCompression == 0 )); then
           dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
             > /dev/disk/by-path/ccw-0.0.${alias}
@@ -656,7 +679,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image. The image has $diskSize blocks in the header, deploy to a disk with $targetDiskSize blocks, either deploy to a bigger size target disk or create a smaller image."
         exit 3
       fi
     else
@@ -860,9 +883,18 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-   
-    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
-    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+
+    # ipConfig format: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]
+    ipsetting=$(echo ${ipConfig%;*})
+    # mtu format: <mtu> , example, "1500"
+    mtu=$(echo ${ipConfig#*;})
+    # nameserver format: nameserver=<nameserver>
+    nameserver1=$(echo $ipsetting| awk -F: '{print $8}')
+    nameserver2=$(echo $ipsetting| awk -F: '{print $9}')
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none:<mtu>
+    ipsetting=$(echo ${ipsetting/%none:*/none:}${mtu})
+
     if [ $nameserver1  ]; then 
         nameserver1='nameserver='${nameserver1}
     fi
@@ -870,7 +902,7 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
 
-    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipsetting $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -878,7 +910,7 @@ function deployDiskImage {
         exit 1
     fi
     #Update BLS config file for reboot
-    sed -i -e 's/ignition.firstboot=1//' /tmp/$fcpChannel/zipl_prm
+    sed -i -e 's/ignition.firstboot=1.*//' /tmp/$fcpChannel/zipl_prm
     sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
     echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
     cat /tmp/$fcpChannel/blsfile > $blsfile
@@ -886,7 +918,7 @@ function deployDiskImage {
   } #update_zipl_bootloader_fcp{}
 
   function update_zipl_bootloader_eckd {
-    inform "Updating zipl"
+    inform "${userID}: Updating zipl"
     mkdir -p /tmp/$userID/boot_partition
     mount_boot_partition /tmp/$userID/boot_partition
     trap 'umount /tmp/$userID/boot_partition; trap - RETURN' RETURN
@@ -894,10 +926,10 @@ function deployDiskImage {
     #Get ignition config file
     mkdir -p "/tmp/$userID/boot_partition/ignition"
     if [ -f "$ignitionUrl" ]; then
-        inform "$ignitionUrl is FILE"
+        inform "${userID}: $ignitionUrl is FILE"
         cat $ignitionUrl >/tmp/$userID/boot_partition/ignition/config.ign 2>/dev/null
     else
-        inform "$ignitionUrl is URL"
+        inform "${userID}: $ignitionUrl is URL"
         let retry=0
         while true
         do
@@ -915,9 +947,9 @@ function deployDiskImage {
                     printError "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
                     exit 1
                 fi
-                inform "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                inform "${userID}: fetching ignition config from ${ignitionUrl}: ${RETCODE}"
             else
-                inform "Successfully get the ignition config"
+                inform "${userID}: Successfully get the ignition config"
                 break;
             fi
         done
@@ -925,8 +957,18 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$userID/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
-    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+
+    # ipConfig format: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]];<mtu>
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]
+    ipsetting=$(echo ${ipConfig%;*})
+    # mtu format: <mtu> , example, "1500"
+    mtu=$(echo ${ipConfig#*;})
+    # nameserver format: nameserver=<nameserver>
+    nameserver1=$(echo $ipsetting| awk -F: '{print $8}')
+    nameserver2=$(echo $ipsetting| awk -F: '{print $9}')
+    # ipsetting format here: <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none:<mtu>
+    ipsetting=$(echo ${ipsetting/%none:*/none:}${mtu})
+
     if [ $nameserver1  ]; then 
         nameserver1='nameserver='${nameserver1}
     fi
@@ -934,19 +976,20 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
     
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$userID/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipsetting $nameserver1 $nameserver2" > /tmp/$userID/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$userID/zipl_prm -i $(ls /tmp/$userID/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$userID/boot_partition/ostree/*/*initramfs*) --target /tmp/$userID/boot_partition
     if [[ $? -ne 0 ]]; then
-        printError "failed updating bootloder"
+        printError "${userID}: failed updating bootloder"
         exit 1
     fi
     #Update BLS config file for reboot
-    sed -i -e 's/ignition.firstboot=1//' /tmp/$userID/zipl_prm
+    sed -i -e 's/ignition.firstboot=1.*//' /tmp/$userID/zipl_prm
     sed -e '/options/d' $blsfile > /tmp/$userID/blsfile
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
-    blockdev --flushbufs ${DEST_DEV} > /dev/null
+
+    inform "${userID}: Update zipl completed."
   } #update_zipl_bootloader_eckd{}
 
   function deployFBAptImage {
@@ -981,6 +1024,7 @@ function deployDiskImage {
           printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
+        wipefs --all --force "/dev/disk/by-path/ccw-0.0.${alias}"
 
         # Zero out the disk header
         out=`dd if=/dev/zero bs=512 count=2 2>&1 of=/dev/disk/by-path/ccw-0.0.${alias}`
@@ -1035,7 +1079,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image, required:$targetDiskSize blocks, given:$diskSize blocks"
+        printError "Target disk is too small for specified image, deploy to target disk:$targetDiskSize blocks, image need minimum:$diskSize blocks"
         exit 3
       fi
 
@@ -1092,6 +1136,7 @@ function deployDiskImage {
         printError "Failed to create a temporary file in the /var/log/zthin directory"
         exit 3
       fi
+      wipefs --all --force "/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}"
       if (( gzipCompression == 0 )); then
         dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
           > /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
@@ -1121,7 +1166,7 @@ function deployDiskImage {
         exit 3
       fi
     else
-      printError "Target disk is too small for specified image, required:$targetDiskSize bytes, given:$diskSize bytes"
+      printError "Target disk is too small for specified image, deploy to target disk:$targetDiskSize bytes, image need minimum:$diskSize bytes"
       exit 3
     fi
   } #deployFCPImage{}
@@ -1142,7 +1187,7 @@ function deployDiskImage {
     DEST_DEV=$(findLinuxDeviceNode $alias)
 
     #Wipe any remaining disk labels
-    inform "Wiping ${DEST_DEV}"
+    inform "${userID}: Wiping ${DEST_DEV}"
     wipefs --all --force "${DEST_DEV}"
     
     #Check disk type
@@ -1153,11 +1198,11 @@ function deployDiskImage {
     fi   
 
     #low-level format the ECKD DASD using dasdfmt, if needed
-    inform "Format ${DEST_DEV} and Copy..."
+    inform "${userID}: Format ${DEST_DEV} and Copy..."
     if dasdview -x ${DEST_DEV} |grep 'CDL formatted'
     then
         if [ ! $(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}') ]; then
-            inform "Formatting..."
+            inform "${userID}: Formatting..."
             dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
             if [[ $? -ne 0 ]]; then
                 printError "failed to format RHCOS DASD device"
@@ -1166,7 +1211,7 @@ function deployDiskImage {
         fi
     else
         #DEST_DEV is not formatted with z/OS compatible disk layout!
-        inform "Formatting..."
+        inform "${userID}: Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
         if [[ $? -ne 0 ]]; then
             printError "failed to format RHCOS DASD device"
@@ -1175,13 +1220,14 @@ function deployDiskImage {
     fi
 
     #Get blocks for per track of target disk
+    inform "${userID}: Getting blocks per track of device ${DEST_DEV}..."
     block_per_tracks=$(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}')
+    inform "${userID}: Blocks per track of device ${DEST_DEV}: ${block_per_tracks}"
     #the first 2 tracks of the ECKD DASD are reserved
     first_track=2
 
     # Get boot partition and root partition of target disk
-    inform "Get boot and root partitions..."
-    inform "(Warning) It is recommended to use 2.32.1 and later version fdisk which we have tested to work well."
+    inform "${userID}: Get boot and root partitions..."
     boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | head -n 1 | awk '{print $2,$4}'))
     root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | tail -n 1 | head -n 2 | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
@@ -1193,7 +1239,7 @@ function deployDiskImage {
 EOF
 
     # format the ECKD DASD using fdasd program
-    inform "Create partitions..."
+    inform "${userID}: Create partitions..."
     fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
     RETCODE=$?
     if [[ $RETCODE -ne 0 ]]; then
@@ -1221,7 +1267,7 @@ EOF
     fi
 
     # copy the content of each partition
-    inform "Coping partitions..."
+    inform "${userID}: Coping partitions..."
     set -- ${boot_partition[@]} ${root_partition[@]}
     while [ $# -gt 0 ]; do
         dd bs=4096 if="${imageFile}" iflag=fullblock of="${DEST_DEV}" \
@@ -1235,13 +1281,14 @@ EOF
         fi
         shift 4
     done
-    
-    blockdev --flushbufs ${DEST_DEV} > /dev/null
 
     # Update bootloader records
     update_zipl_bootloader_eckd
 
-    inform "Install complete"
+    inform "${userID}: Flushing disk buffer..."
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
+
+    inform "${userID}: Install complete"
 
   } #deployRHCOSECKDImage{}
 
@@ -1284,6 +1331,12 @@ EOF
     inform "Deploying image to FCP disk at channel ${fcpChannel}."
   fi
 
+
+  # Technically this only apply for z15+ machine as we can speed up the
+  # zip process through zEDC, and no harm if we set for z15-
+  export DFLTCC=1
+  export DFLTCC_LEVEL_MASK=0x1fe
+
   if [[ $format = 'FCP' ]]; then
     deployFCPImage
   elif [[ $format = 'FBA' ]]; then
@@ -1302,6 +1355,11 @@ EOF
     printError "Disk image type not recognized."
     exit 3
   fi
+
+  # unpackdiskimage is an indenpendent process, so don't need unset it
+  # unset DFLTCC
+  # unset DFLTCC_LEVEL_MASK
+
 } #deployDiskImage{}
 
 
@@ -1323,7 +1381,11 @@ function cleanup {
   fi
 
   if [[ $successful ]]; then
-    inform "Image deployment successful."
+    if [[ $userID ]]; then
+      inform "Deploying image for ${userID} successful."
+    else
+      inform "Deploying image to FCP disk at channel ${fcpChannel} successful."
+    fi
     # Only keep traces of failed disk-image creation attempt unless overriden
     # by a configuration property.
     if [[ -e $logFile ]]; then
@@ -1388,7 +1450,11 @@ function cleanup {
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
-  inform "unpackdiskimage end time: ${timestamp}"
+  if [[ $userID ]]; then
+    inform "${userID}: unpackdiskimage end time: ${timestamp}"
+  else
+    inform "unpackdiskimage to FCP disk at channel ${fcpChannel} end time: ${timestamp}"
+  fi
 } #cleanup{}
 
 trap 'cleanup' EXIT

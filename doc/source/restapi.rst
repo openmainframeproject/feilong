@@ -1,3 +1,7 @@
+..
+ Copyright Contributors to the Feilong Project.
+ SPDX-License-Identifier: CC-BY-4.0
+
 RESTful APIs
 ************
 
@@ -88,6 +92,41 @@ you can think as a combination of username and password.
 
   Please refer to :ref:`TokenUsage` to get more details.
 
+SMAPI Health
+============
+
+Report health of SMAPI
+----------------------
+
+**GET /smapi-healthy**
+
+Get health status of the SMAPI.
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - SMAPI: SMAPI
+  - totalSuccess: totalSuccess
+  - totalFail: totalFail
+  - lastSuccess: lastSuccess
+  - lastFail: lastFail
+  - continuousFail: continuousFail
+  - healthy: healthy
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_smapi_health.tpl
+   :language: javascript
+
 Guest(s)
 ========
 
@@ -175,6 +214,39 @@ Create a vm in z/VM
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_output.tpl
+   :language: javascript
+
+Get guest minidisks info
+------------------------
+
+**GET /guests/{userid}/disks**
+
+List characteristics of all disks of a guest
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - minidisks: minidisks_guest
+  - vdev: get_mdisk_disk_vdev
+  - rdev: rdev_disk
+  - access_type: access_type
+  - device_size: size_no_unit
+  - device_units: device_units
+  - volume_label: volume_label
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_info_output.tpl
    :language: javascript
 
 Guest add disks
@@ -298,15 +370,14 @@ Attach volume to a vm in z/VM
 
   - info: volume_info
   - connection: volume_conn
-  - assigner_id: guest_userid
-  - zvm_fcp: volume_fcp
+  - assigner_id: assigner_id
+  - zvm_fcp: fcp_list
   - target_wwpn: volume_wwpn
   - target_lun: volume_lun
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
   - is_root_volume: root_volume
-
 
 * Request sample:
 
@@ -334,15 +405,14 @@ Detach volume from a vm in z/VM
 
   - info: volume_info
   - connection: volume_conn
-  - assigner_id: guest_userid
-  - zvm_fcp: volume_fcp
+  - assigner_id: assigner_id
+  - zvm_fcp: fcp_list
   - target_wwpn: volume_wwpn
   - target_lun: volume_lun
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
   - is_root_volume: root_volume
-
 
 * Request sample:
 
@@ -363,6 +433,8 @@ Refresh Volume Bootmap Info
 **PUT /volumes/volume_refresh_bootmap**
 
 Refresh a volume's bootmap info.
+
+* Request:
 
 .. restapi_parameters:: parameters.yaml
 
@@ -409,33 +481,6 @@ Get volume connector for z/VM.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
    :language: javascript
 
-Get all FCP Usage of specified userid
----------------------------------------
-
-**GET /volumes/fcp**
-
-Get all the FCP usage in database for z/VM.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. restapi_parameters:: parameters.yaml
-
-  - output: fcp_usage
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_all_fcp_usage.tpl
-
 Get FCP Usage
 --------------------
 
@@ -475,7 +520,7 @@ Set the FCP usage in database for z/VM.
 .. restapi_parameters:: parameters.yaml
 
   - fcp_id: fcp_id
-  - userid: guest_userid
+  - userid: fcp_userid
   - reserved: fcp_reserve
   - connections: fcp_connections
 
@@ -510,6 +555,20 @@ Get guests cpu, memory information.
 .. restapi_parameters:: parameters.yaml
 
   - output: stats_guest
+  - guest_cpus: guest_cpus
+  - used_cpu_time_us: used_cpu_time_us
+  - elapsed_cpu_time_us: elapsed_cpu_time_us
+  - min_cpu_count: min_cpu_count
+  - max_cpu_limit: max_cpu_limit
+  - samples_cpu_in_use: samples_cpu_in_use
+  - samples_cpu_delay: samples_cpu_delay
+  - used_mem_kb: used_mem_kb
+  - max_mem_kb: max_mem_kb
+  - min_mem_kb: min_mem_kb
+  - shared_mem_kb: shared_mem_kb
+  - total_memory: total_memory
+  - available_memory: available_memory
+  - free_memory: free_memory
 
 * Response sample:
 
@@ -538,6 +597,16 @@ Get guests network interface statistics.
 .. restapi_parameters:: parameters.yaml
 
   - output: guest_vnics
+  - vswitch_name: vswitch_name_opt
+  - nic_vdev: nic_interface
+  - nic_fr_rx: nic_fr_rx
+  - nic_fr_tx: nic_fr_tx
+  - nic_fr_rx_dsc: nic_fr_rx_dsc
+  - nic_fr_tx_dsc: nic_fr_tx_dsc
+  - nic_fr_rx_err: nic_fr_rx_err
+  - nic_fr_tx_err: nic_fr_tx_err
+  - nic_rx: nic_rx
+  - nic_tx: nic_tx
 
 * Response sample:
 
@@ -687,6 +756,9 @@ Get running information of guest.
   - cpu_time_us: cpu_time_us_guest
   - power_state: power_status_guest
   - mem_kb: guest_memory_kb
+  - online_cpu_num: online_cpu_num_guest
+  - os_distro: os_distro_guest
+  - kernel_info: kernel_info_guest
 
 * Response sample:
 
@@ -800,7 +872,7 @@ Create one or more network interfaces on giving guest.
 
   - userid: guest_userid
   - interface: network_interface_info
-  - os_version: guest_os_version_all
+  - os_version: guest_os_version
   - guest_networks: guest_networks_list
   - active: active_flag
 
@@ -1096,7 +1168,7 @@ Register guest to be managed by Feilong.
   - userid: guest_userid
   - action: action_register_guest
   - meta: guest_register_meta
-  - net_set: guest_register_net_set  
+  - net_set: guest_register_net_set
   - port: guest_register_port_macs
 
 * Request sample:
@@ -1508,7 +1580,7 @@ Get host information.
 
 * Request:
 
-  No parameters needed. 
+  No parameters needed.
 
 * Response code:
 
@@ -1530,13 +1602,14 @@ Get Host disk pool info
 
 **GET /host/diskpool**
 
-Get disk pool information on the host.
+Get disk pool information(or the free space among all volumes in the disk pool) on the host.
 
 * Request:
 
 .. restapi_parameters:: parameters.yaml
 
   - poolname: disk_pool
+  - details: details
 
 * Response code:
 
@@ -1553,6 +1626,8 @@ Get disk pool information on the host.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_info.tpl
+   :language: javascript
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_details_info.tpl
    :language: javascript
 
 Get host disk pool volume names
@@ -1612,6 +1687,32 @@ Get the volume info on the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_volume.tpl
    :language: javascript
 
+Get Host SSI Cluster Info
+-------------------------
+
+**GET /host/ssi**
+
+Get the SSI(Single System Image) cluster information of the host.
+
+* Request:
+
+  No parameters needed.
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: host_ssi_info
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_ssi_info.tpl
+   :language: javascript
+
 Image(s)
 ========
 
@@ -1640,7 +1741,7 @@ Get the list of image info in image repository.
 
   - output: image_info
   - imagename: image_name
-  - imageosdistro: guest_os_version_all
+  - imageosdistro: guest_os_version
   - md5sum: image_md5sum
   - disk_size_units: root_disk_size_image
   - image_size_in_bytes: physical_disk_size_image
@@ -1877,7 +1978,7 @@ Grant an user to access vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - grant_userid: guest_userid
+  - grant_userid: grant_userid
 
 * Request sample:
 
@@ -1905,7 +2006,7 @@ Revoke the user access from vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - revoke_userid: guest_userid
+  - revoke_userid: grant_userid
 
 * Request sample:
 
@@ -1934,7 +2035,7 @@ Set vlan id for user when connecting to the vswitch
   - name: vswitch_name
   - vswitch: vswitch_info
   - user_vlan_id: user_vlan_id
-  - userid: guest_userid
+  - userid: grant_userid
   - vlanid: vlan_id
 
 * Request sample:
@@ -2035,3 +2136,27 @@ Export file from Feilong, internal use only.
 
 The response body contains the raw binary data that represents the actual file.
 The Content-Type header contains the application/octet-stream value.
+
+
+Get Switch information based on port id
+--------------------
+
+**GET /switch
+
+Get Switch information based on port id.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - portid: port id
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_switch_record.tpl
+   :language: javascript
+

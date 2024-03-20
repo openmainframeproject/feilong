@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # CmdVM functions for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
@@ -45,6 +48,7 @@ information for the positional operands:
 posOpsList = {
     'CMD': [
                ['Command to send', 'cmd', True, 2],
+               ['Timeout value', 'timeout', False, 1],
            ],
 }
 
@@ -148,8 +152,9 @@ def invokeCmd(rh):
     """
 
     rh.printSysLog("Enter cmdVM.invokeCmd, userid: " + rh.userid)
-
-    results = execCmdThruIUCV(rh, rh.userid, rh.parms['cmd'])
+    timeout = rh.parms.get('timeout', None)
+    results = execCmdThruIUCV(rh, rh.userid, rh.parms['cmd'],
+                              timeout=timeout)
 
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])

@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,6 +39,7 @@ class SDKTestCase(unittest.TestCase):
         set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         set_conf('image', 'sdk_image_repository', '/tmp/')
         set_conf('zvm', 'namelist', 'TSTNLIST')
+        set_conf('logging', 'log_dir', '/tmp/zvmsdk_ut_logs/')
 
     @classmethod
     def tearDownClass(cls):

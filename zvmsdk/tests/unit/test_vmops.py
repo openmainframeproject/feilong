@@ -1,4 +1,7 @@
-# Copyright 2017 IBM Corp.
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -82,11 +85,11 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         comment_list = ['comment1', 'comment2 is here']
         self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile,
                              max_cpu, max_mem, '', '', '', vdevs, loaddev,
-                             account, comment_list)
+                             account, comment_list, '', '', '', '')
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile, max_cpu, max_mem,
                                           '', '', '', vdevs, loaddev, account,
-                                          comment_list)
+                                          comment_list, '', '', '', '')
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.process_additional_minidisks")
@@ -104,23 +107,60 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
 
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info(self, gps, gipi):
+    def test_get_info(self, gps, gipi, gaca, ggov, ggki, ggbu):
         gps.return_value = 'on'
         gipi.return_value = {'used_memory': u'4872872 KB',
                              'used_cpu_time': u'6911844399 uS',
                              'guest_cpus': u'2',
                              'userid': u'CMABVT',
                              'max_memory': u'8388608 KB'}
+        gaca.return_value = [0, 1, 2]
+        ggov.return_value = 'RHEL8.4'
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
+        ggbu.return_value = 'rhel8'
         vm_info = self.vmops.get_info('fakeid')
         gps.assert_called_once_with('fakeid')
         gipi.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
         self.assertEqual(vm_info['power_state'], 'on')
         self.assertEqual(vm_info['max_mem_kb'], 8388608)
         self.assertEqual(vm_info['mem_kb'], 4872872)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 6911844399)
+        self.assertEqual(vm_info['online_cpu_num'], 3)
+        self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
+        self.assertEqual(vm_info['kernel_info'], kernel_info)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info_rhcos_vm(self, gps, gipi, ggbu, gaca, ggov, ggki):
+        gps.return_value = 'on'
+        gipi.return_value = {'used_memory': u'4872872 KB',
+                             'used_cpu_time': u'6911844399 uS',
+                             'guest_cpus': u'2',
+                             'userid': u'CMABVT',
+                             'max_memory': u'8388608 KB'}
+        ggbu.return_value = 'rhcos4.13'
+        gaca.return_value = [0, 1, 2]
+        gaca.assert_not_called()
+        ggov.return_value = 'RHEL8.4'
+        gaca.assert_not_called()
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
+        ggki.assert_not_called()
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
@@ -131,12 +171,17 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_shutdown(self, gps, gipi, gud):
+    def test_get_info_shutdown(self, gps, gipi, ggbu, gud, gaca, ggov, ggki):
         gps.return_value = 'off'
         gipi.return_value = None
+        ggbu.return_value = ['', '', 'SHUTDOWN']
         gud.return_value = [
             u'USER FAKEUSER DFLTPASS 2048m 2048m G',
             u'INCLUDE PROFILE',
@@ -145,25 +190,52 @@ class SDKVMOpsTestCase(base.SDKTestCase):
             u'IPL 0100',
             u'NICDEF 1000 TYPE QDIO LAN SYSTEM VSW2 MACID 0E4E8E',
             u'MDISK 0100 3390 34269 3338 OMB1A9 MR', u'']
+        gaca.return_value = [0, 1, 2]
+        ggov.return_value = 'RHEL8.4'
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
         vm_info = self.vmops.get_info('fakeid')
         gps.assert_called_once_with('fakeid')
         gud.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
         self.assertEqual(vm_info['power_state'], 'off')
         self.assertEqual(vm_info['max_mem_kb'], 2097152)
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 0)
+        self.assertEqual(vm_info['online_cpu_num'], 3)
+        self.assertEqual(vm_info['os_distro'], 'RHEL8.4')
+        self.assertEqual(vm_info['kernel_info'], kernel_info)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_image_performance_info")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_get_uid_failed(self, gps, gipi, gud):
+    def test_get_info_get_uid_failed(self, gps, gipi, ggbu, gud):
         gps.return_value = 'off'
         gipi.return_value = None
+        ggbu.return_value = ['', '', 'NOTEXIST']
         gud.side_effect = exception.ZVMVirtualMachineNotExist(userid='fakeid',
                                                         zvm_host='fakehost')
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_disks_info")
+    def test_get_disks_info(self, get_disks_info):
+        minidisks = [{'vdev': '0100',
+                      'rdev': '6018',
+                      'access_type': 'R/W',
+                      'device_type': '3390',
+                      'device_size': 29128,
+                      'device_units': 'Cylinders',
+                      'volume_label': 'VM6018'}]
+        get_disks_info.return_value = minidisks
+        ret = self.vmops.get_disks_info('fakeid')
+        first_minidisk = ret['minidisks'][0]
+        self.assertEqual(first_minidisk['device_size'], 29128)
+        self.assertEqual(first_minidisk['device_units'], 'Cylinders')
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_adapters_info")
     def test_get_adapters_info(self, adapters_info):

@@ -1,5 +1,8 @@
 /**
- * Copyright 2017,2018 IBM Corporation
+ * Copyright Contributors to the Feilong Project.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2017,2022 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,6 +297,9 @@ int displayHelpInfo(int smapiLevel) {
     if (smapiLevel >= 620) {
         printf("  System_Performance_Threshold_Disable\n"
                "  System_Performance_Threshold_Enable\n");
+    }
+    if (smapiLevel >= 720) {
+        printf("  System_Processor_Query\n");
     }
     if (smapiLevel >= 640) {
         printf("  System_RDR_File_Manage\n");
@@ -897,6 +903,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = systemPerformanceThresholdDisable(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_Performance_Threshold_Enable")) {
         rc = systemPerformanceThresholdEnable(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "System_Processor_Query")) {
+        rc = systemProcessorQuery(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_RDR_File_Manage")) {
             rc = systemRDRFileManage(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_SCSI_Disk_Add")) {

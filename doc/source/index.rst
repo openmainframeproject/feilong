@@ -1,3 +1,7 @@
+..
+ Copyright Contributors to the Feilong Project.
+ SPDX-License-Identifier: CC-BY-4.0
+
 ============================================
 Welcome to the Feilong Document
 ============================================

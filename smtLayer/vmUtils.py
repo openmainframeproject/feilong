@@ -1,3 +1,6 @@
+#  Copyright Contributors to the Feilong Project.
+#  SPDX-License-Identifier: Apache-2.0
+
 # Virtual Machine Utilities for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
@@ -20,6 +23,7 @@ from subprocess import CalledProcessError
 import time
 
 from smtLayer import msgs
+from smtLayer import vmStatus
 
 modId = 'VMU'
 version = '1.0.0'         # Version of this script
@@ -77,7 +81,7 @@ def disableEnableDisk(rh, userid, vaddr, option):
     return results
 
 
-def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
+def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[], timeout=None):
     """
     Send a command to a virtual machine using IUCV.
 
@@ -87,6 +91,7 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
        Command string to send
        (Optional) List of strCmd words (by index) to hide in
           sysLog by replacing the word with "<hidden>".
+       (Optional) timeout value in seconds for executing this command.
 
     Output:
        Dictionary containing the following:
@@ -104,13 +109,15 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
     """
     if len(hideInLog) == 0:
         rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
-                       userid + " cmd: " + strCmd)
+                       userid + " cmd: " + strCmd +
+                       " timeout: " + str(timeout))
     else:
         logCmd = strCmd.split(' ')
         for i in hideInLog:
             logCmd[i] = '<hidden>'
         rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
-                       userid + " cmd: " + ' '.join(logCmd))
+                       userid + " cmd: " + ' '.join(logCmd) +
+                       " timeout: " + str(timeout))
 
     iucvpath = '/opt/zthin/bin/IUCV/'
     results = {
@@ -129,9 +136,17 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
         results['response'] = subprocess.check_output(
                 cmd,
                 stderr=subprocess.STDOUT,
-                close_fds=True)
+                close_fds=True,
+                timeout=timeout)
         if isinstance(results['response'], bytes):
             results['response'] = bytes.decode(results['response'])
+    except subprocess.TimeoutExpired as e:
+        # Timeout exceptions from this system
+        rh.printSysLog("Timeout exception in vmUtils.execCmdThruIUCV")
+        results = msgs.msg['0501'][0]
+        msg = msgs.msg['0501'][1] % (modId, strCmd,
+            type(e).__name__, str(e))
+        results['response'] = msg
     except CalledProcessError as e:
         msg = []
         results['overallRC'] = 2
@@ -190,7 +205,17 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
             msg = msgs.msg['0319'][1] % (modId, userid, strCmd,
                 results['rc'], results['rs'], output)
         results['response'] = msg
-
+    except (subprocess.TimeoutExpired,
+            PermissionError) as e:
+        results['overallRC'] = 3
+        # return code
+        results['rc'] = 64
+        # reason code
+        results['rs'] = 408
+        output = str(e)
+        msg = msgs.msg['0320'][1] % (modId, userid, strCmd,
+                results['rc'], results['rs'], output)
+        results['response'] = msg
     except Exception as e:
         # Other exceptions from this system (i.e. not the managed system).
         results = msgs.msg['0421'][0]
@@ -601,6 +626,20 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     # remove this.
     diskAccessed = True
     if diskAccessed:
+        # flush disk buffer before offline the disk.
+        cmd = ["sudo", "/usr/sbin/blockdev", "--flushbufs", device]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
+        try:
+            out = subprocess.check_output(cmd, close_fds=True)
+            if isinstance(out, bytes):
+                out = bytes.decode(out)
+        except Exception as e:
+            # log worning and ignore the exception
+            wmesg = "Executing %(cmd)s failed: %(exp)s" % {'cmd': strCmd,
+                    'exp': str(e)}
+            rh.printLn("WS", wmesg)
+
         # Give up the disk.
         cmd = ["sudo", "/opt/zthin/bin/offlinediskanddetach",
                rh.userid,
@@ -681,6 +720,8 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
     cmd.append(api)
     cmd.append('--addRCheader')
 
+    status = vmStatus.GetSMAPIStatus()
+
     try:
         smcliResp = subprocess.check_output(cmd + parms,
             close_fds=True)
@@ -692,7 +733,11 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
         results['overallRC'] = 0
         results['rc'] = 0
 
+        status.RecordSuccess()
+
     except CalledProcessError as e:
+        status.RecordFail()
+
         strCmd = " ".join(cmd + parms)
 
         # Break up the RC header into its component parts.
