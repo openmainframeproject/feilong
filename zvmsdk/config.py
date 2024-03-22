@@ -251,12 +251,24 @@ The length of namelist must no longer than 64.
     Opt('swap_force_mdisk',
         section='zvm',
         default=False,
+        opt_type='bool',
         help='''
-For swap disk to create from mdisk instead of vdisk.
-In boot from volume case, there might be no disk pool at all, then
+For swap disk to create from mdisk instead of vdisk only for the below boot from
+volume case. In boot from volume case, there might be no disk pool at all, then
 the only choice is to use vdisk (or using FCP LUN which is complicated),
 if customer doesn't want vdisk, then set this value to `True` so
-VDISK will not be used and in turn it will fail check.
+VDISK will not be used and in turn it will fail check. If the customer wants
+to use MDISK to create swap device, he need configure dasd group and set
+`swap_default_with_mdisk` to `True` which is the default value.
+'''),
+    Opt('swap_default_with_mdisk',
+        section='zvm',
+        default=True,
+        opt_type='bool',
+        help='''
+If configure the dasd group, the user can configure `swap_default_with_mdisk`
+to create swap device with MDISK or VDISK, the default value `True` means create
+the swap device with MDISK, if `False`, create the swap device with VDISK.
 '''),
     Opt('remotehost_sshd_port',
         section='zvm',
@@ -716,6 +728,9 @@ class ConfigOpts(object):
                 # Convert type
                 if v2['type'] == 'int':
                     v2['default'] = int(v2['default'])
+                if v2['type'] == 'bool':
+                    if isinstance(v2['default'], str):
+                        v2['default'] = (v2['default'].lower() == 'true')
                 # Check format
                 if (k2 == "disk_pool") and (v2['default'] is not None):
                     self._check_zvm_disk_pool(v2['default'])
