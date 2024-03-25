@@ -110,6 +110,12 @@ sync_with_zvm:
   in: parameter
   required: false
   type: boolean
+smapi_health_report:
+  description: |
+    SMAPI health report
+  in: body
+  required: true
+  type: dict
 guest_list:
   description: |
     Guests list

@@ -98,7 +98,7 @@ SMAPI Health
 Report health of SMAPI
 ----------------------
 
-**GET /smapi-healthy**
+**GET /smapi_health**
 
 Get health status of the SMAPI.
 
@@ -114,7 +114,7 @@ Get health status of the SMAPI.
 
 .. restapi_parameters:: parameters.yaml
 
-  - SMAPI: SMAPI
+  - output: smapi_health_report
   - totalSuccess: totalSuccess
   - totalFail: totalFail
   - lastSuccess: lastSuccess
@@ -126,6 +126,10 @@ Get health status of the SMAPI.
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_smapi_health.tpl
    :language: javascript
+
+* Note:
+
+  Old API call **GET /smapi-healthy** is deprecated.
 
 Guest(s)
 ========
@@ -2139,9 +2143,9 @@ The Content-Type header contains the application/octet-stream value.
 
 
 Get Switch information based on port id
---------------------
+---------------------------------------
 
-**GET /switch
+**GET /switch**
 
 Get Switch information based on port id.
 
@@ -2149,7 +2153,7 @@ Get Switch information based on port id.
 
 .. restapi_parameters:: parameters.yaml
 
-  - portid: port id
+  - portid: port_id
 
 * Response code:
 

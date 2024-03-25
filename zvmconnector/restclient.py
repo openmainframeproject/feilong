@@ -112,6 +112,12 @@ def req_version(start_index, *args, **kwargs):
     return url, body
 
 
+def req_smapi_health(start_index, *args, **kwargs):
+    url = '/smapi_health'
+    body = None
+    return url, body
+
+
 def req_guest_list(start_index, *args, **kwargs):
     url = '/guests'
     body = None
@@ -724,6 +730,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_version},
+    'smapi_health': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_smapi_health},
     'guest_create': {
         'method': 'POST',
         'args_required': 3,
