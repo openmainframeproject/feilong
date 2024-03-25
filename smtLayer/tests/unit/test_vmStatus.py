@@ -29,7 +29,7 @@ class SMTvmStatusTestCase(base.SMTTestCase):
         s.RecordSuccess()
         s.RecordSuccess()
 
-        ret = s.Get()['SMAPI']
+        ret = s.Get()
         d = ret.pop('lastSuccess', None)
         self.assertIsNotNone(d)
         exp = {'continuousFail': 0,
@@ -44,7 +44,7 @@ class SMTvmStatusTestCase(base.SMTTestCase):
         s.RecordFail()
         s.RecordFail()
 
-        ret = s.Get()['SMAPI']
+        ret = s.Get()
         d = ret.pop('lastFail', None)
         self.assertIsNotNone(d)
         exp = {'continuousFail': 2,
@@ -60,7 +60,7 @@ class SMTvmStatusTestCase(base.SMTTestCase):
         for i in range(40):
             s.RecordFail()
 
-        ret = s.Get()['SMAPI']
+        ret = s.Get()
         d = ret.pop('lastFail', None)
         self.assertIsNotNone(d)
         m = ret.pop('lastSuccess', None)

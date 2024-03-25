@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Deprecated handler - See 'smapi.py' instead"""
+"""Handler for SMAPI-related calls"""
 
 import json
 
@@ -27,13 +27,20 @@ from zvmsdk import utils
 
 @util.SdkWsgify
 @tokens.validate
-def healthy(req):
+def health(req):
 
-    s = vmStatus.GetSMAPIStatus()
-    output = {'SMAPI': s.Get()}
-    info_json = json.dumps(output)
+    def _smapi_health(req):
+        status = vmStatus.GetSMAPIStatus()
+        results = {'overallRC': 0, 'modID': None,
+                   'rc': 0, 'rs': 0,
+                   'errmsg': '',
+                   'output': status.Get()}
+        return results
+
+    info = _smapi_health(req)
+
+    info_json = json.dumps(info)
+    req.response.status = 200
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
-    req.response.status = 200
-
     return req.response

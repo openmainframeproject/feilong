@@ -23,7 +23,8 @@ from zvmsdk import log
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import file
 from zvmsdk.sdkwsgi.handlers import guest
-from zvmsdk.sdkwsgi.handlers import healthy
+from zvmsdk.sdkwsgi.handlers import smapi
+from zvmsdk.sdkwsgi.handlers import healthy  # deprecated
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -118,7 +119,10 @@ ROUTE_LIST = (
         'PUT': guest.guest_config_disks,
         'GET': guest.guest_get_disks_info,
     }),
-    ('/smapi-healthy', {
+    ('/smapi_health', {
+        'GET': smapi.health,
+    }),
+    ('/smapi-healthy', {  # deprecated
         'GET': healthy.healthy,
     }),
     ('/host', {
