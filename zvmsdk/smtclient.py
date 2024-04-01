@@ -3669,7 +3669,19 @@ class SMTClient(object):
                 cpu_addr_long = ent.split()[3].strip().upper()
                 defined_addrs_long.append(cpu_addr_long)
             if ent.startswith("MACHINE ESA"):
-                max_cpus = int(ent.split()[2].strip())
+                # If defined the maximum number of virtual processors
+                # the user can define, update max_cpus value.
+                if len(ent.split()) > 2:
+                    max_cpus = int(ent.split()[2].strip())
+
+        # If empty max cpu number in MACHINE ESA, max_cpus should be set to default.
+        # The default max_cpus value is either 1 or the number of CPU statements
+        # for this user, whichever is greater.
+        if max_cpus == 0:
+            if len(defined_addrs) > 1 or len(defined_addrs_long) > 1:
+                max_cpus = max(len(defined_addrs), len(defined_addrs_long))
+            else:
+                max_cpus = 1
 
         return (max_cpus, defined_addrs, defined_addrs_long)
 

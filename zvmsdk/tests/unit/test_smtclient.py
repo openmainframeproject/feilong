@@ -4150,6 +4150,23 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(defined_addrs_long, ['00', '01'])
 
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    def test_private_get_defined_cpu_addrs_default_max_cpu(self, get_user_direct):
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+                                        'INCLUDE OSDFLT',
+                                        'IPL 0100',
+                                        'MACHINE ESA',
+                                        'NICDEF 1000 TYPE QDIO LAN '
+                                        'SYSTEM XCATVSW2 DEVICES 3',
+                                        'MDISK 0100 3390 52509 1100 OMB1AB MR',
+                                        '']
+        (max_cpus, defined_addrs, defined_addrs_long) = \
+            self._smtclient._get_defined_cpu_addrs('TESTUID')
+        get_user_direct.assert_called_once_with('TESTUID')
+        self.assertEqual(max_cpus, 1)
+        self.assertEqual(defined_addrs, [])
+        self.assertEqual(defined_addrs_long, [])
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     def test_private_get_defined_cpu_addrs_no_max_cpu(self, get_user_direct):
         get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
                                         'INCLUDE OSDFLT',
@@ -4163,7 +4180,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         (max_cpus, defined_addrs, defined_addrs_long) = \
             self._smtclient._get_defined_cpu_addrs('TESTUID')
         get_user_direct.assert_called_once_with('TESTUID')
-        self.assertEqual(max_cpus, 0)
+        self.assertEqual(max_cpus, 2)
         self.assertEqual(defined_addrs, ['00', '0A'])
         self.assertEqual(defined_addrs_long, [])
 
