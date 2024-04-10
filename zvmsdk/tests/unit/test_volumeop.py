@@ -1395,12 +1395,14 @@ class TestFCPManager(base.SDKTestCase):
             template_sp_mapping = [('sp1', template_id_1), ('sp2', template_id_2)]
             self.fcp_vol_mgr._insert_data_into_template_sp_mapping_table(template_sp_mapping)
 
+            # fcp_info_list_1 contains fcp with type: available
             fcp_info_list_1 = [
                             # available
                             ('1a00', '', 0, 0, 'c05076de3300a83c',
                             'c05076de33002641', '27', '02e4', 'free', '',
                             '')
                             ]
+            # fcp_info_list_2 contains fcp with type: allocated, unallocated_but_active
             fcp_info_list_2 = [
                             # allocated
                             ('1b00', 'user2', 1, 1, 'c05076de3300c83c',
@@ -1413,6 +1415,7 @@ class TestFCPManager(base.SDKTestCase):
                             ('1b02', 'user2', 1, 1, 'c05076de3300d83c',
                             'c05076de33002641', '27', '02e4', 'active', '',
                             template_id_2)]
+            # fcp_info_list_3 contains fcp with type: allocated, unallocated_but_active
             fcp_info_list_3 = [
                             # allocated
                             ('1c00', 'user3', 1, 1, 'c05076de3300c83c',
@@ -1425,21 +1428,36 @@ class TestFCPManager(base.SDKTestCase):
             fcp_id_list_1 = [fcp_info[0] for fcp_info in fcp_info_list_1]
             fcp_id_list_2 = [fcp_info[0] for fcp_info in fcp_info_list_2]
             fcp_id_list_3 = [fcp_info[0] for fcp_info in fcp_info_list_3]
+            # insert fcps into fcp table
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_1)
             self._insert_data_into_fcp_table(fcp_info_list_1)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_2)
             self._insert_data_into_fcp_table(fcp_info_list_2)
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list_3)
             self._insert_data_into_fcp_table(fcp_info_list_3)
-            template_fcp = [('1a00', template_id_1, 0),
-                            ('1f00', template_id_1, 0),
-                            ('1x00', template_id_1, 1),
-                            ('1b00', template_id_2, 0),
-                            ('1b01', template_id_2, 1),
-                            ('1b02', template_id_2, 1),
-                            ('1c00', template_id_3, 0),
-                            ('1c02', template_id_3, 0)]
-            fcp_id_list_1.append('1x00')
+
+            template_fcp = [
+                # template_id_1,
+                # makeup notfound FCP devices:
+                # path0: 1f00
+                # path1: 0005, 0007, 0019, 001a, 001b
+                ('1a00', template_id_1, 0),
+                ('1f00', template_id_1, 0),
+                ('0005', template_id_1, 1),
+                ('0007', template_id_1, 1),
+                ('0019', template_id_1, 1),
+                ('001a', template_id_1, 1),
+                ('001b', template_id_1, 1),
+                # template_id_2
+                ('1b00', template_id_2, 0),
+                ('1b01', template_id_2, 1),
+                ('1b02', template_id_2, 1),
+                # template_id_3
+                ('1c00', template_id_3, 0),
+                ('1c02', template_id_3, 0)]
+            # makeup notfound FCP devices
+            # fcp_id_list_1.append('0007')
+            # # insert fcps into fcp template_fcp_mapping
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_1, template_id_1)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_2, template_id_2)
             self.db_op.bulk_delete_fcp_from_template(fcp_id_list_3, template_id_3)
@@ -1462,7 +1480,7 @@ class TestFCPManager(base.SDKTestCase):
                 "statistics": {
                     0: {
                             "total": "1A00, 1F00",
-                            "total_count": {'02E4': 1},
+                            "total_count": {'02E4': 1, 'notfound': 1},
                             "single_fcp": "1A00, 1F00",
                             "range_fcp": "",
                             "available": "1A00",
@@ -1477,10 +1495,10 @@ class TestFCPManager(base.SDKTestCase):
                             "chpids": {"27": "1A00"},
                             'pchids': {'02E4': '27'}},
                     1: {
-                            "total": "1X00",
-                            "total_count": {},
-                            "single_fcp": "1X00",
-                            "range_fcp": "",
+                            "total": "0005, 0007, 0019 - 001B",
+                            "total_count": {'notfound': 5},
+                            "single_fcp": "0005, 0007",
+                            "range_fcp": "0019 - 001B",
                             "available": "",
                             "available_count": {},
                             "allocated": "",
@@ -1488,12 +1506,12 @@ class TestFCPManager(base.SDKTestCase):
                             "connection_only": "",
                             "unallocated_but_active": {},
                             "allocated_but_free": "",
-                            "notfound": "1X00",
+                            "notfound": "0005, 0007, 0019 - 001B",
                             "offline": "",
                             "chpids": {},
                             'pchids': {}}
                 }
-                }
+            }
             expected_2 = {
                 "id": template_id_2,
                 "name": "name2",
