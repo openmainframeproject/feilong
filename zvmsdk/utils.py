@@ -1085,7 +1085,7 @@ def shrink_fcp_list(fcp_list):
             if start_fcp + count == end_fcp:
                 # e.g. hex(int('1A01',16)) is '0x1a01'
                 section_str = '{} - {}'.format(
-                    hex(start_fcp)[2:], hex(end_fcp)[2:])
+                    hex(start_fcp)[2:].zfill(4), hex(end_fcp)[2:].zfill(4))
                 fcp_section.append(section_str)
             # Case 3: not all the FCPs are continuous.
             else:
@@ -1110,12 +1110,12 @@ def shrink_fcp_list(fcp_list):
                         if start_fcp != end_fcp:
                             # e.g. hex(int('1A01',16)) is '0x1a01'
                             section_str = '{} - {}'.format(
-                                hex(start_fcp)[2:], hex(end_fcp)[2:])
+                                hex(start_fcp)[2:].zfill(4), hex(end_fcp)[2:].zfill(4))
                         # e.g.
                         # when start_fcp is '1A05',
                         # end_fcp is '1A05'
                         else:
-                            section_str = hex(start_fcp)[2:]
+                            section_str = hex(start_fcp)[2:].zfill(4)
                         fcp_section.append(section_str)
                         break
                 # recursively transform if FCP list still not empty

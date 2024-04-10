@@ -1349,9 +1349,10 @@ class FCPManager(object):
         # from template_fcp_mapping table
         # Show upper case for FCP id
         fcp_id = fcp_id.upper()
-        # If a fcp not found in z/VM, will not insert into fcp table, then the
-        # db query result will be None. So connections not None represents
-        # the fcp is found in z/VM
+        # If a fcp not found in z/VM, will not insert into fcp table, then
+        # (assigner_id, connections, reserved, chpid, pchid, state, owner)
+        # of raw_item are all None.
+        # So connections not None represents the fcp is found in z/VM
         if connections is not None:
             # Store each FCP in section "total"
             statistics_usage[template_id][path_id]["total"].append(fcp_id)
@@ -1461,6 +1462,7 @@ class FCPManager(object):
             LOG.warning("Found a FCP device "
                         "%s in FCP Multipath Template %s, but not found in "
                         "z/VM." % (str(fcp_id), str(template_id)))
+
         return statistics_usage
 
     def _shrink_fcp_list_in_statistics_usage(self, statistics_usage):
@@ -1516,6 +1518,21 @@ class FCPManager(object):
                         single_fcp.append(fcp.strip())
                 template_statistics[path]['range_fcp'] = ', '.join(range_fcp)
                 template_statistics[path]['single_fcp'] = ', '.join(single_fcp)
+
+    def _count_notfound_fcp_in_total_count(self, statistics_usage):
+        """count notfound FCP devices in total_count section"""
+        for template_statistics in statistics_usage.values():
+            for path in template_statistics:
+                if template_statistics[path]['notfound']:
+                    # template_statistics[path]['notfound'] is str, ex:
+                    # '0007, 001D, 1A16 - 1A18'
+                    # expand_fcp_list returns dict, ex:
+                    # {0: {'0007' ,'001D', '1A16', '1A17', '1A18'}
+                    count_of_notfound_fcp = len(
+                        utils.expand_fcp_list(
+                            template_statistics[path]['notfound'])[0])
+                    template_statistics[
+                        path]['total_count']['notfound'] = count_of_notfound_fcp
 
     def get_fcp_templates(self, template_id_list=None, assigner_id=None,
                           default_sp_list=None, host_default=None):
@@ -1832,7 +1849,6 @@ class FCPManager(object):
             self._sync_db_with_zvm()
         statistics_usage = {}
         raw_usage = {}
-        template_info = {}
         ret = []
 
         # tmpl_cmd result format:
@@ -1890,6 +1906,7 @@ class FCPManager(object):
                      % statistics_usage)
             self._shrink_fcp_list_in_statistics_usage(statistics_usage)
             self._split_singe_range_fcp_list(statistics_usage)
+            self._count_notfound_fcp_in_total_count(statistics_usage)
             LOG.info("statistic FCP usage after shrink: %s"
                      % statistics_usage)
             # update base info with statistics_usage
