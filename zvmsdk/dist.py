@@ -1491,6 +1491,10 @@ class ubuntu22(ubuntu20):
     pass
 
 
+class ubuntu24(ubuntu20):
+    pass
+
+
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
         distro, release = self.parse_dist(os_version)
@@ -1499,7 +1503,7 @@ class LinuxDistManager(object):
     def _parse_release(self, os_version, distro, remain):
         supported = {'rhel': ['6', '7', '8', '9'],
                      'sles': ['11', '12', '15'],
-                     'ubuntu': ['16', '20', '22'],
+                     'ubuntu': ['16', '20', '22', '24'],
                      'rhcos': ['4']}
         releases = supported[distro]
 
