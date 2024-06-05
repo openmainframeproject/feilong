@@ -7,54 +7,46 @@
 Setup web server for running RESTful API
 ****************************************
 
+Introduction
+============
+
 Each Feilong API is exposed through a RESTful interface, higher level
 systems can manage z/VM by consuming these RESTful APIs directly.
 
-This document describes how to setup web server for hosting the Feilong RESTful APIs.
+This chapter describes how to setup a web server for hosting the Feilong RESTful APIs.
 
-The recommended deployment for Feilong is to have a real web server such as
-Apache HTTPD or nginx handle the HTTP connections and proxy requests to the independent
-z/VM SDK server running under a wsgi container such as uwsgi. 
+The recommended deployment for Feilong is to have a web server such as
+Apache httpd or nginx handle the HTTP connections and proxy requests to the independent
+z/VM SDK server running under a wsgi container such as uwsgi 
+or directly connected via Apache's wsgi module.
 
-The detailed setup steps for each type of web server product is out of this document's range,
-you can refer to the specific guide of your chosen web server. This guide would take Apache and uwsgi
-on RHEL7.2 as a sample about the deployment process, you can setup your own web server similarly.
+The detailed setup steps for each type of web server is out of this document's range,
+you can refer to the specific guide of your chosen web server. This guide walks you through 
+the deployment process, either with uwsgi. or with Apache's mod_wsgi.
 
-**NOTE**:
+This matrix represents the successful setup of different web servers across three Linux distributions.
+The last section of this chapter details about using tokens to enhance security.
 
-The uwsgi package contained in the **Ubuntu 16.04 LTS** repository cann't work on IBM Z because of
-the know big endian issue which is fixed in version 2.0.13.
-If you are using Ubuntu 16.04 LTS for the BYOL and using apache2 to proxy requests to uwsgi,
-you will get the HTTPD internal error with 500 as the error code.
+====================== ================= ================= =================
+Tested                 RHEL 9.4           SLES 15.5         Ubuntu 24.04
+====================== ================= ================= =================
+Apache2 + uwsgi        ✓                                   
+Apache2 + mod_wsgi     ✓                                   
+nginx + uwsgi                                                   
+====================== ================= ================= =================
 
-References:
 
-* `Ubuntu launchpad bug`_
-* `uwsgi 2.0.13 changelog`_
-
-.. _Ubuntu launchpad bug: https://bugs.launchpad.net/ubuntu/+source/uwsgi/+bug/1776624
-.. _uwsgi 2.0.13 changelog: https://uwsgi-docs.readthedocs.io/en/latest/Changelog-2.0.13.html
-
-To work around this issue, you have the a few choices:
-
-* Install uwsgi of version >= 2.0.13. (eg, you can choose to use pip to install uwsgi and specify the version)
-* Use the mod-wsgi module of apache2 instead of uwsgi, you can refer to :ref:`Steps to deploy Feilong into Apache with mod_wsgi`
-  for the detailed setup.
-
+Apache2 + uwsgi
+===============
 
 Installation
-============
-
+------------
 The following packages need to be installed:
 
 * Apache httpd server
 * Apache modules: mod_proxy_uwsgi
 * uwsgi
 * uwsgi plugin for python: uwsgi-plugin-python
-
-
-Configuration
-=============
 
 Configure uwsgi
 ---------------
@@ -67,9 +59,8 @@ so apache server can connect port 35000 and communicate with it
 
 .. literalinclude:: ../../data/uwsgi-zvmsdk.conf
 
-
 Start Feilong in uwsgi
------------------------------------
+----------------------
 
 * Create a uwsgi service
 
@@ -192,10 +183,8 @@ Start Apache service
 
     #systemctl start httpd.service
 
-.. _`Verification`:
-
 Verification
-============
+------------
 
 Verify your settings after restart httpd servers (assume you are using above
 configurations), if are you able to see similar output below, it means the zvmsdk
@@ -206,10 +195,71 @@ http service is running well.
     # curl http://localhost:8080/
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
 
+
+Apache2 + mod_wsgi
+==================
+
+Installation
+------------
+The following packages need to be installed:
+
+* apache2
+* libapache2-mod-wsgi
+
+Configuration
+-------------
+
+Create a vhost for Feilong in Apache. Copy the following content to
+/etc/apache2/sites-available/zvmsdk_wsgi.conf and update the file to match your system and requirements.
+
+Then execute command "a2ensite zvmsdk_wsgi" to enable the site.
+
+.. code-block:: text
+
+    Listen 8080
+    <VirtualHost *:8080>
+        WSGIDaemonProcess zvmsdkwsgi user=zvmsdk group=zvmsdk processes=2 threads=5
+            WSGIProcessGroup zvmsdkwsgi
+
+        WSGIScriptAlias / /usr/bin/zvmsdk-wsgi
+        <Directory /usr/lib/python2.7/dist-packages/zvmsdk/sdkwsgi>
+            Require all granted
+        </Directory>
+
+        <Directory /usr/bin>
+        <Files zvmsdk-wsgi>
+            Require all granted
+        </Files>
+        </Directory>
+    </VirtualHost>
+
+SSL is strongly recommended for security considerations. Refer to the specific web server 
+documentation on how to enable SSL.
+
+* Start Apache service
+
+  .. code-block:: text
+
+      #systemctl start apache2.service
+
+Verification
+------------
+
+Verify your settings after restart httpd servers (assume you are using above
+configurations), if are you able to see similar output below, it means the zvmsdk
+http service is running well.
+
+.. code-block:: text
+
+    # curl http://localhost:8080/
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
+
+
 .. _`TokenUsage`:
 
-Token Usage
-============
+
+Securing connections with Tokens
+================================
 
 When you sending requests, you can use token authenticaion to enhance security of the connection between client and server.
 Feilong use admin-token to authicate the safety of the connection instead of username&password.
@@ -299,52 +349,3 @@ Setup Client Side
 
      # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
      {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
-
-
-.. _`Steps to deploy Feilong into Apache with mod_wsgi`:
-
-Steps to deploy Feilong into Apache with mod_wsgi
-==============================================================
-
-* Install packages
-
-  * apache2
-  * libapache2-mod-wsgi
-
-* Configure Apache
-
-  Create a vhost for Feilong in Apache. Copy the following content to
-  /etc/apache2/sites-available/zvmsdk_wsgi.conf and update the file to match your system and requirements.
-
-  Then execute command "a2ensite zvmsdk_wsgi" to enable the site.
-
-  .. code-block:: text
-
-      Listen 8080
-      <VirtualHost *:8080>
-          WSGIDaemonProcess zvmsdkwsgi user=zvmsdk group=zvmsdk processes=2 threads=5
-              WSGIProcessGroup zvmsdkwsgi
-
-          WSGIScriptAlias / /usr/bin/zvmsdk-wsgi
-          <Directory /usr/lib/python2.7/dist-packages/zvmsdk/sdkwsgi>
-              Require all granted
-          </Directory>
-
-          <Directory /usr/bin>
-          <Files zvmsdk-wsgi>
-              Require all granted
-          </Files>
-          </Directory>
-      </VirtualHost>
-
-  SSL is strongly recommended for security considerations. Refer to the specific web server
-  documentation on how to enable SSL.
-
-* Start Apache service
-
-  .. code-block:: text
-
-      #systemctl start apache2.service
-
-  Now the Feilong has been deployed into apache2 with mod_wsgi, please continue to follow the
-  :ref:`Verification` to verify the configuration and setup token.
