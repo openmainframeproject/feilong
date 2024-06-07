@@ -1,0 +1,12 @@
+[Unit]
+Description=Feilong uwsgi
+After=syslog.target network.target httpd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/uwsgi --ini /etc/zvmsdk/uwsgi-zvmsdk.conf
+ExecReload=/usr/sbin/uwsgi --reload /etc/zvmsdk/uwsgi-zvmsdk.conf
+ExecStop=/usr/sbin/uwsgi --stop /etc/zvmsdk/uwsgi-zvmsdk.conf
+
+[Install]
+WantedBy=multi-user.target
