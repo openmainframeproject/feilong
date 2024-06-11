@@ -62,21 +62,21 @@ Install the downloaded packages using the `yum` or `dnf` command
     # dnf install zthin-<version>-<release>.s390x.rpm
     # dnf install zvmsdk-<version>-<release>.noarch.rpm
 
-Next you must create a symbolic link for the apache server and then start it. Run the following commands.
+If not already done, enable the automatic startup of the Apache server, and then start it:
 
 ..code-block:: text
 
     # systemctl enable httpd
     # systemctl start  httpd
 
-Finally you can verify if the installation works as intended by making a curl request from your workstation
+Finally, you can verify if the installation works as intended by making a curl request from your workstation
 
 ..code-block:: text
 
     $ curl http://<your server ip address>:8080/
 
 By default, Feilong will listen on port 8080.
-Tu change that, you need to modify both Apache configuration and firewall rules.
+To change that, you need to modify both Apache configuration and firewall rules.
 
 
 SUSE Linux Enterprise Server
