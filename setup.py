@@ -70,5 +70,6 @@ setuptools.setup(
                 ('/var/lib/zvmsdk', ['data/setupDisk']),
                 ('/etc/sudoers.d', ['data/sudoers-zvmsdk']),
                 ('/etc/zvmsdk', ['data/uwsgi-zvmsdk.conf']),
+                ('/etc/zvmsdk', ['data/zvmsdk.conf']),
                 ('/etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
 )
