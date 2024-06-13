@@ -7,11 +7,7 @@ SRC_DIR = zthin/src/
 INCLUDE_DIR = zthin/include/
 ZTHINLIB = "libzthin.so"
 
-ifeq ($(OS_IS_RHEL8),1)
-	LINK_TIRPC = -ltirpc
-else
-	LINK_TIRPC =
-endif
+LINK_TIRPC = -ltirpc
 
 #-----------------------------------------------------------------------
 # Objects for utils
