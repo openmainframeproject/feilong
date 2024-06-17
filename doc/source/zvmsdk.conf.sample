@@ -485,7 +485,7 @@
 # The default maximum size of memory the user can define.
 # This value is used as the default value for maximum memory size when
 # create a guest with no max_mem specified.
-# The value can be specified by 1-4 digits suffixed by either
+# The value can be specified by 1-4 bits of number suffixed by either
 # M (Megabytes) or G (Gigabytes) and the number must be a whole number,
 # values such as 4096.8M or 32.5G are not supported.
 # 
@@ -499,7 +499,7 @@
 # The default maximum size of reserved memory in a vm's direct entry.
 # This value is used as the default value for maximum reserved memory
 # size for a guest.
-# The value can be specified by 1-4 digits suffixed by either
+# The value can be specified by 1-4 bits of number suffixed by either
 # M (Megabytes) or G (Gigabytes) and the number must be a whole number,
 # values such as 4096.8M or 32.5G are not supported.
 # 
