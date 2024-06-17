@@ -17,11 +17,13 @@ import re
 from docutils import nodes
 from docutils.parsers.rst.directives.tables import Table
 from docutils.statemachine import ViewList
+from sphinx.util import logging
 from sphinx.util.osutil import copyfile
 import yaml
 
 
 YAML_CACHE = {}
+LOG = logging.getLogger(__name__)
 
 
 def ordered_load(
@@ -58,17 +60,17 @@ class RestAPIParametersDirective(Table):
             return YAML_CACHE[fpath]
 
         lookup = {}
-        # self.app.info("Fpath: %s" % fpath)
+        LOG.info("Fpath: %s" % fpath)
         try:
             with open(fpath, 'r') as stream:
                 lookup = ordered_load(stream)
         except IOError:
-            self.app.warn(
+            LOG.warning(
                 "Parameters file %s not found" % fpath,
                 (self.env.docname, None))
             return
         except yaml.YAMLError as exc:
-            self.app.warn(exc)
+            LOG.warning(exc)
             raise
 
         # FIXME: check sorting
@@ -88,12 +90,12 @@ class RestAPIParametersDirective(Table):
 
         content = "\n".join(self.content)
         parsed = yaml.safe_load(content)
-        # self.app.info("Params loaded is %s" % parsed)
-        # self.app.info("Lookup table looks like %s" % lookup)
+        LOG.info("Params loaded is %s" % parsed)
+        LOG.info("Lookup table looks like %s" % lookup)
         new_content = list()
         for paramlist in parsed:
             if not isinstance(paramlist, dict):
-                self.app.warn(
+                LOG.warning(
                     ("Invalid parameter definition ``%s``. Expected "
                      "format: ``name: reference``. "
                      " Skipping." % paramlist),
@@ -104,13 +106,13 @@ class RestAPIParametersDirective(Table):
                 if ref in lookup:
                     new_content.append((name, lookup[ref]))
                 else:
-                    self.app.warn(
+                    LOG.warning(
                         ("No field definition for ``%s`` found in ``%s``. "
                          " Skipping." % (ref, fpath)),
                         (self.state_machine.node.source,
                          self.state_machine.node.line))
 
-        # self.app.info("New content %s" % new_content)
+        LOG.info("New content %s" % new_content)
         self.yaml = new_content
 
     def run(self):
@@ -154,7 +156,7 @@ class RestAPIParametersDirective(Table):
             self.col_widths = self.col_widths[1]
         # Actually convert the yaml
         title, messages = self.make_title()
-        # self.app.info("Title %s, messages %s" % (title, messages))
+        LOG.info("Title %s, messages %s" % (title, messages))
         table_node = self.build_table()
         self.add_name(table_node)
         if title:
@@ -194,7 +196,7 @@ class RestAPIParametersDirective(Table):
         rows = []
         groups = []
         try:
-            # self.app.info("Parsed content is: %s" % self.yaml)
+            LOG.info("Parsed content is: %s" % self.yaml)
             for key, values in self.yaml:
                 min_version = values.get('min_version', '')
                 max_version = values.get('max_version', '')
@@ -222,7 +224,7 @@ class RestAPIParametersDirective(Table):
                 rows.append(trow)
         except AttributeError as exc:
             if 'key' in locals():
-                self.app.warn("Failure on key: %s, values: %s. %s" %
+                LOG.warning("Failure on key: %s, values: %s. %s" %
                               (key, values, exc))
             else:
                 rows.append(self.show_no_yaml_error())
