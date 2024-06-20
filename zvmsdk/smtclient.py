@@ -117,9 +117,15 @@ class SMTClient(object):
 
                 rc = results.get('rc', 0)
                 if rc in [-110, -102, -103, -108]:
-                    msg += ("This is likely to be caused by temporary z/VM "
-                            "SMAPI down issue, Contact with your z/VM "
-                            "administrators for further help")
+                    if rc == -108:
+                        msg += ("This is likely to be caused by too short timeout "
+                                "specified for z/VM SMAPI. Update SMAPI timeout "
+                                "configuration in zvmsdk.conf. Contact with your z/VM "
+                                "administrators for further help")
+                    else:
+                        msg += ("This is likely to be caused by temporary z/VM "
+                                "SMAPI down issue, Contact with your z/VM "
+                                "administrators for further help")
 
                 raise exception.SDKInternalError(msg=msg,
                                                     modID='smt',
