@@ -593,6 +593,35 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('smapi_socket_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=240,
+        opt_type='int',
+        help='''
+The timeout value for a general SMAPI socket is specified in seconds.
+
+The default value is 240 seconds.
+
+SMAPIs are socket-based systems management application programming interfaces.
+If the SMAPI socket connection exceeds this timeout, the SMAPI operation will fail.
+'''
+        ),
+    Opt('smapi_socket_long_call_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=900,
+        opt_type='int',
+        help='''
+The timeout value for a long-duration SMAPI socket is specified in seconds.
+
+The default value is 900 seconds.
+
+SMAPIs are socket-based systems management application programming interfaces.
+If the SMAPI socket connection of a long-duration operation exceeds this timeout,
+the SMAPI long-duration operation will fail.
+'''
+        ),
     # tests options
     Opt('images',
         section='tests',
