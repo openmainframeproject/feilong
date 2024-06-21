@@ -17,12 +17,15 @@ This chapter describes how to setup a web server for hosting the Feilong RESTful
 
 The recommended deployment for Feilong is to have a web server such as
 Apache httpd or nginx handle the HTTP connections and proxy requests to the independent
-z/VM SDK server running under a wsgi container such as uwsgi 
+z/VM SDK server running under a wsgi container such as uwsgi
 or directly connected via Apache's wsgi module.
 
 The detailed setup steps for each type of web server is out of this document's range,
-you can refer to the specific guide of your chosen web server. This guide walks you through 
-the deployment process, either with uwsgi. or with Apache's mod_wsgi.
+you can refer to the specific guide of your chosen web server. This guide walks you through
+the deployment process, either:
+ * with premade packages (which use the mod_wsgi method);
+ * manually, with uwsgi;
+ * or manually, with Apache's mod_wsgi.
 
 This matrix represents the successful setup of different web servers across three Linux distributions.
 The last section of this chapter details about using tokens to enhance security.
@@ -34,6 +37,57 @@ Apache2 + uwsgi        ✓
 Apache2 + mod_wsgi     ✓                                   
 nginx + uwsgi                                                   
 ====================== ================= ================= =================
+
+Installing from packages
+========================
+
+Redhat Enterprise Linux
+-----------------------
+
+The following instructions are for RHEL 9.4.
+The RPM packages can be downloaded from (to be determined).
+
+Before installing the necessary packages, it is important to set up the EPEL repository.
+**Important:** Ensure that the EPEL repository is enabled to access additional packages.
+
+.. code-block:: text
+
+    # dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+
+
+Install the downloaded packages using the `yum` or `dnf` command
+
+..code-block:: text
+
+    # dnf install zthin-<version>-<release>.s390x.rpm
+    # dnf install zvmsdk-<version>-<release>.noarch.rpm
+
+If not already done, enable the automatic startup of the Apache server, and then start it:
+
+..code-block:: text
+
+    # systemctl enable httpd
+    # systemctl start  httpd
+
+Finally, you can verify if the installation works as intended by making a curl request from your workstation
+
+..code-block:: text
+
+    $ curl http://<your server ip address>:8080/
+
+By default, Feilong will listen on port 8080.
+To change that, you need to modify both Apache configuration and firewall rules.
+
+
+SUSE Linux Enterprise Server
+----------------------------
+
+(to be written).
+
+Ubuntu
+------
+
+(to be written).
 
 
 Apache2 + uwsgi
@@ -258,7 +312,7 @@ http service is running well.
 .. _`TokenUsage`:
 
 
-Securing connections with Tokens
+Securing Connections with Tokens
 ================================
 
 When you sending requests, you can use token authenticaion to enhance security of the connection between client and server.
