@@ -34,7 +34,7 @@ The last section of this chapter details about using tokens to enhance security.
 Tested                 RHEL 9.4           SLES 15.5         Ubuntu 24.04
 ====================== ================= ================= =================
 Apache2 + uwsgi        ✓                                   
-Apache2 + mod_wsgi     ✓                                   
+Apache2 + mod_wsgi     ✓                 ✓                 
 nginx + uwsgi                                                   
 ====================== ================= ================= =================
 
@@ -82,7 +82,33 @@ To change that, you need to modify both Apache configuration and firewall rules.
 SUSE Linux Enterprise Server
 ----------------------------
 
-(to be written).
+The following instructions are for SLES15 SP5.
+The RPM packages can be downloaded from (to be determined).
+
+
+
+Install the downloaded packages using the `zypper` command
+
+..code-block:: text
+
+    # zypper install zthin-<version>-<release>.s390x.rpm
+    # zypper install zvmsdk-<version>-<release>.noarch.rpm
+
+If not already done, enable the automatic startup of the Apache server, and then start it:
+
+..code-block:: text
+
+    # systemctl enable apache2
+    # systemctl start  apache2
+
+Finally, you can verify if the installation works as intended by making a curl request from your workstation
+
+..code-block:: text
+
+    $ curl http://<your server ip address>:8080/
+
+By default, Feilong will listen on port 8080.
+To change that, you need to modify both Apache configuration and firewall rules.
 
 Ubuntu
 ------
