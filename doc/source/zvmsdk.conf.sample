@@ -449,6 +449,31 @@
 
 
 # 
+# The timeout value for a long-duration SMAPI socket is specified in seconds.
+# 
+# The default value is 900 seconds.
+# 
+# SMAPIs are socket-based systems management application programming interfaces.
+# If the SMAPI socket connection of a long-duration operation exceeds this timeout,
+# the SMAPI long-duration operation will fail.
+# 
+# This param is optional
+#smapi_socket_long_call_timeout_seconds=900
+
+
+# 
+# The timeout value for a general SMAPI socket is specified in seconds.
+# 
+# The default value is 240 seconds.
+# 
+# SMAPIs are socket-based systems management application programming interfaces.
+# If the SMAPI socket connection exceeds this timeout, the SMAPI operation will fail.
+# 
+# This param is optional
+#smapi_socket_timeout_seconds=240
+
+
+# 
 # If configure the dasd group, the user can configure `swap_default_with_mdisk`
 # to create swap device with MDISK or VDISK, the default value `True` means create
 # the swap device with MDISK, if `False`, create the swap device with VDISK.
