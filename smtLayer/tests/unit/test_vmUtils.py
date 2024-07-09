@@ -50,4 +50,5 @@ class SMTvmUtilsTestCase(base.SMTTestCase):
             self.assertEqual(res['response'], expected_resp)
             exec_cmd.assert_called_once_with(
                 ['sudo', '/opt/zthin/bin/smcli', 'Image_Query_DM',
-                 '--addRCheader', '-T', 'fakeuid'], close_fds=True)
+                 '--addRCheader', '-T', 'fakeuid',
+                 '--timeout', '240'], close_fds=True)

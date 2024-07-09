@@ -25,8 +25,13 @@ import time
 from smtLayer import msgs
 from smtLayer import vmStatus
 
+from zvmsdk import config
+
 modId = 'VMU'
 version = '1.0.0'         # Version of this script
+
+DEFAULT_SMAPI_SOCKET_LONG_CALL_TIMEOUT_SECONDS = 900
+DEFAULT_SMAPI_SOCKET_TIMEOUT_SECONDS = 240
 
 
 def disableEnableDisk(rh, userid, vaddr, option):
@@ -692,6 +697,11 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
          values or contain too few words then one or more error
          messages are generated. THIS SHOULD NEVER OCCUR !!!!
     """
+    # APIs requiring a long-duration socket connection
+    # currently, only VMRELOCATE operation is defined as ong-duration
+    # VMRELOCATE operation is called when resizing or migrating
+    SOCKET_LONG_CALL_APIS = ('VMRELOCATE')
+
     if len(hideInLog) == 0:
         rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " +
                        rh.userid + ", function: " + api +
@@ -719,6 +729,29 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
     cmd.append('/opt/zthin/bin/smcli')
     cmd.append(api)
     cmd.append('--addRCheader')
+
+    if api in SOCKET_LONG_CALL_APIS:
+        # add the  --timeout argument for long-duration SMAPI
+        # the timeout value is read from zvmsdk.conf
+        rh.printSysLog("Setting timeout for long-duration APIs...")
+        if config.CONF.zvm.smapi_socket_long_call_timeout_seconds:
+            lgr_socket_timeput = config.CONF.zvm.smapi_socket_long_call_timeout_seconds
+        elif config.CONF.zvm.smapi_socket_timeout_seconds:
+            lgr_socket_timeput = config.CONF.zvm.smapi_socket_timeout_seconds
+        else:
+            lgr_socket_timeput = DEFAULT_SMAPI_SOCKET_LONG_CALL_TIMEOUT_SECONDS
+        rh.printSysLog("long-duration timeout = " + str(lgr_socket_timeput))
+        parms.extend(["--timeout", str(lgr_socket_timeput)])
+    else:
+        # add the  --timeout argument for general SMAPI
+        # whose value is read from zvmsdk.conf
+        rh.printSysLog("Setting timeout for general APIs...")
+        if config.CONF.zvm.smapi_socket_timeout_seconds:
+            lgr_socket_timeput = config.CONF.zvm.smapi_socket_timeout_seconds
+        else:
+            lgr_socket_timeput = DEFAULT_SMAPI_SOCKET_TIMEOUT_SECONDS
+        rh.printSysLog("general timeout = " + str(lgr_socket_timeput))
+        parms.extend(["--timeout", str(lgr_socket_timeput)])
 
     status = vmStatus.GetSMAPIStatus()
 
