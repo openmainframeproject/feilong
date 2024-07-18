@@ -4028,16 +4028,6 @@ class SMTClient(object):
                      % userid)
             return
         else:
-            is_ubuntu = False
-            uname_out = self.execute_cmd(userid, "uname -a")
-            if uname_out and len(uname_out) >= 1:
-                distro = uname_out[0]
-            else:
-                distro = ''
-            if 'ubuntu' in distro or 'Ubuntu' in distro \
-                    or 'UBUNTU' in distro:
-                is_ubuntu = True
-
             if active_count < count:
                 # Add live cpu
                 # Get the number of cpus to add to active and check address
@@ -4050,6 +4040,11 @@ class SMTClient(object):
                 # otherwise need to define and trigger cpu scan.
                 to_enable_addrs = [a for a in active_new if a in offline_addrs]
                 to_define_addrs = list(set(active_new) - set(offline_addrs))
+                if not to_enable_addrs:
+                    # Let's call 'chcpu -e' explictily because 'chcpu -r'
+                    # can't bring the offline cpus online in some Ubuntu &
+                    # SLES distros. Use the safest way to do it.
+                    to_enable_addrs = to_define_addrs
                 to_enable_addrs.sort()
                 to_define_addrs.sort()
 
@@ -4091,24 +4086,6 @@ class SMTClient(object):
                                   "make the defined cpus online." % (userid, msg))
                         raise exception.SDKGuestOperationError(rs=8, userid=userid,
                                                                err=msg)
-
-                    if is_ubuntu:
-                        try:
-                            # need use chcpu -e <cpu-list> to make cpu online for Ubuntu
-                            online_cmd = "chcpu -e " + ','.join(to_define_addrs)
-                            self.execute_cmd(userid, online_cmd)
-                        except exception.SDKSMTRequestFailed as err:
-                            msg = err.format_message()
-                            LOG.error("Enable cpus for ubuntu guest: '%s' "
-                                      "failed with error: %s. No rollback is"
-                                      " done and you may need to check the "
-                                      "status and restart the guest to make"
-                                      " the defined cpus online."
-                                      % (userid, msg))
-                            raise exception.SDKGuestOperationError(rs=15, userid=userid,
-                                                                   err=msg)
-                    LOG.info("Enabled cpus just defined for ubuntu guest: '%s' finished successfully."
-                             % userid)
 
                 # 2, enable cups
                 if to_enable_addrs:
