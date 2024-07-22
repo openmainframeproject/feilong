@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -4240,12 +4240,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        cmd_uname = "uname -a"
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu),
-                                   mock.call(userid, cmd_rescan_cpu)])
+        cmd_enable_cpu = "chcpu -e 02,03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_enable_cpu)])
         request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
@@ -4279,12 +4279,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        cmd_uname = "uname -a"
         cmd_def_cpu = "vmcp def cpu 03"
         cmd_rescan_cpu = "chcpu -r"
         cmd_enable_cpu = "chcpu -e 02"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu),
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu),
                                    mock.call(userid, cmd_enable_cpu)])
         request.assert_not_called()
@@ -4336,10 +4334,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_not_called()
-        cmd_uname = "uname -a"
         cmd_disable_cpu = "chcpu -d 04"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_disable_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_disable_cpu)])
         request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
@@ -4375,10 +4371,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        cmd_uname = "uname -a"
+        cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
         request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
@@ -4412,17 +4408,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
         # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
-        cmd_uname = "uname -a"
+        cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
 
-        rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
-              "-k COMMAND_DEFINE_CPU=CPUADDR=02 -k COMMAND_DEFINE_CPU=CPUADDR=03")
-        rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k SHARE=RELATIVE=200")
-        calls = [call(rd), call(rd2)]
-        request.assert_has_calls(calls)
+        request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
@@ -4454,18 +4445,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
         # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
-        cmd_uname = "uname -a"
+        cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
 
-        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k COMMAND_DEFINE_CPU=\'CPUADDR=04 TYPE=IFL\' "
-              "-k COMMAND_DEFINE_CPU=\'CPUADDR=0A TYPE=IFL\'")
-        rd2 = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k SHARE=RELATIVE=200")
-        calls = [call(rd), call(rd2)]
-        request.assert_has_calls(calls)
+        request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
@@ -4497,15 +4482,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        cmd_uname = "uname -a"
+        cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
         # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
-        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k COMMAND_DEFINE_CPU=\'CPUADDR=04 TYPE=IFL\' "
-              "-k COMMAND_DEFINE_CPU=\'CPUADDR=0A TYPE=IFL\'")
-        request.assert_called_once_with(rd)
+        request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
@@ -4538,11 +4520,11 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        cmd_uname = "uname -a"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu),
-                                   mock.call(userid, cmd_rescan_cpu)])
-        request.assert_not_called()
+        cmd_enable_cpu = "chcpu -e 02,03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_enable_cpu)])
+        request.assert_called_once()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
@@ -4574,12 +4556,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_active.assert_called_once_with(userid)
         resize.assert_called_once_with(userid, count)
         get_avail.assert_called_once_with(['00', '01'], 32)
-        cmd_uname = "uname -a"
+        cmd_enable_cpu = "chcpu -e 02,03"
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu),
-                                   mock.call(userid, cmd_rescan_cpu)])
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_enable_cpu)])
         request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
@@ -4616,10 +4598,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
-        cmd_uname = "uname -a"
         cmd_chcpu = "chcpu -e 02,03"
-        exec_cmd.assert_has_calls([mock.call(userid, cmd_uname),
-                                   mock.call(userid, cmd_def_cpu),
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu),
                                    mock.call(userid, cmd_chcpu)])
         request.assert_not_called()
