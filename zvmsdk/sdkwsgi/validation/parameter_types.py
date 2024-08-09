@@ -277,7 +277,10 @@ share = {
     'type': ['string'],
     'minLength': 1,
     'maxLength': 64,
-    'pattern': '^(\w{,64})$'
+    'pattern': (
+        r'^(ABS|ABS(O|OL|OLU|OLUT|OLUTE))\s*(?:[1-9]\d?|100)(\.\d+)?%$|'
+        r'^(REL|REL(A|AT|ATI|ATIV|ATIVE))\s*(?:[1-9]\d{0,3}|10000)$'
+    )
 }
 
 
