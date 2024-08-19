@@ -4221,6 +4221,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                               exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01'])
@@ -4236,9 +4237,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
@@ -4259,6 +4260,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                               exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = ['02']
         get_defined.return_value = (32, ['00'], ['00', '01'])
@@ -4275,9 +4277,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                      '12', '13', '14', '15', '16', '17', '18', '19',
                      '1A', '1B', '1C', '1D', '1E', '1F']
         get_avail.return_value = avail_lst
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_def_cpu = "vmcp def cpu 03"
         cmd_rescan_cpu = "chcpu -r"
@@ -4298,13 +4300,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                            exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01', '02', '03']
         get_offline.return_value = []
         get_defined.return_value = (32, ['00', '01'], ['00', '01', '02', '03'])
         resize.return_value = (1, ['02', '03'], 32)
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_not_called()
         exec_cmd.assert_not_called()
         request.assert_not_called()
@@ -4320,6 +4323,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                            exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01', '02', '03', '04']
         get_offline.return_value = []
         get_defined.return_value = (32, ['00', '01'], ['00', '01', '02', '03', '04'])
@@ -4330,9 +4334,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                 [''],
                                 ['']]
 
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_not_called()
         cmd_disable_cpu = "chcpu -d 04"
         exec_cmd.assert_has_calls([mock.call(userid, cmd_disable_cpu)])
@@ -4352,6 +4356,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         # Test case: active update failed, definition not updated
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01'])
@@ -4367,9 +4372,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                  ' 2020 s390x s390x s390x GNU/Linux '],
                                 exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smtclient.live_resize_cpus, userid, count)
+                          self._smtclient.live_resize_cpus, userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
@@ -4390,6 +4395,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                 get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         base.set_conf('zvm', 'user_default_share_unit', 100)
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
@@ -4403,9 +4409,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.return_value = avail_lst
         exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smtclient.live_resize_cpus, userid, count)
+                          self._smtclient.live_resize_cpus, userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
         cmd_rescan_cpu = "chcpu -r"
@@ -4428,6 +4434,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                   get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01', '04', '0A'])
@@ -4440,9 +4447,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.return_value = avail_lst
         exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smtclient.live_resize_cpus, userid, count)
+                          self._smtclient.live_resize_cpus, userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         # exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
         cmd_rescan_cpu = "chcpu -r"
@@ -4465,6 +4472,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                             get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01', '04', '0A'])
@@ -4478,9 +4486,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         exec_cmd.side_effect = ["", exception.SDKSMTRequestFailed({}, 'err'), ""]
         request.side_effect = [exception.SDKSMTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smtclient.live_resize_cpus, userid, count)
+                          self._smtclient.live_resize_cpus, userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_rescan_cpu = "chcpu -r"
         cmd_def_cpu = "vmcp def cpu 02 03"
@@ -4502,6 +4510,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                             get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01'])
@@ -4514,9 +4523,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_avail.return_value = avail_lst
         exec_cmd.side_effect = ["", "", exception.SDKSMTRequestFailed({}, 'err')]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smtclient.live_resize_cpus, userid, count)
+                          self._smtclient.live_resize_cpus, userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
@@ -4537,6 +4546,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                               exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01'])
@@ -4552,9 +4562,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                  ' 2020 s390x s390x s390x GNU/Linux '],
                                 [''],
                                 ['']]
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
         cmd_enable_cpu = "chcpu -e 02,03"
         cmd_def_cpu = "vmcp def cpu 02 03"
@@ -4575,6 +4585,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                               exec_cmd, request, get_offline, get_defined):
         userid = 'testuid'
         count = 4
+        cpu_share = 'RELATIVE 100'
         get_active.return_value = ['00', '01']
         get_offline.return_value = []
         get_defined.return_value = (32, [], ['00', '01'])
@@ -4591,9 +4602,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                   [''],
                                   [''],
                                   ['']]
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
         get_active.assert_called_once_with(userid)
-        resize.assert_called_once_with(userid, count)
+        resize.assert_called_once_with(userid, count, cpu_share)
         get_avail.assert_called_once_with(['00', '01'], 32)
 
         cmd_def_cpu = "vmcp def cpu 02 03"

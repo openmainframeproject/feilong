@@ -522,14 +522,16 @@ class SDKAPITestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.vmops.VMOps.live_resize_cpus")
     def test_guest_live_resize_cpus(self, live_resize_cpus):
         cpu_cnt = 3
-        self.api.guest_live_resize_cpus(self.userid, cpu_cnt)
-        live_resize_cpus.assert_called_once_with(self.userid, cpu_cnt)
+        cpu_share = 'RELATIVE 100'
+        self.api.guest_live_resize_cpus(self.userid, cpu_cnt, cpu_share)
+        live_resize_cpus.assert_called_once_with(self.userid, cpu_cnt, cpu_share)
 
     @mock.patch("zvmsdk.vmops.VMOps.resize_cpus")
     def test_guest_resize_cpus(self, resize_cpus):
         cpu_cnt = 3
-        self.api.guest_resize_cpus(self.userid, cpu_cnt)
-        resize_cpus.assert_called_once_with(self.userid, cpu_cnt)
+        cpu_share = 'RELATIVE 100'
+        self.api.guest_resize_cpus(self.userid, cpu_cnt, cpu_share)
+        resize_cpus.assert_called_once_with(self.userid, cpu_cnt, cpu_share)
 
     @mock.patch("zvmsdk.vmops.VMOps.live_resize_memory")
     def test_guest_live_resize_mem(self, live_resize_memory):
