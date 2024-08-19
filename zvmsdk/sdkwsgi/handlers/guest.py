@@ -348,17 +348,25 @@ class VMAction(object):
     @validation.schema(guest.resize_cpus)
     def resize_cpus(self, userid, body):
         cpu_cnt = body['cpu_cnt']
-        info = self.client.send_request('guest_resize_cpus',
-                                        userid, cpu_cnt)
-
+        if 'cpu_share' in body:
+            cpu_share = body['cpu_share']
+            info = self.client.send_request('guest_resize_cpus',
+                                            userid, cpu_cnt, cpu_share)
+        else:
+            info = self.client.send_request('guest_resize_cpus',
+                                            userid, cpu_cnt)
         return info
 
     @validation.schema(guest.resize_cpus)
     def live_resize_cpus(self, userid, body):
         cpu_cnt = body['cpu_cnt']
-        info = self.client.send_request('guest_live_resize_cpus',
-                                        userid, cpu_cnt)
-
+        if 'cpu_share' in body:
+            cpu_share = body['cpu_share']
+            info = self.client.send_request('guest_live_resize_cpus',
+                                            userid, cpu_cnt, cpu_share)
+        else:
+            info = self.client.send_request('guest_live_resize_cpus',
+                                            userid, cpu_cnt)
         return info
 
     @validation.schema(guest.resize_mem)

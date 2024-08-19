@@ -273,6 +273,8 @@ def req_guest_live_resize_cpus(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'live_resize_cpus',
             'cpu_cnt': args[start_index]}
+    if len(args) - start_index == 2:
+        body['cpu_share'] = args[start_index + 1]
     return url, body
 
 
@@ -280,6 +282,8 @@ def req_guest_resize_cpus(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'resize_cpus',
             'cpu_cnt': args[start_index]}
+    if len(args) - start_index == 2:
+        body['cpu_share'] = args[start_index + 1]
     return url, body
 
 
@@ -829,11 +833,13 @@ DATABASE = {
     'guest_live_resize_cpus': {
         'method': 'POST',
         'args_required': 2,
+        'args_optional': 1,
         'params_path': 1,
         'request': req_guest_live_resize_cpus},
     'guest_resize_cpus': {
         'method': 'POST',
         'args_required': 2,
+        'args_optional': 1,
         'params_path': 1,
         'request': req_guest_resize_cpus},
     'guest_live_resize_mem': {

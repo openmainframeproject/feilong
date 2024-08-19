@@ -239,6 +239,7 @@ resize_cpus = {
     'type': 'object',
     'properties': {
         'cpu_cnt': parameter_types.max_cpu,
+        'cpu_share': parameter_types.share,
     },
     'required': ['cpu_cnt'],
     'additionalProperties': False,

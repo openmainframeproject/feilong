@@ -1005,7 +1005,7 @@ class SDKAPI(object):
                                          rdomain, pcif)
 
     @check_guest_exist()
-    def guest_live_resize_cpus(self, userid, cpu_cnt):
+    def guest_live_resize_cpus(self, userid, cpu_cnt, cpu_share=''):
         """Live resize virtual cpus of guests.
 
         :param userid: (str) the userid of the guest to be live resized
@@ -1018,11 +1018,11 @@ class SDKAPI(object):
                                                                        cpu_cnt)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.live_resize_cpus(userid, cpu_cnt)
+            self._vmops.live_resize_cpus(userid, cpu_cnt, cpu_share)
         LOG.info("%s successfully." % action)
 
     @check_guest_exist()
-    def guest_resize_cpus(self, userid, cpu_cnt):
+    def guest_resize_cpus(self, userid, cpu_cnt, cpu_share=''):
         """Resize virtual cpus of guests.
 
         :param userid: (str) the userid of the guest to be resized
@@ -1035,7 +1035,7 @@ class SDKAPI(object):
                                                                   cpu_cnt)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.resize_cpus(userid, cpu_cnt)
+            self._vmops.resize_cpus(userid, cpu_cnt, cpu_share)
         LOG.info("%s successfully." % action)
 
     @check_guest_exist()
