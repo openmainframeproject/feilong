@@ -84,6 +84,8 @@ class VMHandler(object):
             kwargs_list['rdomain'] = guest['rdomain']
         if 'pcif' in guest_keys:
             kwargs_list['pcif'] = guest['pcif']
+        if 'comments' in guest_keys:
+            kwargs_list['comment_list'] = guest['comments']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)

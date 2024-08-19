@@ -25,12 +25,9 @@ system should be updated to the latest level with APARs listed in the
 2. Feilong has to be installed inside a Linux running on z/VM.
 Currently supported distros include the most current supported versions:
 
-  - SUSE Linux Enterprise Server 12.x
-  - Red Hat Enterprise Linux 7.x
-  - Ubuntu 16.04 LTS
-
-  **NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
-  on other Linux distros.
+  - SUSE Linux Enterprise Server 15.x
+  - Red Hat Enterprise Linux 9.x
+  - Ubuntu 24.04 LTS
 
   From now on, BYOL (Bring Your Own Linux) will be used to represent
   the Linux on which the Feilong will be run.
@@ -132,10 +129,85 @@ Installation Requirements
 The supported Python version includes:
 
 - Python 2.7
+- Python 3+
+
+Installation using OBS Packages
+===============================
+
+The Open Build Service (OBS) is a generic system to build and distribute binary packages from sources in an automatic, consistent and reproducible way.
+OBS builds and provides an installable version of the zthin and zvmsdk packages for each of the distributions (RHEL, SLES, Ubuntu).
+
+RPM for RHEL/Alma/Rocky
+-----------------------
+
+SSH onto the BYOL as root user, and then follow the following steps:
+
+1. Add the feilong AlmaLinux repository from OBS
+
+    .. code-block:: text
+
+        # dnf config-manager --add-repo=https://download.opensuse.org/repositories/Virtualization:/feilong/AlmaLinux_9/
+
+2. Disable gpgkeycheck flag
+
+    Add the flag `gpgkeycheck=0`to the /etc/yum.repos.d/download.opensuse.org_repositories_Virtualization_feilong_AlmaLinux_9_.repo file.
+
+3. Disable SELinux
+
+    Update the config file `/etc/selinux/config` and set `SELINUX=disabled`. 
+    Make sure you reboot to ensure the changes are reflected and SELinux is disabled.
+    
+    We are considering writing SELinux policies for Feilong that would enable to not disable SELinux as a whole.
+
+4. Install the Extra Packages for Enterprise Linux.
+
+    Packages in EPEL are dependencies for the feilong packages installation.
+    Make sure you add both the EPEL and the EPEL-Next repos.
+
+5. Install the zthin and zvmsdk packages
+    
+    .. code-block:: text
+
+        # dnf install zthin zvmsdk
+
+6. Skip to the SSH key authentication between consumer and BYOL section to continue.
+
+RPM for SLES
+------------
+
+SSH onto the BYOL as root user, and then follow the following steps:
+
+1. Register to the SUSE Package Hub using SUSEConnect and refresh the available repos list.
+
+    Packages in the PackageHub are dependencies for the feilong package installation
+
+    .. code-block:: text
+
+        # SUSEConnect --product PackageHub/15.5/s390x
+
+2. Add the feilong SUSE repository from OBS
+
+    .. code-block:: text
+        
+        # zypper ar https://download.opensuse.org/repositories/Virtualization:/feilong/SLE_15_SP5/ feilong
+        # zypper refresh
+
+3. Install the zthin and zvmsdk packages
+    
+    .. code-block:: text
+
+        # zypper in zthin zvmsdk
+
+4. Skip to the SSH key authentication between consumer and BYOL section to continue.
+
+DEB for Ubuntu
+-----------------
+
+(to be continued)
 
 
-Installation
-============
+Manual Installation
+===================
 
 z/VM zthin install
 ------------------
@@ -147,11 +219,11 @@ thus it needs to be installed before installing Feilong.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
-1. Clone Feilong build project from github
+1. Clone build project from github
 
    .. code-block:: text
 
-       # git clone https://github.com/openmainframeproject/build-zvmsdk.git
+       # git clone https://github.com/mfcloud/build-zvmsdk.git
 
 2. Trigger the build tool
 
@@ -162,13 +234,6 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
        # cd build-zvmsdk
        # /usr/bin/bash buildzthinrpm_rhel master
-
-   If you build server is RHEL8, the build command should be:
-
-   .. code-block:: text
-
-       # cd build-zvmsdk
-       # OS_IS_RHEL8=1 /usr/bin/bash buildzthinrpm_rhel master
 
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
@@ -206,13 +271,6 @@ z/VM SDK install
 
 z/VM SDK is the upper transition layer of Feilong. It implements the
 supported SDK APIs by communicating with the zthin backend.
-
-1. **Through RPM/DEB**
-
-   Under current plan, there is no rpm/deb files to be supported,
-   it might be changed and for now please install through code directly.
-
-2. **Through Source Code directly**
 
    * Clone python-zvm-sdk project from github
 
