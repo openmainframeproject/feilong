@@ -3736,7 +3736,7 @@ class SMTClient(object):
             offline_addrs.append(addr)
         return offline_addrs
 
-    def resize_cpus(self, userid, count):
+    def resize_cpus(self, userid, count, cpu_share=''):
         # Check defined cpus in user entry. If greater than requested, then
         # delete cpus. Otherwise, add new cpus.
         # Return value: for revert usage, a tuple of
@@ -3867,7 +3867,11 @@ class SMTClient(object):
                     rd += (" -k COMMAND_DEFINE_CPU=\'CPUADDR=%s TYPE=IFL\'" % addr2)
 
             # Add resize support for share of CPU
-            if CONF.zvm.user_default_share_unit > 0:
+            if cpu_share:
+                need_action = True
+                share, value = cpu_share.split(' ')
+                rd += (" -k SHARE=%s=%s" % (share, value))
+            elif CONF.zvm.user_default_share_unit > 0:
                 need_action = True
                 total = CONF.zvm.user_default_share_unit * count
                 rd += (" -k SHARE=RELATIVE=%s" % total)
@@ -3969,7 +3973,11 @@ class SMTClient(object):
                     rd += (" -k COMMAND_DEFINE_CPU=\'CPUADDR=%s TYPE=IFL\'" % addr2)
 
             # Add resize support for share of CPU
-            if CONF.zvm.user_default_share_unit > 0:
+            if cpu_share:
+                need_action = True
+                share, value = cpu_share.split(' ')
+                rd += (" -k SHARE=%s=%s" % (share, value))
+            elif CONF.zvm.user_default_share_unit > 0:
                 need_action = True
                 total = CONF.zvm.user_default_share_unit * count
                 rd += (" -k SHARE=RELATIVE=%s" % total)
@@ -3990,7 +3998,7 @@ class SMTClient(object):
 
             return (action, to_add_addrs_long + to_delete_addrs_long, max_cpus)
 
-    def live_resize_cpus(self, userid, count):
+    def live_resize_cpus(self, userid, count, cpu_share=''):
         # Get active cpu(online) count and compare with requested count
         active_addrs = self.get_active_cpu_addrs(userid)
         active_count = len(active_addrs)
@@ -4018,7 +4026,7 @@ class SMTClient(object):
         #                                      req=count)
 
         # Static resize CPUs. (add or delete CPUs from user directory)
-        (action, updated_addrs, max_cpus) = self.resize_cpus(userid, count)
+        (action, updated_addrs, max_cpus) = self.resize_cpus(userid, count, cpu_share)
         if active_count == count:
             # active count equals to requested
             LOG.info("Current active cpu count of guest: '%s' equals to the "

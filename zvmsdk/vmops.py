@@ -504,7 +504,7 @@ class VMOps(object):
                                         uid, comments=comment)
             return flag
 
-    def live_resize_cpus(self, userid, count):
+    def live_resize_cpus(self, userid, count, cpu_share):
         # Check power state is 'on'
         state = self.get_power_state(userid)
         if state != 'on':
@@ -514,14 +514,14 @@ class VMOps(object):
             raise exception.SDKConflictError(modID='guest', rs=1,
                                              userid=userid)
         # Do live resize
-        self._smtclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count, cpu_share)
 
         LOG.info("Complete live resize cpu on vm %s", userid)
 
-    def resize_cpus(self, userid, count):
+    def resize_cpus(self, userid, count, cpu_share):
         LOG.info("Begin to resize cpu on vm %s", userid)
         # Do resize
-        self._smtclient.resize_cpus(userid, count)
+        self._smtclient.resize_cpus(userid, count, cpu_share)
         LOG.info("Complete resize cpu on vm %s", userid)
 
     def live_resize_memory(self, userid, memory):
