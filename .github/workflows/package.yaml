@@ -1,0 +1,18 @@
+name: Notify Feilong for Packaging
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  notify_buildsdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Feilong Packaging
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repository: mfcloud/build-zvmsdk
+          event-type: obs-package

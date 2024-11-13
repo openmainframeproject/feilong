@@ -120,6 +120,7 @@ def cancelMigrate(rh):
                 rh.printLn("ES", msg)
                 rh.updateResults(msgs.msg['0419'][0])
             else:
+                codes = ''
                 # More details in message codes
                 lines = results['response'].split("\n")
                 for line in lines:
@@ -299,6 +300,7 @@ def modifyMigrate(rh):
                 rh.printLn("ES", msg)
                 rh.updateResults(msgs.msg['0419'][0])
             else:
+                codes = ''
                 # More details in message codes
                 lines = results['response'].split("\n")
                 for line in lines:
@@ -380,6 +382,7 @@ def moveVM(rh):
                 rh.printLn("ES", msg)
                 rh.updateResults(msgs.msg['0418'][0])
             else:
+                codes = ''
                 # More details in message codes
                 lines = results['response'].split("\n")
                 for line in lines:
@@ -573,6 +576,7 @@ def testMigrate(rh):
                 rh.printLn("ES", msg)
                 rh.updateResults(msgs.msg['0418'][0])
             else:
+                codes = ''
                 # More details in message codes
                 lines = results['response'].split("\n")
                 for line in lines:

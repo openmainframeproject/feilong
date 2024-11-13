@@ -383,19 +383,21 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_live_resize_cpus(self, power_state, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
+        cpu_share = 'RELATIVE 100'
         power_state.return_value = 'on'
-        self.vmops.live_resize_cpus(userid, cpu_cnt)
+        self.vmops.live_resize_cpus(userid, cpu_cnt, cpu_share)
         power_state.assert_called_once_with(userid)
-        do_resize.assert_called_once_with(userid, cpu_cnt)
+        do_resize.assert_called_once_with(userid, cpu_cnt, cpu_share)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.live_resize_cpus")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_live_resize_cpus_guest_inactive(self, power_state, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
+        cpu_share = 'RELATIVE 100'
         power_state.return_value = 'off'
         self.assertRaises(exception.SDKConflictError,
-                          self.vmops.live_resize_cpus, userid, cpu_cnt)
+                          self.vmops.live_resize_cpus, userid, cpu_cnt, cpu_share)
         power_state.assert_called_once_with(userid)
         do_resize.assert_not_called()
 
@@ -403,8 +405,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_resize_cpus(self, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        self.vmops.resize_cpus(userid, cpu_cnt)
-        do_resize.assert_called_once_with(userid, cpu_cnt)
+        cpu_share = 'RELATIVE 100'
+        self.vmops.resize_cpus(userid, cpu_cnt, cpu_share)
+        do_resize.assert_called_once_with(userid, cpu_cnt, cpu_share)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.live_resize_memory")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
