@@ -431,112 +431,6 @@ Detach volume from a vm in z/VM
 
   No Response
 
-Refresh Volume Bootmap Info
----------------------------
-
-**PUT /volumes/volume_refresh_bootmap**
-
-Refresh a volume's bootmap info.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - fcpchannel: fcp_list
-  - wwpn: wwpn_list
-  - lun: lun
-  - transportfiles: transportfiles
-  - guest_networks: guest_networks
-
-* Request sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap.tpl
-   :language: javascript
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
-   :language: javascript
-
-Get Volume Connector
---------------------
-
-**GET /volumes/conn/{userid}**
-
-Get volume connector for z/VM.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-  - reserve: fcp_reserve
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
-   :language: javascript
-
-Get FCP Usage
---------------------
-
-**GET /volumes/fcp/{fcp_id}**
-
-Get the FCP usage in database for z/VM.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - fcp_id: fcp_id
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. restapi_parameters:: parameters.yaml
-
-  - output: fcp_usage
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_fcp_usage.tpl
-
-Set FCP Usage
---------------------
-
-**PUT /volumes/fcp/{fcp_id}**
-
-Set the FCP usage in database for z/VM.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - fcp_id: fcp_id
-  - userid: fcp_userid
-  - reserved: fcp_reserve
-  - connections: fcp_connections
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-  No response.
-
-
 Get Guests stats including cpu and memory
 -----------------------------------------
 
@@ -2067,6 +1961,116 @@ Delete a vswitch by using given name.
 .. restapi_parameters:: parameters.yaml
 
   - name: vswitch_name
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Volume(s)
+=========
+
+Handling of volumes and FCP devices.
+
+Refresh Volume Bootmap Info
+---------------------------
+
+**PUT /volumes/volume_refresh_bootmap**
+
+Refresh a volume's bootmap info.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcpchannel: fcp_list
+  - wwpn: wwpn_list
+  - lun: lun
+  - transportfiles: transportfiles
+  - guest_networks: guest_networks
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
+   :language: javascript
+
+Get Volume Connector
+--------------------
+
+**GET /volumes/conn/{userid}**
+
+Get volume connector for z/VM.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - reserve: fcp_reserve
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
+   :language: javascript
+
+Get FCP Usage
+--------------------
+
+**GET /volumes/fcp/{fcp_id}**
+
+Get the FCP usage in database for z/VM.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcp_id: fcp_id
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: fcp_usage
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_fcp_usage.tpl
+
+Set FCP Usage
+-------------
+
+**PUT /volumes/fcp/{fcp_id}**
+
+Set the FCP usage in database for z/VM.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcp_id: fcp_id
+  - userid: fcp_userid
+  - reserved: fcp_reserve
+  - connections: fcp_connections
 
 * Response code:
 
