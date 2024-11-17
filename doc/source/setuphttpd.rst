@@ -23,6 +23,7 @@ or directly connected via Apache's wsgi module.
 The detailed setup steps for each type of web server is out of this document's range,
 you can refer to the specific guide of your chosen web server. This guide walks you through
 the deployment process, either:
+
  * with premade packages (which use the mod_wsgi method);
  * manually, with uwsgi;
  * or manually, with Apache's mod_wsgi.
