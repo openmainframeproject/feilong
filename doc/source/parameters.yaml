@@ -85,13 +85,6 @@ assigner_id:
   in: body
   required: true
   type: string
-userid_in_params:
-  description: |
-    The userid of the guest specified in parameters of the URL.
-    If specified, it will only get data that belongs to this guest.
-  in: parameter
-  required: false
-  type: string
 get_raw_data:
   description: |
     Whether to get raw FCP usage data from backend or not.
@@ -1218,7 +1211,7 @@ volume_conn:
 volume_fcp:
   description: |
     FCP Device number, for example ``1fc5``.
-  in: body
+  in: path
   required: true
   type: string
 volume_wwpn:
@@ -1327,12 +1320,6 @@ last_access_time:
   in: body
   required: true
   type: float
-fcp_id:
-  description: |
-    ID of FCP device.
-  in: path
-  required: true
-  type: string
 fcp_userid:
   description: |
     Guest userid.
@@ -1362,6 +1349,171 @@ fcp_template_id:
   in: body
   required: true
   type: string
+fcp_template_id_path:
+  description: |
+    FCP template identifier.
+  in: path
+  required: true
+  type: string
+fcp_template:
+  description: |
+    Various attibutes of the FCP template.
+  in: body
+  required: true
+  type: dict
+fcp_template_name:
+  description: |
+    Name of FCP template.
+  in: body
+  required: true
+  type: string
+fcp_template_name_optional:
+  description: |
+    Name of FCP template.
+  in: body
+  required: false
+  type: string
+fcp_template_description:
+  description: |
+    Description of FCP template, e.g. "Two paths template".
+  in: body
+  required: false
+  type: string
+fcp_template_description_output:
+  description: |
+    Description of FCP template, e.g. "Two paths template".
+  in: body
+  required: true
+  type: string
+fcp_template_fcp_devices:
+  description: |
+    FCP devices list. '-' indicates a range, and ';' is a separator.
+    Example\: "0011-0013;0015;0017-0018".
+  in: body
+  required: false
+  type: string
+fcp_template_host_default:
+  description: |
+    This template is the default template for the host or not.
+  in: body
+  required: false
+  type: boolean
+fcp_template_host_default_output:
+  description: |
+    This template is the default template for the host or not.
+  in: body
+  required: true
+  type: boolean
+fcp_template_sp_default:
+  description: |
+    List of storage providers for which this is the default.
+  in: body
+  required: true
+  type: list
+fcp_template_storage_providers:
+  description: |
+    List of storage providers.
+  in: body
+  required: false
+  type: list
+fcp_template_storage_providers_output:
+  description: |
+    List of storage providers.
+  in: body
+  required: true
+  type: list
+fcp_template_default_sp_list:
+  description: |
+    List of storage providers for which this template is the default.
+  in: body
+  required: false
+  type: list
+fcp_template_min_fcp_paths_count:
+  description: |
+    Minimum number of multipath paths.
+  in: body
+  required: false
+  type: integer
+fcp_template_min_fcp_paths_count_output:
+  description: |
+    Minimum number of multipath paths.
+  in: body
+  required: true
+  type: integer
+template_id_list:
+  description: |
+    Restrict output to some FCP template ids.
+    If omitted, no restriction on template ids.
+  in: parameter
+  required: false
+  type: list
+userid_in_params:
+  description: |
+    Restrict output to some userids.
+    If omitted, no restriction on userids.
+  in: parameter
+  required: false
+  type: string
+default_sp_list:
+  description: |
+    Restrict output to the storage providers for which this is the default template.
+    If omitted, no restriction on storage providers.
+  in: parameter
+  required: false
+  type: string
+host_default:
+  description: |
+    Restrict output to the hosts for which this is the default template.
+    If omitted, no restriction on hosts.
+  in: parameter
+  required: false
+  type: string
+fcp_details_raw:
+  description: |
+    For each FCP, provides raw data, if it was requested.
+  in: body
+  required: false
+  type: dict
+fcp_details_statistics:
+  description: |
+    For each FCP, provides the following statistics, if it was requested:
+    ``total``, ``total_count``, ``single_fcp``, ``range_fcp``, ``available``,
+    ``available_count``, ``allocated``, ``reserve_only``, ``connection_only``,
+    ``unallocated_but_active``, ``allocated_but_free``, ``notfound``, ``offline``,
+    ``chids``, and ``pchids``.
+  in: body
+  required: false
+  type: dict
+cpc_sn:
+  description: |
+    Central Processor Complex serial number.
+  in: body
+  required: true
+  type: string
+cpc_name:
+  description: |
+    Central Processor Complex name.
+  in: body
+  required: true
+  type: string
+lpar:
+  description: |
+    Logical Partition.
+  in: body
+  required: true
+  type: string
+hypervisor_hostname:
+  description: |
+    Name of z/VM hypervisor.
+  in: body
+  required: true
+  type: string
+pchids:
+  description: |
+    Physical Channel identifiers.
+  in: body
+  required: true
+  type: list
 wwpn_list:
   description: |
     World Wide Port Name identifiers.
