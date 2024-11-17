@@ -2080,6 +2080,177 @@ Get volume connector for a given userid.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
    :language: javascript
 
+Create FCP template
+-------------------
+
+**POST /volumes/fcptemplates**
+
+Create a FCP multipath template.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+   - name: fcp_template_name
+   - description: fcp_template_description
+   - fcp_devices: fcp_template_fcp_devices
+   - host_default: fcp_template_host_default
+   - storage_providers: fcp_template_storage_providers
+   - min_fcp_paths_count: fcp_template_min_fcp_paths_count
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+   - fcp_template: fcp_template
+   - id: fcp_template_id
+   - name: fcp_template_name
+   - description: fcp_template_description_output
+   - host_default: fcp_template_host_default_output
+   - storage_providers: fcp_template_storage_providers_output
+   - min_fcp_paths_count: fcp_template_min_fcp_paths_count_output
+
+Delete FCP template
+-------------------
+
+**DELETE /volumes/fcptemplates/{template_id}**
+
+Delete a FCP multipath template.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+   - template_id: fcp_template_id_path
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Get FCP templates
+-----------------
+
+**GET /volumes/fcptemplates**
+
+Get a list of FCP templates.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+   - template_id_list: template_id_list
+   - assigner_id: userid_in_params
+   - default_sp_list: default_sp_list
+   - host_default: host_default
+
+* Request sample:
+
+.. code-block:: text
+
+   https://<feilong_fqdn>/volumes/fcptemplates?template_id_list=[
+     "45c1d1be-a437-11ef-be87-e1b40fa110c4","4982739c-a457-11ef-be87-e1b40fa110c4"]
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+   - name: fcp_template_name
+   - id: fcp_template_id
+   - description: fcp_template_description_output
+   - host_default: fcp_template_host_default_output
+   - sp_default: fcp_template_sp_default
+   - min_fcp_paths_count: fcp_template_min_fcp_paths_count_output
+   - cpc_sn: cpc_sn
+   - cpc_name: cpc_name
+   - lpar: lpar
+   - hypervisor_hostname: hypervisor_hostname
+   - pchids: pchids
+
+Edit FCP template
+-----------------
+
+**PUT /volumes/fcptemplates/{template_id}**
+
+Change some values in an existing FCP template.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+   - template_id: fcp_template_id_path
+   - name: fcp_template_name_optional
+   - description: fcp_template_description
+   - fcp_devices: fcp_template_fcp_devices
+   - host_default: fcp_template_host_default
+   - default_sp_list: fcp_template_default_sp_list
+   - min_fcp_paths_count: fcp_template_min_fcp_paths_count
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Get FCP templates details
+-------------------------
+
+**GET /volumes/fcptemplates/detail**
+
+Get more information about FCP templates, including raw data and/or statistics.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+   - template_id_list: template_id_list
+   - raw: get_raw_data
+   - statistics: get_statistics_data
+   - sync_with_zvm: sync_with_zvm
+
+* Request sample:
+
+.. code-block:: text
+
+   https://<feilong_fqdn>/volumes/fcptemplates?template_id_list=[
+     "45c1d1be-a437-11ef-be87-e1b40fa110c4","4982739c-a457-11ef-be87-e1b40fa110c4"]&
+     statistics=true
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+   - id: fcp_template_id
+   - name: fcp_template_name
+   - description: fcp_template_description_output
+   - host_default: fcp_template_host_default_output
+   - storage_providers: fcp_template_storage_providers_output
+   - min_fcp_paths_count: fcp_template_min_fcp_paths_count_output
+   - raw: fcp_details_raw
+   - statistics: fcp_details_statistics
+   - cpc_sn: cpc_sn
+   - cpc_name: cpc_name
+   - lpar: lpar
+   - hypervisor_hostname: hypervisor_hostname
+   - pchids: pchids
+
 Get FCP usage
 -------------
 
@@ -2091,7 +2262,7 @@ Get the FCP usage in database for z/VM.
 
 .. restapi_parameters:: parameters.yaml
 
-  - fcp_id: fcp_id
+  - fcp_id: volume_fcp
 
 * Response code:
 
@@ -2119,7 +2290,7 @@ Set the FCP usage in database for z/VM.
 
 .. restapi_parameters:: parameters.yaml
 
-  - fcp_id: fcp_id
+  - fcp_id: volume_fcp
   - userid: fcp_userid
   - reserved: fcp_reserved
   - connections: fcp_connections
