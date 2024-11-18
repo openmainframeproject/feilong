@@ -29,10 +29,11 @@ it's different for each API.
 
 Version
 =======
+
 Lists version of this API.
 
 Get Feilong version
--------------------------------
+-------------------
 
 **GET /**
 
@@ -46,7 +47,7 @@ Get Feilong version
 
 * Response contents:
 
-  Return the version of the zvm cloud connect API.
+  Return the version of the Feilong API.
 
 .. restapi_parameters:: parameters.yaml
 
@@ -64,13 +65,15 @@ Get Feilong version
 Token
 =====
 
+Management of authentication token.
+
 Create token
 ------------
 
 **POST /token**
 
-Get a valid token to perform further request by using Admin-Token which
-you can think as a combination of username and password.
+Get a valid token to perform further requests by using an admin token,
+which you can think as a combination of username and password.
 
 * Request:
 
@@ -95,12 +98,14 @@ you can think as a combination of username and password.
 SMAPI Health
 ============
 
+Check health of SMAPI layer used by Feilong.
+
 Report health of SMAPI
 ----------------------
 
 **GET /smapi_health**
 
-Get health status of the SMAPI.
+Get health status of SMAPI.
 
 * Request:
 
@@ -134,9 +139,9 @@ Get health status of the SMAPI.
 Guest(s)
 ========
 
-Lists, creates, shows details for, updates, and deletes guests.
+Management of z/VM guests and their peripherals.
 
-List Guests
+List guests
 -----------
 
 **GET /guests**
@@ -162,12 +167,12 @@ List names of all the guests created by Feilong.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_list.tpl
    :language: javascript
 
-Create Guest
+Create guest
 ------------
 
 **POST /guests**
 
-Create a vm in z/VM
+Create a VM in z/VM.
 
 * Request:
 
@@ -225,7 +230,7 @@ Get guest minidisks info
 
 **GET /guests/{userid}/disks**
 
-List characteristics of all disks of a guest
+List characteristics of all disks of a guest.
 
 * Request:
 
@@ -258,7 +263,7 @@ Guest add disks
 
 **POST /guests/{userid}/disks**
 
-Add disks for a guest
+Add disks to a guest.
 
 * Request:
 
@@ -303,7 +308,7 @@ Guest configure disks
 
 **PUT /guests/{userid}/disks**
 
-Configure additional disks for a guest
+Configure additional disks for a guest.
 
 * Request:
 
@@ -334,7 +339,7 @@ Guest delete disks
 
 **DELETE /guests/{userid}/disks**
 
-Delete disks form a guest that in shutdown state
+Delete disks from a guest in shutdown state.
 
 * Request:
 
@@ -361,12 +366,12 @@ Delete disks form a guest that in shutdown state
 
   Not support delete disks when guest is active
 
-Attach Volume
+Attach volume
 -------------
 
 **POST /guests/volumes**
 
-Attach volume to a vm in z/VM
+Attach a volume to a VM in z/VM.
 
 * Request:
 
@@ -396,12 +401,12 @@ Attach volume to a vm in z/VM
 
   No Response
 
-Detach Volume
+Detach volume
 -------------
 
 **DELETE /guests/volumes**
 
-Detach volume from a vm in z/VM
+Detach a volume from a VM in z/VM.
 
 * Request:
 
@@ -431,12 +436,12 @@ Detach volume from a vm in z/VM
 
   No Response
 
-Get Guests stats including cpu and memory
+Get guests stats including CPU and memory
 -----------------------------------------
 
 **GET /guests/stats**
 
-Get guests cpu, memory information.
+Get guests CPU and memory information.
 
 * Request:
 
@@ -473,7 +478,7 @@ Get guests cpu, memory information.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_stats.tpl
    :language: javascript
 
-Get Guests interface stats
+Get guests interface stats
 --------------------------
 
 **GET /guests/interfacestats**
@@ -511,12 +516,12 @@ Get guests network interface statistics.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_interface_stats.tpl
    :language: javascript
 
-Get Guests nic info
----------------------
+Get guests NIC info
+-------------------
 
 **GET /guests/nics**
 
-Get guests nic information, including userid, nic number, vswitch, nic id and comments.
+Get guests NIC information, including userid, NIC number, vswitch, NIC id and comments.
 
 * Request:
 
@@ -546,12 +551,12 @@ Get guests nic information, including userid, nic number, vswitch, nic id and co
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_nic_info.tpl
    :language: javascript
 
-Show Guest definition
+Show guest definition
 ---------------------
 
 **GET /guests/{userid}**
 
-Display the user direct by the given userid.
+Display the user direct for the given userid.
 
 * Request:
 
@@ -574,7 +579,7 @@ Display the user direct by the given userid.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get.tpl
    :language: javascript
 
-Delete Guest
+Delete guest
 ------------
 
 **DELETE /guests/{userid}**
@@ -596,13 +601,12 @@ Delete a guest.
   No Response
 
 
-Get Guest power state from hypervisor
---------------------------------------
+Get guest power state from hypervisor
+-------------------------------------
 
 **GET /guests/{userid}/power_state_real**
 
 Get power state of the guest from hypervisor directly,
-
 no matter the guest is in zcc database or not.
 
 * Request:
@@ -627,7 +631,7 @@ no matter the guest is in zcc database or not.
    :language: javascript
 
 
-Get Guest info
+Get guest info
 --------------
 
 **GET /guests/{userid}/info**
@@ -664,7 +668,7 @@ Get running information of guest.
    :language: javascript
 
 
-Get Guest user direct
+Get guest user direct
 ---------------------
 
 **GET /guests/{userid}/user_direct**
@@ -693,7 +697,7 @@ Get the user directory info of the given userid from hypervisor.
    :language: javascript
 
 
-Get Guest adapters info
+Get guest adapters info
 -----------------------
 
 **GET /guests/{userid}/adapters**
@@ -728,12 +732,12 @@ Get adapters information of running guest.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_adapters_info.tpl
    :language: javascript
 
-Create Guest nic
+Create guest NIC
 ----------------
 
 **POST /guests/{userid}/nic**
 
-Create a virtual nic on giving guest.
+Create a virtual NIC on giving guest.
 
 * Request:
 
@@ -790,7 +794,7 @@ Delete network interface
 
 **DELETE /guests/{userid}/interface**
 
-Delete one network interface on giving guest.
+Delete a network interface on given guest.
 
 * Request:
 
@@ -866,7 +870,7 @@ Stop a guest.
 Softstop guest
 --------------
 
-Stop a guest gracefully, it will firstly shutdown the os on vm, then stop the vm.
+Stop a guest gracefully, it will first shut down the OS on the VM, then stop the VM.
 
 **POST /guests/{userid}/action**
 
@@ -1159,7 +1163,7 @@ Live resize CPUs of guest.
          user_default_max_cpu=64
 
 Resize CPUs of guest
--------------------------
+--------------------
 
 **POST /guests/{userid}/action**
 
@@ -1232,8 +1236,8 @@ Live resize memory of guest.
    - The resize memory size can't exceed the maximum memory defined in user directory.
    - The maximum memory size is defined when the guest is created. It is set by the configuration
      "user_default_max_memory" in [zvm] section and can be overriden by the parameter "max_mem" when
-     creating the guest. e.g, the following configuration would define the default maximum memory size
-     as 64G.
+     creating the guest. For example, the following configuration would define the default maximum
+     memory size as 64G.
 
      .. code-block:: text
 
@@ -1277,7 +1281,7 @@ Deploy guest
 
 **POST /guests/{userid}/action**
 
-After guest created, deploy image onto the guest.
+After guest is created, deploy image onto the guest.
 
 * Request:
 
@@ -1353,7 +1357,7 @@ Grow root volume of guest
 
 * Response contents:
 
-Get Guest power state
+Get guest power state
 ---------------------
 
 **GET /guests/{userid}/power_state**
@@ -1383,12 +1387,12 @@ Get power state of the guest.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_power_state.tpl
    :language: javascript
 
-Update Guest nic
+Update guest NIC
 ----------------
 
 **PUT /guests/{userid}/nic/{vdev}**
 
-Couple or uncouple nic with vswitch on the guest.
+Couple or uncouple NIC with vswitch on the guest.
 
 * Request:
 
@@ -1415,10 +1419,12 @@ Couple or uncouple nic with vswitch on the guest.
 
   No response.
 
-Delete Guest nic
+Delete guest NIC
 ----------------
 
 **DELETE /guests/{userid}/nic/{vdev}**
+
+Delete a NIC on the guest.
 
 * Request:
 
@@ -1439,9 +1445,9 @@ Delete Guest nic
 Host
 ====
 
-Get guests list, info from host (hypervisor) running on.
+Get guests list and information from the host (hypervisor) they are running on.
 
-Get Guests List
+Get guests list
 ---------------
 
 **GET /host/guests**
@@ -1469,7 +1475,7 @@ List names of all the guests on the host.
 
 Get info from host (hypervisor) running on.
 
-Get Host Info
+Get host info
 -------------
 
 **GET /host**
@@ -1495,7 +1501,7 @@ Get host information.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_info.tpl
    :language: javascript
 
-Get Host disk pool info
+Get host disk pool info
 -----------------------
 
 **GET /host/diskpool**
@@ -1557,7 +1563,7 @@ Get volume list of the diskpool on the host.
    :language: javascript
 
 Get host volume info
--------------------------------
+--------------------
 
 **GET /host/volume**
 
@@ -1585,7 +1591,7 @@ Get the volume info on the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_volume.tpl
    :language: javascript
 
-Get Host SSI Cluster Info
+Get host SSI cluster info
 -------------------------
 
 **GET /host/ssi**
@@ -1835,7 +1841,7 @@ Get the list of vswitch name on the host
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_get.tpl
    :language: javascript
 
-GET vswitch details
+Get vswitch details
 -------------------
 
 **GET /vswitches/{name}**
@@ -1919,12 +1925,12 @@ Revoke the user access from vswitch
 
   No response.
 
-Set user VLANID to vswitch
---------------------------
+Set user VLAN id to vswitch
+---------------------------
 
 **PUT /vswitches/{name}**
 
-Set vlan id for user when connecting to the vswitch
+Set VLAN id for user when connecting to the vswitch
 
 * Request:
 
@@ -2008,7 +2014,7 @@ Volume(s)
 
 Handling of volumes and FCP devices.
 
-Refresh Volume Bootmap Info
+Refresh volume bootmap info
 ---------------------------
 
 **PUT /volumes/volume_refresh_bootmap**
@@ -2039,7 +2045,7 @@ Refresh a volume's bootmap info.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
    :language: javascript
 
-Get Volume Connector
+Get volume connector
 --------------------
 
 **GET /volumes/conn/{userid}**
@@ -2062,8 +2068,8 @@ Get volume connector for z/VM.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
    :language: javascript
 
-Get FCP Usage
---------------------
+Get FCP usage
+-------------
 
 **GET /volumes/fcp/{fcp_id}**
 
@@ -2088,8 +2094,9 @@ Get the FCP usage in database for z/VM.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_fcp_usage.tpl
+   :language: javascript
 
-Set FCP Usage
+Set FCP usage
 -------------
 
 **PUT /volumes/fcp/{fcp_id}**
@@ -2115,6 +2122,7 @@ Set the FCP usage in database for z/VM.
 
 Files
 =====
+
 Imports and exports raw file data.
 
 These operations may be restricted to Feilong administrators.
@@ -2124,7 +2132,7 @@ Import file
 
 **PUT /files**
 
-Import binary file data to Feilong. Internal use Only.Please set
+Import binary file data to Feilong. Internal use only. Please set
 the Content-Type of the request header to application/octet-stream. The body
 contains the binary data.
 
