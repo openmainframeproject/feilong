@@ -1223,10 +1223,10 @@ volume_fcp:
   type: string
 volume_wwpn:
   description: |
-    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``.
+    World Wide Port Numbers, must start with ``0x``, for example ``0x50050763050b073d``.
   in: body
   required: true
-  type: string
+  type: list
 volume_lun:
   description: |
     Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``.
@@ -1248,6 +1248,19 @@ mount_point:
 root_volume:
   description: |
     Volume is bootable or not.
+  in: body
+  required: false
+  type: boolean
+update_connections_only:
+  description: |
+    Update connections in database only, do not undedicate in CP.
+  in: body
+  required: false
+  type: boolean
+do_rollback:
+  description: |
+    Roll back will be done if any phase fails.
+    Default is True.
   in: body
   required: false
   type: boolean
@@ -1328,11 +1341,12 @@ fcp_userid:
   type: string
 fcp_usage:
   description: |
-    FCP usage, contains 3 values [userid, reserved, connections]\:
+    FCP usage, as a list with 4 entries\:
 
-    - ``userid`` is the userid this FCP belongs to.
-    - ``reserved`` is 0 or 1, represent the FCP is been used or not
-    - ``connections`` is non-negative value, means the count of volumes on this FCP.
+    - the userid this FCP belongs to
+    - 0 or 1, represents whether the FCP is being used or not
+    - the count of volumes on this FCP
+    - the FCP template id used to create this FCP
   in: body
   required: true
   type: list
@@ -1342,12 +1356,18 @@ fcp_list:
   in: body
   required: true
   type: list
+fcp_template_id:
+  description: |
+    FCP template identifier.
+  in: body
+  required: true
+  type: string
 wwpn_list:
   description: |
     World Wide Port Name identifiers.
   in: body
   required: true
-  type: string
+  type: list
 lun:
   description: |
     Logical Unit Number identifier.
@@ -1387,6 +1407,18 @@ fcp_reserved:
   in: body
   required: true
   type: integer
+storage_provider:
+  description: |
+    Storage provider.
+  in: body
+  required: true
+  type: string
+pchid_info:
+  description: |
+    Information on physical channel identifier.
+  in: body
+  required: true
+  type: dict
 fcp_connections:
   description: |
     The count of volumes on this FCP device.
