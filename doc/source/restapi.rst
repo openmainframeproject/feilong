@@ -381,16 +381,18 @@ Attach a volume to a VM in z/VM.
   - connection: volume_conn
   - assigner_id: assigner_id
   - zvm_fcp: fcp_list
+  - fcp_template_id: fcp_template_id
   - target_wwpn: volume_wwpn
   - target_lun: volume_lun
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
   - is_root_volume: root_volume
+  - do_rollback: do_rollback
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach.tpl
    :language: javascript
 
 * Response code:
@@ -400,6 +402,11 @@ Attach a volume to a VM in z/VM.
 * Response contents:
 
   No Response
+
+* Note:
+
+  If multipath is requested, multipath software must be installed on the guest,
+  and multipathd service must be running, for this method to work.
 
 Detach volume
 -------------
@@ -422,10 +429,12 @@ Detach a volume from a VM in z/VM.
   - multipath: guest_multipath
   - mount_point: mount_point
   - is_root_volume: root_volume
+  - update_connections_only: update_connections_only
+  - do_rollback: do_rollback
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_detach.tpl
    :language: javascript
 
 * Response code:
@@ -2040,7 +2049,7 @@ Refresh a volume's bootmap info.
 
   HTTP status code 200 on success.
 
-* Response contents:
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
    :language: javascript
@@ -2050,7 +2059,7 @@ Get volume connector
 
 **GET /volumes/conn/{userid}**
 
-Get volume connector for z/VM.
+Get volume connector for a given userid.
 
 * Request:
 
@@ -2058,6 +2067,9 @@ Get volume connector for z/VM.
 
   - userid: guest_userid
   - reserve: fcp_reserve
+  - fcp_template_id: fcp_template_id
+  - storage_provider: storage_provider
+  - pchid_info: pchid_info
 
 * Response code:
 
@@ -2109,8 +2121,9 @@ Set the FCP usage in database for z/VM.
 
   - fcp_id: fcp_id
   - userid: fcp_userid
-  - reserved: fcp_reserve
+  - reserved: fcp_reserved
   - connections: fcp_connections
+  - fcp_template_id: fcp_template_id
 
 * Response code:
 
