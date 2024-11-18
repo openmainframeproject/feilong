@@ -25,13 +25,13 @@ ret_rc:
 ret_errmsg:
   description: |
     The error message returned for API request. It can be empty
-    if no error occur.
+    if no error occurred.
   in: body
   required: true
   type: string
 ret_modID:
   description: |
-    The module ID that causes the error to occur.
+    The module ID that caused the error to occur.
   in: body
   required: true
   type: integer
@@ -43,13 +43,13 @@ ret_output:
   type: dict
 min_version_sdk:
   description: |
-    Min version of Feilong. 
+    Minimum version of Feilong.
   in: header
   required: true
   type: string
 max_version_sdk:
   description: |
-    Max version of Feilong.
+    Maximum version of Feilong.
   in: header
   required: true
   type: string
@@ -67,15 +67,15 @@ version_sdk:
   type: string
 token_admin:
   description: |
-    Admin-token, which is stored in /etc/zvmsdk/token.dat. 
-    You need put this into header to request for a auth-token.
-    Then you can send a request with this auth-token.
+    Admin token, stored in ``/etc/zvmsdk/token.dat``.
+    You need to put this into the header to request for an authentication token.
+    Then you can send a request with this authentication token.
   in: header
   required: true
   type: string
 userid_create:
   description: |
-    The userid of the guest to be created
+    The userid of the guest to be created.
   in: body
   required: true
   type: string
@@ -87,8 +87,8 @@ assigner_id:
   type: string
 userid_in_params:
   description: |
-    The userid of the guest specified in parameters of the url.
-    If specified, will only get data belongs to this guest.
+    The userid of the guest specified in parameters of the URL.
+    If specified, it will only get data that belongs to this guest.
   in: parameter
   required: false
   type: string
@@ -112,31 +112,31 @@ sync_with_zvm:
   type: boolean
 smapi_health_report:
   description: |
-    SMAPI health report
+    SMAPI health report.
   in: body
   required: true
   type: dict
 guest_list:
   description: |
-    Guests list
+    Guests list.
   in: body
   required: true
   type: list
 guest_dict:
   description: |
-    Guest dict
+    Guest dict.
   in: body
   required: true
   type: dict
 guest_userid:
   description: |
-    Guest userid
+    Guest userid.
   in: path
   required: true
   type: string
 guest_vcpus:
   description: |
-    vcpus count.
+    vCPUs count.
   in: body
   required: true
   type: integer
@@ -148,13 +148,13 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    Memory size used by the guest, in KBytes.
+    Memory size used by the guest, in kilobytes.
   in: body
   required: true
   type: integer
 guest_memory_kb_max:
   description: |
-    The maximum memory in KBytes that can be allocated for this guest.
+    The maximum memory in kilobytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
@@ -173,13 +173,13 @@ guest_info:
   type: dict
 guest_account:
   description: |
-    account of guest, useful for guest billing.
+    Account of guest, useful for guest billing.
   in: body
   required: false
   type: string
 guest_comment_list:
   description: |
-    comment of the user direct.
+    Comment of the user directory.
   in: body
   required: false
   type: list
@@ -197,16 +197,16 @@ user_direct_guest:
   type: dict
 disk_list_guest:
   description: |
-    A list of disks info for the guest
+    A list of disk information for the guest.
     It has one dictionary that contain some of the below keys for
-    each disk, the root disk should be the first element in the
+    each disk. The root disk should be the first element in the
     list.
   in: body
   required: false
   type: list
 minidisks_guest:
   description: |
-    A list of disks info for the guest.
+    A list of disks information for the guest.
     Each entry in this list describes a minidisk and is a dictionary
     that contains some of the below keys.
   in: body
@@ -214,117 +214,114 @@ minidisks_guest:
   type: list
 add_mdisk_disk_vdev:
   description: |
-    when adding mdisk (either add after create or during create guest)
-    use this param to specify the virtual device number.
-    e.g. add this param to dist list as `vdev: 0123` will result user
-    direct has something like `MDISK 0123`
+    When adding a minidisk (either after creating or during creation of guest),
+    use this parameter to specify the virtual device number.
+    e.g. adding this parameter to disk list as ``vdev: 0123`` will make user
+    directory have something like ``MDISK 0123``.
   in: body
   required: false
   type: string
 get_mdisk_disk_vdev:
   description:
-    the virtual device number of the disk.
+    The virtual device number of the disk.
   in: body
   required: true
   type: string
 guest_ipl_from:
   description: |
-    where the guest IPL from, by default it's ipl from
-    `CONF.zvm.user_root_vdev`, and if this value is not empty,
-    the IPL will from given param, for example `IPL CMS` will IPL
+    Where the guest will IPL from. By default, it will IPL from
+    ``CONF.zvm.user_root_vdev``. If this value is not empty,
+    it will IPL from the given parameter, for example ``IPL CMS`` will IPL
     from CMS instead of device number.
   in: body
   required: false
   type: string
 guest_ipl_param:
   description: |
-    The param to add to IPL command, e.g. `IPL xxx PARM <guest_ipl_param>`
+    The parameter to add to IPL command, e.g. `IPL xxx PARM <guest_ipl_param>`.
   in: body
   required: false
   type: string
 guest_ipl_loadparam:
   description: |
-    The loadparam to add to IPL command, e.g. `IPL xxx LOADPARM <guest_ipl_loadparam>`
+    The load parameter to add to IPL command, e.g. `IPL xxx LOADPARM <guest_ipl_loadparam>`.
   in: body
   required: false
   type: string
-
 guest_dedicate_vdevs:
   description: |
-    A list of device vdevs to dedicate to the guest。
+    A list of device vdevs to dedicate to the guest.
   in: body
   required: false
   type: list
-
 guest_loaddev:
   description: |
-    The loaddev parms to add in the guest directory.Current supported key includes 'portname',
-    'lun' and 'alterdev'. Both the 'portname' and 'lun' can specify only one one- to
-    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF. There is 'alterdev' added
-    only when the compute node z/VM supports multipath IPL feature.
+    The loaddev parameters to add in the guest directory. Current supported keys include
+    ``portname``, ``lun`` and ``alterdev``. Both the ``portname`` and ``lun`` can specify
+    only one one- to eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF.
+    There is ``alterdev`` added only when the compute node z/VM supports multipath IPL feature.
   in: body
   required: false
   type: dict
-
 guest_max_cpu:
   description: |
-    The maximum number of virtual cpus this user can define.
-    The value should be a decimal value between 1 and 64.
+    The maximum number of virtual CPUs this user can define.
+    The value should be an integer value between 1 and 64.
   in: body
   required: false
   type: integer
 guest_max_mem:
   description: |
     The maximum size of memory the user can define.
-    The value should be specified by 1-4 digits suffixed by
-    either M (Megabytes) or G (Gigabytes). And the number should be
-    a whole number, eg. 512M, 4G.
+    The value should be specified by 1 to 4 digits suffixed by
+    either M (megabytes) or G (gigabytes). The number should be
+    a whole number, e.g. 512M or 4G.
   in: body
   required: false
   type: string
 additional_disk_guest:
   description: |
-    A list of additional disks info for the guest
+    A list of additional disks information for the guest.
     It has one dictionary that contain some of the below keys for
-    each disk
+    each disk.
   in: body
   required: true
   type: list
 size_disk:
   description: |
-    size of disk, case insensitive, the unit can be in Megabytes (M),
-    Gigabytes (G), or number of cylinders/blocks, for example, please
-    use ``512M``, ``1g`` or just ``2000``.
+    size of disk, case insensitive, the unit can be in megabytes (M),
+    gigabytes (G), or number of cylinders/blocks, for example
+    ``512M``, ``1g``, or just ``2000``.
   in: body
   required: true
   type: string
 format_disk:
   description: |
     Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``swap``, ``xfs``, ``none``.
-    The file system ``none`` means there is no need to create a file system,
-    and in turn no format and partition table will be created, this usually
-    used for some system such as z/OS.
+    The file system ``none`` means that there is no need to create a file system,
+    and in turn no format and partition table will be created, this is usually
+    used for some systems such as z/OS.
   in: body
   required: false
   type: string
 is_boot_disk:
   description: |
-    is boot disk or not. For the root disk, this key must be set to
+    Is boot disk or not. For the root disk, this key must be set to
     indicate the image that will be deployed on this disk.
   in: body
   required: false
-  type: bool
+  type: boolean
 disk_pool_guest:
   description: |
-    disk pool, if not specified, the disk will be created by using
-    the value from configure file, the format is
+    Disk pool. If not specified, the disk will be created by using
+    the value from configuration file. The format is
     ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
   in: body
   required: false
   type: string
 disk_info:
   description: |
-    A dict to describe disk info.
+    A dict to describe disk information.
   in: body
   required: true
   type: dict
@@ -336,41 +333,41 @@ vdev_info:
   type: dict
 disk_vdev_list:
   description: |
-    Disk vdev list of guest
-    It has one list contains the vdev for delete,
-    for example, ``['0101','0102']``
+    Disk vdev list of guest.
+    It contains the vdevs tor delete, for example ``['0101','0102']``.
   in: body
   required: true
   type: list
 disk_vdev:
   description: |
-    The device number of the disk, if not specified, zvmsdk will use the next vdev
-    of CONF.zvm.user_root_vdev as the additional disk's vdev, eg. if CONF.zvm.user_root_vdev
-    is 0100, zvmsdk will use 0101 as the vdev for first additional disk in disk_info, 0102 as
-    the second additional disk's vdev
+    The device number of the disk. If not specified, Feilong will use the next vdev
+    of ``CONF.zvm.user_root_vdev`` as the additional disk's vdev. For example, if
+    ``CONF.zvm.user_root_vdev`` is 0100, Feilong will use 0101 as the vdev for first
+    additional disk in disk_info, and 0102 as the second additional disk's vdev.
   in: body
   required: false
   type: string
 disk_mountpoint:
   description: |
-    The directory on guest to which the additional disk will be mounted, if not specified,
-    zvmsdk will use /mnt/ephemeral0 as the mount point of first additional disk, /mnt/ephemeral1
-    as the mount point of second additional disk
+    The directory on guest to which the additional disk will be mounted. If not specified,
+    Feilong will use ``/mnt/ephemeral0`` as the mount point of first additional disk, and
+    ``/mnt/ephemeral1`` as the mount point of second additional disk.
   in: body
   required: false
   type: string
 format_disk_required:
   description: |
-    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``swap``, ``xfs``.
-    The file system ``none`` means there is no need to create a file system,
-    and in turn no format and partition table will be created, this usually
-    used for some system such as z/OS.
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``swap``, ``xfs``, ``none``.
+    The file system ``none`` means that there is no need to create a file system,
+    and in turn no format and partition table will be created, this is usually
+    used for some systems such as z/OS.
   in: body
   required: true
   type: string
 userid_list_guest:
   description: |
-      A string that contains single userid or userids delimited by comma, like ``id1, id2, id3``
+      A string that contains a single userid or userids delimited by commas,
+      like ``id1, id2, id3``.
   in: path
   required: true
   type: string
@@ -407,7 +404,7 @@ online_cpu_num_guest:
   type: integer
 os_distro_guest:
   description: |
-    The os distro information for the guest.
+    The OS distro information for the guest.
   in: body
   required: true
   type: string
@@ -499,7 +496,7 @@ dest_zcc_userid:
 lgr_destination:
   description: |
      The system ID of the z/VM system to which
-     the specified vm will be relocated or tested.
+     the specified VM will be relocated or tested.
   in: body
   required: true
   type: string
@@ -525,7 +522,7 @@ action_register_guest:
   type: string
 guest_register_meta:
   description: |
-    The metadata of the vm to be registered.
+    The metadata of the VM to be registered.
   in: body
   required: true
   type: string
@@ -538,7 +535,7 @@ guest_register_net_set:
   type: string
 guest_register_port_macs:
   description: |
-    The dict of virtual interface port id and mac id
+    The dict of virtual interface port id and MAC id.
   in: body
   required: false
   type: dict
@@ -562,7 +559,7 @@ action_resize_cpus_of_guest:
   type: string
 cpu_cnt:
   description: |
-    The number of virtual cpus that the guest should
+    The number of virtual CPUs that the guest should
     have after resize. The value should be an
     positive integer between 1 and 64.
   in: body
@@ -583,15 +580,15 @@ action_resize_mem_of_guest:
 mem_size:
   description: |
     The size of memory that the guest should have after resize.
-    The value should be specified by 1-4 digits suffixed by
-    either M (Megabytes) or G (Gigabytes). And the number should be
-    an integer, eg. 512M, 4G.
+    The value should be specified by 1 to 4 digits suffixed by
+    either M (megabytes) or G (gigabytes). The number should be
+    an integer, e.g. 512M or 4G.
   in: body
   required: true
   type: string
 vdev_guest:
   description: |
-    nic device number, 1- to 4- hexadecimal digits.
+    NIC device number, 1 to 4 hexadecimal digits.
   in: path
   required: true
   type: string
@@ -603,7 +600,7 @@ host_info:
   type: dict
 disk_pool:
   description: |
-    The pool name to get pool information from
+    The pool name to get pool information from.
   in: path
   required: false
   type: string
@@ -612,49 +609,49 @@ disk_info_total:
     The total size of the pool in Gigabytes (G).
   in: body
   required: true
-  type: int
+  type: integer
 disk_info_available:
   description: |
     The total available size of the disks in the pool in Gigabytes(G).
   in: body
   required: true
-  type: int
+  type: integer
 disk_info_used:
   description: |
     The size of used disks in the pool in Gigabytes(G).
   in: body
   required: true
-  type: int
+  type: integer
 details:
   description: |
-    get the free space of all volumes on the disk pool or not.
+    Get the free space of all volumes on the disk pool or not.
   in: path
   required: false
   type: boolean
 diskpool_volumes:
   description: |
-    The volume list of the diskpool
+    The volume list of the disk pool.
   in: body
   required: true
   type: string
 volume:
   description: |
-    The name of the volume
+    The name of the volume.
   in: path
   required: true
   type: string
 volume_type:
   description: |
-    The type of the volume
+    The type of the volume.
   in: body
   required: true
   type: string
 volume_size:
   description: |
-    The disk size of the volume
+    The disk size of the volume.
   in: body
   required: true
-  type: int
+  type: integer
 host_ssi_info:
   description: |
     If the host is an SSI cluster member, it returns a list of SSI cluster
@@ -664,14 +661,14 @@ host_ssi_info:
   type: list
 image_info:
   description: |
-    The image info for specific image or all images, each image has one dict
-    to indicate its info
+    The image information for a specific image or all images.
+    Each image has one dict to indicate its info.
   in: body
   required: true
   type: list
 image_dict:
   description: |
-    The image info dict.
+    The image information dict.
   in: body
   required: true
   type: dict
@@ -695,46 +692,52 @@ image_md5sum:
   type: string
 image_import_url:
   description: |
-    The location of the image to be imported, support import image from 3
-    types location, local file system: eg. ``file:///opt/images/import.img``.
-    http server: eg. ``http://192.168.2.1/path/to/import.img``
-    file system on remote host: in this case both url and remote_host parameter
-    should be specified
+    The location of the image to be imported. The image can be imported from 3
+    types of locations\:
+
+    - local file system, e.g. ``file:///opt/images/import.img``.
+    - HTTP server, e.g. ``http://192.168.2.1/path/to/import.img``
+    - file system on remote host: in this case both url and remote_host parameters
+      should be specified.
   in: body
   required: true
   type: string
 image_export_location:
   description: |
-    The dictionary to indicate the location info of image to be exported
+    The dictionary to indicate the location information of the image to be exported.
   in: body
   required: true
   type: dict
 image_export_url:
   description: |
-    The location of the exported image, support export to 2 types location,
-    local file system: eg. ``file:///opt/images/export.img``
-    file system on remote host: in this case both dest_url and remote_host
-    parameter should be specified
+    The location of the exported image. The image can be exported to 2
+    types of locations\:
+
+    - local file system, e.g. ``file:///opt/images/export.img``
+    - file system on remote host: in this case both dest_url and remote_host
+      parameters should be specified.
   in: body
   required: true
   type: string
 image_metadata:
   description: |
-    The metadata which describes the image, the valid keys are os_version, md5sum and disk_type.
-    os_version is a required key, the valid values are: rhel6.x, rhel7.x, rhel8.x,
-    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    The metadata that describes the image.
+    The valid keys are os_version, md5sum, and disk_type.
+    os_version is a required key, the valid values are: ``rhel6.x``,
+    ``rhel7.x``, ``rhel8.x``, ``rhel9.x``, ``sles11.x``, ``sles12.x``,
+    ``sles15.x``, ``ubuntu16.x``, ``ubuntu20.x``, ``ubuntu22.x``, and ``rhcos4.x``,
     all case insensitive. Please contact your cloud administrator
-    if you don't know the image's OS version. disk_type is required if os_version is rhcos4,
-    the valid disk_type values are: DASD, SCSI.
+    if you don't know the image's OS version. disk_type is required if
+    os_version is ``rhcos4``, the valid disk_type values are: DASD, SCSI.
   in: body
   required: true
   type: dict
 remotehost_image_import:
   description: |
-    The server from where the image will be import, if remote_host is None,
-    the image will be import from the url in local server, otherwise,
+    The server from where the image will be imported. If remote_host is None,
+    the image will be imported from the URL in local server, otherwise,
     the format is username@ip, for example, ``nova@9.x.x.x`` or
-    username@hostname, for example, ``test@test.ibm.com``
+    username@hostname, for example, ``test@test.ibm.com``.
   in: body
   required: false
   type: string
@@ -743,74 +746,76 @@ remotehost_image_export:
     The server that the image will be export to, if remote_host is None,
     the image will be stored in the dest_path in local server, otherwise,
     the format is username@ip, for example, ``nova@9.x.x.x`` or
-    username@hostname eg.``test@test.ibm.com``.
+    username@hostname e.g.``test@test.ibm.com``.
   in: body
   required: false
   type: string
 root_disk_size_image:
   description: |
-    The image's root disk size in units CYL or BLK, eg 3338:CYL or 614200:BLK.
+    The image's root disk size in units CYL or BLK,
+    e.g. ``3338:CYL`` or ``614200:BLK``.
   in: body
   required: true
   type: string
 physical_disk_size_image:
   description: |
-    Physical image size in bytes eg 5120000
+    Physical image size in bytes, e.g. ``5120000``.
   in: body
   required: true
   type: string
 image_type:
   description: |
-    How the image is generated, if it captured from root disk the type is netboot.
+    How the image is generated, if it is captured from root disk the
+    type is netboot.
   in: body
   required: true
   type: string
 image_comments:
   description: |
-    the comments for the image
+    The comments for the image.
   in: body
   required: true
   type: string
 export_image_dict:
   description: |
-    The dict contains image info after export.
+    The dict contains image information after it has been exported.
   in: body
   required: true
   type: dict
 transportfiles:
   description: |
-    The files path that used to customize the vm. For RHCOS image, the transportfiles
-    should be the ignition file and it's required.
+    The files path that used to customize the VM. For RHCOS image, the transportfiles
+    is required and should be the ignition file.
   in: body
   required: false
   type: string
 remotehost_transportfiles:
   description: |
-    The server that the transportfiles located, if remotehost is not
-    specified, will deploy with the transport file in local server,
+    The server where the transportfiles is located. If remotehost is not
+    specified, Feilong will deploy with the transport file in local server,
     otherwise, the format is username@ip, for example, ``nova@9.x.x.x``
-    or username@hostname eg.``test@test.ibm.com``
+    or username@hostname e.g.``test@test.ibm.com``.
   in: body
   required: false
   type: string
 deploy_vdev:
   description: |
-    Device number to which the image will be deployed, 1- to 4- hexadecimal 
+    Device number to which the image will be deployed, 1 to 4 hexadecimal
     digits. ``null`` is also allowed.
   in: body
   required: false
   type: string
 deploy_hostname:
   description: |
-    hostname of the guest. Will be ignored if ``transportfiles`` 
+    Hostname of the guest. Will be ignored if ``transportfiles`` is
     specified. ``null`` is also allowed.
   in: body
   required: false
   type: string
 deploy_skipdiskcopy:
   description: |
-    whether to skip the copy of image to disk. Default value if False.
-    If the value is True, the ``image_name`` specified should be the os version.
+    Whether to skip the copy of image to disk. Default value if False.
+    If the value is True, the ``image_name`` specified should be the OS version.
     If the value is False, the ``image_name`` specified should be the name of the image
     to be used to copy to the root disk.
   in: body
@@ -822,13 +827,13 @@ capture_type:
 
     - ``rootonly``: indicate just root device will be captured, this is the default one
     - ``alldisks``: indicate all the devices of the userid will be captured
-  in: body 
+  in: body
   required: false
   type: string
 compress_level:
   description: |
-    The compression level of the image, default value is 6
-  in: body 
+    The compression level of the image, default value is 6.
+  in: body
   required: false
   type: integer
 vswitch_name:
@@ -851,57 +856,57 @@ rdev_vswitch:
   type: string
 controller_vswitch:
   description: |
-    The vswitch's controller. It could be userid or "*" to
-    specifies any available controller.
+    The vswitch's controller. It could be an userid or ``*`` to
+    specify any available controller.
   in: body
   required: false
   type: string
 connection_vswitch:
   description: |
-    Connection type option \:
+    Connection type option\:
 
-    - ``CONnect``: Activate the real device connection.
-    - ``DISCONnect``: Do not active the real device connection.
+    - ``CONnect``: activate the real device connection.
+    - ``DISCONnect``: do not active the real device connection.
     - ``NOUPLINK``: the vswitch will never have connectivity through.
   in: body
   required: false
   type: string
 network_type_vswitch:
   description: |
-    Specifies the transport mechanism to be used for switch,
-    as follow:IP, ETHERNET, default is ETHERNET.
+    Specifies the transport mechanism to be used for the switch,
+    ``IP`` or ``ETHERNET``. Default is ``ETHERNET``.
   in: body
   required: false
   type: string
 router_vswitch:
   description: |
-    Connection type option \:
+    Connection type option\:
 
     - ``NONROUTER``: The OSA-Express device identified in
-      real_device_address= will not act as a router to the vswitch.
+      real_device_address will not act as a router to the vswitch.
     - ``PRIROUTER``: The OSA-Express device identified in
-      real_device_address= will act as a primary router to the vswitch.
-    - ``Note``: If the network_type is ETHERNET, this value must be
+      real_device_address will act as a primary router to the vswitch.
+    - ``Note``: If the network_type is ``ETHERNET``, this value must be
       unspecified, otherwise, if this value is unspecified,
-      default is NONROUTER
+      default is ``NONROUTER``.
   in: body
   required: false
   type: string
 vid_vswitch:
   description: |
-    The VLAN ID. This can be any of the following values:
-    ``UNAWARE``,  ``AWARE`` or ``1-4094``.
+    The VLAN id. This can be any of the following values\:
+    ``UNAWARE``, ``AWARE``, or ``1-4094``.
   in: body
   required: false
   type: string, integer
 port_type_vswitch:
   description: |
-    Port type \:
+    Port type\:
 
     - ``ACCESS``: The default porttype attribute for
       guests authorized for the virtual switch.
       The guest is unaware of VLAN IDs and sends and
-      receives only untagged traffic
+      receives only untagged traffic.
     - ``TRUNK``: The default porttype attribute for
       guests authorized for the virtual switch.
       The guest is VLAN aware and sends and receives tagged
@@ -914,7 +919,7 @@ port_type_vswitch:
   type: string
 gvrp_vswitch:
   description: |
-    gvrp \:
+    GVRP\:
 
     - ``GVRP``: Indicates that the VLAN IDs in use on the virtual
       switch should be registered with GVRP-aware switches on the
@@ -924,14 +929,14 @@ gvrp_vswitch:
       port VLAN assignments.
     - ``NOGVRP``: Do not register VLAN IDs with GVRP-aware switches on
       the LAN. When NOGVRP is specified VLAN port assignments
-      must be configured manually
+      must be configured manually.
   in: body
   required: false
   type: string
 queue_mem_vswitch:
   description: |
     A number between 1 and 8, specifying the QDIO
-    buffer size in megabytes
+    buffer size in megabytes.
   in: body
   required: false
   type: integer
@@ -943,8 +948,8 @@ native_vid_vswitch:
   type: integer
 persist_option_vswitch:
   description: |
-    Whether create the vswitch in the permanent
-    configuration for the system.
+    Whether to create the vswitch in the permanent
+    configuration of the system.
   in: body
   required: false
   type: boolean
@@ -975,7 +980,7 @@ guest_userid_opt:
   type: string
 nic_id_opt:
   description: |
-    nic identifier.
+    NIC identifier.
   in: path
   required: False
   type: string
@@ -987,7 +992,7 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    List describing nic information, each nic has one dict
+    List describing NIC information. Each NIC has one dict
     to indicate its info, including userid, interface,
     switch, port id and comments.
   in: body
@@ -995,38 +1000,38 @@ guests_nic_info:
   type: list
 nic_set_info:
   description: |
-    The information which is used to set nic device number
+    The information which is used to set NIC device number.
   in: body
   required: true
   type: dict
 vdev_number:
   description: |
-    nic device number, 1- to 4- hexadecimal digits.
+    NIC device number, 1 to 4 hexadecimal digits.
   in: body
   required: false
   type: string
 vdev_number_orNone:
   description: |
-    nic device number, 1- to 4- hexadecimal digits. ``null`` is also allowed.
+    NIC device number, 1 to 4 hexadecimal digits. ``null`` is also allowed.
   in: body
   required: false
   type: string
 nic_identifier:
   description: |
-    nic identifier
+    NIC identifier
   in: body
   required: false
   type: string
 mac_address:
   description: |
-    Mac address, it is only used when changing the guest's user direct.
-    Format should be xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit.
+    MAC address, it is only used when changing the guest's user directory.
+    Format should be xx:xx:xx:xx:xx:xx, where x is a hexadecimal digit.
   in: body
   required: false
   type: string
 ip_address:
   description: |
-    ip address.
+    IP address.
   in: body
   required: false
   type: string
@@ -1035,10 +1040,10 @@ active_flag:
     Whether the change will apply to the active guest.
   in: body
   required: false
-  type: bool
+  type: boolean
 couple_info:
   description: |
-    The info used to describe the couple/uncouple action.
+    The information used to describe the couple/uncouple action.
   in: body
   required: true
   type: dict
@@ -1047,7 +1052,7 @@ couple_action:
     couple or uncouple action.
   in: body
   required: true
-  type: bool
+  type: boolean
 vswitch_name_body_opt:
   description: |
     vswitch name.
@@ -1062,8 +1067,9 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    Operating system version, the valid alues are: rhel6.x, rhel7.x, rhel8.x,
-    rhel9.x, sles11.x, sles12.x, sles15.x, ubuntu16.x, ubuntu20.x, ubuntu22.x, rhcos4.x,
+    Operating system version. The valid values are: ``rhel6.x``,
+    ``rhel7.x``, ``rhel8.x``, ``rhel9.x``, ``sles11.x``, ``sles12.x``,
+    ``sles15.x``, ``ubuntu16.x``, ``ubuntu20.x``, ``ubuntu22.x``, and ``rhcos4.x``,
     all case insensitive. Please contact your cloud administrator if you don't know
     the guest's OS version.
   in: body
@@ -1071,18 +1077,18 @@ guest_os_version:
   type: string
 guest_networks_list:
   description: |
-    Network info list of guest. It has one dictionary that contain some of the below
-    keys for each interface. All the keys are optional \:
+    Network information list of guest. It has one dictionary that contain some of the below
+    keys for each interface. All the keys are optional\:
 
-    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if ip address
-      is set
-    - ``dns_addr``: dns addresses list
+    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if IP address
+       is set
+    - ``dns_addr``: DNS servers address list
     - ``gateway_addr``: gateway address
-    - ``cidr``: cidr format
-    - ``nic_vdev``: nic device number, 1- to 4- hexadecimal digits
-    - ``mac_addr``: mac address
-    - ``nic_id``: nic identifier
-    - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
+    - ``cidr``: CIDR format
+    - ``nic_vdev``: NIC device number, 1 to 4 hexadecimal digits
+    - ``mac_addr``: MAC address
+    - ``nic_id``: NIC identifier
+    - ``osa_device``: OSA device number, 1 to 4 hexadecimal digits
     - ``hostname``: host name
   in: body
   required: true
@@ -1090,18 +1096,18 @@ guest_networks_list:
 guest_networks:
   description: |
     Required only if refresh volume bootmap for RHCOS.
-    Network info list of guest. It has one dictionary that contain some of the below
-    keys for each interface. All the keys are optional \:
+    Network information list of guest. It has one dictionary that contain some of the below
+    keys for each interface. All the keys are optional\:
 
-    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if ip address
+    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if IP address
       is set
-    - ``dns_addr``: dns addresses list
+    - ``dns_addr``: DNS servers address list
     - ``gateway_addr``: gateway address
     - ``cidr``: cidr format
-    - ``nic_vdev``: nic device number, 1- to 4- hexadecimal digits
-    - ``mac_addr``: mac address
-    - ``nic_id``: nic identifier
-    - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
+    - ``nic_vdev``: NIC device number, 1 to 4 hexadecimal digits
+    - ``mac_addr``: MAC address
+    - ``nic_id``: NIC identifier
+    - ``osa_device``: OSA device number, 1 to 4 hexadecimal digits
     - ``hostname``: the hostname of the guest
   in: body
   required: false
@@ -1114,198 +1120,197 @@ vswitch_info:
   type: dict
 user_vlan_id:
   description: |
-    A dict to describe guest userid and vlanid.
+    A dict to describe guest userid and VLAN id.
   in: body
   required: true
   type: dict
 vlan_id:
   description: |
-    The VLAN ID. This can be any of the value between -1 or 1-4094.
+    The VLAN id. This can be any of the value between -1 or 1-4094.
   in: body
   required: true
   type: integer
 nic_comments:
   description: |
-    the comments for the nic.
+    The comments for the NIC.
   in: body
   required: true
   type: string
 nic_port:
   description: |
-    nic identifier.
+    NIC identifier.
   in: body
   required: true
   type: string
 nic_userid:
   description: |
-    the userid of the nic.
+    The userid of the NIC.
   in: body
   required: true
   type: string
 nic_interface:
   description: |
-    the device number of the nic.
+    The device number of the NIC.
   in: body
   required: true
   type: string
 vswitch_details:
   description: |
-    The vswitch info for specific vswitch
+    The vswitch information for specific vswitch.
   in: body
   required: true
   type: dict
 file_import:
   description: |
-    The binary data for the file to be imported
+    The binary data for the file to be imported.
   in: body
   required: true
   type: octet stream
 file_request_header:
   description: |
-    The media type descriptor for the request body. Use 'application/octet-stream'
+    The media type descriptor for the request body. Use ``application/octet-stream``.
   in: header
   required: true
   type: string
 file_import_output:
   description: |
-    Dictionary describing the file import status and result
+    Dictionary describing the file import status and result.
   in: body
   required: true
   type: dict
 file_import_dest_url:
   description: |
-    The location of file after imported on Feilong. For example,
-    'file:///var/lib/zvmsdk/files/imported/be919b98-8408-11e8-b9fe-020001000053'
+    The location of file after it has been imported into Feilong. For example,
+    ``file:///var/lib/zvmsdk/files/imported/be919b98-8408-11e8-b9fe-020001000053``.
   in: body
   required: true
   type: string
 imported_file_size:
   description: |
-    The physical file size in bytes
+    The physical file size in bytes.
   in: body
   required: true
-  type: int
+  type: integer
 file_md5sum:
   description: |
-    The md5sum of the file after imported
+    The md5sum of the file after it has been imported.
   in: body
   required: true
   type: string
 export_source_file:
   description: |
-    The path of the file to be exported, eg. '/root/testfile'
+    The path of the file to be exported, e.g. ``/root/testfile``.
   in: body
   required: true
   type: string
 volume_info:
   description: |
-    A dict to describe connection info of the volume
+    A dict to describe connection information of the volume.
   in: body
   required: true
   type: dict
 volume_conn:
   description: |
-    A dict to describe info of the volume to be operated
+    A dict to describe information of the volume to be operated.
   in: body
   required: true
   type: dict
 volume_fcp:
   description: |
-    FCP Device number, for example ``1fc5``
+    FCP Device number, for example ``1fc5``.
   in: body
   required: true
   type: string
 volume_wwpn:
   description: |
-    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``
+    World Wide Port Number, must start with ``0x``, for example ``0x50050763050b073d``.
   in: body
   required: true
   type: string
 volume_lun:
   description: |
-    Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``
+    Logical Unit Number, must start with ``0x``, for example ``0x4020400100000000``.
   in: body
   required: true
   type: string
 guest_multipath:
   description: |
-    Multipath service is open or not
+    Multipath service is open or not.
   in: body
   required: true
-  type: bool
+  type: boolean
 mount_point:
   description: |
-    The symbol link name of the volume device. If not assigned, will be assigned by the os in vm.
+    The symbolic link name of the volume device. If not assigned, will be assigned by the OS in VM.
   in: body
   required: false
   type: string
 root_volume:
   description: |
-    Volume is bootable or not
+    Volume is bootable or not.
   in: body
   required: false
-  type: bool
+  type: boolean
 disk_list_output:
   description: |
-    A list of created disks info for the guest
-    It has one dictionary that contain some of the below keys for
-    each disk.
+    A list of created disks information for the guest.
+    It has one dictionary that contain some of the below keys for each disk.
   in: body
   required: true
   type: list
 vdev_disk:
   description: |
-    Device number of the disk, 1- to 4- hexadecimal digits.
+    Device number of the disk, 1 to 4 hexadecimal digits.
   in: body
   required: true
   type: string
 rdev_disk:
   description: |
-    the real device number of the disk.
+    The real device number of the disk.
   in: body
   required: true
   type: string
 access_type:
   description: |
-    type of access to the disk, either ``R/O`` or ``R/W``.
+    Type of access to the disk, either ``R/O`` or ``R/W``.
   in: body
   required: true
   type: string
 disk_pool_output:
   description: |
-    disk pool, the format is ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
+    Disk pool. The format is ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
   in: body
   required: true
   type: string
 size_output:
   description: |
-    size of disk, case insensitive, the unit can be in Megabytes (M),
-    Gigabytes (G), for example, please ``512M``, ``1g``.
+    Size of disk, case insensitive. The unit can be in megabytes (M)
+    or gigabytes (G), for example ``512M`` or ``1g``.
   in: body
   required: true
   type: string
 size_no_unit:
   description: |
-    the size of the disk, without unit.
+    The size of the disk, without unit.
   in: body
   required: true
   type: integer
 device_units:
   description: |
-    the unit for the size of the disk, for example ``Cylinders``.
+    The unit for the size of the disk, for example ``Cylinders``.
   in: body
   required: true
   type: string
 volume_label:
   description: |
-    the volume label of the disk.
+    The volume label of the disk.
   in: body
   required: true
   type: string
 last_access_time:
   description: |
-    the time stamp of last access time of this image
-    the seconds count after 1970 and is generated from python ``time`` module.
+    The time stamp of last access time of this image.
+    The seconds count is after 1970 and is generated from python ``time`` module.
   in: body
   required: true
   type: float
@@ -1323,10 +1328,11 @@ fcp_userid:
   type: string
 fcp_usage:
   description: |
-    FCP usage, contains 3 values [userid, reserved, connections].
-    ``userid`` is the userid this fcp belongs to.
-    ``reserved`` is 0 or 1, represent the fcp is been used or not.
-    ``connections`` is non-negative value, means the count of volumes on this FCP.
+    FCP usage, contains 3 values [userid, reserved, connections]\:
+
+    - ``userid`` is the userid this FCP belongs to.
+    - ``reserved`` is 0 or 1, represent the FCP is been used or not
+    - ``connections`` is non-negative value, means the count of volumes on this FCP.
   in: body
   required: true
   type: list
@@ -1338,45 +1344,45 @@ fcp_list:
   type: list
 wwpn_list:
   description: |
-    World Wide Port Name IDs.
+    World Wide Port Name identifiers.
   in: body
   required: true
   type: string
 lun:
   description: |
-    Logical Unit Number ID
+    Logical Unit Number identifier.
   in: body
   required: true
   type: string
 adapters_info_output:
   description: |
-    A list of adapters info for the guest
-    It has one or more dictionary that contain some of the below keys, one dictionary represent for one adapter.
-    each adapter.
+    A list of adapters information for the guest.
+    It has one or more dictionaries that contain some of the below keys.
+    One dictionary represents one adapter.
   in: body
   required: true
   type: list
 adapter_status:
   description: |
-    status of adapter, 2 hexadecimal digits. ``02`` means normal.
+    Status of adapter, 2 hexadecimal digits. ``02`` means normal.
   in: body
   required: true
   type: string
 ip_version:
   description: |
-    version of IP address, ``4`` means IPV4, ``6`` means IPV6.
+    Version of IP address, ``4`` means IPv4, ``6`` means IPv6.
   in: body
   required: true
   type: string
 fcp_reserve:
   description: |
-    If or not reserve the FCP devices.
+    Whether or not reserve the FCP devices.
   in: body
   required: true
   type: boolean
 fcp_reserved:
   description: |
-    If value is 1, means this FCP device is using by one userid.
+    If value is 1, means this FCP device is used by an userid.
     If value is 0, means this FCP device can be operated.
   in: body
   required: true
@@ -1389,7 +1395,7 @@ fcp_connections:
   type: integer
 SMAPI:
   description: |
-    Status of SMAPI health
+    Status of SMAPI health.
   in: body
   required: true
   type: dict
@@ -1419,7 +1425,7 @@ lastFail:
   type: string
 continuousFail:
   description: |
-    The count of continuous fail.
+    The count of continuous fails.
   in: body
   required: true
   type: integer
@@ -1473,25 +1479,25 @@ samples_cpu_delay:
   type: integer
 used_mem_kb:
   description: |
-    Memory size used by the guest, in KBytes.
+    Memory size used by the guest, in kilobytes.
   in: body
   required: true
   type: integer
 max_mem_kb:
   description: |
-    The maximum memory in KBytes that can be allocated for this guest.
+    The maximum memory in kilobytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
 min_mem_kb:
   description: |
-    The maximum memory in KBytes that can be allocated for this guest.
+    The maximum memory in kilobytes that can be allocated for this guest.
   in: body
   required: true
   type: integer
 shared_mem_kb:
   description: |
-    Shared memory in KBytes.
+    Shared memory in kilobytes.
   in: body
   required: true
   type: integer
