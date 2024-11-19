@@ -1767,10 +1767,10 @@ Delete an image.
 
   No response.
 
-VSwitch
-=======
+VSwitch(es)
+===========
 
-Lists, creates, updates, and deletes vswitch.
+Management of virtual switches.
 
 Create vswitch
 --------------
@@ -1970,6 +1970,39 @@ Delete a vswitch by using given name.
 
   No response.
 
+Get vswitch info
+----------------
+
+**GET /vswitch**
+
+Get vswitch information based on port id.
+Returns one entry per connected NIC.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - portid: port_id
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+   - userid: nic_userid
+   - interface: nic_interface
+   - switch: vswitch_name_body
+   - port: port_id
+   - comments: nic_comments
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_switch_record.tpl
+   :language: javascript
+
 Volume(s)
 =========
 
@@ -2144,27 +2177,3 @@ Export file from Feilong, internal use only.
 
 The response body contains the raw binary data that represents the actual file.
 The Content-Type header contains the application/octet-stream value.
-
-
-Get Switch information based on port id
----------------------------------------
-
-**GET /switch**
-
-Get Switch information based on port id.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - portid: port_id
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_switch_record.tpl
-   :language: javascript
-
