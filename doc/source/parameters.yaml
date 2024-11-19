@@ -1561,12 +1561,6 @@ nic_tx:
   in: body
   required: true
   type: integer
-switch:
-  description: |
-    Get Switch information based on port id.
-  in: body
-  required: true
-  type: string
 port_id:
   description: |
     The ID of the port.
