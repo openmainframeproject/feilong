@@ -1153,12 +1153,6 @@ vswitch_details:
   in: body
   required: true
   type: dict
-file_import:
-  description: |
-    The binary data for the file to be imported.
-  in: body
-  required: true
-  type: octet stream
 file_request_header:
   description: |
     The media type descriptor for the request body. Use ``application/octet-stream``.
