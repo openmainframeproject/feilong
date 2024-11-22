@@ -249,7 +249,7 @@ else
     exit $DEVICE_PATH_NOT_FOUND
 fi
 
-WWID=`/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath`
+WWID=`/usr/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath`
 echo "scsi_id command get WWID:$WWID for device $diskPath."
 
 ConfigLib="/lib/udev/rules.d/56-zfcp.rules"
