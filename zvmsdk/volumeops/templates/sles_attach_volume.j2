@@ -48,7 +48,7 @@ fcp_count=0
 for fcp in ${fcp_list[@]}
 do
     echo "Got FCP $fcp"
-    fcp_count=$((fcp_count+=1))
+    fcp_count=$((fcp_count+1))
 done
 
 if [[ $fcp_count -eq 0 ]]; then
@@ -156,7 +156,7 @@ echo "Got valid wwpns, list of key is: ${!valid_dict[@]}, list of value is: ${va
 valid_fcp_count=0
 for fcp in ${!valid_dict[@]}
 do
-    valid_fcp_count=$((valid_fcp_count+=1))
+    valid_fcp_count=$((valid_fcp_count+1))
 done
 if [[ $valid_fcp_count -eq 0 ]]; then
     echo "Can not find the intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output, exit with code $INVALID_WWPNS."
@@ -236,7 +236,7 @@ do
         # if devices still not ready, wait another 5 seconds and retry
         if [ $FoundDiskPath -eq 0 ]; then
             sleep 1
-            Timeout=$((Timeout-=1))
+            Timeout=$((Timeout-1))
             echo "Sleep 1 second to wait the devices ready, timeout left: $Timeout"
         fi
     done
