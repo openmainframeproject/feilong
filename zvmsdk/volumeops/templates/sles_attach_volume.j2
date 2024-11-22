@@ -56,7 +56,7 @@ if [[ $fcp_count -eq 0 ]]; then
     exit $INVALID_PARAMETERS
 fi
 
-# see if zfcp is enable
+# see if zfcp is enabled
 echo "Begin to enable zfcp mode ..."
 enable_zfcp_mod=`lsmod | grep zfcp`
 if [ -z "$enable_zfcp_mod" ];then
@@ -66,7 +66,7 @@ else
     echo "zfcp mode is already enabled"
 fi
 
-# online fcp devices
+# online FCP devices
 for fcp in ${fcp_list[@]}
 do
     echo "Begin to online FCP $fcp ..."
@@ -92,8 +92,8 @@ do
     fi
 done
 
-# send an iSCSI scan request with given host and optionally the ctl 
-# the ctl means, c: channel,default to -
+# send an iSCSI scan request with given host and optionally the ctl
+# the ctl means: c: channel,default to -
 #                t: target, default to -
 #                l: lun, default to -
 all_hosts=(`ls /sys/class/scsi_host/`)
@@ -104,9 +104,9 @@ do
     echo "Scan on host $host completed"
 done
 
-# the number WWPNs is generated dynamically
+# the WWPNs are generated dynamically
 # so we need to get them from the filesystem
-# and get the intersection between input wwpns and lszfcp output
+# and get the intersection between input WWPNs and lszfcp output
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
 echo -e "lszfcp -P output port info:\n$lszfcp_output"
 
@@ -120,7 +120,7 @@ do
         # Get WWPNs under /sys/bus/ccw/drivers/zfcp/.
         wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
         echo -e "Target WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
-        # Try to find match between system WWPNs(from lszfcp output or under /sys) and input WWPNs
+        # Try to match system WWPNs (from lszfcp output or under /sys) with input WWPNs
         found_match=0
         for wwpn in ${input_wwpns[@]}
         do
@@ -138,7 +138,7 @@ do
                 fi
             fi
         done
-        # If no matched wwpn found, need retry
+        # If no matched WWPN found, need retry
         if [[ $found_match -eq 0 ]]; then
             sleep 1
             Timeout=$((Timeout-1))
@@ -163,16 +163,16 @@ if [[ $valid_fcp_count -eq 0 ]]; then
     exit $INVALID_WWPNS
 fi
 
-# flag which indicate whether we found a valid and accessable path for the volume
+# flag which indicates whether we found a valid and accessible path for the volume
 FoundDiskPath=0
 # wait for the device ready
 for fcp in ${!valid_dict[@]}
 do
     ActiveWWPNs=(${valid_dict[$fcp]})
     echo "Discover WWPNs: ${ActiveWWPNs[@]} for FCP device: $fcp"
-    
+
     # If auto-discovery of LUNs is disabled on s390 platforms
-    # luns need to be added to the configuration through
+    # LUNs need to be added to the configuration through
     # the unit_add interface
     AutoScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
     if [[ "$AutoScan" != "Y" ]]; then
@@ -218,7 +218,7 @@ do
             break
         fi
 
-        # loop all the WWPNs to found the alive device
+        # loop through all the WWPNs to find the alive device
         for j in ${ActiveWWPNs[@]}
         do
             x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$j:$lun"
@@ -269,8 +269,7 @@ echo -e $LinkItem >> $ConfigFile
 echo "Begin to reload udev rules ..."
 udevadm control --reload
 udevadm trigger --sysname-match=dm-*
-echo "Undev rules reload done"
+echo "Udev rules reloaded"
 
 echo "Exit SLES attach script"
 exit $OK
-
