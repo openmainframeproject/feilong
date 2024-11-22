@@ -249,6 +249,7 @@ else
     exit $DEVICE_PATH_NOT_FOUND
 fi
 
+# read the WWN from page 0x83 value for a SCSI device
 WWID=`/usr/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath`
 echo "scsi_id command get WWID:$WWID for device $diskPath."
 
@@ -260,9 +261,11 @@ else
     ConfigFile="/etc/udev/rules.d/56-zfcp.rules"
 fi
 
+# add udev rules
 LinkItem="KERNEL==\"dm-*\", ENV{DM_UUID}==\"mpath-$WWID\", SYMLINK+=\"$target_filename\""
 echo -e $LinkItem >> $ConfigFile
 
+# reload udev rules
 echo "Begin to reload udev rules ..."
 udevadm control --reload
 udevadm trigger --sysname-match=dm-*
