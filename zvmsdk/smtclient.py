@@ -84,6 +84,7 @@ class SMTClient(object):
         self._NetDbOperator = database.NetworkDbOperator()
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
+        self._FCPDbOperator = database.FCPDbOperator()
 
     def _request(self, requestData):
         try:
@@ -2586,8 +2587,10 @@ class SMTClient(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._NetDbOperator.switch_delete_record_for_userid(userid)
 
-        # TODO: cleanup db record from volume table
-        pass
+        # cleanup db records from FCP table
+        action = "delete FCP records for user %s" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._FCPDbOperator.reset_fcps_of_assigner(userid)
 
         # cleanup persistent folder for guest
         self._pathutils.remove_guest_path(userid)
