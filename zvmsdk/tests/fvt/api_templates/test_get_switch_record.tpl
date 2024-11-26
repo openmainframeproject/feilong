@@ -4,5 +4,13 @@
     "modID": null,
     "rc": 0,
     "errmsg": "",
-    "output": {['TEST0045', '4000', 'VSTEST', 'da19c4b3-905b-4844-898e-e36813be796e', None]}
+    "output": [
+                {
+                  "userid": "TEST0045",
+                  "interface": "4000",
+                  "switch": "VSTEST",
+                  "port": "da19c4b3-905b-4844-898e-e36813be796e",
+                  "comments": ""
+                }
+              ]
 }
