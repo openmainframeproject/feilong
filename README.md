@@ -12,17 +12,17 @@ Feilong is a SDK for managing z/VM. It provides a set of APIs to operate z/VM in
 Just like os-win for the nova Hyper V driver and oslo.vmware for the nova VMware driver, Feilong is used by the nova z/VM driver and other z/VM related openstack drivers such as neutron and ceilometer.
 
 ## Quickstart
-Please refer to [Quick Start Guide](https://cloudlib4zvm.readthedocs.io/en/latest/quickstart.html).
+Please refer to [Quick Start Guide](https://feilong.readthedocs.io/en/latest/quickstart.html).
 
 ## Documentation
-Please refer to [Documentation of Feilong](https://cloudlib4zvm.readthedocs.io/en/latest/index.html).
+Please refer to [Documentation of Feilong](https://feilong.readthedocs.io/en/latest/).
 
 ## License
 This package is licensed under the [Apache 2.0 License](LICENSE)
 
 ## Bug reporting
 If you encounter any problem with this package, please open a bug against
-[cloud connector issue tracker](https://bugs.launchpad.net/python-zvm-sdk/+bug)
+[feilong issue tracker](https://github.com/openmainframeproject/feilong/issues)
 
 ## Governance
 Feilong is a project hosted at the [Open Mainframe Project](https://openmainframeproject.com), and is openly governed as defined in [GOVERNANCE.md](GOVERNANCE.md).
