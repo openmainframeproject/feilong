@@ -4,17 +4,17 @@ on:
     branches: [ master ]
 jobs:
   python:
-    name: python checks ${{ matrix.python }} ${{ matrix.os }}
+    name: python checks ${{ matrix.python-version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.7]
+        python-version: ['3.11']
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -24,4 +24,4 @@ jobs:
     - name: PEP8
       run: tox -e pep8
     - name: unit test
-      run: tox -e py37
+      run: tox -e py311
