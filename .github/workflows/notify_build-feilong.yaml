@@ -1,4 +1,4 @@
-name: Notify Feilong for Packaging
+name: Notify build-feilong for packaging
 
 on:
   push:
@@ -14,5 +14,5 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          repository: mfcloud/build-zvmsdk
+          repository: openmainframeproject/build-feilong
           event-type: obs-package
