@@ -496,11 +496,11 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
   * /opt/zthin/bin/linkdiskandbringonline
   * /opt/zthin/bin/offlinediskanddetach
 
-  A sample is given in the following block, copy the content to /etc/sudoers.d/zvmsdk:
+  A sample is given in the following block, copy the content to /etc/sudoers.d/sudoers-zvmsdk:
 
   .. code-block:: text
 
-      # cat /etc/sudoers.d/zvmsdk
+      # cat /etc/sudoers.d/sudoers-zvmsdk
       zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /opt/zthin/bin/smcli, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach
 
 * Setup home directory
