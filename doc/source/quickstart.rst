@@ -210,7 +210,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
     .. code-block:: text
 
-        # bash -c "echo 'deb http://download.opensuse.org/repositories/home:/Aazam:/feilong/xUbuntu_24.04/ /' > /etc/apt/sources.list.d/feilong.list"
+        # bash -c "echo 'deb http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/ /' > /etc/apt/sources.list.d/feilong.list"
         # wget http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/Release.key 
         # mv Release.key /etc/apt/trusted.gpg.d/feilong.asc
 
