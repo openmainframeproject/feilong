@@ -57,8 +57,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Feilong'
-copyright = u'2017 IBM'
-author = u'IBM z/VM cloud team'
+copyright = u'2017 IBM and 2025 Contributors to Feilong project'
+author = u'IBM z/VM cloud team and the contributors to Feilong project'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
