@@ -210,7 +210,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
     .. code-block:: text
 
-        # bash -c "echo 'deb http://download.opensuse.org/repositories/home:/Aazam:/feilong/xUbuntu_24.04/ /' > /etc/apt/sources.list.d/feilong.list"
+        # bash -c "echo 'deb http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/ /' > /etc/apt/sources.list.d/feilong.list"
         # wget http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/Release.key 
         # mv Release.key /etc/apt/trusted.gpg.d/feilong.asc
 
@@ -496,11 +496,11 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
   * /opt/zthin/bin/linkdiskandbringonline
   * /opt/zthin/bin/offlinediskanddetach
 
-  A sample is given in the following block, copy the content to /etc/sudoers.d/zvmsdk:
+  A sample is given in the following block, copy the content to /etc/sudoers.d/sudoers-zvmsdk:
 
   .. code-block:: text
 
-      # cat /etc/sudoers.d/zvmsdk
+      # cat /etc/sudoers.d/sudoers-zvmsdk
       zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /opt/zthin/bin/smcli, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach
 
 * Setup home directory
