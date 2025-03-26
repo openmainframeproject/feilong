@@ -320,7 +320,18 @@ class SDKAPI(object):
         # they want to get the disk pool info of CONF.zvm.disk_pool.
         # The default value of CONF.zvm.disk_pool is None, if it's configured,
         # the format must be "ECKD:eckdpool" or "FBA:fbapool".
-        disk_pool = disk_pool or CONF.zvm.disk_pool
+        disk_pool = disk_pool
+        if disk_pool is None:
+            disk_pool = CONF.zvm.disk_pool
+            if disk_pool is not None:
+                disk_pools = disk_pool.split(",")
+                if len(disk_pools) == 1:
+                    disk_pool = disk_pools[0]
+                else:
+                    errmsg = ("disk_pool input is required if multiple disk_pool"
+                              " is configured for sdkserver.")
+                    LOG.error(errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
         if disk_pool is None:
             # Support disk_pool not configured, return empty list
             return {}
@@ -409,22 +420,40 @@ class SDKAPI(object):
                 return {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
             else:
                 return {}
-        if ':' not in disk_pool:
-            msg = ('Invalid input parameter disk_pool, expect ":" in'
-                   'disk_pool, eg. ECKD:eckdpool')
-            LOG.error(msg)
-            raise exception.SDKInvalidInputFormat(msg)
-        diskpool_type = disk_pool.split(':')[0].upper()
-        diskpool_name = disk_pool.split(':')[1]
-        if diskpool_type not in ('ECKD', 'FBA'):
-            msg = ('Invalid disk pool type found in disk_pool, expect'
-                   'disk_pool like ECKD:eckdpool or FBA:fbapool')
-            LOG.error(msg)
-            raise exception.SDKInvalidInputFormat(msg)
+        disk_pools_total = 0
+        disk_pools_used = 0
+        disk_pools_available = 0
+        disk_pools = disk_pool.split(',')
+        disk_pool_info = {}
+        for disk_pool in disk_pools:
+            if ':' not in disk_pool:
+                msg = ('Invalid input parameter disk_pool, expect ":" in'
+                       'disk_pool, eg. ECKD:eckdpool')
+                LOG.error(msg)
+                raise exception.SDKInvalidInputFormat(msg)
+            diskpool_type = disk_pool.split(':')[0].upper()
+            diskpool_name = disk_pool.split(':')[1]
+            if diskpool_type not in ('ECKD', 'FBA'):
+                msg = ('Invalid disk pool type found in disk_pool, expect'
+                       'disk_pool like ECKD:eckdpool or FBA:fbapool')
+                LOG.error(msg)
+                raise exception.SDKInvalidInputFormat(msg)
 
-        action = "get information of disk pool: '%s' '%s'" % (disk_pool, details)
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._hostops.diskpool_get_info(diskpool_name, details)
+            action = "get information of disk pool: '%s' '%s'" % (disk_pool, details)
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                dp_info = self._hostops.diskpool_get_info(diskpool_name, details)
+                if not details:
+                    disk_pools_total = disk_pools_total + dp_info.get("disk_total", 0)
+                    disk_pools_used = disk_pools_used + dp_info.get("disk_used", 0)
+                    disk_pools_available = disk_pools_available + dp_info.get("disk_available", 0)
+                    disk_pool_info = {
+                        'disk_total': disk_pools_total,
+                        'disk_used': disk_pools_used,
+                        'disk_available': disk_pools_available
+                    }
+                else:
+                    disk_pool_info.update(dp_info)
+        return disk_pool_info
 
     def image_delete(self, image_name):
         """Delete image from image repository
@@ -939,7 +968,18 @@ class SDKAPI(object):
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
                 # check disk_pool
-                disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                disk_pool = disk.get('disk_pool')
+                if disk_pool is None:
+                    disk_pool = CONF.zvm.disk_pool
+                    if disk_pool is not None:
+                        disk_pools = disk_pool.split(",")
+                        if len(disk_pools) == 1:
+                            disk_pool = disk_pools[0]
+                        else:
+                            errmsg = ("disk_pool input is required if multiple disk_pool"
+                                      " is configured for sdkserver.")
+                            LOG.error(errmsg)
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
                 if not swap_only:
                     if disk_pool is None:
                         errmsg = ("Invalid disk_pool input, disk_pool should"
@@ -1132,7 +1172,19 @@ class SDKAPI(object):
                 LOG.error(errmsg)
                 raise exception.SDKInvalidInputFormat(msg=errmsg)
             # check disk_pool
-            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            disk_pool = disk.get('disk_pool')
+            if disk_pool is None:
+                disk_pool = CONF.zvm.disk_pool
+                if disk_pool is not None:
+                    disk_pools = disk_pool.split(",")
+                    if len(disk_pools) == 1:
+                        disk_pool = disk_pools[0]
+                    else:
+                        errmsg = ("disk_pool input is required if multiple disk_pool"
+                                  " is configured for sdkserver.")
+                        LOG.error(errmsg)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
             if disk_pool is None:
                 errmsg = ("Invalid disk_pool input, it should be configured"
                           " for sdkserver.")

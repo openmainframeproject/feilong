@@ -79,7 +79,6 @@ _SMAPIStatus = None
 
 
 def GetSMAPIStatus():
-    global _SMAPIStatus
     if _SMAPIStatus is None:
         _GetSMAPIStatus = SMAPIStatus()
     return _GetSMAPIStatus

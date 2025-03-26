@@ -39,6 +39,13 @@ class ZVMConfigTestCases(base.SDKTestCase):
         self.assertRaises(config.OptFormatError,
                           CONFOPTS._check_zvm_disk_pool, 'ECKD:')
 
+    def test_check_zvm_disk_pool_err3(self):
+        disk_pool = ("ECKD:fakepool,ECKD:fakepool1,ECKD:fakepool2,ECKD:fakepool3,ECKD:fakepool4,"
+                  "ECKD:fakepool5,ECKD:fakepool6,ECKD:fakepool7,ECKD:fakepool8,ECKD:fakepool9,"
+                  "ECKD:fakepool10")
+        self.assertRaises(config.LenFormatError,
+                          CONFOPTS._check_zvm_disk_pool, disk_pool)
+
     def test_check_user_default_max_memory(self):
         CONFOPTS._check_user_default_max_memory('30G')
         CONFOPTS._check_user_default_max_memory('1234M')
