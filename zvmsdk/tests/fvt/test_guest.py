@@ -38,7 +38,6 @@ TEST_USERID_LIST = []
 
 
 def generate_test_userid_list():
-    global TEST_USERID_LIST
     utils = test_utils.ZVMConnectorTestUtils()
     for i in range(0, len(TEST_IMAGE_LIST)):
         userid = utils.generate_test_userid()

@@ -82,14 +82,25 @@ class HOSTOps(object):
                 host_info['zvm_host'] = inv_info['zvm_host']
                 host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
 
-        disk_pool = CONF.zvm.disk_pool
-        if disk_pool is None:
-            dp_info = {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
-        else:
-            diskpool_name = disk_pool.split(':')[1]
-            dp_info = self.diskpool_get_info(diskpool_name)
-        host_info.update(dp_info)
-
+        disk_pool_list = CONF.zvm.disk_pool
+        disk_pools_total = 0
+        disk_pools_used = 0
+        disk_pools_available = 0
+        if disk_pool_list is not None:
+            disk_pools = disk_pool_list.split(',')
+            for disk_pool in disk_pools:
+                if disk_pool is not None:
+                    disk_pool_name = disk_pool.split(':')[1]
+                    dp_info = self.diskpool_get_info(disk_pool_name)
+                    disk_pools_total = disk_pools_total + dp_info.get("disk_total", 0)
+                    disk_pools_used = disk_pools_used + dp_info.get("disk_used", 0)
+                    disk_pools_available = disk_pools_available + dp_info.get("disk_available", 0)
+        disk_pool_info = {
+            'disk_total': disk_pools_total,
+            'disk_used': disk_pools_used,
+            'disk_available': disk_pools_available
+        }
+        host_info.update(disk_pool_info)
         return host_info
 
     def guest_list(self):

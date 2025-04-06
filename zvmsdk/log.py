@@ -77,7 +77,6 @@ class Logger():
 
 
 def setup_log():
-    global LOGGER
     LOGGER.setup(log_dir=config.CONF.logging.log_dir,
                  log_level=config.CONF.logging.log_level)
 

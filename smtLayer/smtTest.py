@@ -1370,8 +1370,6 @@ def runTest(smt, test):
     Output:
        Final test score - 0: failed, 1: passed,
     """
-    global args
-
     if test['request'][0:10] != 'SHELL_TEST':
         reqHandle = ReqHandle(cmdName=sys.argv[0], captureLogs=True)
         results = reqHandle.parseCmdline(test['request'])
@@ -1541,9 +1539,6 @@ def driveTestSet(smt, setId, setToTest):
     Output:
        Global values changed
     """
-    global args
-    global cnts
-
     print(" ")
     print("******************************************************************")
     print("******************************************************************")

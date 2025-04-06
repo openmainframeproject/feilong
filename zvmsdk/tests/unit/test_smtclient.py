@@ -1072,6 +1072,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           self._smtclient._add_mdisk, 'fakeuser', disk, vdev)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_add_mdisk_single_disk_pool(self, request):
+        userid = 'fakeuser'
+        vdev = '0101'
+        disk = {'size': '1g',
+                'format': 'ext3'}
+        base.set_conf('zvm', 'disk_pool', 'ECKD:eckdpool1')
+        rd = ('changevm fakeuser add3390 eckdpool1 0101 1g --mode MR '
+              '--filesystem ext3')
+        self._smtclient._add_mdisk(userid, disk, vdev),
+        request.assert_called_once_with(rd)
+
+    def test_add_mdisk_multiple_disk_pool(self):
+        userid = 'fakeuser'
+        vdev = '0101'
+        disk = {'size': '1g',
+                'format': 'ext3'}
+        base.set_conf('zvm', 'disk_pool', 'ECKD:eckdpool1,ECKD:eckdpool2')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient._add_mdisk, userid, disk, vdev)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_add_mdisk_format_none(self, request):
         userid = 'fakeuser'
         disk = {'size': '1g',
@@ -2966,8 +2987,26 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                       'disk_pool': 'ECKD:eckdpool1'},
                      {'size': '200000',
                       'format': 'ext3'}]
+        base.set_conf('zvm', 'disk_pool', None)
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.add_mdisks, 'fakeuser', disk_list)
+
+    @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
+    def test_add_mdisks_single_disk_pool(self, add_mdisk):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True}]
+        base.set_conf('zvm', 'disk_pool', "ECKD:fakepool")
+        self._smtclient.add_mdisks(userid, disk_list)
+        add_mdisk.assert_any_call(userid, disk_list[0], '0100')
+
+    def test_add_mdisks_multiple_disk_pool(self):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True}]
+        base.set_conf('zvm', 'disk_pool', "ECKD:fakepool,ECKD:fakepool1")
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient.add_mdisks, userid, disk_list)
 
     @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
     def test_add_mdisks_with_1dev(self, add_mdisk):

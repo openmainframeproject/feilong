@@ -777,10 +777,14 @@ class ConfigOpts(object):
                     self._check_user_default_max_cpu(v2['default'])
 
     def _check_zvm_disk_pool(self, value):
-        disks = value.split(':')
-        if (len(disks) != 2) or (disks[0].upper() not in ['FBA', 'ECKD']) or (
-            disks[1] == ''):
-            raise OptFormatError("zvm", "disk_pool", value)
+        disk_pools = value.split(',')
+        if (len(disk_pools) > 10):
+            raise LenFormatError("zvm", "disk_pool", disk_pools)
+        for disk_pool in disk_pools:
+            disks = disk_pool.split(':')
+            if (len(disks) != 2) or (disks[0].upper() not in ['FBA', 'ECKD']) or (
+                disks[1] == ''):
+                raise OptFormatError("zvm", "disk_pool", value)
 
     def _check_user_default_max_memory(self, value):
         suffix = value[-1].upper()
@@ -915,6 +919,16 @@ class OptFormatError(Exception):
         return "value %s for option  %s - %s is invalid" % (self.value,
                                                             self.grp_name,
                                                             self.opt_name)
+
+
+class LenFormatError(Exception):
+    def __init__(self, grp_name, opt_name, value):
+        self.grp_name = grp_name
+        self.opt_name = opt_name
+        self.value = value
+
+    def __str__(self):
+        return "value %s, not more than 10 disk pools can be added" % (self.value)
 
 
 CONFOPTS = ConfigOpts()
