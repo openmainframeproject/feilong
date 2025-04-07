@@ -85,6 +85,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)
 
+        # Test multiple disk_pool
+        base.set_conf('zvm', 'disk_pool', 'eckd:fakepool,eckd:fakepool1,fba:fakepool2')
+        host_info = self._hostops.get_info()
+        diskpool_get_info.assert_has_calls([mock.call('fakepool'),
+                                            mock.call('fakepool1'),
+                                            mock.call('fakepool2')])
+
         # Test disk_pool is None
         base.set_conf('zvm', 'disk_pool', None)
         host_info = self._hostops.get_info()

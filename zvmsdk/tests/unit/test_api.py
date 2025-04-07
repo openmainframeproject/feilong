@@ -327,6 +327,38 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_not_called()
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_multiple_disk_pool(self, create_vm):
+        disk_list = [{'size': '1g', 'is_boot_disk': True}]
+        vcpus = 1
+        memory = 1024
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'disk_pool', 'ECKD:fakepool,ECKD:fakepool1')
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create, self.userid, vcpus,
+                          memory, disk_list, user_profile,
+                          max_cpu, max_mem)
+        create_vm.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_single_disk_pool(self, create_vm):
+        disk_list = [{'size': '1g', 'is_boot_disk': True}]
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'disk_pool', 'ECKD:fakepool')
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                          disk_list, user_profile, max_cpu, max_mem,
+                                          '', '', '', [], {}, '', None, '', '', '',
+                                          '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_no_disk_pool_swap_only(self, create_vm):
         disk_list = [{'size': '1g', 'format': 'swap'}]
         vcpus = 1
@@ -506,7 +538,22 @@ class SDKAPITestCase(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self.api.guest_create_disks, self.userid, disk_list)
-        cds.ssert_not_called()
+        cds.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_disks")
+    def test_guest_add_disks_single_disk_pool(self, cds):
+        disk_list = [{'size': '1g', 'is_boot_disk': True}]
+        base.set_conf('zvm', 'disk_pool', "ECKD:fakepool")
+        self.api.guest_create_disks(self.userid, disk_list)
+        cds.assert_called_once_with(self.userid, disk_list)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_disks")
+    def test_guest_add_disks_multiple_disk_pool(self, cds):
+        disk_list = [{'size': '1g', 'is_boot_disk': True}]
+        base.set_conf('zvm', 'disk_pool', "ECKD:fakepool,ECKD:fakepool1")
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_disks, self.userid, disk_list)
+        cds.asssert_not_called()
 
     @mock.patch("zvmsdk.vmops.VMOps.create_disks")
     def test_guest_add_disks_nothing_to_do(self, cds):
@@ -768,6 +815,18 @@ class SDKAPITestCase(base.SDKTestCase):
             self.assertEqual(result, True)
             pass
 
+        # Test multiple disk pool
+        base.set_conf('zvm', 'disk_pool', "ECKD:fakepool,ECKD:fakepool1")
+        disk_pool = None
+        try:
+            self.api.host_get_diskpool_volumes(disk_pool)
+        except Exception as exc:
+            errmsg = ("disk_pool input is required if multiple disk_pool"
+                      " is configured for sdkserver.")
+            result = errmsg in six.text_type(exc)
+            self.assertEqual(result, True)
+            pass
+
     @mock.patch("zvmsdk.hostops.HOSTOps.get_volume_info")
     def test_host_get_volume_info(self, volume_info):
         volume = 'VOLUM1'
@@ -786,9 +845,103 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     def test_host_diskpool_get_info(self, dp_info):
+        # Disk Pool is None and details is False
         base.set_conf('zvm', 'disk_pool', None)
         results = self.api.host_diskpool_get_info()
         self.assertEqual(results['disk_total'], 0)
         self.assertEqual(results['disk_available'], 0)
         self.assertEqual(results['disk_used'], 0)
-        dp_info.ssert_not_called()
+        dp_info.assert_not_called()
+
+        # Disk Pool is fakepool and details is False
+        base.set_conf('zvm', 'disk_pool', 'eckd:fakepool')
+        dp_info.return_value = {
+            "disk_total": 406105,
+            "disk_used": 367263,
+            "disk_available": 38843,
+        }
+        results = self.api.host_diskpool_get_info()
+        self.assertEqual(results['disk_total'], 406105)
+        self.assertEqual(results['disk_available'], 38843)
+        self.assertEqual(results['disk_used'], 367263)
+        dp_info.assert_called_once_with("fakepool", False)
+
+        # Disk Pool is fakepool, fakepool2 and details is False
+        base.set_conf('zvm', 'disk_pool', 'eckd:fakepool1,eckd:fakepool2')
+        dp_info.side_effect = [{"disk_total": 50, "disk_used": 30, "disk_available": 20},
+                                {"disk_total": 40, "disk_used": 20, "disk_available": 20}]
+        results = self.api.host_diskpool_get_info()
+        self.assertEqual(results['disk_total'], 90)
+        self.assertEqual(results['disk_available'], 40)
+        self.assertEqual(results['disk_used'], 50)
+        dp_info.assert_has_calls([mock.call('fakepool1', False), mock.call('fakepool2', False)])
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
+    def test_host_diskpool_get_info_with_details(self, dp_info):
+        # Disk Pool is None and details is True
+        base.set_conf('zvm', 'disk_pool', None)
+        results = self.api.host_diskpool_get_info(details=True)
+        self.assertEqual(results, {})
+        dp_info.assert_not_called()
+
+        # Disk Pool is fakepool and details is True
+        base.set_conf('zvm', 'disk_pool', 'eckd:fakepool')
+        disk_pool_details = {
+            'fakepool': [
+                {'volume_name': 'vol1',
+                 'device_type': 'type1',
+                 'start_cylinder': '100',
+                 'free_size': '1456',
+                 'dasd_group': 'poolname',
+                 'region_name': 'vol1'
+                 }
+            ]
+        }
+        dp_info.return_value = disk_pool_details
+        results = self.api.host_diskpool_get_info(details=True)
+        self.assertEqual(results, disk_pool_details)
+        dp_info.assert_called_once_with("fakepool", True)
+
+        # Disk Pool is fakepool1, fakepool2 and details is True
+        base.set_conf('zvm', 'disk_pool', 'eckd:fakepool1,eckd:fakepool2')
+        disk_pool_details = {
+            'fakepool1': [
+                {
+                    'volume_name': 'vol1',
+                    'device_type': 'type1',
+                    'start_cylinder': '100',
+                    'free_size': '1456',
+                    'dasd_group': 'poolname',
+                    'region_name': 'vol1'
+                 },
+                 {
+                     'volume_name': 'vol2',
+                     'device_type': 'typ1',
+                     'start_cylinder': '3000',
+                     'free_size': '15291',
+                     'dasd_group': 'poolname',
+                     'region_name': 'vol2'
+                 }],
+             'fakepool2': [
+                 {
+                     'volume_name': 'vol1',
+                     'device_type': 'type1',
+                     'start_cylinder': '100',
+                     'free_size': '1456',
+                     'dasd_group': 'poolname',
+                     'region_name': 'vol1'
+                 },
+                 {
+                     'volume_name': 'vol2',
+                     'device_type': 'typ1',
+                     'start_cylinder': '3000',
+                     'free_size': '15291',
+                     'dasd_group': 'poolname',
+                     'region_name': 'vol2'
+                  }
+             ]
+         }
+        dp_info.return_value = disk_pool_details
+        results = self.api.host_diskpool_get_info(details=True)
+        self.assertEqual(results, disk_pool_details)
+        dp_info.assert_has_calls([mock.call('fakepool1', True), mock.call('fakepool2', True)])

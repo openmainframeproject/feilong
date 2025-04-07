@@ -23,6 +23,7 @@ or directly connected via Apache's wsgi module.
 The detailed setup steps for each type of web server is out of this document's range,
 you can refer to the specific guide of your chosen web server. This guide walks you through
 the deployment process, either:
+
  * with premade packages (which use the mod_wsgi method);
  * manually, with uwsgi;
  * or manually, with Apache's mod_wsgi.
@@ -35,7 +36,7 @@ Tested                 RHEL 9.4          SLES 15 SP6       Ubuntu 24.04
 ====================== ================= ================= =================
 Apache2 + uwsgi        ✓                                   ✓
 Apache2 + mod_wsgi     ✓                 ✓                 ✓
-nginx + uwsgi                                                   
+nginx + uwsgi                                              ✓    
 ====================== ================= ================= =================
 
 Installing from packages
@@ -45,23 +46,9 @@ Redhat Enterprise Linux
 -----------------------
 
 The following instructions are for RHEL 9.4.
-The RPM packages can be downloaded from https://download.opensuse.org/repositories/Virtualization:/feilong/AlmaLinux_9/
+The RPM packages can be downloaded from https://download.opensuse.org/repositories/Virtualization:/feilong/AlmaLinux_9/ .
 
-Before installing the necessary packages, it is important to set up the EPEL repository.
-**Important:** Ensure that the EPEL repository is enabled to access additional packages.
-
-.. code-block:: text
-
-    # dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
-
-
-Install the downloaded packages using the `yum` or `dnf` command
-
-..code-block:: text
-
-    # dnf install zthin-<version>-<release>.s390x.rpm
-    # dnf install zvmsdk-<version>-<release>.noarch.rpm
-
+Install the downloaded packages `zthin` and `zvmsdk` using the `yum` or `dnf` command
 If not already done, enable the automatic startup of the Apache server, and then start it:
 
 ..code-block:: text
@@ -78,22 +65,13 @@ Finally, you can verify if the installation works as intended by making a curl r
 By default, Feilong will listen on port 8080.
 To change that, you need to modify both Apache configuration and firewall rules.
 
-
 SUSE Linux Enterprise Server
 ----------------------------
 
-The following instructions are for SLES15 SP5.
+The following instructions are for SLES15 SP6.
 The RPM packages can be downloaded from https://download.opensuse.org/repositories/Virtualization:/feilong/SLE_15_SP5/
 
-
-
 Install the downloaded packages using the `zypper` command
-
-..code-block:: text
-
-    # zypper install zthin-<version>-<release>.s390x.rpm
-    # zypper install zvmsdk-<version>-<release>.noarch.rpm
-
 If not already done, enable the automatic startup of the Apache server, and then start it:
 
 ..code-block:: text
@@ -113,7 +91,25 @@ To change that, you need to modify both Apache configuration and firewall rules.
 Ubuntu
 ------
 
-(to be written).
+The following instructions are for Ubuntu 24.04.
+The RPM packages can be downloaded from https://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/
+
+Install the downloaded packages using the `apt` command
+If not already done, enable the automatic startup of the Apache server, and then start it:
+
+..code-block:: text
+
+    # systemctl enable apache2
+    # systemctl start  apache2
+
+Finally, you can verify if the installation works as intended by making a curl request from your workstation
+
+..code-block:: text
+
+    $ curl http://<your server ip address>:8080/
+
+By default, Feilong will listen on port 8080.
+To change that, you need to modify both Apache configuration and firewall rules.
 
 
 Apache2 + uwsgi

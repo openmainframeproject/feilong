@@ -25,8 +25,8 @@ system should be updated to the latest level with APARs listed in the
 2. Feilong has to be installed inside a Linux running on z/VM.
 Currently supported distros include the most current supported versions:
 
-  - SUSE Linux Enterprise Server 15.x
-  - Red Hat Enterprise Linux 9.x
+  - SUSE Linux Enterprise Server 15 SP6
+  - Red Hat Enterprise Linux 9.4
   - Ubuntu 24.04 LTS
 
   From now on, BYOL (Bring Your Own Linux) will be used to represent
@@ -150,7 +150,8 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
 2. Disable gpgkeycheck flag
 
-    Add the flag `gpgkeycheck=0`to the /etc/yum.repos.d/download.opensuse.org_repositories_Virtualization_feilong_AlmaLinux_9_.repo file.
+    Add the flag `gpgkeycheck=0` to the 
+    `/etc/yum.repos.d/download.opensuse.org_repositories_Virtualization_feilong_AlmaLinux_9_.repo` file.
 
 3. Disable SELinux
 
@@ -203,7 +204,36 @@ SSH onto the BYOL as root user, and then follow the following steps:
 DEB for Ubuntu
 -----------------
 
-(to be continued)
+SSH onto the BYOL as root user, and then follow the following steps:
+
+1. Add the feilong Ubuntu repository from OBS
+
+    .. code-block:: text
+
+        # bash -c "echo 'deb http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/ /' > /etc/apt/sources.list.d/feilong.list"
+        # wget http://download.opensuse.org/repositories/Virtualization:/feilong/xUbuntu_24.04/Release.key 
+        # mv Release.key /etc/apt/trusted.gpg.d/feilong.asc
+
+2. Update the apt repository list
+
+    .. code-block:: text
+
+        # apt update
+
+3. Disable SELinux
+
+    Update the config file `/etc/selinux/config` and set `SELINUX=disabled`. 
+    Make sure you reboot to ensure the changes are reflected and SELinux is disabled.
+    
+    We are considering writing SELinux policies for Feilong that would enable to not disable SELinux as a whole.
+
+5. Install the zthin and zvmsdk packages
+    
+    .. code-block:: text
+
+        # apt-get install zthin zvmsdk
+
+6. Skip to the SSH key authentication between consumer and BYOL section to continue.
 
 
 Manual Installation
@@ -224,30 +254,54 @@ SSH onto the BYOL as root user, and then follow the following steps:
    .. code-block:: text
 
        # git clone https://github.com/mfcloud/build-zvmsdk.git
+       # cd build-zvmsdk
 
 2. Trigger the build tool
 
    The build tool depends on the following commands: *rpmbuild*, *gcc*, so you should make
    sure these commands are usable on BYOL before running the following build.
 
+   For building on RHEL
+
    .. code-block:: text
 
-       # cd build-zvmsdk
        # /usr/bin/bash buildzthinrpm_rhel master
+    
+   For building on SLES
 
-   If this build finishes successfully, the result rpm will be generated
+   .. code-block:: text
+
+       # /usr/bin/bash buildzthinrpm_sles master
+
+   If this build finishes successfully, the resulting rpm package will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
    *zthin-version-snapdate.s390x.rpm* where *version* is the zthin version
    number and *date* is the build date.
 
-3. Install the rpm generated in last step
+   For building on Debian, make sure you have *dpkg-dev* available.
+
+   .. code-block:: text
+
+       # /usr/bin/bash buildzthindeb master
+    
+    If the build finishes successfully, the resulting deb package will be generated
+    in the /root/build-zvmsdk/feilong directory named in the format
+    *zthin-version.s390x.deb* where *version* is the zthin version
+    number and *date* is the build date.
+
+3. Install the rpm or deb generated in last step
 
    .. code-block:: text
 
        # rpm -ivh /root/zthin-build/RPMS/s390x/zthin-3.1.0-snap201710300123.s390x.rpm
 
-   Be sure to replace the *zthin-3.1.0-snap201710300123.s390x.rpm* with your own
-   rpm name.
+   Be sure to replace the *zthin-3.1.0-snap201710300123.s390x.rpm* with the correct version name.
+
+   .. code-block:: text
+
+       # dpkg -i /root/build-zvmsdk/feilong/zthin-3.1.2.s390x.deb
+
+   Be sure to replace the *zthin-3.1.2.s390x.deb* with the correct version name.
 
 4. Verify zthin can work
 
@@ -272,25 +326,63 @@ z/VM SDK install
 z/VM SDK is the upper transition layer of Feilong. It implements the
 supported SDK APIs by communicating with the zthin backend.
 
-   * Clone python-zvm-sdk project from github
+1. Install z/VM sdk
+    
+    Please ensure to update your setuptools to the latest version before doing this step,
+    the following installation step would rely on it to automatically install the depended
+    python packages.
 
-     .. code-block:: text
+    .. code-block:: text
+        
+        # git clone https://github.com/mfcloud/build-zvmsdk.git
+        # cd build-zvmsdk
 
-         # git clone https://github.com/openmainframeproject/python-zvm-sdk.git
+2. Trigger the build tool
 
-     (If this has been done in the "z/VM zthin install" step, this step can be
-     obsoleted.)
+   The build tool depends on the following commands: *rpmbuild*, *gcc*, so you should make
+   sure these commands are usable on BYOL before running the following build.
 
-   * Install z/VM sdk
+   For building on RHEL
 
-     Please ensure to update your setuptools to the latest version before doing this step,
-     the following installation step would rely on it to automatically install the depended
-     python packages.
+   .. code-block:: text
 
-     .. code-block:: text
+       # /usr/bin/bash buildzvmdsdkrpm_rhel master
+    
+   For building on SLES
 
-         # cd python-zvm-sdk
-         # python ./setup.py install
+   .. code-block:: text
+
+       # /usr/bin/bash buildzvmsdkrpm_sles master
+
+   If this build finishes successfully, the resulting rpm package will be generated
+   in the /root/zvmsdk-build/RPMS/s390x/ directory named in the format
+   *zvmsdk-version-snapdate.s390x.rpm* where *version* is the zvmsdk version
+   number and *date* is the build date.
+
+   For building on Debian, make sure you have *dpkg-dev* available.
+
+   .. code-block:: text
+
+       # /usr/bin/bash buildzvmsdkdeb master
+    
+   If the build finishes successfully, the resulting deb package will be generated
+   in the /root/build-zvmsdk/ directory named in the format
+   *zvmsdk-version.s390x.deb* where *version* is the zthin version
+   number and *date* is the build date.
+
+3. Install the rpm or deb generated in last step
+
+   .. code-block:: text
+
+       # rpm -ivh /root/zvmsdk/RPMS/s390x/zvmsdk-1.4.0-snap201710300123.s390x.rpm
+
+   Be sure to replace the *zvmsdk-1.4.0-snap201710300123.s390x.rpm* with the correct version name.
+
+   .. code-block:: text
+
+       # dpkg -i /root/build-zvmsdk/feilong/zvmsdk-1.4.0.s390x.deb
+
+   Be sure to replace the *zvmsdk-1.4.0.s390x.deb* with the correct version name.
 
 Upgrade z/VM SDK
 ----------------
@@ -299,80 +391,14 @@ If the z/VM SDK was installed via ``python setup.py install``, you can fetch and
 checkout to new version, then upgrade it by issue ``python setup.py install`` again.
 
 .. note::
-   If upgrade from version equal or lower than 1.6.2, to **1.6.3** or newer version,
+   If you upgrade from a version equal or lower than 1.6.2 to **1.6.3** or newer version,
    you have to add two new columns - **wwpn_npiv** and **wwpn_phy** into fcp table in
-   sdk_fcp database with type **`varchar(16)`**, which located at
+   sdk_fcp database with type **`varchar(16)`**, which is located at
    ``/var/lib/zvmsdk/databases/sdk_fcp.sqlite``, for example, by sqlite3 command:
    ``ALTER TABLE fcp ADD COLUMN wwpn_npiv varchar(16)`` and
    ``ALTER TABLE fcp ADD COLUMN wwpn_phy varchar(16)``
 
 .. _`ssh_key`:
-
-SSH key authentication between consumer and BYOL server
--------------------------------------------------------
-
-For image import/export function, BYOL's running user(eg zvmsdk) needs to
-authorized by the user of the consumer (eg nova-compute) if they are not in
-same host. For example, if you want to import/export image from/to nova
-compute server，please make ensure you can ssh nova@nova-compute-ip without
-password from zvmsdk user on BYOL server. Refer to the following steps to
-configure it:
-
-Logon to the nova-compute server and change the nova user’s right to be
-able to log in, and make sure port 22 is open.
-
-.. code-block:: text
-
-    ssh root@nova-compute-ip
-    usermod -s /bin/bash nova
-
-where:
-nova-compute-ip: is the IP address of the nova compute node.
-
-Change to nova user and inject the zvmsdk server's public key into it.
-
-.. code-block:: text
-
-    su - nova
-    scp zvmsdk@zvmsdk-ip:/var/lib/zvmsdk/.ssh/id_rsa.pub $HOME mkdir -p $HOME/.ssh
-    mv $HOME/id_rsa.pub $HOME/.ssh/authorized_keys
-
-where:
-zvmsdk: is running user of the BYOL server.
-zvmsdk-ip: is the IP address of the BYOL server
-Note: If the $HOME/.ssh/authorized_keys file already exists,
-you just need to append the BYOL’s public key to it.
-
-Ensure that the file mode under the $HOME/.ssh folder is 644.
-
-.. code-block:: text
-
-    chmod -R 644 $HOME/.ssh/*
-
-Issue the following command to determine if SELinux is enabled on the system.
-
-.. code-block:: text
-
-    getenforce
-
-If SELinux is enabled then set SELinux contexts on the nova home directory.
-
-.. code-block:: text
-
-    su -
-    chcon -R -t ssh_home_t nova_home
-
-where:
-nova_home：is the home directory for the nova user on the nova compute server.
-You can obtain nova_home by issuing: echo ~nova
-
-**NOTE:** If the host key of nova-compute server changed, please run
-the following command on zvmsdk server to clean the cached host key of
-nova-compute server from zvmsdk server's known_hosts file
-
-.. code-block:: text
-
-    ssh-keygen -R nova-compute-ip
 
 Configuration Sample
 ====================
@@ -470,11 +496,11 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
   * /opt/zthin/bin/linkdiskandbringonline
   * /opt/zthin/bin/offlinediskanddetach
 
-  A sample is given in the following block, copy the content to /etc/sudoers.d/zvmsdk:
+  A sample is given in the following block, copy the content to /etc/sudoers.d/sudoers-zvmsdk:
 
   .. code-block:: text
 
-      # cat /etc/sudoers.d/zvmsdk
+      # cat /etc/sudoers.d/sudoers-zvmsdk
       zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /opt/zthin/bin/smcli, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach
 
 * Setup home directory
@@ -508,6 +534,72 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
   options before the z/VM SDK daemon can be started.
+
+SSH key authentication between consumer and BYOL server
+=======================================================
+
+For image import/export function, BYOL's running user(eg zvmsdk) needs to be
+authorized by the user of the consumer (eg nova-compute) if they are not in
+same host. For example, if you want to import/export image from/to nova
+compute server，please make ensure you can ssh nova@nova-compute-ip without
+password from zvmsdk user on BYOL server. Refer to the following steps to
+configure it:
+
+Logon to the nova-compute server and change the nova user’s right to be
+able to log in, and make sure port 22 is open.
+
+.. code-block:: text
+
+    ssh root@nova-compute-ip
+    usermod -s /bin/bash nova
+
+where:
+nova-compute-ip: is the IP address of the nova compute node.
+
+Change to nova user and inject the zvmsdk server's public key into it.
+
+.. code-block:: text
+
+    su - nova
+    scp zvmsdk@zvmsdk-ip:/var/lib/zvmsdk/.ssh/id_rsa.pub $HOME mkdir -p $HOME/.ssh
+    mv $HOME/id_rsa.pub $HOME/.ssh/authorized_keys
+
+where:
+zvmsdk: is the user on the BYOL server that runs the z/VM SDK.
+zvmsdk-ip: is the IP address of the BYOL server
+Note: If the $HOME/.ssh/authorized_keys file already exists,
+you just need to append the BYOL’s public key to it.
+
+Ensure that the file mode under the $HOME/.ssh folder is 644.
+
+.. code-block:: text
+
+    chmod -R 644 $HOME/.ssh/*
+
+Issue the following command to determine if SELinux is enabled on the system.
+
+.. code-block:: text
+
+    getenforce
+
+If SELinux is enabled then set SELinux contexts on the nova home directory.
+
+.. code-block:: text
+
+    su -
+    chcon -R -t ssh_home_t nova_home
+
+where:
+nova_home：is the home directory for the nova user on the nova compute server.
+You can obtain nova_home by issuing: echo ~nova
+
+**NOTE:** If the host key of nova-compute server changed, please run
+the following command on zvmsdk server to clean the cached host key of
+nova-compute server from zvmsdk server's known_hosts file
+
+.. code-block:: text
+
+    ssh-keygen -R nova-compute-ip
 
 Start z/VM SDK Daemon
 =====================

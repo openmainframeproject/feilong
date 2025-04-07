@@ -51,7 +51,7 @@ _DBLOCK_FCP = threading.RLock()
 
 @contextlib.contextmanager
 def get_network_conn():
-    global _NETWORK_CONN, _DBLOCK_NETWORK
+    global _NETWORK_CONN
     if not _NETWORK_CONN:
         _NETWORK_CONN = _init_db_conn(const.DATABASE_NETWORK)
 
@@ -68,7 +68,7 @@ def get_network_conn():
 
 @contextlib.contextmanager
 def get_image_conn():
-    global _IMAGE_CONN, _DBLOCK_IMAGE
+    global _IMAGE_CONN
     if not _IMAGE_CONN:
         _IMAGE_CONN = _init_db_conn(const.DATABASE_IMAGE)
 
@@ -84,7 +84,7 @@ def get_image_conn():
 
 @contextlib.contextmanager
 def get_guest_conn():
-    global _GUEST_CONN, _DBLOCK_GUEST
+    global _GUEST_CONN
     if not _GUEST_CONN:
         _GUEST_CONN = _init_db_conn(const.DATABASE_GUEST)
 
@@ -101,7 +101,7 @@ def get_guest_conn():
 
 @contextlib.contextmanager
 def get_fcp_conn():
-    global _FCP_CONN, _DBLOCK_FCP
+    global _FCP_CONN
     if not _FCP_CONN:
         _FCP_CONN = _init_db_conn(const.DATABASE_FCP)
         # enable access columns by name

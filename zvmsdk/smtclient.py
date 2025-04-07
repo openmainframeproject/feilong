@@ -211,7 +211,18 @@ class SMTClient(object):
         # and not configured(the default vaule is None), report error
         # report error
         for idx, disk in enumerate(disk_list):
-            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            disk_pool = disk.get('disk_pool')
+            if disk_pool is None:
+                disk_pool = CONF.zvm.disk_pool
+                if disk_pool is not None:
+                    disk_pools = disk_pool.split(",")
+                    if len(disk_pools) == 1:
+                        disk_pool = disk_pools[0]
+                    else:
+                        errmsg = ("disk_pool input is required if multiple disk_pool"
+                                  " is configured for sdkserver.")
+                        LOG.error(errmsg)
+                        raise exception.SDKGuestOperationError(rs=2, msg=errmsg)
             disk['disk_pool'] = disk_pool
             if disk_pool is None:
                 msg = ('disk_pool not configured for sdkserver.')
@@ -856,7 +867,18 @@ class SMTClient(object):
         """
         size = disk['size']
         fmt = disk.get('format', 'ext4')
-        disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+        disk_pool = disk.get('disk_pool')
+        if disk_pool is None:
+            disk_pool = CONF.zvm.disk_pool
+            if disk_pool is not None:
+                disk_pools = disk_pool.split(",")
+                if len(disk_pools) == 1:
+                    disk_pool = disk_pools[0]
+                else:
+                    errmsg = ("disk_pool input is required if multiple disk_pool"
+                              " is configured for sdkserver.")
+                    LOG.error(errmsg)
+                    raise exception.SDKGuestOperationError(rs=2, msg=errmsg)
         # Check disk_pool, if it's None, report error
         if disk_pool is None:
             msg = ('disk_pool not configured for sdkserver.')

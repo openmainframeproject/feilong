@@ -215,19 +215,6 @@ def _run_guest(userid, image_path, os_version, profile,
 
 def run_guest():
     """ A sample for quick deploy and start a virtual guest."""
-    global GUEST_USERID
-    global GUEST_PROFILE
-    global GUEST_VCPUS
-    global GUEST_MEMORY
-    global GUEST_ROOT_DISK_SIZE
-    global DISK_POOL
-    global IMAGE_PATH
-    global IMAGE_OS_VERSION
-    global GUEST_IP_ADDR
-    global GATEWAY
-    global CIDR
-    global VSWITCH_NAME
-
     network_info = {'ip_addr': GUEST_IP_ADDR,
          'gateway_addr': GATEWAY,
          'cidr': CIDR,
