@@ -1,8 +1,8 @@
 /*
- * Copyright Contributors to the Feilong Project.
  * SPDX-License-Identifier: Apache-2.0
  *
- * * Copyright 2017 IBM Corporation
+ * Copyright 2025 Contributors to the Feilong Project.
+ * Copyright 2017 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,7 +249,7 @@ struct lnx_dist get_linux_version()
 
     bzero((char *) &linux_dist, sizeof(linux_dist));
     // Get linux name
-    strcpy(buffer, "echo `cat /etc/*release|egrep -i 'Red|Suse|Ubuntu'`");
+    strcpy(buffer, "echo `cat /etc/os-release | egrep -i 'Red|Suse|Ubuntu'`");
     if (NULL != (fp=popen(buffer, "r")))
     {
         bzero(buffer, BUFFER_SIZE);
@@ -262,10 +262,6 @@ struct lnx_dist get_linux_version()
             if (strstr(buffer, "RED") != NULL)
             {
                 strcpy(linux_dist.name, "Rhel");
-                // For rhel65, it doesn't have a "VERSION" line.
-                if (strstr(buffer, "6")!= NULL){
-                    linux_dist.version = 6;
-                }
             }
             else if (strstr(buffer, "SUSE") != NULL)
             {
@@ -279,7 +275,7 @@ struct lnx_dist get_linux_version()
         }
     }
     // Get linux version
-    strcpy(buffer, "echo `cat /etc/*release|grep ^VERSION`");
+    strcpy(buffer, "echo `cat /etc/os-release | grep ^VERSION`");
     if ((linux_dist.version == 0) && (NULL != (fp=popen(buffer, "r"))))
     {
         bzero(buffer, BUFFER_SIZE);
