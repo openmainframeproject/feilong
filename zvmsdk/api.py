@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -516,7 +517,7 @@ class SDKAPI(object):
         :param dict image_meta:
                a dictionary to describe the image info, such as md5sum,
                os_version. For example:
-               {'os_version': 'rhel6.2',
+               {'os_version': 'rhel8.9',
                'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
                'disk_type': 'DASD'}
         :param string remote_host:
