@@ -1,7 +1,7 @@
 #!/bin/bash
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
+#
+# Copyright 2025 Contributors to the Feilong Project.
 # Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -35,7 +35,7 @@ function getOsVersion {
   #   None
   # @Output:
   #   os - Variable set with OS and version information.  For example:
-  #        "rhel62" or "sles11sp2"
+  #        "rhel89" or "sles15sp6"
   # @Code:
   if [[ -e "/etc/os-release" ]]; then
     os=`cat /etc/os-release | grep "^ID=" | sed \
@@ -46,36 +46,8 @@ function getOsVersion {
       -e 's/"//g' \
       -e 's/\.//'`
     os=$os$version
-
-  #The /etc/SuSE-release file will be deprecated in sles11.4 and later release
-  elif [[ -e "/etc/SuSE-release" ]]; then
-    os='sles'
-    version=`cat /etc/SuSE-release | grep "VERSION =" | sed \
-      -e 's/^.*VERSION =//' \
-      -e 's/\s*$//' \
-      -e 's/.//' \
-      -e 's/[^0-9]*([0-9]+).*/$1/'`
-    os=$os$version
-
-    # Append service level
-    level=`echo "/etc/SuSE-release" | grep "LEVEL =" | sed \
-      -e 's/^.*LEVEL =//' \
-      -e 's/\s*$//' \
-      -e 's/.//' \
-      -e 's/[^0-9]*([0-9]+).*/$1/'`
-    os=$os'sp'$level
-
-  #The /etc/redhat-release file will be deprecated in rhel7 and later release
-  elif [[ -e "/etc/redhat-release" ]]; then
-    os='rhel'
-    version=`cat /etc/redhat-release | grep -i "Red Hat Enterprise Linux Server" | sed \
-      -e 's/[A-Za-z\/\.\(\)]//g' \
-      -e 's/^ *//g' \
-      -e 's/ *$//g' \
-      -e 's/\s.*$//'`
-    os=$os$version
   fi
-  #echo "Detect the running os version is: "$os
+  #echo "The running OS version is: "$os
   return
 }
 
@@ -111,15 +83,11 @@ function installIucvserver {
   cp iucvserv /usr/bin/iucvserv
 
   # Install the service file according to linux distro
-  if [[ $os == sles11* || $os == rhel6* ]]; then
-    COPY_SERVICE_CMD="cp iucvserd /etc/init.d/"
-    REGISTER_SERVICE_CMD="chkconfig --add iucvserd"
-    START_SERVICE_CMD="service iucvserd start"
-  elif [[ $os == ubuntu* || $os == rhel7* || $os == rhel8* || $os == rhel9* || $os == rhel10* ]]; then
+  if [[ $os == ubuntu* || $os == rhel* ]]; then
     COPY_SERVICE_CMD="cp iucvserd.service /lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"
-  elif [[ $os == sles12* || $os == sles15* ]]; then
+  elif [[ $os == sles* ]]; then
     COPY_SERVICE_CMD="cp iucvserd.service /usr/lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"

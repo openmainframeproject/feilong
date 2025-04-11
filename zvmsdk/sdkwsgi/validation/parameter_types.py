@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2022 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
@@ -444,34 +445,40 @@ disk_conf = {
     }
 }
 
-# For redhat linux, it will match rhelX, rhelX.Y, redhatX, redhatX.Y,
-# where X is 6 or 7, Y is 0 to 9, all case insensitive
-# For suse linux, it will match slesX, slesX.Y, slesXspY, suseX,
-# suseX.Y, suseXspY, where X is 11 or 12, Y is 0 to 9,
-# all case insensitive
-# For ubuntu linux, it will match ubuntuX, ubuntuX.Y, ubuntuX.Y.Z,
-# where X is 16, Y is 01 to 10, Z is 0 to 9, such as ubuntu16.04.3,
-# all case insensitive
-# For red hat cores linux, it will match rhcosX, rhcosX.Y and rhcosX.Y.Z,
-# where X is 4, such as rhcos4, rhcos4.6, rhcos4.6.8,
-# all case insensitive
+# For Red Hat Enterprise Linux,
+# it will match rhelX, rhelX.Y, redhatX, redhatX.Y,
+# where X is 7, 8 or 9, Y is 0 to 9, all case insensitive
+#
+# For SUSE Linux Enterprise Server,
+# it will match slesX, slesX.Y, slesXspY, suseX, suseX.Y, suseXspY,
+# where X is 12, 15 or 16, Y is 0 to 9, all case insensitive
+#
+# For Ubuntu Linux,
+# it will match ubuntuX, ubuntuX.Y, ubuntuX.Y.Z,
+# where X is 20, 22, or 24, Y is 01 to 12, Z is 0 to 9,
+# such as ubuntu16.04.3, all case insensitive
+#
+# For Red Hat CoreOS Linux,
+# it will match rhcosX, rhcosX.Y and rhcosX.Y.Z,
+# where X is 4,
+# such as rhcos4, rhcos4.12, rhcos4.7.23, all case insensitive
 os_version = {
 'oneOf': [
 {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(e|E)(l|L))(6|7|8|9|10){1}([.][0-9]{1,2})?$'},
+ '^((r|R)(h|H)(e|E)(l|L))(7|8|9|10){1}([.][0-9]{1,2})?$'},
 {'type': 'string',
  'pattern':
- '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(6|7){1}([.][0-9]{1,2})?$'},
+ '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(7|8|9){1}([.][0-9]{1,2})?$'},
 {'type': 'string',
  'pattern':
- '^((s|S)(l|L)(e|E)(s|S))(11|12|15){1}(([.]|((s|S)(p|P)))[0-9])?$'},
+ '^((s|S)(l|L)(e|E)(s|S))(12|15|16){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((s|S)(u|U)(s|S)(e|E))(11|12|15){1}(([.]|((s|S)(p|P)))[0-9])?$'},
+ '^((s|S)(u|U)(s|S)(e|E))(12|15|16){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16|20|22|24|25){1}([.][0-9]{2})?([.][0-9])?$'},
+ '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(20|22|24|25){1}([.][0-9]{2})?([.][0-9])?$'},
  {'type': 'string',
  'pattern':
  '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}([.][0-9]{1,2})?([.][0-9]{1,2})?$'}
@@ -487,7 +494,7 @@ image_meta = {
     'type': 'object',
     'properties': {
         'os_version': os_version,
-        # md5 shoule be 32 hexadeciaml numbers
+        # md5 should be 32 hexadecimal digits
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'},
         'disk_type': disk_type
     },

@@ -728,9 +728,9 @@ image_metadata:
   description: |
     The metadata that describes the image.
     The valid keys are os_version, md5sum, and disk_type.
-    os_version is a required key, the valid values are: ``rhel6.x``,
-    ``rhel7.x``, ``rhel8.x``, ``rhel9.x``, ``sles11.x``, ``sles12.x``,
-    ``sles15.x``, ``ubuntu16.x``, ``ubuntu20.x``, ``ubuntu22.x``, and ``rhcos4.x``,
+    os_version is a required key, the valid values are: ``rhel7.x``,
+    ``rhel8.x``, ``rhel9.x``, `sles12.x``, ``sles15.x``, ``sles16.x``,
+    ``ubuntu20.x``, ``ubuntu22.x``, ``ubuntu24.x``, and ``rhcos4.x``,
     all case insensitive. Please contact your cloud administrator
     if you don't know the image's OS version. disk_type is required if
     os_version is ``rhcos4``, the valid disk_type values are: DASD, SCSI.
@@ -1072,11 +1072,11 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    Operating system version. The valid values are: ``rhel6.x``,
-    ``rhel7.x``, ``rhel8.x``, ``rhel9.x``, ``sles11.x``, ``sles12.x``,
-    ``sles15.x``, ``ubuntu16.x``, ``ubuntu20.x``, ``ubuntu22.x``, and ``rhcos4.x``,
-    all case insensitive. Please contact your cloud administrator if you don't know
-    the guest's OS version.
+    Operating system version. The valid values are: ``rhel7.x``,
+    ``rhel8.x``, ``rhel9.x``, ``sles12.x``, ``sles15.x``, ``sles16.x``,
+    ``ubuntu20.x``, ``ubuntu22.x``, ``ubuntu24.x``, and ``rhcos4.x``,
+    all case insensitive. Please contact your cloud administrator
+    if you don't know the guest's OS version.
   in: body
   required: true
   type: string

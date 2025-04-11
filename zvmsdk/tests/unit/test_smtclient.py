@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2024 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -2747,12 +2747,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           image_add_record, rename):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
-        image_meta = {'os_version': 'rhel6.5',
+        image_meta = {'os_version': 'rhel8.9',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
-        final_image_fpath = '/home/netboot/rhel6.5/testimage/0100'
+        import_image_fpath = '/home/netboot/rhel8.9/testimage/testdummyimg'
+        final_image_fpath = '/home/netboot/rhel8.9/testimage/0100'
         image_query.return_value = []
-        create_path.return_value = '/home/netboot/rhel6.5/testimage'
+        create_path.return_value = '/home/netboot/rhel8.9/testimage'
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units.return_value = '3338:CYL'
         image_size.return_value = '512000'
@@ -2765,7 +2765,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(final_image_fpath)
         image_size.assert_called_once_with(final_image_fpath)
         image_add_record.assert_called_once_with(image_name,
-                                    'rhel6.5',
+                                    'rhel8.9',
                                     'c73ce117eef8077c3420bfc8f473ac2f',
                                     '3338:CYL',
                                     '512000',
@@ -2818,9 +2818,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                               get_image_path):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
-        image_meta = {'os_version': 'rhel6.5',
+        image_meta = {'os_version': 'rhel8.9',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        image_query.return_value = [(u'testimage', u'rhel6.5',
+        image_query.return_value = [(u'testimage', u'rhel8.9',
             u'c73ce117eef8077c3420bfc8f473ac2f',
             u'3338:CYL', u'5120000', u'netboot', None)]
         self.assertRaises(exception.SDKImageOperationError,
@@ -2836,7 +2836,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                          get_md5sum):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
-        image_meta = {'os_version': 'rhel6.5',
+        image_meta = {'os_version': 'rhel8.9',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
         image_query.return_value = []
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc000000'
@@ -2946,7 +2946,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         remote_host = 'nova@9.x.x.x'
         image_query.return_value = [
             {'imagename': u'testimage',
-             'imageosdistro': u'rhel6.5',
+             'imageosdistro': u'rhel8.9',
              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
              'disk_size_units': u'3338:CYL',
              'image_size_in_bytes': u'5120000',
@@ -2955,7 +2955,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         expect_return = {
             'image_name': u'testimage',
             'image_path': u'file:///path/to/exported/image',
-            'os_version': u'rhel6.5',
+            'os_version': u'rhel8.9',
             'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
             'comments': None
         }
@@ -3200,9 +3200,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     def test_guest_capture_get_os_version_rh7(self, execcmd):
         userid = 'fakeid'
-        execcmd.side_effect = [['/etc/os-release', '/etc/redhat-release',
-                                '/etc/system-release'],
-                               ['NAME="Red Hat Enterprise Linux Server"',
+        execcmd.side_effect = [['NAME="Red Hat Enterprise Linux Server"',
                                 'VERSION="7.0 (Maipo)"',
                                 'ID="rhel"',
                                 'ID_LIKE="fedora"',
@@ -3217,33 +3215,23 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(result, 'rhel7.0')
 
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    def test_guest_capture_get_os_version_rhel67_sles11(self, execcmd):
-        userid = 'fakeid'
-        execcmd.side_effect = [['/etc/redhat-release',
-                                '/etc/system-release'],
-                               ['Red Hat Enterprise Linux Server release 6.7'
-                                ' (Santiago)']]
-        result = self._smtclient.guest_get_os_version(userid)
-        self.assertEqual(result, 'rhel6.7')
-
-    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     def test_guest_capture_get_os_version_ubuntu(self, execcmd):
         userid = 'fakeid'
-        execcmd.side_effect = [['/etc/lsb-release',
-                                '/etc/os-release'],
-                               ['NAME="Ubuntu"',
-                                'VERSION="16.04 (Xenial Xerus)"',
+        execcmd.side_effect = [['PRETTY_NAME="Ubuntu 24.04.2 LTS"',
+                                'NAME="Ubuntu"',
+                                'VERSION_ID="24.04"',
+                                'VERSION="24.04.2 LTS (Noble Numbat)"',
+                                'VERSION_CODENAME=noble',
                                 'ID=ubuntu',
                                 'ID_LIKE=debian',
-                                'PRETTY_NAME="Ubuntu 16.04"',
-                                'VERSION_ID="16.04"',
-                                'HOME_URL="http://www.ubuntu.com/"',
-                                'SUPPORT_URL="http://help.ubuntu.com/"',
-                                'BUG_REPORT_URL="http://bugs.launchpad.net'
-                                '/ubuntu/"',
-                                'UBUNTU_CODENAME=xenial']]
+                                'HOME_URL="https://www.ubuntu.com/"',
+                                'SUPPORT_URL="https://help.ubuntu.com/"',
+                                'BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"',
+                                'PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"',
+                                'UBUNTU_CODENAME=noble',
+                                'LOGO=ubuntu-logo']]
         result = self._smtclient.guest_get_os_version(userid)
-        self.assertEqual(result, 'ubuntu16.04')
+        self.assertEqual(result, 'ubuntu24.04')
 
     @mock.patch.object(database.GuestDbOperator,
                        'get_guest_metadata_with_userid')

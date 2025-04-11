@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,9 +37,9 @@ LOG = log.LOG
 class LinuxDist(object):
     """Linux distribution base class
 
-    Due to we need to interact with linux dist and inject different files
-    according to the dist version. Currently RHEL6, RHEL7, SLES11, SLES12
-    , UBUNTU16 and RHCOS4 are supported.
+    We need to interact with linux distributions and inject different files
+    according to the distribution version. Currently, RHEL7, RHEL8, RHEL9, RHCOS4,
+    SLES12, SLES15, SLES16, UBUNTU20, UBUNTU22, and UBUNTU24 are supported.
     """
     def __init__(self):
         self._smtclient = smtclient.get_smtclient()
@@ -78,10 +79,11 @@ class LinuxDist(object):
                  clean_cmd: if first is true, it is used to erase the previous
                            network interface configuration, will be put into
                            invokeScript file
-                 net_enable_cmd: 'ip addr' and 'ip link' command to enable the
-                                 new network interface
+                 net_enable_cmd: commands to enable the new network interface
+                 vdev_list: list of vdevs of the new network interfaces
         """
         cfg_files = []
+        vdev_list = []
         cmd_strings = ''
         udev_cfg_str = ''
         dns_cfg_str = ''
@@ -100,6 +102,7 @@ class LinuxDist(object):
             # Mark 1st network in guest_networks as primary
             network['primary'] = True if idx == 0 else False
             base_vdev = network['nic_vdev'].lower()
+            vdev_list.append(base_vdev)
             file_name = self._get_device_filename(base_vdev)
             (cfg_str, cmd_str, dns_str,
                 route_str, net_cmd) = self._generate_network_configuration(
@@ -126,7 +129,7 @@ class LinuxDist(object):
                                              file_name_route,
                                              route_cfg_str,
                                              udev_cfg_str, first)
-        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
+        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd, vdev_list
 
     def _generate_network_configuration(self, network, vdev, active=False):
         method = 'static'
@@ -247,7 +250,7 @@ class LinuxDist(object):
 
     @abc.abstractmethod
     def _enable_network_interface(self, device, ip, broadcast):
-        """construct a router string."""
+        """construct a command to bring up an interface."""
         pass
 
     @abc.abstractmethod
@@ -266,8 +269,8 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def get_znetconfig_contents(self):
-        """construct znetconfig file will be called during first boot."""
+    def get_znetconfig_contents(self, vdev_list):
+        """construct znetconfig file that will be called during first boot."""
         pass
 
     @abc.abstractmethod
@@ -398,81 +401,8 @@ class rhel(LinuxDist):
         return ''
 
 
-class rhel6(rhel):
-    def get_znetconfig_contents(self):
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'service network restart',
-                          'cio_ignore -u'))
-
-    def _get_device_filename(self, vdev):
-        return 'ifcfg-eth' + str(vdev).zfill(4)
-
-    def _get_all_device_filename(self):
-        return 'ifcfg-eth*'
-
-    def _get_device_name(self, vdev):
-        return 'eth' + str(vdev).zfill(4)
-
-    def get_scp_string(self, root, fcp, wwpn, lun):
-        return ("=root=%(root)s selinux=0 "
-                "rd_ZFCP=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s") % {
-                'root': root, 'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-
-    def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
-        return ['#!/bin/bash\n',
-                ('echo -e "[defaultboot]\\n'
-                 'timeout=5\\n'
-                 'default=boot-from-volume\\n'
-                 'target=/boot/\\n'
-                 '[boot-from-volume]\\n'
-                 'image=%(image)s\\n'
-                 'ramdisk=%(ramdisk)s\\n'
-                 'parameters=\\"root=%(root)s '
-                 'rd_ZFCP=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s selinux=0\\""'
-                 '>/etc/zipl_volume.conf\n'
-                 'zipl -c /etc/zipl_volume.conf')
-                % {'image': image, 'ramdisk': ramdisk, 'root': root,
-                   'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
-
-    def create_active_net_interf_cmd(self):
-        return 'service zvmguestconfigure start'
-
-    def _get_clean_command(self):
-        files = os.path.join(self._get_network_file_path(),
-                             self._get_all_device_filename())
-        return '\nrm -f %s\n' % files
-
-    def generate_set_hostname_script(self, hostname):
-        lines = ['#!/bin/bash\n',
-                 'sed -i "s/^HOSTNAME=.*/HOSTNAME=%s/" '
-                    '/etc/sysconfig/network\n' % hostname,
-                 '/bin/hostname %s\n' % hostname]
-        return lines
-
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
-                                             target_lun, multipath,
-                                             mount_point):
-        "generate punch script for attachment configuration"
-        func_name = 'get_volume_attach_configuration_cmds'
-        raise exception.SDKFunctionNotImplementError(func=func_name,
-                                                     modID='volume')
-
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
-                                             target_lun, multipath,
-                                             mount_point, connections):
-        "generate punch script for detachment configuration"
-        func_name = 'get_volume_detach_configuration_cmds'
-        raise exception.SDKFunctionNotImplementError(func=func_name,
-                                                     modID='volume')
-
-
 class rhel7(rhel):
-    def get_znetconfig_contents(self):
+    def get_znetconfig_contents(self, vdev_list):
         return '\n'.join(('cio_ignore -R',
                           'znetconf -R -n',
                           'udevadm trigger',
@@ -564,8 +494,6 @@ class rhel7(rhel):
 
 
 class rhel8(rhel7):
-    """docstring for rhel8"""
-
     def _get_device_filename(self, vdev):
         return 'ifcfg-enc' + str(vdev).zfill(4)
 
@@ -613,18 +541,52 @@ class rhel8(rhel7):
         return content
 
 
-class rhel9(rhel8):
-    pass
+class rhel9(rhel):
+    def _get_clean_command(self):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def _get_device_filename(self, vdev):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def create_active_net_interf_cmd(self):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def get_scp_string(self, root, fcp, wwpn, lun):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def get_znetconfig_contents(self, vdev_list):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
+
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        # TODO(eric): ADD MODERN DISTRIBUTIONS
+        pass
 
 
-class rhel10(rhel8):
+class rhel10(rhel9):
+    # TODO(eric): ADD MODERN DISTRIBUTIONS
     pass
 
 
 class rhcos(LinuxDist):
     def create_coreos_parameter(self, network_info, userid=''):
         try:
-            # TODO: fix the limitation that assuming the first NIC configured
             vif = network_info[0]
             ip_addr = vif['ip_addr']
             gateway_addr = vif['gateway_addr']
@@ -753,7 +715,7 @@ class rhcos(LinuxDist):
     def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
         pass
 
-    def get_znetconfig_contents(self):
+    def get_znetconfig_contents(self, vdev_list):
         pass
 
 
@@ -762,32 +724,6 @@ class rhcos4(rhcos):
 
 
 class sles(LinuxDist):
-    def _get_network_file_path(self):
-        return '/etc/sysconfig/network/'
-
-    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4, mtu):
-        cfg_str = "BOOTPROTO=\'%s\'\n" % method
-        if method == 'static':
-            cfg_str += "IPADDR=\'%s\'\n" % ip_v4
-            cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
-            cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
-        cfg_str += "STARTMODE=\'onboot\'\n"
-        cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
-                    address_read)
-        cfg_str += "MTU=\'%s\'\n" % mtu
-        if (dns_v4 is not None) and (len(dns_v4) > 0):
-            self.dns_v4 = dns_v4
-        else:
-            self.dns_v4 = None
-        return cfg_str
-
-    def _get_route_str(self, method, gateway_v4):
-        route_str = ''
-        if method == 'static':
-            route_str = 'default %s - -\n' % gateway_v4
-        return route_str
-
     def _get_cmd_str(self, address_read, address_write, address_data):
         cmd_str = 'qeth_configure -l 0.0.%s ' % address_read.lower()
         cmd_str += '0.0.%(write)s 0.0.%(data)s 1\n' % {'write':
@@ -800,12 +736,6 @@ class sles(LinuxDist):
 
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
-
-    def _get_device_filename(self, vdev):
-        return 'ifcfg-eth' + str(vdev).zfill(4)
-
-    def _get_all_device_filename(self):
-        return 'ifcfg-eth*'
 
     def _get_device_name(self, vdev):
         return 'eth' + str(vdev).zfill(4)
@@ -894,7 +824,7 @@ class sles(LinuxDist):
         return rules_str
 
     def get_scp_string(self, root, fcp, wwpn, lun):
-        return ("=root=%(root)s "
+        return ("=root=%(root)s zfcp.allow_lun_scan=0 "
                 "zfcp.device=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s") % {
                 'root': root, 'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
 
@@ -907,15 +837,25 @@ class sles(LinuxDist):
                  'target = /boot/zipl\\n'
                  'ramdisk=%(ramdisk)s\\n'
                  'parameters=\\"root=%(root)s '
-                 'zfcp.device=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s\\""'
+                 'zfcp.device=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s '
+                 'zfcp.allow_lun_scan=0\\""'
                  '>/etc/zipl_volume.conf\n'
                  'mkinitrd\n'
                  'zipl -c /etc/zipl_volume.conf')
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
 
+    def create_active_net_interf_cmd(self):
+        return 'systemctl start zvmguestconfigure.service'
+
     def _enable_network_interface(self, device, ip, broadcast):
-        return ''
+        if len(broadcast) > 0:
+            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
+                                                    broadcast, device)
+        else:
+            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
+        activeIP_str += 'ip link set dev %s up\n' % device
+        return activeIP_str
 
     def _get_clean_command(self):
         files = os.path.join(self._get_network_file_path(),
@@ -972,24 +912,40 @@ class sles(LinuxDist):
         return content
 
 
-class sles11(sles):
-    def get_znetconfig_contents(self):
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'sleep 2',
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'service network restart',
-                          'cio_ignore -u'))
-
-    def create_active_net_interf_cmd(self):
-        return 'service zvmguestconfigure start'
-
-
 class sles12(sles):
-    def get_znetconfig_contents(self):
+    def _get_network_file_path(self):
+        return '/etc/sysconfig/network/'
+
+    def _get_device_filename(self, vdev):
+        return 'ifcfg-eth' + str(vdev).zfill(4)
+
+    def _get_all_device_filename(self):
+        return 'ifcfg-eth*'
+
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
+        cfg_str = "BOOTPROTO=\'%s\'\n" % method
+        if method == 'static':
+            cfg_str += "IPADDR=\'%s\'\n" % ip_v4
+            cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
+            cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
+        cfg_str += "STARTMODE=\'onboot\'\n"
+        cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
+                    address_read)
+        cfg_str += "MTU=\'%s\'\n" % mtu
+        if (dns_v4 is not None) and (len(dns_v4) > 0):
+            self.dns_v4 = dns_v4
+        else:
+            self.dns_v4 = None
+        return cfg_str
+
+    def _get_route_str(self, method, gateway_v4):
+        route_str = ''
+        if method == 'static':
+            route_str = 'default %s - -\n' % gateway_v4
+        return route_str
+
+    def get_znetconfig_contents(self, vdev_list):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
         return '\n'.join(('cio_ignore -R',
                           'znetconf -R -n',
@@ -1002,44 +958,9 @@ class sles12(sles):
                           'cio_ignore -u',
                           'wicked ifreload all'))
 
-    def get_scp_string(self, root, fcp, wwpn, lun):
-        return ("=root=%(root)s zfcp.allow_lun_scan=0 "
-                "zfcp.device=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s") % {
-                'root': root, 'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-
-    def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
-        return ['#!/bin/bash\n',
-                ('echo -e "[defaultboot]\\n'
-                 'default=boot-from-volume\\n'
-                 '[boot-from-volume]\\n'
-                 'image=%(image)s\\n'
-                 'target = /boot/zipl\\n'
-                 'ramdisk=%(ramdisk)s\\n'
-                 'parameters=\\"root=%(root)s '
-                 'zfcp.device=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s '
-                 'zfcp.allow_lun_scan=0\\""'
-                 '>/etc/zipl_volume.conf\n'
-                 'mkinitrd\n'
-                 'zipl -c /etc/zipl_volume.conf')
-                % {'image': image, 'ramdisk': ramdisk, 'root': root,
-                   'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
-
-    def create_active_net_interf_cmd(self):
-        return 'systemctl start zvmguestconfigure.service'
-
-    def _enable_network_interface(self, device, ip, broadcast):
-        if len(broadcast) > 0:
-            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
-                                                    broadcast, device)
-        else:
-            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
-        activeIP_str += 'ip link set dev %s up\n' % device
-        return activeIP_str
-
 
 class sles15(sles12):
-    """docstring for sles15"""
-    def get_znetconfig_contents(self):
+    def get_znetconfig_contents(self, vdev_list):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
         replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
         replace_file = '/etc/sysconfig/network/config'
@@ -1077,6 +998,53 @@ class sles15(sles12):
                               'wicked ifreload all'))
 
 
+class sles16(sles):
+    def _get_network_file_path(self):
+        return '/etc/NetworkManager/system-connections/'
+
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
+        # TODO(eric): SUPPORT FIXED ADDRESS AND OTHER PARAMETERS
+        return '\n'.join(('[connection]',
+                          'id=' + device,
+                          'type=ethernet',
+                          'interface-name=' + device,
+                          'autoconnect=true',
+                          '',
+                          '[ipv4]',
+                          'method=auto',
+                          '',
+                          '[ipv6]',
+                          'method=auto',
+                          ''))
+
+    def _get_route_str(self, method, gateway_v4):
+        return ''
+
+    def _get_device_filename(self, vdev):
+        return 'eth' + str(vdev).zfill(4) + '.nmconnection'
+
+    def _get_all_device_filename(self):
+        return 'eth*.nmconnection'
+
+    def get_znetconfig_contents(self, vdev_list):
+        znetcfg = '\n'.join(('cio_ignore -R',
+                             'znetconf -R -n',
+                             'sleep 2',
+                             'udevadm trigger',
+                             'udevadm settle',
+                             'sleep 2',
+                             'znetconf -A',
+                             'cio_ignore -u',
+                             ''))
+        for vdev in vdev_list:
+            device = self._get_device_name(vdev)
+            znetcfg += '\n'.join(('chmod go-r /etc/NetworkManager/system-connections/' + device + '.nmconnection',
+                                  'nmcli connection reload',
+                                  'nmcli connection up ' + device))
+        return znetcfg
+
+
 class ubuntu(LinuxDist):
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
@@ -1106,38 +1074,70 @@ class ubuntu(LinuxDist):
                'nic_vdev': '1004',
                'mac_addr': '02:00:00:ab:cd:ef'}
                ]
+        :returns cfg_files: the network interface configuration file name
+                            and file content
+                 cmd_strings: shell command, helps to enable the network
+                              interface, will be put into znetconfig file
+                 clean_cmd: if first is true, it is used to erase the previous
+                           network interface configuration, will be put into
+                           invokeScript file
+                 net_enable_cmd: commands to enable the new network interface
+                 vdev_list: list of vdevs of the new network interfaces
         """
         cfg_files = []
+        vdev_list = []
         cmd_strings = ''
         network_config_file_name = self._get_network_file()
-        network_cfg_str = 'auto lo\n'
-        network_cfg_str += 'iface lo inet loopback\n'
         net_enable_cmd = ''
         if first:
             clean_cmd = self._get_clean_command()
         else:
             clean_cmd = ''
-            network_cfg_str = ''
 
+        device_cfg = {}
         for idx, network in enumerate(guest_networks):
             # Mark 1st network in guest_networks as primary
             network['primary'] = True if idx == 0 else False
+
             base_vdev = network['nic_vdev'].lower()
-            network_hw_config_fname = self._get_device_filename(base_vdev)
-            network_hw_config_str = self._get_network_hw_config_str(base_vdev)
-            cfg_files.append((network_hw_config_fname, network_hw_config_str))
-            (cfg_str, dns_str) = self._generate_network_configuration(network,
+            vdev_list.append(base_vdev)
+            device = self._get_device_name(base_vdev)
+
+            device_cfg_str = self._generate_network_configuration(network,
                                     base_vdev)
-            LOG.debug('Network configure file content is: %s', cfg_str)
-            network_cfg_str += cfg_str
-            if len(dns_str) > 0:
-                network_cfg_str += dns_str
+            device_cfg[device] = device_cfg_str
+        # For Ubuntu20 and Ubuntu 22, when there are multi NICs,
+        # there is still 1 network config yml file, all NICs are
+        # written in this file, example is:
+        #  network:
+        #   ethernets:
+        #    enc1000:
+        #     addresses:
+        #     - 172.26.54.179/17
+        #     gateway4: 172.26.0.1
+        #     mtu: '1500'
+        #    enc1003:
+        #     addresses:
+        #     - 192.168.6.5/24
+        #     gateway4: '192.168.6.1'
+        #     mtu: '1500'
+        #  version: 2
+        cfg_str = {'network':
+                    {'version': 2,
+                     'ethernets': device_cfg
+                    }
+                  }
+        LOG.debug('Network configure file content is: %s', cfg_str)
+
         if first:
-            cfg_files.append((network_config_file_name, network_cfg_str))
+            cfg_files.append((network_config_file_name, cfg_str))
         else:
-            cmd_strings = ('echo "%s" >>%s\n' % (network_cfg_str,
-                                                 network_config_file_name))
-        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
+            # TODO(haolp): create interface with cmd_strings after VM deployed
+            raise Exception('Ubuntu is not supported to create interface'
+                            'after VM deployed.')
+
+        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd, vdev_list
+
 
     def get_network_configuration_files(self, vdev):
         vdev = vdev.lower()
@@ -1168,7 +1168,7 @@ class ubuntu(LinuxDist):
         return cmd
 
     def _get_network_file(self):
-        return '/etc/network/interfaces'
+        return '/etc/netplan/00-zvmguestconfigure-config.yaml'
 
     def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, mtu):
@@ -1183,44 +1183,45 @@ class ubuntu(LinuxDist):
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
-        method = 'static'
         ip_v4 = dns_str = gateway_v4 = ''
-        netmask_v4 = broadcast_v4 = ''
-        if (('method' in network.keys()) and
-            (network['method'] is not None)):
-            method = network['method']
-
+        cidr = mtu = ''
+        dns_v4 = []
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
 
         if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None) and network['primary']):
+            (network['gateway_addr'] is not None)):
             gateway_v4 = network['gateway_addr']
 
         if (('dns_addr' in network.keys()) and
             (network['dns_addr'] is not None) and
             (len(network['dns_addr']) > 0)):
             for dns in network['dns_addr']:
-                dns_str += 'dns-nameservers ' + dns + '\n'
+                dns_str += 'nameserver ' + dns + '\n'
+                dns_v4.append(dns)
 
         if (('cidr' in network.keys()) and
             (network['cidr'] is not None)):
-            ip_cidr = network['cidr']
-            netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
-            broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
-            if broadcast_v4 == 'None':
-                broadcast_v4 = ''
+            cidr = network['cidr'].split('/')[1]
 
         if (('mtu' in network.keys()) and
             (network['mtu'] is not None)):
             mtu = str(network['mtu'])
 
-        device = self._get_device_name(vdev)
-        cfg_str = self._get_cfg_str(device, method, broadcast_v4, gateway_v4,
-                                    ip_v4, netmask_v4, mtu)
-
-        return cfg_str, dns_str
+        if dns_v4:
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                       'gateway4': gateway_v4,
+                       'mtu': mtu,
+                       'nameservers':
+                           {'addresses': dns_v4}
+                       }
+        else:
+            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
+                        'gateway4': gateway_v4,
+                        'mtu': mtu
+                       }
+        return cfg_str
 
     def _get_route_str(self, method, gateway_v4):
         return ''
@@ -1238,7 +1239,7 @@ class ubuntu(LinuxDist):
         return ''
 
     def _get_device_filename(self, device_num):
-        return '/etc/sysconfig/hardware/config-ccw-0.0.' + str(device_num)
+        return '/etc/netplan/' + str(device_num) + '.yaml'
 
     def _get_network_hw_config_str(self, base_vdev):
         ccwgroup_chans_str = ' '.join((
@@ -1249,9 +1250,9 @@ class ubuntu(LinuxDist):
                           'QETH_OPTIONS=layer2'))
 
     def _get_network_file_path(self):
-        pass
+        return '/etc/netplan/'
 
-    def get_znetconfig_contents(self):
+    def get_znetconfig_contents(self, vdev_list):
         return '\n'.join(('cio_ignore -R',
                           'znetconf -R -n',
                           'sleep 2',
@@ -1259,7 +1260,7 @@ class ubuntu(LinuxDist):
                           'udevadm settle',
                           'sleep 2',
                           'znetconf -A',
-                          '/etc/init.d/networking restart',
+                          'netplan apply',
                           'cio_ignore -u'))
 
     def _get_udev_configuration(self, device, dev_channel):
@@ -1366,152 +1367,8 @@ class ubuntu(LinuxDist):
         return content
 
 
-class ubuntu16(ubuntu):
-    pass
-
-
 class ubuntu20(ubuntu):
-    def _get_device_filename(self, device_num):
-        return '/etc/netplan/' + str(device_num) + '.yaml'
-
-    def _get_network_file(self):
-        return '/etc/netplan/00-zvmguestconfigure-config.yaml'
-
-    def _get_network_file_path(self):
-        return '/etc/netplan/'
-
-    def get_znetconfig_contents(self):
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'sleep 2',
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'netplan apply',
-                          'cio_ignore -u'))
-
-    def create_network_configuration_files(self, file_path, guest_networks,
-                                           first, active=False):
-        """Generate network configuration files for guest VM
-        :param list guest_networks:  a list of network info for the guest.
-               It has one dictionary that contain some of the below keys for
-               each network, the format is:
-               {'method': (str) NIC initialization method,
-               'ip_addr': (str) IP address,
-               'dns_addr': (list) DNS addresses,
-               'gateway_addr': (str) gateway address,
-               'cidr': (str) CIDR format
-               'nic_vdev': (str) VDEV of the NIC}
-
-               Example for guest_networks:
-               [{'ip_addr': '192.168.95.10',
-               'dns_addr': ['9.0.2.1', '9.0.3.1'],
-               'gateway_addr': '192.168.95.1',
-               'cidr': "192.168.95.0/24",
-               'nic_vdev': '1000'},
-               {'ip_addr': '192.168.96.10',
-               'dns_addr': ['9.0.2.1', '9.0.3.1'],
-               'gateway_addr': '192.168.96.1',
-               'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003'},
-               {'method': 'dhcp'
-               'nic_vdev': '1004',
-               'mac_addr': '02:00:00:ab:cd:ef'}
-               ]
-        """
-        cfg_files = []
-        cmd_strings = ''
-        network_config_file_name = self._get_network_file()
-        net_enable_cmd = ''
-        if first:
-            clean_cmd = self._get_clean_command()
-        else:
-            clean_cmd = ''
-
-        device_cfg = {}
-        for idx, network in enumerate(guest_networks):
-            # Mark 1st network in guest_networks as primary
-            network['primary'] = True if idx == 0 else False
-
-            base_vdev = network['nic_vdev'].lower()
-            device = self._get_device_name(base_vdev)
-
-            device_cfg_str = self._generate_network_configuration(network,
-                                    base_vdev)
-            device_cfg[device] = device_cfg_str
-        # For Ubuntu20 and Ubuntu 22, when there are multi NICs,
-        # there is still 1 network config yml file, all NICs are
-        # written in this file, example is:
-        #  network:
-        #   ethernets:
-        #    enc1000:
-        #     addresses:
-        #     - 172.26.54.179/17
-        #     gateway4: 172.26.0.1
-        #     mtu: '1500'
-        #    enc1003:
-        #     addresses:
-        #     - 192.168.6.5/24
-        #     gateway4: '192.168.6.1'
-        #     mtu: '1500'
-        #  version: 2
-        cfg_str = {'network':
-                    {'version': 2,
-                     'ethernets': device_cfg
-                    }
-                  }
-        LOG.debug('Network configure file content is: %s', cfg_str)
-
-        if first:
-            cfg_files.append((network_config_file_name, cfg_str))
-        else:
-            # TODO: create interface with cmd_strings after VM deployed
-            raise Exception('Ubuntu20 is not supported to create interface'
-                            'after VM deployed.')
-
-        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
-
-    def _generate_network_configuration(self, network, vdev):
-        ip_v4 = dns_str = gateway_v4 = ''
-        cidr = mtu = ''
-        dns_v4 = []
-        if (('ip_addr' in network.keys()) and
-            (network['ip_addr'] is not None)):
-            ip_v4 = network['ip_addr']
-
-        if (('gateway_addr' in network.keys()) and
-            (network['gateway_addr'] is not None)):
-            gateway_v4 = network['gateway_addr']
-
-        if (('dns_addr' in network.keys()) and
-            (network['dns_addr'] is not None) and
-            (len(network['dns_addr']) > 0)):
-            for dns in network['dns_addr']:
-                dns_str += 'nameserver ' + dns + '\n'
-                dns_v4.append(dns)
-
-        if (('cidr' in network.keys()) and
-            (network['cidr'] is not None)):
-            cidr = network['cidr'].split('/')[1]
-
-        if (('mtu' in network.keys()) and
-            (network['mtu'] is not None)):
-            mtu = str(network['mtu'])
-
-        if dns_v4:
-            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
-                       'gateway4': gateway_v4,
-                       'mtu': mtu,
-                       'nameservers':
-                           {'addresses': dns_v4}
-                       }
-        else:
-            cfg_str = {'addresses': [ip_v4 + '/' + cidr],
-                        'gateway4': gateway_v4,
-                        'mtu': mtu
-                       }
-        return cfg_str
+    pass
 
 
 class ubuntu22(ubuntu20):
@@ -1519,10 +1376,12 @@ class ubuntu22(ubuntu20):
 
 
 class ubuntu24(ubuntu20):
+    # TODO(eric): ADD MODERN DISTRIBUTIONS
     pass
 
 
 class ubuntu25(ubuntu20):
+    # TODO(eric): ADD MODERN DISTRIBUTIONS
     pass
 
 
@@ -1532,18 +1391,18 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7', '8', '9', '10'],
-                     'sles': ['11', '12', '15'],
-                     'ubuntu': ['16', '20', '22', '24', '25'],
+        supported = {'rhel': ['7', '8', '9', '10'],
+                     'sles': ['12', '15', '16'],
+                     'ubuntu': ['20', '22', '24', '25'],
                      'rhcos': ['4']}
         releases = supported[distro]
 
         for r in releases:
             if remain.startswith(r):
                 return r
-        else:
-            msg = 'Can not handle os: %s' % os_version
-            raise exception.ZVMException(msg=msg)
+
+        msg = 'Can not handle os: %s' % os_version
+        raise exception.ZVMException(msg=msg)
 
     def parse_dist(self, os_version):
         """Separate os and version from os_version.
@@ -1552,14 +1411,14 @@ class LinuxDistManager(object):
         ('rhel', x.y) and ('sles', x.y) where x.y may not be digits
         """
         supported = {'rhel': ['rhel', 'redhat', 'red hat'],
-                    'sles': ['suse', 'sles'],
-                    'ubuntu': ['ubuntu'],
-                    'rhcos': ['rhcos', 'coreos', 'red hat coreos']}
+                     'sles': ['suse', 'sles'],
+                     'ubuntu': ['ubuntu'],
+                     'rhcos': ['rhcos', 'coreos', 'red hat coreos']}
         os_version = os_version.lower()
         for distro, patterns in supported.items():
             for i in patterns:
                 if os_version.startswith(i):
-                    # Not guarrentee the version is digital
+                    # No guarantee the version is a number
                     remain = os_version.split(i, 2)[1]
                     release = self._parse_release(os_version, distro, remain)
                     return distro, release

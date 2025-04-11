@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1437,35 +1438,6 @@ class SMTClient(object):
                 if '"' in version:
                     version = eval(version)
                 os_version = '%s%s' % (distro, version)
-
-            elif '/etc/redhat-release' in release_file:
-                # The output looks like:
-                # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-                distro = 'rhel'
-                release_info = self.execute_cmd(userid, 'grep -v ^# /etc/redhat-release')
-                distro_version = release_info[0].split()[6]
-                os_version = ''.join((distro, distro_version))
-
-            elif '/etc/SuSE-release' in release_file:
-                # The output for this file looks like:
-                # SUSE Linux Enterprise Server 11 (s390x)
-                # VERSION = 11
-                # PATCHLEVEL = 3
-                distro = 'sles'
-                release_info = self.execute_cmd(userid, 'grep -v ^# /etc/SuSE-release')
-                LOG.debug('OS release info is %s' % release_info)
-                release_version = '.'.join((release_info[1].split('=')[1].strip(),
-                                            release_info[2].split('=')[1].strip()))
-                os_version = ''.join((distro, release_version))
-
-            elif '/etc/system-release' in release_file:
-                # For some rhel6.7 system, it only have system-release file and
-                # the output looks like:
-                # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-                distro = 'rhel'
-                release_info = self.execute_cmd(userid, 'grep -v ^# /etc/system-release')
-                distro_version = release_info[0].split()[6]
-                os_version = ''.join((distro, distro_version))
 
             return os_version
         except Exception as e:

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-#  Copyright Contributors to the Feilong Project.
-#  SPDX-License-Identifier: Apache-2.0
-
 # Test logic for Systems Management Ultra Thin Layer
 #
-# Copyright 2017 IBM Corp.
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017 IBM Corp.
+#  SPDX-License-Identifier: Apache-2.0
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -66,7 +65,7 @@ subs = {
     '<<<SimpleCfgFile>>>': '/install/zvm/POC/testImages/cfgdrive.tgz',
                                         # Simple tar file for the config drive
     '<<<simpleImage>>>': '/install/zvm/POC/testImages/' +
-        'rhel67eckd_small_1100cyl.img',    # Small image file
+        'rhel89eckd_small_1100cyl.img',    # Small image file
     '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
