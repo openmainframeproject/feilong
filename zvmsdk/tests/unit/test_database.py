@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017, 2023 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017, 2023 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -2322,7 +2322,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
 
     def test_image_add_query_delete_record(self):
         imagename = 'test'
-        imageosdistro = 'rhel6.5'
+        imageosdistro = 'rhel8.9'
         md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
@@ -2336,7 +2336,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(1, len(image_record))
         self.assertListEqual(
             [{'imagename': u'test',
-              'imageosdistro': u'rhel6.5',
+              'imageosdistro': u'rhel8.9',
               'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
@@ -2351,7 +2351,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
 
     def test_image_add_record_with_existing_imagename(self):
         imagename = 'test'
-        imageosdistro = 'rhel6.5'
+        imageosdistro = 'rhel8.9'
         md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
@@ -2371,7 +2371,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
     def test_image_query_record_multiple_image(self):
         imagename1 = 'testimage1'
         imagename2 = 'testimage2'
-        imageosdistro = 'rhel6.5'
+        imageosdistro = 'rhel8.9'
         md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
@@ -2389,14 +2389,14 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(2, len(image_records))
         self.assertListEqual(
             [{'imagename': u'testimage1',
-              'imageosdistro': u'rhel6.5',
+              'imageosdistro': u'rhel8.9',
               'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
               'type': u'netboot',
               'comments': None},
              {'imagename': u'testimage2',
-              'imageosdistro': u'rhel6.5',
+              'imageosdistro': u'rhel8.9',
               'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
