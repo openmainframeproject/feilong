@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2018 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -839,14 +839,14 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_network_interface(self, mock_interface, mock_userid):
-        os_version = 'rhel6'
+        os_version = 'rhel8'
         guest_networks = [{'ip_addr': '192.168.12.34',
                            'dns_addr': ['9.1.2.3'],
                            'gateway_addr': '192.168.95.1',
                            'cidr': '192.168.95.0/24',
                            'nic_vdev': '1000',
                            'mac_addr': '02:00:00:12:34:56'}]
-        bstr = """{"interface": {"os_version": "rhel6",
+        bstr = """{"interface": {"os_version": "rhel8",
                                  "guest_networks": [
                                      {"ip_addr": "192.168.12.34",
                                       "dns_addr": ["9.1.2.3"],
@@ -870,7 +870,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_network_interface_OSA(self, mock_interface,
                                                 mock_userid):
-        os_version = 'rhel6'
+        os_version = 'rhel8'
         guest_networks = [{'ip_addr': '192.168.12.34',
                            'dns_addr': ['9.1.2.3'],
                            'gateway_addr': '192.168.95.1',
@@ -878,7 +878,7 @@ class HandlersGuestTest(SDKWSGITest):
                            'nic_vdev': '1000',
                            'mac_addr': '02:00:00:12:34:56',
                            'osa_device': 'AABB'}]
-        bstr = """{"interface": {"os_version": "rhel6",
+        bstr = """{"interface": {"os_version": "rhel8",
                                  "guest_networks": [
                                      {"ip_addr": "192.168.12.34",
                                       "dns_addr": ["9.1.2.3"],
@@ -903,9 +903,9 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_delete_network_interface(self, mock_interface, mock_userid):
-        os_version = 'rhel6'
+        os_version = 'rhel8'
         vdev = '1000'
-        bstr = """{"interface": {"os_version": "rhel6",
+        bstr = """{"interface": {"os_version": "rhel8",
                                  "vdev": "1000", "active": "True"}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
@@ -1237,7 +1237,7 @@ class HandlersGuestTest(SDKWSGITest):
     def test_guest_create_network_interface_invalid_cidr(self,
                                                          mock_userid):
         # / not in cidr
-        bstr = """{"interface": {"os_version": "rhel6",
+        bstr = """{"interface": {"os_version": "rhel8",
                                  "guest_networks": [
                                      {"ip_addr": "192.168.12.34",
                                       "dns_addr": ["9.1.2.3"],
