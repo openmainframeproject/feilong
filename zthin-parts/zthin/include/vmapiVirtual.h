@@ -854,7 +854,7 @@ static tableLayout Virtual_Network_VSwitch_Query_Extended_Layout = {
     { APITYPE_ARRAY_LEN,          4,  4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, globalMemberList) },
     { APITYPE_ARRAY_STRUCT_COUNT, 4,  4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, globalMemberCount) },
     { APITYPE_NOBUFFER_STRUCT_LEN,4,  4, STRUCT_INDX_6, NEST_LEVEL_6, sizeof(global_member_structure) },
-    { APITYPE_C_STR_PTR,          0, 15, STRUCT_INDX_6, NEST_LEVEL_6, offsetof(global_member_structure, globalmemberFields) },
+    { APITYPE_C_STR_PTR,          0, 16, STRUCT_INDX_6, NEST_LEVEL_6, offsetof(global_member_structure, globalmemberFields) },
     { APITYPE_END_OF_TABLE, 0, 0, 0, 0 }
 };
 
