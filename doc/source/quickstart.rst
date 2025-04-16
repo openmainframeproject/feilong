@@ -625,7 +625,7 @@ And make sure the sdkserver service status is 'active (running)' as following:
        Active: active (running) since Mon 2017-11-20 00:47:18 EST; 3s ago
      Main PID: 5779 (sdkserver)
        CGroup: /system.slice/sdkserver.service
-               └─5779 /usr/bin/python /usr/bin/sdkserver
+               └─5779 /usr/bin/env python /usr/bin/sdkserver
 
     Nov 20 00:47:18 0822rhel7 systemd[1]: Started zVM SDK API server.
     Nov 20 00:47:18 0822rhel7 systemd[1]: Starting zVM SDK API server...
