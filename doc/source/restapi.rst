@@ -146,7 +146,7 @@ List guests
 
 **GET /guests**
 
-List names of all the guests created by Feilong.
+List names of all guests managed by Feilong (created or registered), regardless of their current power state. This includes guests added to the Feilong database via creation or registration, even if they are later deregistered or powered off.
 
 * Request:
 
