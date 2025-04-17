@@ -2313,28 +2313,27 @@ class ImageDbOperator(object):
                 'disk_size_units          varchar(512),',
                 'image_size_in_bytes      varchar(512),',
                 'type                     varchar(16),',
+                'raw_track_access         integer DEFAULT 0,',
                 'comments                 varchar(128))'))
         with get_image_conn() as conn:
             conn.execute(create_image_table_sql)
 
     def image_add_record(self, imagename, imageosdistro, md5sum,
-                         disk_size_units, image_size_in_bytes,
-                         type, comments=None):
-        if comments is not None:
-            with get_image_conn() as conn:
-                conn.execute("INSERT INTO image (imagename, imageosdistro,"
-                             "md5sum, disk_size_units, image_size_in_bytes,"
-                             " type, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                             (imagename, imageosdistro, md5sum,
-                              disk_size_units, image_size_in_bytes, type,
-                              comments))
-        else:
-            with get_image_conn() as conn:
-                conn.execute("INSERT INTO image (imagename, imageosdistro,"
-                             "md5sum, disk_size_units, image_size_in_bytes,"
-                             " type) VALUES (?, ?, ?, ?, ?, ?)",
-                             (imagename, imageosdistro, md5sum,
-                              disk_size_units, image_size_in_bytes, type))
+                     disk_size_units, image_size_in_bytes,
+                     type, raw_track_access=0, comments=None):
+        with get_image_conn() as conn:
+            if comments is not None:
+                conn.execute("INSERT INTO image (imagename, imageosdistro, md5sum, "
+                            "disk_size_units, image_size_in_bytes, type, raw_track_access, comments) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            (imagename, imageosdistro, md5sum, disk_size_units,
+                            image_size_in_bytes, type, raw_track_access, comments))
+            else:
+                conn.execute("INSERT INTO image (imagename, imageosdistro, md5sum, "
+                            "disk_size_units, image_size_in_bytes, type, raw_track_access) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (imagename, imageosdistro, md5sum, disk_size_units,
+                            image_size_in_bytes, type, raw_track_access))
 
     def image_query_record(self, imagename=None):
         """Query the image record from database, if imagename is None, all

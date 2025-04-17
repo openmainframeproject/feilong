@@ -43,8 +43,10 @@ class ImageOps(object):
     def image_get_root_disk_size(self, image_name):
         return self._smtclient.image_get_root_disk_size(image_name)
 
-    def image_import(self, image_name, url, image_meta, remote_host=None):
+    def image_import(self, image_name, url, image_meta, remote_host=None, raw_track_access=False, disk=None):
 
+        if not raw_track_access and disk:
+            self._smtclient.dasdfmt(disk)
         return self._smtclient.image_import(image_name,
                                              url,
                                              image_meta,
