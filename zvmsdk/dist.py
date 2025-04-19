@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,9 +37,9 @@ LOG = log.LOG
 class LinuxDist(object):
     """Linux distribution base class
 
-    Due to we need to interact with linux dist and inject different files
-    according to the dist version. Currently RHEL6, RHEL7, SLES11, SLES12
-    , UBUNTU16 and RHCOS4 are supported.
+    We need to interact with linux distributions and inject different files
+    according to the distribution version. Currently, RHEL7, RHEL8, RHEL9, RHCOS4,
+    SLES12, SLES15, SLES16, UBUNTU20, UBUNTU22, and UBUNTU24 are supported.
     """
     def __init__(self):
         self._smtclient = smtclient.get_smtclient()
@@ -244,7 +245,7 @@ class LinuxDist(object):
 
     @abc.abstractmethod
     def _enable_network_interface(self, device, ip, broadcast):
-        """construct a router string."""
+        """construct a command to bring up an interface."""
         pass
 
     @abc.abstractmethod
@@ -394,79 +395,6 @@ class rhel(LinuxDist):
         return ''
 
 
-class rhel6(rhel):
-    def get_znetconfig_contents(self):
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'service network restart',
-                          'cio_ignore -u'))
-
-    def _get_device_filename(self, vdev):
-        return 'ifcfg-eth' + str(vdev).zfill(4)
-
-    def _get_all_device_filename(self):
-        return 'ifcfg-eth*'
-
-    def _get_device_name(self, vdev):
-        return 'eth' + str(vdev).zfill(4)
-
-    def get_scp_string(self, root, fcp, wwpn, lun):
-        return ("=root=%(root)s selinux=0 "
-                "rd_ZFCP=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s") % {
-                'root': root, 'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-
-    def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
-        return ['#!/bin/bash\n',
-                ('echo -e "[defaultboot]\\n'
-                 'timeout=5\\n'
-                 'default=boot-from-volume\\n'
-                 'target=/boot/\\n'
-                 '[boot-from-volume]\\n'
-                 'image=%(image)s\\n'
-                 'ramdisk=%(ramdisk)s\\n'
-                 'parameters=\\"root=%(root)s '
-                 'rd_ZFCP=0.0.%(fcp)s,0x%(wwpn)s,0x%(lun)s selinux=0\\""'
-                 '>/etc/zipl_volume.conf\n'
-                 'zipl -c /etc/zipl_volume.conf')
-                % {'image': image, 'ramdisk': ramdisk, 'root': root,
-                   'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
-
-    def create_active_net_interf_cmd(self):
-        return 'service zvmguestconfigure start'
-
-    def _get_clean_command(self):
-        files = os.path.join(self._get_network_file_path(),
-                             self._get_all_device_filename())
-        return '\nrm -f %s\n' % files
-
-    def generate_set_hostname_script(self, hostname):
-        lines = ['#!/bin/bash\n',
-                 'sed -i "s/^HOSTNAME=.*/HOSTNAME=%s/" '
-                    '/etc/sysconfig/network\n' % hostname,
-                 '/bin/hostname %s\n' % hostname]
-        return lines
-
-    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
-                                             target_lun, multipath,
-                                             mount_point):
-        "generate punch script for attachment configuration"
-        func_name = 'get_volume_attach_configuration_cmds'
-        raise exception.SDKFunctionNotImplementError(func=func_name,
-                                                     modID='volume')
-
-    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
-                                             target_lun, multipath,
-                                             mount_point, connections):
-        "generate punch script for detachment configuration"
-        func_name = 'get_volume_detach_configuration_cmds'
-        raise exception.SDKFunctionNotImplementError(func=func_name,
-                                                     modID='volume')
-
-
 class rhel7(rhel):
     def get_znetconfig_contents(self):
         return '\n'.join(('cio_ignore -R',
@@ -560,8 +488,6 @@ class rhel7(rhel):
 
 
 class rhel8(rhel7):
-    """docstring for rhel8"""
-
     def _get_device_filename(self, vdev):
         return 'ifcfg-enc' + str(vdev).zfill(4)
 
@@ -609,7 +535,8 @@ class rhel8(rhel7):
         return content
 
 
-class rhel9(rhel8):
+class rhel9(rhel):
+    # TODO: ADD MODERN DISTRIBUTIONS
     pass
 
 
@@ -961,22 +888,6 @@ class sles(LinuxDist):
         return content
 
 
-class sles11(sles):
-    def get_znetconfig_contents(self):
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'sleep 2',
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'service network restart',
-                          'cio_ignore -u'))
-
-    def create_active_net_interf_cmd(self):
-        return 'service zvmguestconfigure start'
-
-
 class sles12(sles):
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
@@ -1027,7 +938,6 @@ class sles12(sles):
 
 
 class sles15(sles12):
-    """docstring for sles15"""
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
         replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
@@ -1064,6 +974,11 @@ class sles15(sles12):
                               'znetconf -A',
                               'cio_ignore -u',
                               'wicked ifreload all'))
+
+
+class sles16(sles):
+    # TODO: ADD MODERN DISTRIBUTIONS
+    pass
 
 
 class ubuntu(LinuxDist):
@@ -1344,10 +1259,6 @@ class ubuntu(LinuxDist):
         return content
 
 
-class ubuntu16(ubuntu):
-    pass
-
-
 class ubuntu20(ubuntu):
     def _get_device_filename(self, device_num):
         return '/etc/netplan/' + str(device_num) + '.yaml'
@@ -1501,18 +1412,18 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7', '8', '9'],
-                     'sles': ['11', '12', '15'],
-                     'ubuntu': ['16', '20', '22', '24'],
+        supported = {'rhel': ['7', '8', '9'],
+                     'sles': ['12', '15', '16'],
+                     'ubuntu': ['20', '22', '24'],
                      'rhcos': ['4']}
         releases = supported[distro]
 
         for r in releases:
             if remain.startswith(r):
                 return r
-        else:
-            msg = 'Can not handle os: %s' % os_version
-            raise exception.ZVMException(msg=msg)
+
+        msg = 'Can not handle os: %s' % os_version
+        raise exception.ZVMException(msg=msg)
 
     def parse_dist(self, os_version):
         """Separate os and version from os_version.
@@ -1521,14 +1432,14 @@ class LinuxDistManager(object):
         ('rhel', x.y) and ('sles', x.y) where x.y may not be digits
         """
         supported = {'rhel': ['rhel', 'redhat', 'red hat'],
-                    'sles': ['suse', 'sles'],
-                    'ubuntu': ['ubuntu'],
-                    'rhcos': ['rhcos', 'coreos', 'red hat coreos']}
+                     'sles': ['suse', 'sles'],
+                     'ubuntu': ['ubuntu'],
+                     'rhcos': ['rhcos', 'coreos', 'red hat coreos']}
         os_version = os_version.lower()
         for distro, patterns in supported.items():
             for i in patterns:
                 if os_version.startswith(i):
-                    # Not guarrentee the version is digital
+                    # No guarantee the version is a number
                     remain = os_version.split(i, 2)[1]
                     release = self._parse_release(os_version, distro, remain)
                     return distro, release
