@@ -490,6 +490,15 @@ class FCPDbOperator(object):
             conn.executemany("UPDATE fcp set state=? "
                              "WHERE fcp_id=?", data_to_update)
 
+    def reset_fcps_of_assigner(self, userid):
+        """Reset fcp records for a given assigner."""
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET assigner_id='', reserved=0, "
+                         "connections=0, tmpl_id='' WHERE assigner_id=?",
+                         (userid,))
+            LOG.debug("FCP records for user %s are reset in "
+                      "fcp table" % userid)
+
     def get_all_fcps_of_assigner(self, assigner_id=None):
         """Get dict of all fcp records of specified assigner.
         If assigner is None, will get all fcp records.
