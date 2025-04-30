@@ -511,6 +511,33 @@ These worker threads would work concurrently to handle requests from client.
 This value should be adjusted according to the system resource and workload.
 '''
         ),
+    Opt('smapi_rate_limit_window_size_seconds',
+        section='sdkserver',
+        opt_type='int',
+        default=1,
+        help='''
+The duration to consider for rate limit window. For example, if we want 30 requests per 5 seconds, then
+specify 5 as the value here.        
+'''
+        ),
+    Opt('smapi_rate_limit_per_window',
+        section='sdkserver',
+        opt_type='str',
+        default='total:30',
+        help='''
+The configuration for limiting the rate at which functions can be invoked.
+The "total" count must be specified. Other function limits can be specified optionally,
+e.g. guest_list = 10, guest_get_info = 5, ...
+'''
+        ),
+    Opt('smapi_max_outstanding_requests',
+        section='sdkserver',
+        opt_type='int',
+        default='10',
+        help='''
+Maximum number of requests allowed for which response is not yet received
+'''
+        ),
     # database options
     Opt('dir',
         section='database',
