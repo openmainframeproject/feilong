@@ -17,6 +17,7 @@
 
 import configparser
 import os
+from zvmsdk import constants
 
 
 class Opt(object):
@@ -517,17 +518,22 @@ This value should be adjusted according to the system resource and workload.
         default=1,
         help='''
 The duration to consider for rate limit window. For example, if we want 30 requests per 5 seconds, then
-specify 5 as the value here.        
+specify 5 as the value here. Setting this value to 0 disables the rate-limit check.
 '''
         ),
     Opt('smapi_rate_limit_per_window',
         section='sdkserver',
         opt_type='str',
-        default='total:30',
+        default=f'total:{constants.SMAPI_RATE_LIMIT_DEFAULT_TOTAL}',
         help='''
 The configuration for limiting the rate at which functions can be invoked.
 The "total" count must be specified. Other function limits can be specified optionally,
-e.g. guest_list = 10, guest_get_info = 5, ...
+e.g. "smapi_rate_limit_per_window = total:30, guest_list:10, guest_get_info:5, ..."
+The cumulative value specified for other function keywords should be less than the "total"
+value. The option to specify custom limit for certain functions can be helpful in limiting
+functions which are more resource/time intensive. If the rate limit has been reached, the
+request received by client is postponed for execution. A request can be postponed for anywhere
+between 1 and 3 seconds.
 '''
         ),
     Opt('smapi_max_outstanding_requests',
@@ -535,7 +541,10 @@ e.g. guest_list = 10, guest_get_info = 5, ...
         opt_type='int',
         default='10',
         help='''
-Maximum number of requests allowed for which response is not yet received
+Maximum number of requests allowed for which response is not yet received.
+If current oustanding requests exceeds allowed limit, the request is postponed for processing
+in future. Under this situation, a request can be postponed for a duration between 1 second
+and 3 seconds. Setting this value to 0 disables the outstanding requests check.
 '''
         ),
     # database options
