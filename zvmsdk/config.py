@@ -547,6 +547,15 @@ in future. Under this situation, a request can be postponed for a duration betwe
 and 3 seconds. Setting this value to 0 disables the outstanding requests check.
 '''
         ),
+    Opt('smapi_request_postpone_threshold_seconds',
+        section='sdkserver',
+        opt_type='int',
+        default='60',
+        help='''
+Maximum duration in seconds for which a request sent by client can be
+postponed due to rate limit or outstanding requests threshold
+'''
+        ),
     # database options
     Opt('dir',
         section='database',

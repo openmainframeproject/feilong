@@ -60,6 +60,7 @@ class SDKServer(object):
         self.rate_limit_config = rate_limit_config_dict
         self.rate_window_records = {}
         self.rate_window_lock = threading.Lock()
+        self.postponed_requests = {}
 
     def log_error(self, msg):
         thread = threading.current_thread().name
@@ -220,6 +221,11 @@ class SDKServer(object):
             self._assert_within_outstanding_limit()
             self._assert_within_rate_limit(client, addr)
             
+            # The rate limit has passed, so clear the postponed requests entry for this connection
+            # if present. This is for scenario in which request from client was postponed and now
+            # it is tried again.
+            self.postponed_requests.pop(f'{addr[0]}:{addr[1]}', None)
+            
             data = client.recv(4096)
             data = bytes.decode(data)
             # When client failed to send the data or quit before sending the
@@ -261,9 +267,23 @@ class SDKServer(object):
             return_data = api_func(*api_args, **api_kwargs)
         except (_RateLimitReached, _MaxOutstandingLimitReached) as e:
             request_postponed = True
-            self.log_error(f'({addr[0]}:{addr[1]} {str(e)}). Limit reached, postponing the request.')
-            sleep(randrange(1000, 3000) / 1000)
-            self.request_queue.put((client, addr))
+            request_key = f'{addr[0]}:{addr[1]}'
+            if request_key not in self.postponed_requests:
+                self.postponed_requests[request_key] = int(time())
+            elapsed_seconds = int(time()) - self.postponed_requests[request_key]
+            if elapsed_seconds > CONF.sdkserver.smapi_request_postpone_threshold_seconds:
+                self.postponed_requests.pop(request_key, None)
+                request_postponed = False
+                results = self.construct_internal_error(
+                    f'Unable to process request as sdkserver is under heavy load. Waited for {elapsed_seconds} seconds')
+            else:
+                self.log_error(f'({addr[0]}:{addr[1]} {str(e)}). Limit reached, postponing the request.')
+                # The sleep is necessary because there are other worker threads waiting on ".get" of request_queue.
+                # If sleep is not added, it will immediately picked from the queue by any worker thread and
+                # same rate limit condition would be met. Sleep for random duration is added so that postponed
+                # requests are not attempted at once.
+                sleep(randrange(1000, 3000) / 1000)
+                self.request_queue.put((client, addr))
             
         except exception.SDKBaseException as e:
             self.log_error("(%s:%s) %s" % (addr[0], addr[1],
