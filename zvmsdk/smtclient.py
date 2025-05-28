@@ -337,7 +337,7 @@ class SMTClient(object):
 
         :userid: the zvm userid to be queried
         """
-        pi_dict = self.image_performance_query([userid])
+        pi_dict = self.system_image_performance_query([userid])
         return pi_dict.get(userid, None)
 
     def get_adapters_info(self, userid):
