@@ -250,9 +250,8 @@ def getPerfInfo(rh, useridlist):
           response  - Stripped and reformatted output of the SMCLI command.
     """
     rh.printSysLog("Enter vmUtils.getPerfInfo, userid: " + useridlist)
-    parms = ["-T", rh.userid,
-             "-c", "1"]
-    results = invokeSMCLI(rh, "Image_Performance_Query", parms)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "System_Image_Performance_Query", parms)
     if results['overallRC'] != 0:
         # SMCLI failed.
         rh.printLn("ES", results['response'])
