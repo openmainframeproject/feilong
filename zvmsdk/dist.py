@@ -681,29 +681,6 @@ class rhcos4(rhcos):
 
 
 class sles(LinuxDist):
-    def _get_network_file_path(self):
-        return '/etc/sysconfig/network/'
-
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels, dns_v4, mtu):
-        cfg_str = "BOOTPROTO=\'static\'\n"
-        cfg_str += "IPADDR=\'%s\'\n" % ip_v4
-        cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
-        cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
-        cfg_str += "STARTMODE=\'onboot\'\n"
-        cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
-                    address_read)
-        cfg_str += "MTU=\'%s\'\n" % mtu
-        if (dns_v4 is not None) and (len(dns_v4) > 0):
-            self.dns_v4 = dns_v4
-        else:
-            self.dns_v4 = None
-        return cfg_str
-
-    def _get_route_str(self, gateway_v4):
-        route_str = 'default %s - -\n' % gateway_v4
-        return route_str
-
     def _get_cmd_str(self, address_read, address_write, address_data):
         cmd_str = 'qeth_configure -l 0.0.%s ' % address_read.lower()
         cmd_str += '0.0.%(write)s 0.0.%(data)s 1\n' % {'write':
@@ -716,12 +693,6 @@ class sles(LinuxDist):
 
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
-
-    def _get_device_filename(self, vdev):
-        return 'ifcfg-eth' + str(vdev).zfill(4)
-
-    def _get_all_device_filename(self):
-        return 'ifcfg-eth*'
 
     def _get_device_name(self, vdev):
         return 'eth' + str(vdev).zfill(4)
@@ -830,8 +801,17 @@ class sles(LinuxDist):
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
 
+    def create_active_net_interf_cmd(self):
+        return 'systemctl start zvmguestconfigure.service'
+
     def _enable_network_interface(self, device, ip, broadcast):
-        return ''
+        if len(broadcast) > 0:
+            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
+                                                    broadcast, device)
+        else:
+            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
+        activeIP_str += 'ip link set dev %s up\n' % device
+        return activeIP_str
 
     def _get_clean_command(self):
         files = os.path.join(self._get_network_file_path(),
@@ -889,6 +869,35 @@ class sles(LinuxDist):
 
 
 class sles12(sles):
+    def _get_network_file_path(self):
+        return '/etc/sysconfig/network/'
+
+    def _get_device_filename(self, vdev):
+        return 'ifcfg-eth' + str(vdev).zfill(4)
+
+    def _get_all_device_filename(self):
+        return 'ifcfg-eth*'
+
+    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
+        cfg_str = "BOOTPROTO=\'static\'\n"
+        cfg_str += "IPADDR=\'%s\'\n" % ip_v4
+        cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
+        cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
+        cfg_str += "STARTMODE=\'onboot\'\n"
+        cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
+                    address_read)
+        cfg_str += "MTU=\'%s\'\n" % mtu
+        if (dns_v4 is not None) and (len(dns_v4) > 0):
+            self.dns_v4 = dns_v4
+        else:
+            self.dns_v4 = None
+        return cfg_str
+
+    def _get_route_str(self, gateway_v4):
+        route_str = 'default %s - -\n' % gateway_v4
+        return route_str
+
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
         return '\n'.join(('cio_ignore -R',
@@ -923,18 +932,6 @@ class sles12(sles):
                  'zipl -c /etc/zipl_volume.conf')
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
-
-    def create_active_net_interf_cmd(self):
-        return 'systemctl start zvmguestconfigure.service'
-
-    def _enable_network_interface(self, device, ip, broadcast):
-        if len(broadcast) > 0:
-            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
-                                                    broadcast, device)
-        else:
-            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
-        activeIP_str += 'ip link set dev %s up\n' % device
-        return activeIP_str
 
 
 class sles15(sles12):
@@ -977,8 +974,42 @@ class sles15(sles12):
 
 
 class sles16(sles):
-    # TODO: ADD MODERN DISTRIBUTIONS
-    pass
+    def _get_network_file_path(self):
+        return '/etc/NetworkManager/system-connections/'
+
+    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+                     netmask_v4, address_read, subchannels, dns_v4, mtu):
+        # TODO: SUPPORT FIXED ADDRESS AND OTHER PARAMETERS
+        return '\n'.join(('[connection]',
+                          'id=' + device,
+                          'type=ethernet',
+                          'name=' + device,
+                          ''
+                          '[ipv4]'
+                          'method=auto'
+                          '',
+                          '[ipv6]',
+                          'method=auto'))
+
+    def _get_route_str(self, gateway_v4):
+        return ''
+
+    def _get_device_filename(self, vdev):
+        return 'eth' + str(vdev).zfill(4) + '.nmconnection'
+
+    def _get_all_device_filename(self):
+        return 'eth*.nmconnection'
+
+    def get_znetconfig_contents(self):
+        return '\n'.join(('cio_ignore -R',
+                          'znetconf -R -n',
+                          'sleep 2',
+                          'udevadm trigger',
+                          'udevadm settle',
+                          'sleep 2',
+                          'znetconf -A',
+                          'cio_ignore -u',
+                          'nmcli connection reload'))
 
 
 class ubuntu(LinuxDist):
