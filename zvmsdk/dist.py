@@ -681,9 +681,6 @@ class rhcos4(rhcos):
 
 
 class sles(LinuxDist):
-    def _get_network_file_path(self):
-        return '/etc/sysconfig/network/'
-
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = "BOOTPROTO=\'static\'\n"
@@ -716,12 +713,6 @@ class sles(LinuxDist):
 
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
-
-    def _get_device_filename(self, vdev):
-        return 'ifcfg-eth' + str(vdev).zfill(4)
-
-    def _get_all_device_filename(self):
-        return 'ifcfg-eth*'
 
     def _get_device_name(self, vdev):
         return 'eth' + str(vdev).zfill(4)
@@ -830,8 +821,17 @@ class sles(LinuxDist):
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
 
+    def create_active_net_interf_cmd(self):
+        return 'systemctl start zvmguestconfigure.service'
+
     def _enable_network_interface(self, device, ip, broadcast):
-        return ''
+        if len(broadcast) > 0:
+            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
+                                                    broadcast, device)
+        else:
+            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
+        activeIP_str += 'ip link set dev %s up\n' % device
+        return activeIP_str
 
     def _get_clean_command(self):
         files = os.path.join(self._get_network_file_path(),
@@ -889,6 +889,15 @@ class sles(LinuxDist):
 
 
 class sles12(sles):
+    def _get_network_file_path(self):
+        return '/etc/sysconfig/network/'
+
+    def _get_device_filename(self, vdev):
+        return 'ifcfg-eth' + str(vdev).zfill(4)
+
+    def _get_all_device_filename(self):
+        return 'ifcfg-eth*'
+
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
         return '\n'.join(('cio_ignore -R',
@@ -923,18 +932,6 @@ class sles12(sles):
                  'zipl -c /etc/zipl_volume.conf')
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
-
-    def create_active_net_interf_cmd(self):
-        return 'systemctl start zvmguestconfigure.service'
-
-    def _enable_network_interface(self, device, ip, broadcast):
-        if len(broadcast) > 0:
-            activeIP_str = 'ip addr add %s broadcast %s dev %s\n' % (ip,
-                                                    broadcast, device)
-        else:
-            activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
-        activeIP_str += 'ip link set dev %s up\n' % device
-        return activeIP_str
 
 
 class sles15(sles12):
@@ -978,7 +975,25 @@ class sles15(sles12):
 
 class sles16(sles):
     # TODO: ADD MODERN DISTRIBUTIONS
-    pass
+    def _get_network_file_path(self):
+        return '/etc/NetworkManager/system-connections/'
+
+    def _get_device_filename(self, vdev):
+        return 'qeth-' + str(vdev).zfill(4) + '.nmconnection'
+
+    def _get_all_device_filename(self):
+        return 'qeth-*.nmconnection'
+
+    def get_znetconfig_contents(self):
+        return '\n'.join(('cio_ignore -R',
+                          'znetconf -R -n',
+                          'sleep 2',
+                          'udevadm trigger',
+                          'udevadm settle',
+                          'sleep 2',
+                          'znetconf -A',
+                          'cio_ignore -u',
+                          'nmcli connection reload'))
 
 
 class ubuntu(LinuxDist):
