@@ -1072,9 +1072,9 @@ class SMTClient(object):
                 local_trans = '/'.join([tmp_trans_dir,
                                         os.path.basename(transportfiles)])
                 if os.path.isfile(local_trans):
-                    LOG.info(f"Transport file {local_trans} already present, skipping scp/cp.")
+                    LOG.info("Transport file %s already present, skipping scp/cp.", local_trans)
                 elif os.path.isfile(transportfiles):
-                    LOG.info(f"Transport file is local, copying {transportfiles} to {local_trans}")
+                    LOG.info("Transport file is local, copying %s to %s", transportfiles, local_trans)
                     shutil.copyfile(transportfiles, local_trans)
                 elif remotehost:
                     cmd = ["/usr/bin/scp", "-B",
