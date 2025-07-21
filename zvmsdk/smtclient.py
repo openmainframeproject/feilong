@@ -4578,7 +4578,12 @@ class FilesystemBackend(object):
         file system, just copy the image to image repository
         """
         source = urlparse.urlparse(url).path
-        if kwargs['remote_host']:
+        if os.path.isfile(target):
+            LOG.info("Target file %s already present, skipping scp/cp.", target)
+        elif os.path.isfile(source):
+            LOG.info("Source file is local, copying %s to %s", source, target)
+            shutil.copyfile(source, target)           
+        elif kwargs['remote_host']:
             if '@' in kwargs['remote_host']:
                 source_path = ':'.join([kwargs['remote_host'], source])
                 command = ' '.join(['/usr/bin/scp',
