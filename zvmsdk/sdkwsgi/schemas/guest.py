@@ -212,7 +212,7 @@ deploy = {
     'type': 'object',
     'properties': {
         'image': parameter_types.name,
-        'transportfiles': {'type': ['string']},
+        'transportfiles': {'type': ['string', 'null']},
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev_or_None,
         'hostname': parameter_types.hostname,
