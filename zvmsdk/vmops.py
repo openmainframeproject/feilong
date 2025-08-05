@@ -392,7 +392,7 @@ class VMOps(object):
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
-        LOG.info("Begin to capture vm %(userid), image name is %(name)s",
+        LOG.info("Begin to capture vm %(userid)s, image name is %(name)s",
                  {'userid': userid, 'name': image_name})
         self._smtclient.guest_capture(userid, image_name,
                                        capture_type=capture_type,
