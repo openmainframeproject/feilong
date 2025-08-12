@@ -6,6 +6,6 @@
     "errmsg": "",
     "output": {"image_name": "name1",
                "image_path": "/tmp/images/name1",
-               "os_version": "rhel6",
+               "os_version": "rhel8",
                "md5sum": "121212314231"}
 }
