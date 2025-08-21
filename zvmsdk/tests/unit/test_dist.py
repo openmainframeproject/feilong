@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2021 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,6 +14,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import mock
 import os
 
@@ -366,18 +367,17 @@ class RHCOS4TestCase(base.SDKTestCase):
                          'enc1000:none:10.10.0.250:10.10.0.51;1000')
 
 
-class SLESTestCase(base.SDKTestCase):
+class SLES15TestCase(base.SDKTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(SLESTestCase, cls).setUpClass()
+        super(SLES15TestCase, cls).setUpClass()
+        cls.os_version = 'sles15'
 
     def setUp(self):
-        super(SLESTestCase, self).setUp()
+        super(SLES15TestCase, self).setUp()
         self.dist_manager = dist.LinuxDistManager()
-        self.sles11_dist = self.dist_manager.get_linux_dist('sles11')()
-        self.sles12_dist = self.dist_manager.get_linux_dist('sles12')()
-        self.sles15_dist = self.dist_manager.get_linux_dist('sles15')()
+        self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
 
     def test_create_network_configuration_files(self):
         guest_networks = [{'ip_addr': '192.168.95.10',
@@ -387,7 +387,7 @@ class SLESTestCase(base.SDKTestCase):
                            'mtu': 8000}]
         file_path = '/etc/sysconfig/network/'
         first = False
-        files_and_cmds = self.sles15_dist.create_network_configuration_files(
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
             file_path, guest_networks, first, active=False)
         (net_conf_files, net_conf_cmds,
          clean_cmd, net_enable_cmd) = files_and_cmds
@@ -413,7 +413,7 @@ class SLESTestCase(base.SDKTestCase):
                             'mtu': 1500}]
         file_path = '/etc/sysconfig/network/'
         first = False
-        files_and_cmds = self.sles15_dist.create_network_configuration_files(
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
             file_path, guest_networks, first, active=False)
         (net_conf_files, net_conf_cmds,
          clean_cmd, net_enable_cmd) = files_and_cmds
@@ -445,9 +445,9 @@ class SLESTestCase(base.SDKTestCase):
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
-        self.sles15_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
-                                                              lun, multipath,
-                                                              mount_point)
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point)
         # check function called assertions
         get_template.assert_called_once_with("volumeops",
                                              "sles_attach_volume.j2")
@@ -470,9 +470,9 @@ class SLESTestCase(base.SDKTestCase):
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
-        self.sles15_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
-                                                              lun, multipath,
-                                                              mount_point, 2)
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point, 2)
         get_template.assert_called_once_with(
             "volumeops",
             "sles_detach_volume.j2")
@@ -496,9 +496,9 @@ class SLESTestCase(base.SDKTestCase):
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 0 and is_last_volume shoud be 1
-        self.sles15_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
-                                                              lun, multipath,
-                                                              mount_point, 0)
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point, 0)
         get_template.assert_called_once_with(
             "volumeops",
             "sles_detach_volume.j2")
@@ -509,29 +509,17 @@ class SLESTestCase(base.SDKTestCase):
                                                 is_last_volume=1)
 
 
-class UBUNTUTestCase(base.SDKTestCase):
+class UBUNTU22TestCase(base.SDKTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(UBUNTUTestCase, cls).setUpClass()
+        super(UBUNTU22TestCase, cls).setUpClass()
+        cls.os_version = 'ubuntu22'
 
     def setUp(self):
-        super(UBUNTUTestCase, self).setUp()
+        super(UBUNTU22TestCase, self).setUp()
         self.dist_manager = dist.LinuxDistManager()
-        self.linux_dist = self.dist_manager.get_linux_dist('ubuntu16')()
-        self.ubuntu20_dist = self.dist_manager.get_linux_dist('ubuntu20')()
-
-
-class UBUNTU20TestCase(base.SDKTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(UBUNTU20TestCase, cls).setUpClass()
-
-    def setUp(self):
-        super(UBUNTU20TestCase, self).setUp()
-        self.dist_manager = dist.LinuxDistManager()
-        self.linux_dist = self.dist_manager.get_linux_dist('ubuntu20')()
+        self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
 
     def test_create_network_configuration_files(self):
         guest_networks = [{'ip_addr': '192.168.95.10',
