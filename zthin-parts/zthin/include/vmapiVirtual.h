@@ -827,7 +827,7 @@ static tableLayout Virtual_Network_VSwitch_Query_Extended_Layout = {
 
     { APITYPE_STRUCT_LEN,         4,  4, STRUCT_INDX_1, NEST_LEVEL_1, sizeof(vswitch_array_structure) },
     { APITYPE_INT4,               4,  4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, attrLength) },
-    { APITYPE_C_STR_PTR,          1,200, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, vswitchAttributes) },
+    { APITYPE_C_STR_PTR,          1,400, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, vswitchAttributes) },
 
     { APITYPE_ARRAY_LEN,          4,  4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, realDeviceList) },
     { APITYPE_ARRAY_STRUCT_COUNT, 4,  4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vswitch_array_structure, realDeviceCount) },
