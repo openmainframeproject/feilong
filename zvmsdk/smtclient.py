@@ -1072,7 +1072,12 @@ class SMTClient(object):
                 tmp_trans_dir = tempfile.mkdtemp()
                 local_trans = '/'.join([tmp_trans_dir,
                                         os.path.basename(transportfiles)])
-                if remotehost:
+                if os.path.isfile(local_trans):
+                    LOG.info(f"Transport file {local_trans} already present, skipping scp/cp.")
+                elif os.path.isfile(transportfiles):
+                    LOG.info(f"Transport file is local, copying {transportfiles} to {local_trans}")
+                    shutil.copyfile(transportfiles, local_trans)
+                elif remotehost:
                     cmd = ["/usr/bin/scp", "-B",
                            "-P", CONF.zvm.remotehost_sshd_port,
                            "-o StrictHostKeyChecking=no",
@@ -4574,7 +4579,12 @@ class FilesystemBackend(object):
         file system, just copy the image to image repository
         """
         source = urlparse.urlparse(url).path
-        if kwargs['remote_host']:
+        if os.path.isfile(target):
+            LOG.info("Target file %s already present, skipping scp/cp.", target)
+        elif os.path.isfile(source):
+            LOG.info("Source file is local, copying %s to %s", source, target)
+            shutil.copyfile(source, target)           
+        elif kwargs['remote_host']:
             if '@' in kwargs['remote_host']:
                 source_path = ':'.join([kwargs['remote_host'], source])
                 command = ' '.join(['/usr/bin/scp',
