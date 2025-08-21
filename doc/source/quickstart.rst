@@ -119,9 +119,16 @@ Preparation on BYOL
    If something like 'is already  online' is returned, it means punch already
    online and feel free to ignore the warning.
 
+6. Add privilege class B
+
+   If you are planning to use Fiber Channel storage and attach volumes, you need
+   to add privilege class B to your BYOL:
+
+   replace G with BG at the end of the first definition line (starting with USER).
+
 .. note::
-   Preparation step 2 and step 3 require to logoff then re-logon the
-   BYOL to make the updates become effective.
+   Preparation step 2, step 3, and step 6 require to logoff then
+   re-logon the BYOL to make the updates become effective.
 
 Installation Requirements
 -------------------------
