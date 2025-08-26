@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2023 IBM Corp.
+# Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -230,6 +230,32 @@ class SDKAPI(object):
         action = "get info of guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
+
+    @check_guest_exist()
+    def guest_get_os_info(self, userid):
+        """Get the operating system and kernel information of a virtual machine.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                os_distro: (str) the operating system distribution of the guest
+                kernel_info: (str) the kernel version of the guest
+        """
+        action = "get os info of guest '%s' " % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_os_details(userid)
+
+    @check_guest_exist()
+    def guest_get_online_cpu_num(self, userid):
+        """
+        Get the number of online CPUs of a virtual machine.
+        :param str userid: The ID of the virtual machine.
+
+        :returns: int representing the number of online CPUs for the guest.
+        """
+        action = "get online cpu number of guest '%s' " % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_online_cpu_num(userid)
 
     def guest_get_power_state_real(self, userid):
         """Returns power state of a virtual machine from hypervisor."""
