@@ -677,6 +677,67 @@ Get running information of guest.
    :language: javascript
 
 
+Get guest os info 
+-----------------
+
+**GET /guests/{userid}/os_info**
+
+Get operating system and kernel information of a virtual machine.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guest_os_info
+  - os_distro: os_distro_guest
+  - kernel_info: kernel_info_guest
+
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_os_info.tpl
+  :language: javascript
+
+
+Get guest online cpu num 
+---------------------------
+
+**GET /guests/{userid}/online_cpu_num**
+
+Get the number of online CPUs for the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - online_cpu_num: guest_online_cpu_num
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_online_cpu_num.tpl
+  :language: javascript
+
 Get guest user direct
 ---------------------
 

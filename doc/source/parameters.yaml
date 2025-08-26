@@ -164,6 +164,18 @@ guest_info:
   in: body
   required: true
   type: dict
+guest_os_info:
+  description: |
+    OS info and kernel info of guest 
+  in: body
+  required: true 
+  type: dict
+guest_online_cpu_num:
+  description: |
+    Online cpu number of the guest 
+  in: body
+  required: true 
+  type: int 
 guest_account:
   description: |
     Account of guest, useful for guest billing.
