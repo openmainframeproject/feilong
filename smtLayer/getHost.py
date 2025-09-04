@@ -25,6 +25,7 @@ from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
+from datetime import datetime
 
 modId = 'GHO'
 version = "1.0.0"
@@ -564,6 +565,8 @@ def getGeneralInfo(rh):
     lparMemTotal = "no info"
     lparMemStandby = "no info"
     results = invokeSMCLI(rh, "System_Information_Query", parm)
+    ipl = ""
+    ipl_data = {}
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "STORAGE=" in line:
@@ -571,6 +574,18 @@ def getGeneralInfo(rh):
                 lparMemStandby = line.split()[4]
                 lparMemTotal = lparMemOnline.split("=")[2]
                 lparMemStandby = lparMemStandby.split("=")[1]
+
+            # Checks the ipl data
+            if "IPL_TIME=" in line:
+                ipl_time_line = line.split()[5]
+                ipl_data['IPL_TIME'] = ipl_time_line.split("=")[1]
+                ipl_date_line = line.split()[6]
+                ipl_data['IPL_DATE'] = ipl_date_line.split("=")[1]
+                date_obj = datetime.strptime(ipl_data['IPL_DATE'], "%Y-%m-%d")
+                ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
+                ipl_timezone_line = line.split()[7]
+                ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
+                ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
     else:
         # SMAPI API failed, so we put out messages
         # 300 and 405 for consistency
@@ -604,28 +619,6 @@ def getGeneralInfo(rh):
             msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
                 "(see message 300)", results['response'])
             rh.printLn("ES", msg)
-
-    # Get IPL Time
-    ipl = ""
-    cmd = ["sudo", "/sbin/vmcp", "query cplevel"]
-    strCmd = ' '.join(cmd)
-    rh.printSysLog("Invoking: " + strCmd)
-    try:
-        ipl = subprocess.check_output(
-            cmd,
-            close_fds=True,
-            stderr=subprocess.STDOUT)
-        ipl = bytes.decode(ipl).split("\n")[2]
-    except subprocess.CalledProcessError as e:
-        msg = msgs.msg['0405'][1] % (modId, "IPL Time",
-                                     strCmd, e.output)
-        rh.printLn("ES", msg)
-        rh.updateResults(msgs.msg['0405'][0])
-    except Exception as e:
-        # All other exceptions.
-        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
-            type(e).__name__, str(e)))
-        rh.updateResults(msgs.msg['0421'][0])
 
     # Create output string
     outstr = "ZCC USERID: " + userid
