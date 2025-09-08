@@ -93,7 +93,8 @@ class VMHandler(object):
         return info
 
     def list(self):
-        # list all guest on the given host
+        # List all guests managed by Feilong (created or registered),
+        # based on database records, regardless of power state.
         info = self.client.send_request('guest_list')
         return info
 
