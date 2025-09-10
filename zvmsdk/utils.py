@@ -1319,6 +1319,9 @@ def get_lpar_name(zhypinfo=None):
 
 
 def is_fips_enabled():
+    if not os.path.exists('/proc/sys/crypto/fips_enabled'):
+        return False
+
     try:
         with open('/proc/sys/crypto/fips_enabled', 'r') as infile:
             return infile.read().strip() == '1'
