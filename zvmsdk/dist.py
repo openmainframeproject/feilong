@@ -205,13 +205,6 @@ class LinuxDist(object):
         """Get network file configuration path."""
         pass
 
-    def get_change_passwd_command(self, admin_password):
-        """construct change password command
-
-        :admin_password: the password to be changed to
-        """
-        return "echo 'root:%s' | chpasswd" % admin_password
-
     @abc.abstractmethod
     def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
@@ -1495,6 +1488,10 @@ class ubuntu24(ubuntu20):
     pass
 
 
+class ubuntu25(ubuntu20):
+    pass
+
+
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
         distro, release = self.parse_dist(os_version)
@@ -1503,7 +1500,7 @@ class LinuxDistManager(object):
     def _parse_release(self, os_version, distro, remain):
         supported = {'rhel': ['6', '7', '8', '9'],
                      'sles': ['11', '12', '15'],
-                     'ubuntu': ['16', '20', '22', '24'],
+                     'ubuntu': ['16', '20', '22', '24', '25'],
                      'rhcos': ['4']}
         releases = supported[distro]
 
