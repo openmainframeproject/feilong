@@ -259,8 +259,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         transport_file3 = '/'.join([tempDir,
                             "openstack/latest/vendor_data2.json"])
         with open(transport_file, 'w') as f:
-            f.write('{"admin_pass": "sMcTNh8b65dM",\
-                      "random_seed": "Q2UzyJ+6ITjY4STr/sSkDeoP4Wy\
+            f.write('{"random_seed": "Q2UzyJ+6ITjY4STr/sSkDeoP4Wy\
                       Nz62TlTiwc09NbkOEnunHn8v15DHdGsiLOJw0skc\
                       lGC3ERWpl6WVdyqK7Y6RB9PmttJF2w9MV\
                       kSZGIdhuyPa2b+tlIRxHBQTrXGIGoEKWq6KY9t\
