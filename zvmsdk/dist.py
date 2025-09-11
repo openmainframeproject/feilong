@@ -205,13 +205,6 @@ class LinuxDist(object):
         """Get network file configuration path."""
         pass
 
-    def get_change_passwd_command(self, admin_password):
-        """construct change password command
-
-        :admin_password: the password to be changed to
-        """
-        return "echo 'root:%s' | chpasswd" % admin_password
-
     @abc.abstractmethod
     def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
