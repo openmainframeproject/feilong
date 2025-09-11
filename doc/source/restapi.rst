@@ -146,7 +146,11 @@ List guests
 
 **GET /guests**
 
-List names of all the guests created by Feilong.
+List names of all guests managed by Feilong (created or registered), regardless of their current
+power state.
+
+This includes guests added to the Feilong database via creation or registration, even if they
+are powered off.
 
 * Request:
 
@@ -565,7 +569,9 @@ Show guest definition
 
 **GET /guests/{userid}**
 
-Display the user direct for the given userid.
+Get the user directory entry that was used to create the guest.
+
+The password will appear in clear text.
 
 * Request:
 
@@ -682,7 +688,9 @@ Get guest user direct
 
 **GET /guests/{userid}/user_direct**
 
-Get the user directory info of the given userid from hypervisor.
+Get the user directory info of the given userid from the hypervisor.
+
+The password will be obfuscated.
 
 * Request:
 
