@@ -1,6 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017,2024 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -1407,56 +1408,24 @@ class SMTClient(object):
                  'successfully' % image_name)
 
     def guest_get_os_version(self, userid):
-        os_version = ''
-        release_file = self.execute_cmd(userid, 'ls /etc/*-release')
-        if '/etc/os-release' in release_file:
-            # Parse os-release file, part of the output looks like:
-            # NAME="Red Hat Enterprise Linux Server"
-            # ID="rhel"
-            # VERSION_ID="7.0"
+        # Parse os-release file, part of the output looks like:
+        # NAME="Red Hat Enterprise Linux Server"
+        # ID="rhel"
+        # VERSION_ID="7.0"
 
-            release_info = self.execute_cmd(userid, 'cat /etc/os-release')
-            release_dict = {}
-            for item in release_info:
-                if item:
-                    release_dict[item.split('=')[0]] = item.split('=')[1]
-            distro = release_dict['ID']
-            version = release_dict['VERSION_ID']
-            if '"' in distro:
-                distro = eval(distro)
-            if '"' in version:
-                version = eval(version)
-            os_version = '%s%s' % (distro, version)
-            return os_version
-        elif '/etc/redhat-release' in release_file:
-            # The output looks like:
-            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-            distro = 'rhel'
-            release_info = self.execute_cmd(userid, 'cat /etc/redhat-release')
-            distro_version = release_info[0].split()[6]
-            os_version = ''.join((distro, distro_version))
-            return os_version
-        elif '/etc/SuSE-release' in release_file:
-            # The output for this file looks like:
-            # SUSE Linux Enterprise Server 11 (s390x)
-            # VERSION = 11
-            # PATCHLEVEL = 3
-            distro = 'sles'
-            release_info = self.execute_cmd(userid, 'cat /etc/SuSE-release')
-            LOG.debug('OS release info is %s' % release_info)
-            release_version = '.'.join((release_info[1].split('=')[1].strip(),
-                                     release_info[2].split('=')[1].strip()))
-            os_version = ''.join((distro, release_version))
-            return os_version
-        elif '/etc/system-release' in release_file:
-            # For some rhel6.7 system, it only have system-release file and
-            # the output looks like:
-            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-            distro = 'rhel'
-            release_info = self.execute_cmd(userid, 'cat /etc/system-release')
-            distro_version = release_info[0].split()[6]
-            os_version = ''.join((distro, distro_version))
-            return os_version
+        release_info = self.execute_cmd(userid, 'cat /etc/os-release')
+        release_dict = {}
+        for item in release_info:
+            if item:
+                release_dict[item.split('=')[0]] = item.split('=')[1]
+        distro = release_dict['ID']
+        version = release_dict['VERSION_ID']
+        if '"' in distro:
+            distro = eval(distro)
+        if '"' in version:
+            version = eval(version)
+        os_version = '%s%s' % (distro, version)
+        return os_version
 
     def _get_capture_devices(self, userid, capture_type='rootonly'):
         capture_devices = []

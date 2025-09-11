@@ -524,7 +524,7 @@ class TestFCPManager(base.SDKTestCase):
             'BBBB': {'allocated': 109, 'max': 110}}
         self.fcpops._check_missing_pchids(assigner_id, fcp_template_id, pchid_info_correct)
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
-                               ".*the statistics of PCHIDs \[\'02C0\', \'02E0\'\] "
+                               ".*the statistics of PCHIDs [\'02C0\', \'02E0\'] "
                                "are missing.*",
                                self.fcpops._check_missing_pchids,
                                assigner_id, fcp_template_id, pchid_info_missing)
@@ -2124,7 +2124,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         sp_name = 'v7k60'
         pchid_info = dict()
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
-                               "FCP Multipath Template \(id: 0001\) does not exist.",
+                               "FCP Multipath Template (id: 0001) does not exist.",
                                self.volumeops.get_volume_connector,
                                assigner_id, True, fcp_template_id, sp_name, pchid_info)
 
