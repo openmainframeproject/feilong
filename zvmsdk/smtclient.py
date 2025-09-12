@@ -2991,19 +2991,24 @@ class SMTClient(object):
             # because database maybe None, so return nothing here
             return []
 
-        # if image_name is not None, means there is only one record
-        if image_name:
+        for item in image_info:
+            image_name = item['imagename']
+            # set raise_exception to false because one failed
+            # may stop processing all the items in the list
             last_access_time = self._get_image_last_access_time(
                                    image_name, raise_exception=False)
-            image_info[0]['last_access_time'] = last_access_time
-        else:
-            for item in image_info:
-                image_name = item['imagename']
-                # set raise_exception to false because one failed
-                # may stop processing all the items in the list
-                last_access_time = self._get_image_last_access_time(
-                                       image_name, raise_exception=False)
-                item['last_access_time'] = last_access_time
+            item['last_access_time'] = last_access_time
+
+            # Adding Location of Image Path if image type is 'rootonly'
+            image_type = item['type']
+            if image_type == 'rootonly':
+                source_path = '/'.join([CONF.image.sdk_image_repository,
+                                        const.IMAGE_TYPE['DEPLOY'],
+                                        item['imageosdistro'],
+                                        image_name,
+                                        CONF.zvm.user_root_vdev])
+                item['image_path'] = source_path
+
         return image_info
 
     def image_get_root_disk_size(self, image_name):
