@@ -146,7 +146,11 @@ List guests
 
 **GET /guests**
 
-List names of all the guests created by Feilong.
+List names of all guests managed by Feilong (created or registered), regardless of their current
+power state.
+
+This includes guests added to the Feilong database via creation or registration, even if they
+are powered off.
 
 * Request:
 
@@ -565,7 +569,9 @@ Show guest definition
 
 **GET /guests/{userid}**
 
-Display the user direct for the given userid.
+Get the user directory entry that was used to create the guest.
+
+The password will appear in clear text.
 
 * Request:
 
@@ -677,12 +683,75 @@ Get running information of guest.
    :language: javascript
 
 
+Get guest os info 
+-----------------
+
+**GET /guests/{userid}/os_info**
+
+Get operating system and kernel information of a virtual machine.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guest_os_info
+  - os_distro: os_distro_guest
+  - kernel_info: kernel_info_guest
+
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_os_info.tpl
+  :language: javascript
+
+
+Get guest online cpu num 
+---------------------------
+
+**GET /guests/{userid}/online_cpu_num**
+
+Get the number of online CPUs for the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - online_cpu_num: guest_online_cpu_num
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_online_cpu_num.tpl
+  :language: javascript
+
 Get guest user direct
 ---------------------
 
 **GET /guests/{userid}/user_direct**
 
-Get the user directory info of the given userid from hypervisor.
+Get the user directory info of the given userid from the hypervisor.
+
+The password will be obfuscated.
 
 * Request:
 

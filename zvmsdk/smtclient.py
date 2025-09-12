@@ -337,7 +337,8 @@ class SMTClient(object):
 
         :userid: the zvm userid to be queried
         """
-        pi_dict = self.system_image_performance_query([userid])
+        namelist = zvmutils.get_namelist()
+        pi_dict = self.system_image_performance_query(namelist)
         return pi_dict.get(userid, None)
 
     def get_adapters_info(self, userid):
@@ -1406,56 +1407,75 @@ class SMTClient(object):
                  'successfully' % image_name)
 
     def guest_get_os_version(self, userid):
-        os_version = ''
-        release_file = self.execute_cmd(userid, 'ls /etc/*-release')
-        if '/etc/os-release' in release_file:
-            # Parse os-release file, part of the output looks like:
-            # NAME="Red Hat Enterprise Linux Server"
-            # ID="rhel"
-            # VERSION_ID="7.0"
+        """
+        Retrieves the operating system name and version of the VM from release file.
+        :param userid: User ID of the VM.
+        :return: A string containing the OS name and version information.
+                 Returns "" if IUCV is not configured.
+                 Returns "NA" if no OS release file is found.
+        """
 
-            release_info = self.execute_cmd(userid, 'cat /etc/os-release')
-            release_dict = {}
-            for item in release_info:
-                if item:
-                    release_dict[item.split('=')[0]] = item.split('=')[1]
-            distro = release_dict['ID']
-            version = release_dict['VERSION_ID']
-            if '"' in distro:
-                distro = eval(distro)
-            if '"' in version:
-                version = eval(version)
-            os_version = '%s%s' % (distro, version)
+        os_version = 'NA'
+        try:
+            release_file = self.execute_cmd(userid, 'ls /etc/*-release')
+
+            if '/etc/os-release' in release_file:
+                # Parse os-release file, part of the output looks like:
+                # NAME="Red Hat Enterprise Linux Server"
+                # ID="rhel"
+                # VERSION_ID="7.0"
+
+                release_info = self.execute_cmd(userid, 'cat /etc/os-release')
+                release_dict = {}
+                for item in release_info:
+                    if item:
+                        release_dict[item.split('=')[0]] = item.split('=')[1]
+                distro = release_dict['ID']
+                version = release_dict['VERSION_ID']
+                if '"' in distro:
+                    distro = eval(distro)
+                if '"' in version:
+                    version = eval(version)
+                os_version = '%s%s' % (distro, version)
+
+            elif '/etc/redhat-release' in release_file:
+                # The output looks like:
+                # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
+                distro = 'rhel'
+                release_info = self.execute_cmd(userid, 'cat /etc/redhat-release')
+                distro_version = release_info[0].split()[6]
+                os_version = ''.join((distro, distro_version))
+
+            elif '/etc/SuSE-release' in release_file:
+                # The output for this file looks like:
+                # SUSE Linux Enterprise Server 11 (s390x)
+                # VERSION = 11
+                # PATCHLEVEL = 3
+                distro = 'sles'
+                release_info = self.execute_cmd(userid, 'cat /etc/SuSE-release')
+                LOG.debug('OS release info is %s' % release_info)
+                release_version = '.'.join((release_info[1].split('=')[1].strip(),
+                                            release_info[2].split('=')[1].strip()))
+                os_version = ''.join((distro, release_version))
+
+            elif '/etc/system-release' in release_file:
+                # For some rhel6.7 system, it only have system-release file and
+                # the output looks like:
+                # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
+                distro = 'rhel'
+                release_info = self.execute_cmd(userid, 'cat /etc/system-release')
+                distro_version = release_info[0].split()[6]
+                os_version = ''.join((distro, distro_version))
+
             return os_version
-        elif '/etc/redhat-release' in release_file:
-            # The output looks like:
-            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-            distro = 'rhel'
-            release_info = self.execute_cmd(userid, 'cat /etc/redhat-release')
-            distro_version = release_info[0].split()[6]
-            os_version = ''.join((distro, distro_version))
-            return os_version
-        elif '/etc/SuSE-release' in release_file:
-            # The output for this file looks like:
-            # SUSE Linux Enterprise Server 11 (s390x)
-            # VERSION = 11
-            # PATCHLEVEL = 3
-            distro = 'sles'
-            release_info = self.execute_cmd(userid, 'cat /etc/SuSE-release')
-            LOG.debug('OS release info is %s' % release_info)
-            release_version = '.'.join((release_info[1].split('=')[1].strip(),
-                                     release_info[2].split('=')[1].strip()))
-            os_version = ''.join((distro, release_version))
-            return os_version
-        elif '/etc/system-release' in release_file:
-            # For some rhel6.7 system, it only have system-release file and
-            # the output looks like:
-            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
-            distro = 'rhel'
-            release_info = self.execute_cmd(userid, 'cat /etc/system-release')
-            distro_version = release_info[0].split()[6]
-            os_version = ''.join((distro, distro_version))
-            return os_version
+        except Exception as e:
+            if e.results['rc'] in (1, 4):
+                # rc = 1,Command was not authorized or a generic Linux error.
+                # rc = 4,IUCV socket error
+                return ""
+            elif e.results['rc'] == 8:
+                # rc = 8,Executed command failed
+                return "NA"
 
     def _get_capture_devices(self, userid, capture_type='rootonly'):
         capture_devices = []
@@ -2971,19 +2991,24 @@ class SMTClient(object):
             # because database maybe None, so return nothing here
             return []
 
-        # if image_name is not None, means there is only one record
-        if image_name:
+        for item in image_info:
+            image_name = item['imagename']
+            # set raise_exception to false because one failed
+            # may stop processing all the items in the list
             last_access_time = self._get_image_last_access_time(
                                    image_name, raise_exception=False)
-            image_info[0]['last_access_time'] = last_access_time
-        else:
-            for item in image_info:
-                image_name = item['imagename']
-                # set raise_exception to false because one failed
-                # may stop processing all the items in the list
-                last_access_time = self._get_image_last_access_time(
-                                       image_name, raise_exception=False)
-                item['last_access_time'] = last_access_time
+            item['last_access_time'] = last_access_time
+
+            # Adding Location of Image Path if image type is 'rootonly'
+            image_type = item['type']
+            if image_type == 'rootonly':
+                source_path = '/'.join([CONF.image.sdk_image_repository,
+                                        const.IMAGE_TYPE['DEPLOY'],
+                                        item['imageosdistro'],
+                                        image_name,
+                                        CONF.zvm.user_root_vdev])
+                item['image_path'] = source_path
+
         return image_info
 
     def image_get_root_disk_size(self, image_name):

@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2023 IBM Corp.
+# Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -66,6 +66,59 @@ class VMOps(object):
         with zvmutils.expect_invalid_resp_data():
             mem = dict_info[0].split(' ')[4]
             return zvmutils.convert_to_mb(mem) * 1024
+
+    def get_os_details(self, userid):
+        """
+        Gets the operating system and kernel information of a virtual machine.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                os_distro: (str) the operating system distribution of the guest
+                kernel_info: (str) the kernel version of the guest
+        """
+        try:
+            os_distro = self._smtclient.guest_get_os_version(userid)
+            kernel_info = self._smtclient.guest_get_kernel_info(userid)
+            LOG.debug('OS and kernel info: %s, %s', os_distro, kernel_info)
+        except exception.SDKSMTRequestFailed as err:
+            response = err.results.get('response', ['Unknown error'])[0]
+            msg = ('Failed to execute command on VM %(vm)s to get OS info: %(err)s'
+                % {'vm': userid, 'err': response})
+            LOG.error(msg)
+
+        return {
+            'os_distro': os_distro,
+            'kernel_info': kernel_info
+        }
+
+    def get_online_cpu_num(self, userid):
+        """
+        Gets the number of online/active CPUs of a virtual machine.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: int: the number of online CPUs (0 for RHCOS guests or on error)
+        """
+
+        # Check if RHCOS guest (skip CPU counting for these )
+        try:
+            guest_info = self._GuestDbOperator.get_guest_by_userid(userid)
+            if 'rhcos' in guest_info[2].lower():
+                return 0
+        except (ValueError, AttributeError, IndexError, TypeError) as err:
+            LOG.error(f"Failed to query guest type for {userid}: {err}")
+            return 0
+
+        # Gets the  active CPU count
+        try:
+            active_cpus = self._smtclient.get_active_cpu_addrs(userid)
+            cpu_count = len(active_cpus)
+            LOG.debug(f"Online CPUs for {userid}: {cpu_count}")
+            return cpu_count
+        except exception.SDKSMTRequestFailed as err:
+            LOG.error(f"Failed to get CPU count for {userid}: {err}")
+            return 0
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)

@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017-2020 IBM Corp.
+# Copyright 2017-2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -93,7 +93,8 @@ class VMHandler(object):
         return info
 
     def list(self):
-        # list all guest on the given host
+        # List all guests managed by Feilong (created or registered),
+        # based on database records, regardless of power state.
         info = self.client.send_request('guest_list')
         return info
 
@@ -105,6 +106,16 @@ class VMHandler(object):
     @validation.query_schema(guest.userid_list_query)
     def get_info(self, req, userid):
         info = self.client.send_request('guest_get_info', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
+    def get_os_info(self, req, userid):
+        info = self.client.send_request('guest_get_os_info', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
+    def get_online_cpu_num(self, req, userid):
+        info = self.client.send_request('guest_get_online_cpu_num', userid)
         return info
 
     @validation.query_schema(guest.userid_list_query)
@@ -537,6 +548,42 @@ def guest_get_info(req):
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_os_info(req):
+    def _guest_get_os_info(req, userid):
+        action = get_handler()
+        return action.get_os_info(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_os_info(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(
+        info, additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_online_cpu_num(req):
+    def _guest_get_online_cpu_num(req, userid):
+        action = get_handler()
+        return action.get_online_cpu_num(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_online_cpu_num(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(
+        info, additional_handler=util.handle_not_found)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response

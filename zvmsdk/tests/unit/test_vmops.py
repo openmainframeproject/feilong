@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -221,6 +221,178 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                                         zvm_host='fakehost')
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    def test_get_os_details(self, ggov, ggki):
+        ggov.return_value = 'RHEL8.4'
+        kernel_info = 'Linux 4.18.0-305.el8.s390x s390x'
+        ggki.return_value = kernel_info
+
+        os_details = self.vmops.get_os_details('fakeid')
+
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
+        self.assertEqual(os_details['os_distro'], 'RHEL8.4')
+        self.assertEqual(os_details['kernel_info'], kernel_info)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    def test_get_os_details_empty_values(self, ggov, ggki):
+        ggov.return_value = ''
+        ggki.return_value = ''
+
+        os_details = self.vmops.get_os_details('fakeid')
+
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
+        self.assertEqual(os_details['os_distro'], '')
+        self.assertEqual(os_details['kernel_info'], '')
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    def test_get_os_details_smt_failed(self, ggov, ggki, mock_log):
+        ggov.side_effect = exception.SDKSMTRequestFailed(
+            results={'response': ['Connection timeout error']},
+            msg="SMT request failed"
+        )
+        ggki.return_value = 'Linux 4.18.0-305.el8.s390x s390x'
+
+        os_details = self.vmops.get_os_details('fakeid')
+
+        ggov.assert_called_once_with('fakeid')
+        mock_log.error.assert_called_once()
+        self.assertIn('os_distro', os_details)
+        self.assertIn('kernel_info', os_details)
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_os_version")
+    def test_get_os_details_kernel_failed(self, ggov, ggki, mock_log):
+        ggov.return_value = 'RHEL8.4'
+        ggki.side_effect = exception.SDKSMTRequestFailed(
+            results={'response': ['Failed to get kernel info']},
+            msg="SMT request failed"
+        )
+
+        ggov.assert_called_once_with('fakeid')
+        ggki.assert_called_once_with('fakeid')
+        mock_log.error.assert_called_once()
+
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num(self, gaca, ggbu):
+        ggbu.return_value = ['fakeid', 'other_info', 'rhel8', 'more_info']
+        gaca.return_value = [0, 1, 2, 3]
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        self.assertEqual(cpu_count, 4)
+
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_rhcos_guest(self, gaca, ggbu):
+        ggbu.return_value = ['fakeid', 'other_info', 'RHCOS4.8', 'more_info']
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_not_called()
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_rhcos_lowercase(self, gaca, ggbu):
+        ggbu.return_value = ['fakeid', 'other_info', 'rhcos4.13', 'more_info']
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_not_called()
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_db_failed(self, gaca, ggbu, mock_log):
+        ggbu.side_effect = ValueError("Database connection error")
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_not_called()
+        mock_log.error.assert_called_once()
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_index_error(self, gaca, ggbu, mock_log):
+        ggbu.return_value = ['fakeid', 'only_two_fields']
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_not_called()
+        mock_log.error.assert_called_once()
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_smt_failed(self, gaca, ggbu, mock_log):
+        ggbu.return_value = ['fakeid', 'other_info', 'rhel8', 'more_info']
+        gaca.side_effect = exception.SDKSMTRequestFailed(
+            results={'response': ['CPU query failed']},
+            msg="SMT request failed"
+        )
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        mock_log.error.assert_called_once()
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_empty_cpu_list(self, gaca, ggbu):
+        ggbu.return_value = ['fakeid', 'other_info', 'rhel8', 'more_info']
+        gaca.return_value = []
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        self.assertEqual(cpu_count, 0)
+
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_single_cpu(self, gaca, ggbu):
+        ggbu.return_value = ['fakeid', 'other_info', 'rhel8', 'more_info']
+        gaca.return_value = [0]
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_called_once_with('fakeid')
+        self.assertEqual(cpu_count, 1)
+
+    @mock.patch("zvmsdk.vmops.LOG")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
+    def test_get_online_cpu_num_type_error(self, gaca, ggbu, mock_log):
+        ggbu.return_value = ['fakeid', 'other_info', None, 'more_info']
+
+        cpu_count = self.vmops.get_online_cpu_num('fakeid')
+
+        ggbu.assert_called_once_with('fakeid')
+        gaca.assert_not_called()
+        mock_log.error.assert_called_once()
+        self.assertEqual(cpu_count, 0)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_disks_info")
     def test_get_disks_info(self, get_disks_info):
