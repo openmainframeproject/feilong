@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2022 IBM Corp.
+# Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -92,6 +92,12 @@ ROUTE_LIST = (
     }),
     ('/guests/{userid}/info', {
         'GET': guest.guest_get_info,
+    }),
+    ('/guests/{userid}/os_info', {
+        'GET': guest.guest_get_os_info,
+    }),
+    ('/guests/{userid}/online_cpu_num', {
+        'GET': guest.guest_get_online_cpu_num,
     }),
     ('/guests/{userid}/user_direct', {
         'GET': guest.guest_get_user_direct,
