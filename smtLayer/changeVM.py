@@ -205,6 +205,8 @@ def add3390(rh):
             rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
 
+    if (results['overallRC'] == 0 and 'fileSystem' not in rh.parms):
+        return results['overallRC']
     if (results['overallRC'] == 0 and 'fileSystem' in rh.parms):
         results = installFS(
             rh,
@@ -305,6 +307,9 @@ def add9336(rh):
             # SMAPI API failed.
             rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
+
+    if (results['overallRC'] == 0 and 'fileSystem' not in rh.parms):
+        return results['overallRC']
 
     if (results['overallRC'] == 0 and 'fileSystem' in rh.parms):
         # Install the file system
