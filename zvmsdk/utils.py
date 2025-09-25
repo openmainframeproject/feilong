@@ -36,6 +36,7 @@ import time
 import traceback
 import threading
 import string
+import hashlib
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -1315,3 +1316,22 @@ def get_lpar_name(zhypinfo=None):
         zhypinfo = get_zhypinfo(filter='all')
         lpar_name = zhypinfo['lpar']['layer_name']
     return lpar_name
+
+
+def is_fips_enabled():
+    if not os.path.exists('/proc/sys/crypto/fips_enabled'):
+        return False
+
+    try:
+        with open('/proc/sys/crypto/fips_enabled', 'r') as infile:
+            return infile.read().strip() == '1'
+    except Exception as ex:
+        LOG.warning(f'Encountered error while checking FIPS status. Error={str(ex)}')
+        return False
+
+
+def get_hash_object():
+    if is_fips_enabled():
+        return hashlib.sha256()
+    else:
+        return hashlib.md5()

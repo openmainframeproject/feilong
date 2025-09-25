@@ -2921,7 +2921,7 @@ class SMTClient(object):
     def _get_md5sum(self, fpath):
         """Calculate the md5sum of the specific image file"""
         try:
-            current_md5 = hashlib.md5()
+            current_md5 = zvmutils.get_hash_object()
             if isinstance(fpath, six.string_types) and os.path.exists(fpath):
                 with open(fpath, "rb") as fh:
                     for chunk in self._read_chunks(fh):
