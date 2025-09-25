@@ -534,8 +534,27 @@ class SMTClient(object):
         with zvmutils.log_and_reraise_smt_request_failed(action):
             results = self._request(requestData)
         with zvmutils.expect_invalid_resp_data(results):
-            status = results['response'][0].partition(': ')[2]
-        return status
+            vmcp_status = results['response'][0].partition(': ')[2]
+        if vmcp_status == "off":
+            return vmcp_status
+        cmd = ["/opt/zthin/bin/IUCV/iucvclnt", userid, "date"]
+        try:
+            result_iucv = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+            IUCV_status = "on"
+        except subprocess.CalledProcessError as err:
+            rc = err.returncode
+            output = err.output
+            output = output.decode('utf-8').strip()
+            if "UNAUTHORIZED_ERROR" in output:
+                return vmcp_status
+            IUCV_status = "off"
+        except Exception as err:
+            msg = ("Could not find the userid of the smt server: %s") % err
+            LOG.error(msg)
+            IUCV_status = "off"
+        return IUCV_status
 
     def _check_power_state(self, userid, action):
         # Get the vm status
