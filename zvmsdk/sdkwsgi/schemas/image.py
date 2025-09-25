@@ -27,7 +27,8 @@ create = {
                 'image_name': parameter_types.name,
                 'url': parameter_types.url,
                 'image_meta': parameter_types.image_meta,
-                'remote_host': parameter_types.remotehost
+                'remote_host': parameter_types.remotehost,
+                'raw_track_access': parameter_types.boolean
             },
             'required': ['image_name', 'url', 'image_meta'],
             'additionalProperties': False
