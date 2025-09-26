@@ -606,6 +606,10 @@ class rhel9(rhel8):
     pass
 
 
+class rhel10(rhel8):
+    pass
+
+
 class rhcos(LinuxDist):
     def create_coreos_parameter(self, network_info, userid=''):
         try:
@@ -1498,7 +1502,7 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7', '8', '9'],
+        supported = {'rhel': ['6', '7', '8', '9', '10'],
                      'sles': ['11', '12', '15'],
                      'ubuntu': ['16', '20', '22', '24', '25'],
                      'rhcos': ['4']}
