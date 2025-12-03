@@ -49,7 +49,8 @@ class LinuxDist(object):
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
-               {'ip_addr': (str) IP address,
+               {'method': (str) NIC initialization method,
+               'ip_addr': (str) IP address,
                'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
                'cidr': (str) CIDR format
@@ -65,7 +66,11 @@ class LinuxDist(object):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003}]
+               'nic_vdev': '1003'},
+               {'method': 'dhcp',
+               'nic_vdev': '1004',
+               'mac_addr': '02:00:00:ab:cd:ef'}
+               ]
         :returns cfg_files: the network interface configuration file name
                             and file content
                  cmd_strings: shell command, helps to enable the network
@@ -124,10 +129,15 @@ class LinuxDist(object):
         return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
 
     def _generate_network_configuration(self, network, vdev, active=False):
+        method = 'static'
         ip_v4 = dns_str = gateway_v4 = ''
         ip_cidr = netmask_v4 = broadcast_v4 = ''
         net_cmd = mtu = ''
         dns_v4 = []
+
+        if (('method' in network.keys()) and
+            (network['method'] is not None)):
+            method = network['method']
 
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
@@ -164,12 +174,12 @@ class LinuxDist(object):
         subchannels += ',0.0.%s' % address_write.lower()
         subchannels += ',0.0.%s' % address_data.lower()
 
-        cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
+        cfg_str = self._get_cfg_str(device, method, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4, address_read,
                                     subchannels, dns_v4, mtu)
         cmd_str = self._get_cmd_str(address_read, address_write,
                                     address_data)
-        route_str = self._get_route_str(gateway_v4)
+        route_str = self._get_route_str(method, gateway_v4)
         if active and ip_v4 != '':
             if ip_cidr != '':
                 mask = ip_cidr.rpartition('/')[2]
@@ -220,7 +230,7 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels):
         """construct configuration file of network device."""
         pass
@@ -231,7 +241,7 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def _get_route_str(self, gateway_v4):
+    def _get_route_str(self, method, gateway_v4):
         """construct a router string."""
         pass
 
@@ -333,14 +343,15 @@ class rhel(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network-scripts/'
 
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels, dns_v4, mtu):
         cfg_str = 'DEVICE=\"' + device + '\"\n'
-        cfg_str += 'BOOTPROTO=\"static\"\n'
-        cfg_str += 'BROADCAST=\"' + broadcast_v4 + '\"\n'
-        cfg_str += 'GATEWAY=\"' + gateway_v4 + '\"\n'
-        cfg_str += 'IPADDR=\"' + ip_v4 + '\"\n'
-        cfg_str += 'NETMASK=\"' + netmask_v4 + '\"\n'
+        cfg_str += 'BOOTPROTO=\"' + method + '"\n'
+        if method == 'static':
+            cfg_str += 'BROADCAST=\"' + broadcast_v4 + '\"\n'
+            cfg_str += 'GATEWAY=\"' + gateway_v4 + '\"\n'
+            cfg_str += 'IPADDR=\"' + ip_v4 + '\"\n'
+            cfg_str += 'NETMASK=\"' + netmask_v4 + '\"\n'
         cfg_str += 'NETTYPE=\"qeth\"\n'
         cfg_str += 'ONBOOT=\"yes\"\n'
         cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
@@ -354,7 +365,7 @@ class rhel(LinuxDist):
                 i += 1
         return cfg_str
 
-    def _get_route_str(self, gateway_v4):
+    def _get_route_str(self, method, gateway_v4):
         return ''
 
     def _get_cmd_str(self, address_read, address_write, address_data):
@@ -702,7 +713,7 @@ class rhcos(LinuxDist):
     def _enable_network_interface(self, device, ip, broadcast):
         pass
 
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels):
         pass
 
@@ -724,7 +735,7 @@ class rhcos(LinuxDist):
     def _get_network_file_path(self):
         pass
 
-    def _get_route_str(self, gateway_v4):
+    def _get_route_str(self, method, gateway_v4):
         pass
 
     def _get_udev_configuration(self, device, dev_channel):
@@ -754,12 +765,13 @@ class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
 
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels, dns_v4, mtu):
-        cfg_str = "BOOTPROTO=\'static\'\n"
-        cfg_str += "IPADDR=\'%s\'\n" % ip_v4
-        cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
-        cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
+        cfg_str = "BOOTPROTO=\'%s\'\n" % method
+        if method == 'static':
+            cfg_str += "IPADDR=\'%s\'\n" % ip_v4
+            cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
+            cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
         cfg_str += "STARTMODE=\'onboot\'\n"
         cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
                     address_read)
@@ -770,8 +782,10 @@ class sles(LinuxDist):
             self.dns_v4 = None
         return cfg_str
 
-    def _get_route_str(self, gateway_v4):
-        route_str = 'default %s - -\n' % gateway_v4
+    def _get_route_str(self, method, gateway_v4):
+        route_str = ''
+        if method == 'static':
+            route_str = 'default %s - -\n' % gateway_v4
         return route_str
 
     def _get_cmd_str(self, address_read, address_write, address_data):
@@ -1070,7 +1084,8 @@ class ubuntu(LinuxDist):
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
-               {'ip_addr': (str) IP address,
+               {'method': (str) NIC initialization method,
+               'ip_addr': (str) IP address,
                'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
                'cidr': (str) CIDR format
@@ -1086,7 +1101,11 @@ class ubuntu(LinuxDist):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003}]
+               'nic_vdev': '1003'},
+               {'method': 'dhcp',
+               'nic_vdev': '1004',
+               'mac_addr': '02:00:00:ab:cd:ef'}
+               ]
         """
         cfg_files = []
         cmd_strings = ''
@@ -1151,20 +1170,26 @@ class ubuntu(LinuxDist):
     def _get_network_file(self):
         return '/etc/network/interfaces'
 
-    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+    def _get_cfg_str(self, device, method, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, mtu):
         cfg_str = 'auto ' + device + '\n'
-        cfg_str += 'iface ' + device + ' inet static\n'
-        cfg_str += 'address ' + ip_v4 + '\n'
-        cfg_str += 'netmask ' + netmask_v4 + '\n'
-        cfg_str += 'broadcast ' + broadcast_v4 + '\n'
-        cfg_str += 'gateway ' + gateway_v4 + '\n'
+        cfg_str += 'iface ' + device + ' inet ' + method + '\n'
+        if method == 'static':
+            cfg_str += 'address ' + ip_v4 + '\n'
+            cfg_str += 'netmask ' + netmask_v4 + '\n'
+            cfg_str += 'broadcast ' + broadcast_v4 + '\n'
+            cfg_str += 'gateway ' + gateway_v4 + '\n'
         cfg_str += 'mtu ' + mtu + '\n'
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
+        method = 'static'
         ip_v4 = dns_str = gateway_v4 = ''
         netmask_v4 = broadcast_v4 = ''
+        if (('method' in network.keys()) and
+            (network['method'] is not None)):
+            method = network['method']
+
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
@@ -1192,12 +1217,12 @@ class ubuntu(LinuxDist):
             mtu = str(network['mtu'])
 
         device = self._get_device_name(vdev)
-        cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
+        cfg_str = self._get_cfg_str(device, method, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4, mtu)
 
         return cfg_str, dns_str
 
-    def _get_route_str(self, gateway_v4):
+    def _get_route_str(self, method, gateway_v4):
         return ''
 
     def _get_cmd_str(self, address_read, address_write, address_data):
@@ -1372,7 +1397,8 @@ class ubuntu20(ubuntu):
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
-               {'ip_addr': (str) IP address,
+               {'method': (str) NIC initialization method,
+               'ip_addr': (str) IP address,
                'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
                'cidr': (str) CIDR format
@@ -1388,7 +1414,11 @@ class ubuntu20(ubuntu):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003}]
+               'nic_vdev': '1003'},
+               {'method': 'dhcp'
+               'nic_vdev': '1004',
+               'mac_addr': '02:00:00:ab:cd:ef'}
+               ]
         """
         cfg_files = []
         cmd_strings = ''

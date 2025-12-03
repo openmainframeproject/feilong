@@ -1085,6 +1085,8 @@ guest_networks_list:
     Network information list of guest. It has one dictionary that contain some of the below
     keys for each interface. All the keys are optional\:
 
+    - ``method``: interface initialization method. The valid values are ``static`` and
+      ``dhcp``.  Default is ``static``.
     - ``ip_addr``: the IP address of the interface, ``cidr`` is required if IP address
        is set
     - ``dns_addr``: DNS servers address list
