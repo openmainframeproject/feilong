@@ -45,15 +45,15 @@ class LinuxDist(object):
 
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
-        """Generate network configuration files for guest vm
+        """Generate network configuration files for guest VM
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
                {'ip_addr': (str) IP address,
-               'dns_addr': (list) dns addresses,
+               'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
-               'cidr': (str) cidr format
-               'nic_vdev': (str) VDEV of the nic}
+               'cidr': (str) CIDR format
+               'nic_vdev': (str) VDEV of the NIC}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -298,7 +298,7 @@ class LinuxDist(object):
 
     @abc.abstractmethod
     def create_active_net_interf_cmd(self):
-        """construct active command which will initialize and configure vm."""
+        """construct active command which will initialize and configure VM."""
         pass
 
     @abc.abstractmethod
@@ -613,14 +613,14 @@ class rhel10(rhel8):
 class rhcos(LinuxDist):
     def create_coreos_parameter(self, network_info, userid=''):
         try:
-            # TODO: fix the limitation that assuming the first nic configured
+            # TODO: fix the limitation that assuming the first NIC configured
             vif = network_info[0]
             ip_addr = vif['ip_addr']
             gateway_addr = vif['gateway_addr']
             netmask = vif['cidr'].split("/")[-1]
             nic_name = "enc" + vif.get('nic_vdev', CONF.zvm.default_nic_vdev)
             hostname = vif.get('hostname', userid) or "localhost"
-            # update dns name server info if they're defined in subnet
+            # update DNS name server info if they are defined in subnet
             _dns = ["", ""]
             if 'dns_addr' in vif.keys():
                 if ((vif['dns_addr'] is not None) and
@@ -1066,15 +1066,15 @@ class sles15(sles12):
 class ubuntu(LinuxDist):
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
-        """Generate network configuration files for guest vm
+        """Generate network configuration files for guest VM
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
                {'ip_addr': (str) IP address,
-               'dns_addr': (list) dns addresses,
+               'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
-               'cidr': (str) cidr format
-               'nic_vdev': (str) VDEV of the nic}
+               'cidr': (str) CIDR format
+               'nic_vdev': (str) VDEV of the NIC}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -1368,15 +1368,15 @@ class ubuntu20(ubuntu):
 
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
-        """Generate network configuration files for guest vm
+        """Generate network configuration files for guest VM
         :param list guest_networks:  a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
                {'ip_addr': (str) IP address,
-               'dns_addr': (list) dns addresses,
+               'dns_addr': (list) DNS addresses,
                'gateway_addr': (str) gateway address,
-               'cidr': (str) cidr format
-               'nic_vdev': (str) VDEV of the nic}
+               'cidr': (str) CIDR format
+               'nic_vdev': (str) VDEV of the NIC}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -1410,8 +1410,8 @@ class ubuntu20(ubuntu):
             device_cfg_str = self._generate_network_configuration(network,
                                     base_vdev)
             device_cfg[device] = device_cfg_str
-        # For Ubuntu20 and Ubuntu 22, when there are multi nics,
-        # there is still 1 network config yml file, all nics are
+        # For Ubuntu20 and Ubuntu 22, when there are multi NICs,
+        # there is still 1 network config yml file, all NICs are
         # written in this file, example is:
         #  network:
         #   ethernets:

@@ -683,7 +683,7 @@ Get running information of guest.
    :language: javascript
 
 
-Get guest os info 
+Get guest OS info
 -----------------
 
 **GET /guests/{userid}/os_info**
@@ -716,8 +716,8 @@ Get operating system and kernel information of a virtual machine.
   :language: javascript
 
 
-Get guest online cpu num 
----------------------------
+Get guest online CPU num
+------------------------
 
 **GET /guests/{userid}/online_cpu_num**
 
