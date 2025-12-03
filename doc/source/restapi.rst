@@ -815,7 +815,9 @@ Create guest NIC
 
 **POST /guests/{userid}/nic**
 
-Create a virtual NIC on giving guest.
+Create a virtual NIC on given guest.
+The NIC is created in the z/VM system directory, but it is not configured
+at the guest OS level.
 
 * Request:
 
@@ -844,7 +846,9 @@ Create network interface
 
 **POST /guests/{userid}/interface**
 
-Create one or more network interfaces on giving guest.
+Create one or more network interfaces on given guest.
+The interfaces are created in the z/VM system directory, and configured after
+the guest is started.
 
 * Request:
 
