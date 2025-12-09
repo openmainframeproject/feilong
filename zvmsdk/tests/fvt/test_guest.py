@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2018 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -419,12 +419,12 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
     def test_guest_vif_create_not_exist(self):
         resp = self.client.guest_create_network_interface('notexist',
-                                                          'rhel6.7', [])
+                                                          'rhel8.9', [])
         self.assertEqual(404, resp.status_code)
 
     def test_guest_vif_delete_not_exist(self):
         resp = self.client.guest_delete_network_interface(userid='notexist',
-                                                          os_version='rhel6.7')
+                                                          os_version='rhel8.9')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_query_not_exist(self):
@@ -636,7 +636,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
                                    resp.content)
 
         # Use softstop instend of stop to avoid the data lose with guest_stop
-        # when testing the sles12 image.
+        # when testing the sles image.
         resp = self.client.guest_softstop(userid)
         self.assertEqual(200, resp.status_code)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(userid,
