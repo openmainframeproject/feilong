@@ -507,11 +507,20 @@ hostname = {
     ]
 }
 
+method = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': 'string',
+         'enum': ['static', 'dhcp']}
+    ]
+}
+
 network_list = {
     'type': 'array',
     'items': {
         'type': 'object',
         'properties': {
+            'method': method,
             'ip_addr': ipv4,
             'dns_addr': {'type': 'array',
                         'items': ipv4},

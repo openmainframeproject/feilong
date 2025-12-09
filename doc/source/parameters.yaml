@@ -166,16 +166,16 @@ guest_info:
   type: dict
 guest_os_info:
   description: |
-    OS info and kernel info of guest 
+    OS info and kernel info of guest.
   in: body
-  required: true 
+  required: true
   type: dict
 guest_online_cpu_num:
   description: |
-    Online cpu number of the guest 
+    Online CPU number of the guest.
   in: body
-  required: true 
-  type: int 
+  required: true
+  type: int
 guest_account:
   description: |
     Account of guest, useful for guest billing.
@@ -1085,6 +1085,8 @@ guest_networks_list:
     Network information list of guest. It has one dictionary that contain some of the below
     keys for each interface. All the keys are optional\:
 
+    - ``method``: interface initialization method. The valid values are ``static`` and
+      ``dhcp``.  Default is ``static``.
     - ``ip_addr``: the IP address of the interface, ``cidr`` is required if IP address
        is set
     - ``dns_addr``: DNS servers address list
@@ -1108,7 +1110,7 @@ guest_networks:
       is set
     - ``dns_addr``: DNS servers address list
     - ``gateway_addr``: gateway address
-    - ``cidr``: cidr format
+    - ``cidr``: CIDR format
     - ``nic_vdev``: NIC device number, 1 to 4 hexadecimal digits
     - ``mac_addr``: MAC address
     - ``nic_id``: NIC identifier
