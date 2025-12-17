@@ -125,7 +125,7 @@ class SDKAPI(object):
         :param str userid: the id of the virtual machine to be power off
         :param dict kwargs:
                - timeout=<value>:
-                 Integer, time to wait for vm to be deactivate, the
+                 Integer, time to wait for VM to deactivate, the
                  recommended value is 300
                - poll_interval=<value>
                  Integer, how often to signal guest while waiting for it
@@ -146,7 +146,7 @@ class SDKAPI(object):
         :param str userid: the id of the virtual machine to be power off
         :param dict kwargs:
                - timeout=<value>:
-                 Integer, time to wait for vm to be deactivate, the
+                 Integer, time to wait for VM to deactivate, the
                  recommended value is 300
                - poll_interval=<value>
                  Integer, how often to signal guest while waiting for it
@@ -241,7 +241,7 @@ class SDKAPI(object):
                 os_distro: (str) the operating system distribution of the guest
                 kernel_info: (str) the kernel version of the guest
         """
-        action = "get os info of guest '%s' " % userid
+        action = "get OS info of guest '%s' " % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_os_details(userid)
 
@@ -253,7 +253,7 @@ class SDKAPI(object):
 
         :returns: int representing the number of online CPUs for the guest.
         """
-        action = "get online cpu number of guest '%s' " % userid
+        action = "get online CPU number of guest '%s' " % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_online_cpu_num(userid)
 
@@ -290,9 +290,9 @@ class SDKAPI(object):
             return self._vmops.get_disks_info(userid)
 
     def guest_get_user_direct(self, userid):
-        """Get user direct of the specified guest vm
+        """Get user direct of the specified guest VM
 
-        :param str userid: the user id of the guest vm
+        :param str userid: the user id of the guest VM
         :returns: Dictionary describing user direct and check info result
         :rtype: dict
         """
@@ -320,7 +320,7 @@ class SDKAPI(object):
     def guest_list(self):
         """list names of all the VMs on this host.
 
-        :returns: names of the vm on this host, in a list.
+        :returns: names of the VM on this host, in a list.
         """
         action = "list guests on host"
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -395,7 +395,7 @@ class SDKAPI(object):
 
     def host_get_guest_list(self):
         """list names of all the VMs on the host.
-        :returns: names of the vm on this hypervisor, in a list.
+        :returns: names of the VM on this hypervisor, in a list.
         """
         action = "list guests on the host"
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -560,7 +560,7 @@ class SDKAPI(object):
         {
         'image_name': the image_name that exported
         'image_path': the image_path after exported
-        'os_version': the os version of the exported image
+        'os_version': the OS version of the exported image
         'md5sum': the md5sum of the original image
         'comments': the comments of the original image
         }
@@ -576,20 +576,20 @@ class SDKAPI(object):
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, hostname=None,
                      skipdiskcopy=False):
-        """ Deploy the image to vm.
+        """ Deploy the image to VM.
 
-        :param userid: (str) the user id of the vm
+        :param userid: (str) the user id of the VM
         :param image_name: (str) If the skipdiskcopy is False, this would be
-               used as the name of image that used to deploy the vm;
-               Otherwise, this value should be the os version.
-        :param transportfiles: (str) the files that used to customize the vm
+               used as the name of image that used to deploy the VM;
+               Otherwise, this value should be the OS version.
+        :param transportfiles: (str) the files that used to customize the VM
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
-        :param hostname: (str) the hostname of the vm. This parameter will be
+        :param hostname: (str) the hostname of the VM. This parameter will be
                ignored if transportfiles present.
         :param skipdiskcopy: (bool) whether to skip the disk copy process.
-               If True, the os version should be specified in the parameter
+               If True, the OS version should be specified in the parameter
                image_name.
         """
         action = ("deploy image '%(img)s' to guest '%(vm)s'" %
@@ -603,7 +603,7 @@ class SDKAPI(object):
                       compress_level=6):
         """ Capture the guest to generate a image
 
-        :param userid: (str) the user id of the vm
+        :param userid: (str) the user id of the VM
         :param image_name: (str) the unique image name after capture
         :param capture_type: (str) the type of capture, the value can be:
                rootonly: indicate just root device will be captured
@@ -622,47 +622,47 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, active=False):
-        """ Create the nic for the vm, add NICDEF record into the user direct.
+        """ Create the NIC for the VM, add NICDEF record into the user direct.
 
-        :param str userid: the user id of the vm
-        :param str vdev: nic device number, 1- to 4- hexadecimal digits
-        :param str nic_id: nic identifier
-        :param str mac_addr: mac address, it is only be used when changing
+        :param str userid: the user id of the VM
+        :param str vdev: NIC device number, 1- to 4- hexadecimal digits
+        :param str nic_id: NIC identifier
+        :param str mac_addr: MAC address, it is only used when changing
                the guest's user direct. Format should be xx:xx:xx:xx:xx:xx,
                and x is a hexadecimal digit
-        :param bool active: whether add a nic on active guest system
+        :param bool active: whether add a NIC on active guest system
 
-        :returns: nic device number, 1- to 4- hexadecimal digits
+        :returns: NIC device number, 1- to 4- hexadecimal digits
         :rtype: str
         """
         if mac_addr is not None:
             if not zvmutils.valid_mac_addr(mac_addr):
                 raise exception.SDKInvalidInputFormat(
-                    msg=("Invalid mac address, format should be "
-                         "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
+                    msg=("Invalid MAC address, format should be "
+                         "xx:xx:xx:xx:xx:xx, where x is a hexadecimal digit"))
         return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, active=active)
 
     @check_guest_exist()
     def guest_delete_nic(self, userid, vdev, active=False):
-        """ delete the nic for the vm
+        """ delete the NIC for the VM
 
-        :param str userid: the user id of the vm
-        :param str vdev: nic device number, 1- to 4- hexadecimal digits
-        :param bool active: whether delete a nic on active guest system
+        :param str userid: the user id of the VM
+        :param str vdev: NIC device number, 1- to 4- hexadecimal digits
+        :param bool active: whether delete a NIC on active guest system
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
     @check_guest_exist()
     def guest_get_definition_info(self, userid, **kwargs):
-        """Get definition info for the specified guest vm, also could be used
+        """Get definition info for the specified guest VM, also could be used
         to check specific info.
 
-        :param str userid: the user id of the guest vm
+        :param str userid: the user id of the guest VM
         :param dict kwargs: Dictionary used to check specific info in user
                             direct. Valid keywords for kwargs:
                             nic_coupled=<vdev>, where <vdev> is the virtual
-                            device number of the nic to be checked the couple
+                            device number of the NIC to be checked the couple
                             status.
         :returns: Dictionary describing user direct and check info result
         :rtype: dict
@@ -671,7 +671,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_definition_info(userid, **kwargs)
 
-    """Parse the nics' info from the user directory
+    """Parse the NICs' info from the user directory
     :param user_direct: (str) the user directory info to be parsed
     """
 
@@ -704,11 +704,11 @@ class SDKAPI(object):
         return nics_info
 
     def guest_register(self, userid, meta, net_set, port_macs=None):
-        """Register vm by inserting or updating DB for e.g. migration and onboarding
-        :param userid: (str) the userid of the vm to be relocated or tested
-        :param meta: (str) the metadata of the vm to be relocated or tested
-        :param net_set: (str) the net_set of the vm, default is 1.
-        :param port_macs: (dict) the virtual interface port id maps with mac id
+        """Register VM by inserting or updating DB for e.g. migration and onboarding
+        :param userid: (str) the userid of the VM to be relocated or tested
+        :param meta: (str) the metadata of the VM to be relocated or tested
+        :param net_set: (str) the net_set of the VM, default is 1.
+        :param port_macs: (dict) the virtual interface port id maps with MAC id
                      Format: { macid1 : portid1, macid2 : portid2}.
                      For example,
                      {
@@ -736,7 +736,7 @@ class SDKAPI(object):
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     guests = self._GuestDbOperator.get_migrated_guest_list()
                 if userid in str(guests):
-                    """change comments for vm"""
+                    """change comments for VM"""
                     comments = self._GuestDbOperator.get_comments_by_userid(
                                                                     userid)
                     comments['migrated'] = 0
@@ -749,7 +749,7 @@ class SDKAPI(object):
                 # since the guest exists
                 return
 
-            # add one record for new vm for both onboarding and migration,
+            # add one record for new VM for both onboarding and migration,
             # and even others later.
             action = "add guest '%s' to database" % userid
             with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -775,10 +775,10 @@ class SDKAPI(object):
                         if mac in port_macs.keys():
                             port = port_macs[mac]
                     if port is None:
-                        LOG.warning("Port not found for nic %s, %s." %
+                        LOG.warning("Port not found for NIC %s, %s." %
                                     (interface, port_macs))
                     else:
-                        LOG.info("Port found for nic %s." % interface)
+                        LOG.info("Port found for NIC %s." % interface)
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
                                 userid, interface, port, switch)
@@ -787,8 +787,8 @@ class SDKAPI(object):
     # Deregister the guest (not delete), this function has no relationship with
     # migration.
     def guest_deregister(self, userid):
-        """DB operation for deregister vm for offboard (dismiss) request.
-        :param userid: (str) the userid of the vm to be deregistered
+        """DB operation for deregister VM for offboard (dismiss) request.
+        :param userid: (str) the userid of the VM to be deregistered
         """
         userid = userid.upper()
         # We don't check if the VM exists in the LPAR or zCC DB, just delete it
@@ -813,11 +813,11 @@ class SDKAPI(object):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster.
 
-        :param userid: (str) the userid of the vm to be relocated or tested
+        :param userid: (str) the userid of the VM to be relocated or tested
         :param dest_zcc_userid: (str) the userid of zcc on destination.
                If None, no any userid is set into the guest.
         :param destination: (str) the system ID of the z/VM system to which
-               the specified vm will be relocated or tested.
+               the specified VM will be relocated or tested.
         :param parms: (dict) a dictionary of options for relocation.
                It has one dictionary that contains some of the below keys:
                {'maxtotal': i,
@@ -839,7 +839,7 @@ class SDKAPI(object):
                 which causes the VMRELOCATE command
                 to do one early pass through virtual machine storage
                 and then go directly to the quiesce stage.
-        :param lgr_action: (str) indicates the action is move or test for vm.
+        :param lgr_action: (str) indicates the action is move or test for VM.
 
         """
         if lgr_action.lower() == 'move':
@@ -896,10 +896,10 @@ class SDKAPI(object):
                      dedicate_vdevs=None, loaddev={}, account='',
                      comment_list=None, cschedule='', cshare='',
                      rdomain='', pcif=''):
-        """create a vm in z/VM
+        """create a VM in z/VM
 
-        :param userid: (str) the userid of the vm to be created
-        :param vcpus: (int) amount of vcpus
+        :param userid: (str) the userid of the VM to be created
+        :param vcpus: (int) amount of vCPUs
         :param memory: (int) size of memory in MB
         :param disk_list: (dict) a list of disks info for the guest.
                It has one dictionary that contain some of the below keys for
@@ -939,7 +939,7 @@ class SDKAPI(object):
                If it's configured, such as ECKD:eckdpool2, it will
                create 0102 with size 1g from ECKD diskpool eckdpool2 for guest.
         :param user_profile: (str) the profile for the guest
-        :param max_cpu: (int) the maximum number of virtual cpu this user can
+        :param max_cpu: (int) the maximum number of virtual CPUs this user can
                define. The value should be a decimal value between 1 and 64.
         :param max_mem: (str) the maximum size of memory the user can define.
                The value should be specified by 1-4 bits of number suffixed by
@@ -963,10 +963,10 @@ class SDKAPI(object):
         https://www.ibm.com/docs/en/zvm/6.4?topic=SSB27U_6.4.0/
                 com.ibm.zvm.v640.hcpa5/daccoun.htm#daccoun
         :param comment_list: (array) a list of comment string
-        :param cschedule: a command input for schedule cpu pool
+        :param cschedule: a command input for schedule CPU pool
         :param cshare: a command input for share settings
         :param rdomain: a command input for relocation domain
-        :param pcif: a command input for pci function
+        :param pcif: a command input for PCI function
         """
         dedicate_vdevs = dedicate_vdevs or []
 
@@ -1073,15 +1073,15 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt, cpu_share=''):
-        """Live resize virtual cpus of guests.
+        """Live resize virtual CPUs of guests.
 
         :param userid: (str) the userid of the guest to be live resized
-        :param cpu_cnt: (int) The number of virtual cpus that the guest should
+        :param cpu_cnt: (int) The number of virtual CPUs that the guest should
                have in active state after live resize. The value should be an
                integer between 1 and 64.
 
         """
-        action = "live resize guest '%s' to have '%i' virtual cpus" % (userid,
+        action = "live resize guest '%s' to have '%i' virtual CPUs" % (userid,
                                                                        cpu_cnt)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -1090,15 +1090,15 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_resize_cpus(self, userid, cpu_cnt, cpu_share=''):
-        """Resize virtual cpus of guests.
+        """Resize virtual CPUs of guests.
 
         :param userid: (str) the userid of the guest to be resized
-        :param cpu_cnt: (int) The number of virtual cpus that the guest should
+        :param cpu_cnt: (int) The number of virtual CPUs that the guest should
                have defined in user directory after resize. The value should
                be an integer between 1 and 64.
 
         """
-        action = "resize guest '%s' to have '%i' virtual cpus" % (userid,
+        action = "resize guest '%s' to have '%i' virtual CPUs" % (userid,
                                                                   cpu_cnt)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -1144,9 +1144,9 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_create_disks(self, userid, disk_list):
-        """Add disks to an existing guest vm.
+        """Add disks to an existing guest VM.
 
-        :param userid: (str) the userid of the vm to be created
+        :param userid: (str) the userid of the VM to be created
         :param disk_list: (list) a list of disks info for the guest.
                It has one dictionary that contain some of the below keys for
                each disk, the root disk should be the first element in the
@@ -1224,9 +1224,9 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_delete_disks(self, userid, disk_vdev_list):
-        """Delete disks from an existing guest vm.
+        """Delete disks from an existing guest VM.
 
-        :param userid: (str) the userid of the vm to be deleted
+        :param userid: (str) the userid of the VM to be deleted
         :param disk_vdev_list: (list) the vdev list of disks to be deleted,
             for example: ['0101', '0102']
         """
@@ -1238,10 +1238,10 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False, vlan_id=-1):
-        """ Couple nic device to specified vswitch.
+        """ Couple NIC device to specified vswitch.
 
-        :param str userid: the user's name who owns the nic
-        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
+        :param str userid: the user's name who owns the NIC
+        :param str nic_vdev: NIC device number, 1- to 4- hexadecimal digits
         :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
         :param str vlan_id: the VLAN ID of the NIC
@@ -1253,10 +1253,10 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
                                         active=False):
-        """ Disonnect nic device with network.
+        """ Disconnect NIC device from network.
 
-        :param str userid: the user's name who owns the nic
-        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
+        :param str userid: the user's name who owns the NIC
+        :param str nic_vdev: NIC device number, 1- to 4- hexadecimal digits
         :param bool active: whether make the change on active guest system
         """
         self._networkops.uncouple_nic_from_vswitch(userid, nic_vdev,
@@ -1368,7 +1368,7 @@ class SDKAPI(object):
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         :returns: console log string
         :rtype: str
         """
@@ -1381,7 +1381,7 @@ class SDKAPI(object):
     def guest_delete(self, userid):
         """Delete guest.
 
-        :param userid: the user id of the vm
+        :param userid: the user id of the VM
         """
 
         # check guest exist in database or not
@@ -1402,10 +1402,10 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_inspect_stats(self, userid_list):
-        """Get the statistics including cpu and mem of the guests
+        """Get the statistics including CPU and mem of the guests
 
         :param userid_list: a single userid string or a list of guest userids
-        :returns: dictionary describing the cpu statistics of the vm
+        :returns: dictionary describing the CPU statistics of the VM
                   in the form {'UID1':
                   {
                   'guest_cpus': xx,
@@ -1446,10 +1446,10 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_inspect_vnics(self, userid_list):
-        """Get the vnics statistics of the guest virtual machines
+        """Get the vNICs statistics of the guest virtual machines
 
         :param userid_list: a single userid string or a list of guest userids
-        :returns: dictionary describing the vnics statistics of the vm
+        :returns: dictionary describing the vNICs statistics of the VM
                   in the form
                   {'UID1':
                   [{
@@ -1485,7 +1485,7 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        action = "get the vnics statistics of guest '%s'" % str(userid_list)
+        action = "get the vNICs statistics of guest '%s'" % str(userid_list)
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._monitor.inspect_vnics(userid_list)
 
@@ -1494,7 +1494,7 @@ class SDKAPI(object):
         """Set vswitch to grant user
 
         :param str vswitch_name: the name of the vswitch
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         """
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
@@ -1503,7 +1503,7 @@ class SDKAPI(object):
         """Revoke user for vswitch
 
         :param str vswitch_name: the name of the vswitch
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
@@ -1522,7 +1522,7 @@ class SDKAPI(object):
         """Set vlan id for user when connecting to the vswitch
 
         :param str vswitch_name: the name of the vswitch
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         :param int vlan_id: the VLAN id
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
@@ -1530,9 +1530,9 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_config_minidisks(self, userid, disk_info):
-        """Punch the script that used to process additional disks to vm
+        """Punch the script that used to process additional disks to VM
 
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         :param disk_info: a list contains disks info for the guest. It
                contains dictionaries that describes disk info for each disk.
 
@@ -1573,7 +1573,7 @@ class SDKAPI(object):
             2. Only one partition is supported.
             3. xfs file system is not supported.
 
-        :param str userid: the user id of the vm
+        :param str userid: the user id of the VM
         :param str os_version: operating system version of the guest
         """
         return self._vmops.guest_grow_root_volume(userid, os_version)
@@ -1642,8 +1642,8 @@ class SDKAPI(object):
             - gvrp_value=<value>:
                 GVRP or NOGVRP
             - mac_id=<value>:
-                A unique identifier (up to six hexadecimal
-                digits) used as part of the vswitch MAC address
+                A unique identifier (up to six hexadecimal digits)
+                used as part of the vswitch MAC address
             - uplink=<value>:
                 One of the following:
                 NO: The port being enabled is not the vswitch's UPLINK port.
@@ -1986,8 +1986,8 @@ class SDKAPI(object):
             use this FCP Multipath Template as default FCP Multipath Template. If None, it means
             no storage provider would use this FCP Multipath Template as default.
         :param min_fcp_paths_count: The minimum number of FCP paths that
-            should be defined to a vm when attachinga data volume to a vm or
-            BFV (deploying a vm from SCSI image).
+            should be defined to a VM when attachinga data volume to a VM or
+            BFV (deploying a VM from SCSI image).
         """
         return self._volumeop.create_fcp_template(
             name, description, fcp_devices,
@@ -2071,17 +2071,17 @@ class SDKAPI(object):
         :param list of wwpns
         :param string lun
         :param wwid: (str) the wwid of the target volume
-        :param transportfiles: (str) the files that used to customize the vm
+        :param transportfiles: (str) the files that used to customize the VM
         :param list guest_networks: a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
                {'ip_addr': (str) IP address or None,
-               'dns_addr': (list) dns addresses or None,
+               'dns_addr': (list) DNS addresses or None,
                'gateway_addr': (str) gateway address or None,
-               'cidr': (str) cidr format,
-               'nic_vdev': (str)nic VDEV, 1- to 4- hexadecimal digits or None,
-               'nic_id': (str) nic identifier or None,
-               'mac_addr': (str) mac address or None, it is only be used when
+               'cidr': (str) CIDR format,
+               'nic_vdev': (str) NIC VDEV, 1- to 4- hexadecimal digits or None,
+               'nic_id': (str) NIC identifier or None,
+               'mac_addr': (str) MAC address or None, it is only used when
                changing the guest's user direct. Format should be
                xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit
                'osa_device': (str) OSA address or None,
@@ -2134,28 +2134,29 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_create_network_interface(self, userid, os_version,
                                        guest_networks, active=False):
-        """ Create network interface(s) for the guest inux system. It will
-            create the nic for the guest, add NICDEF record into the user
+        """ Create network interface(s) for the guest Linux system. It will
+            create the NIC for the guest, add NICDEF record into the user
             direct. It will also construct network interface configuration
             files and punch the files to the guest. These files will take
-            effect when initializing and configure guest.
+            effect when initializing and configuring the guest.
 
         :param str userid: the user id of the guest
         :param str os_version: operating system version of the guest
         :param list guest_networks: a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
                each network, the format is:
-               {'ip_addr': (str) IP address or None,
-               'dns_addr': (list) dns addresses or None,
+               {'method': (str) 'static', 'dhcp', or None,
+               'ip_addr': (str) IP address or None,
+               'dns_addr': (list) DNS addresses or None,
                'gateway_addr': (str) gateway address or None,
-               'cidr': (str) cidr format,
-               'nic_vdev': (str)nic VDEV, 1- to 4- hexadecimal digits or None,
-               'nic_id': (str) nic identifier or None,
-               'mac_addr': (str) mac address or None, it is only be used when
+               'cidr': (str) CIDR format,
+               'nic_vdev': (str) NIC VDEV, 1- to 4- hexadecimal digits or None,
+               'nic_id': (str) NIC identifier or None,
+               'mac_addr': (str) MAC address or None, it is only used when
                changing the guest's user direct. Format should be
                xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit
                'osa_device': (str) OSA address or None,
-               'hostname': (str) Optional. The hostname of the vm.}
+               'hostname': (str) Optional. The hostname of the VM.}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -2169,8 +2170,12 @@ class SDKAPI(object):
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',
                'cidr': "192.168.96.0/24",
-               'nic_vdev': '1003}]
-        :param bool active: whether add a nic on active guest system
+               'nic_vdev': '1003'},
+               {'method': 'dhcp',
+               'nic_vdev': '1004',
+               'mac_addr': '02:00:00:ab:cd:ef'}
+               ]
+        :param bool active: whether add a NIC on active guest system
         :returns: guest_networks list, including nic_vdev for each network
         :rtype: list
         """
@@ -2193,49 +2198,61 @@ class SDKAPI(object):
                 mac_addr = network['mac_addr']
                 if not zvmutils.valid_mac_addr(mac_addr):
                     errmsg = ("API guest_create_network_interface: "
-                              "Invalid mac address, format should be "
-                              "xx:xx:xx:xx:xx:xx, and x is a hexadecimal "
+                              "Invalid MAC address, format should be "
+                              "xx:xx:xx:xx:xx:xx, where x is a hexadecimal "
                               "digit")
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
-            if (('ip_addr' in network.keys()) and
-                (network['ip_addr'] is not None)):
-                ip_addr = network['ip_addr']
-                if not netaddr.valid_ipv4(ip_addr):
-                    errmsg = ("API guest_create_network_interface: "
-                              "Invalid management IP address, it should be "
-                              "the value between 0.0.0.0 and 255.255.255.255")
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
-
-            if (('dns_addr' in network.keys()) and
-                (network['dns_addr'] is not None)):
-                if not isinstance(network['dns_addr'], list):
-                    raise exception.SDKInvalidInputTypes(
-                        'guest_config_network',
-                        str(list), str(type(network['dns_addr'])))
-                for dns in network['dns_addr']:
-                    if not netaddr.valid_ipv4(dns):
+            method = 'static'
+            if (('method' in network.keys()) and
+                (network['method'] is not None)):
+                method = network['method'].lower()
+            if method == 'static':
+                if (('ip_addr' in network.keys()) and
+                    (network['ip_addr'] is not None)):
+                    ip_addr = network['ip_addr']
+                    if not netaddr.valid_ipv4(ip_addr):
                         errmsg = ("API guest_create_network_interface: "
-                                  "Invalid dns IP address, it should be the "
+                                  "Invalid IP address, it should be a "
                                   "value between 0.0.0.0 and 255.255.255.255")
                         raise exception.SDKInvalidInputFormat(msg=errmsg)
 
-            if (('gateway_addr' in network.keys()) and
-                (network['gateway_addr'] is not None)):
-                if not netaddr.valid_ipv4(
-                                    network['gateway_addr']):
-                    errmsg = ("API guest_create_network_interface: "
-                              "Invalid gateway IP address, it should be "
-                              "the value between 0.0.0.0 and 255.255.255.255")
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
-            if (('cidr' in network.keys()) and
-                (network['cidr'] is not None)):
-                if not zvmutils.valid_cidr(network['cidr']):
-                    errmsg = ("API guest_create_network_interface: "
-                              "Invalid CIDR, format should be a.b.c.d/n, and "
-                              "a.b.c.d is IP address, n is the value "
-                              "between 0-32")
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+                if (('dns_addr' in network.keys()) and
+                    (network['dns_addr'] is not None)):
+                    if not isinstance(network['dns_addr'], list):
+                        raise exception.SDKInvalidInputTypes(
+                            'guest_config_network',
+                            str(list), str(type(network['dns_addr'])))
+                    for dns in network['dns_addr']:
+                        if not netaddr.valid_ipv4(dns):
+                            errmsg = ("API guest_create_network_interface: "
+                                      "Invalid DNS IP address, it should be a "
+                                      "value between 0.0.0.0 and 255.255.255.255")
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                if (('gateway_addr' in network.keys()) and
+                    (network['gateway_addr'] is not None)):
+                    if not netaddr.valid_ipv4(
+                                        network['gateway_addr']):
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid gateway IP address, it should be a "
+                                  "value between 0.0.0.0 and 255.255.255.255")
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                if (('cidr' in network.keys()) and
+                    (network['cidr'] is not None)):
+                    if not zvmutils.valid_cidr(network['cidr']):
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid CIDR, format should be a.b.c.d/n, where "
+                                  "a.b.c.d is a IP address, and n is a value "
+                                  "between 0 and 32")
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+            elif method != 'dhcp':
+                errmsg = ("API guest_create_network_interface: "
+                          "Invalid initialization method, it should be either "
+                          "static or dhcp")
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             try:
                 if OSA is None:
@@ -2249,7 +2266,7 @@ class SDKAPI(object):
                                                               active=active)
                 network['nic_vdev'] = used_vdev
             except exception.SDKBaseException:
-                LOG.error(('Failed to create nic on vm %s') % userid)
+                LOG.error(('Failed to create nic on VM %s') % userid)
                 raise
 
         try:
@@ -2257,22 +2274,22 @@ class SDKAPI(object):
                                                    guest_networks,
                                                    active=active)
         except exception.SDKBaseException:
-            LOG.error(('Failed to set network configuration file on vm %s') %
+            LOG.error(('Failed to set network configuration file on VM %s') %
                       userid)
             raise
         return guest_networks
 
     def guests_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
-        """ Retrieve nic information in the network database according to
-            the requirements, the nic information will include the guest
-            name, nic device number, vswitch name that the nic is coupled
-            to, nic identifier and the comments.
+        """ Retrieve NIC information in the network database according to
+            the requirements, the NIC information will include the guest
+            name, NIC device number, vswitch name that the NIC is coupled
+            to, NIC identifier and the comments.
 
-        :param str userid: the user id of the vm
-        :param str nic_id: nic identifier
+        :param str userid: the user id of the VM
+        :param str nic_id: NIC identifier
         :param str vswitch: the name of the vswitch
 
-        :returns: list describing nic information, format is
+        :returns: list describing NIC information, format is
                   [
                   (userid, interface, vswitch, nic_id, comments),
                   (userid, interface, vswitch, nic_id, comments)
@@ -2283,7 +2300,7 @@ class SDKAPI(object):
                   ]
         :rtype: list
         """
-        action = "get nic information"
+        action = "get NIC information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._networkops.get_nic_info(userid=userid, nic_id=nic_id,
                                                  vswitch=vswitch)
@@ -2302,12 +2319,12 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_delete_network_interface(self, userid, os_version,
                                        vdev, active=False):
-        """ delete the nic and network configuration for the vm
+        """ delete the NIC and network configuration for the VM
 
         :param str userid: the user id of the guest
         :param str os_version: operating system version of the guest
-        :param str vdev: nic device number, 1- to 4- hexadecimal digits
-        :param bool active: whether delete a nic on active guest system
+        :param str vdev: NIC device number, 1- to 4- hexadecimal digits
+        :param bool active: whether delete a NIC on active guest system
         """
         self._networkops.delete_nic(userid, vdev, active=active)
         self._networkops.delete_network_configuration(userid, os_version,
