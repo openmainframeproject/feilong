@@ -106,7 +106,7 @@ Feilong manages the deployed VM via IUCV channel. IUCV service
 should be configured on zLinux before capture it to make image. Following the below
 steps to install and configure IUCV service.
 
-1. Logon your BYOL(Bring Your Own Linux, which will be used to represent the Linux
+1. Logon your BYOL (Bring Your Own Linux, which will be used to represent the Linux
    on which the Feilong will be run), and copy the following files
    to target VM
 
