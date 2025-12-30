@@ -48,8 +48,10 @@ class ImageAction(object):
         remote_host = image.get('remote_host', None)
         image_meta = image['image_meta']
 
+        raw_track_access = image.get('raw_track_access', False)
         info = self.client.send_request('image_import', image_name,
-                                        url, image_meta, remote_host)
+                                        url, image_meta, remote_host,
+                                        raw_track_access)
         return info
 
     @validation.query_schema(image.query)
