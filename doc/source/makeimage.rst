@@ -17,16 +17,17 @@ These are the requirements for an image to be captured and deployed by Feilong:
 
 1. The supported Linux distributions are:
 
-- RHEL 6.x
 - RHEL 7.x
-- RHEL 8.1
-- SLES 11.x
+- RHEL 8.x
+- RHEL 9.x
 - SLES 12.x
-- SELS 15
-- Ubuntu 16.04
+- SLES 15.x
+- SLES 16.x
 - Ubuntu 20.04
+- Ubuntu 22.04
+- Ubuntu 24.04
 
-Where x is the zLinux's minor release number
+where x is the zLinux's minor release number.
 
 **Note**: FBA as root disk type is not supported for RHEL 8.1
 
@@ -79,14 +80,13 @@ Install Linux on z Systems(zLinux) in a Virtual Machine
 -------------------------------------------------------
 
 1. Prepare a Linux on z Systems virtual server in the z/VM system. You will
-   have to make adjustments to the procedures that are documented in the below cook 
+   have to make adjustments to the procedures that are documented in the below cook
    book in order to keep the resulting virtual server within the bounds of the above
    image requirements.
 
-- For RHEL6.4 and SLES 11 SP3 installation, see http://www.vm.ibm.com/pubs/redbooks/sg248147/files/24814700.pdf
-- For RHEL 7 installation, see http://www.redbooks.ibm.com/abstracts/sg248303.html?Open
-- For SLES 12 installation, see http://www.redbooks.ibm.com/abstracts/sg248890.html?Open
-- For Ubuntu 16.04 installation, see http://www.redbooks.ibm.com/redbooks/pdfs/sg248354.pdf
+- For RHEL 8.2 installation, see http://www.redbooks.ibm.com/abstracts/sg248303.html
+- For SLES 12 installation, see http://www.redbooks.ibm.com/abstracts/sg248890.html
+- For Ubuntu 16.04 installation, see http://www.redbooks.ibm.com/abstracts/sg248354.html
 
 2. Install the mkisofs and openssl modules on it.
 
@@ -96,7 +96,7 @@ Install Linux on z Systems(zLinux) in a Virtual Machine
 4. Set UseDNS no in /etc/ssh/sshd_config file in order to improve the inventory
    collection efficiency.
 
-5. For Ubuntu 16.04, you must enable root ssh access. By default, root ssh access
+5. For Ubuntu, you must enable root ssh access. By default, root ssh access
    is not enabled.
 
 Installation and Configuration of IUCV service in zLinux
@@ -132,14 +132,14 @@ steps to install and configure IUCV service.
        Setting the authorized client userid to be: OPNCLOUD
        IUCV server daemon is configured and started successfully
 
-   you may get the detail usage of iucvserverdaemoninstaller.sh by command:
+   You may get the detailed usage of iucvserverdaemoninstaller.sh by command:
 
    .. code-block:: text
 
        ./iucvserverdaemoninstaller.sh -h
 
-3. Logon your BYOL, run a simple command to check the if the iucv 
-   channel is set up correctly by commands:
+3. Logon your BYOL, run a simple command to check if the iucv
+   channel is set up correctly by command:
 
    .. code-block:: text
 
@@ -155,7 +155,7 @@ Configuration of cloud-init in zLinux
 -------------------------------------
 To do useful work with the user data, the zLinux image must be configured to
 run a service that retrieves the user data passed from the Feilong
-and then takes some actions based on the contents of that data. This task can 
+and then takes some actions based on the contents of that data. This task can
 be done by cloud-init.
 
 For zLinux images that deployed by Feilong, zvmguestconfigure must
@@ -191,69 +191,8 @@ down or the virtual machine is logged off. The changes to zLinux are implemented
 using zvmguestconfigure that is run when Linux is booted the next time. The steps
 of how to install zvmguestconfigure is described in subsequent sections.
 
-Configuration of zvmguestconfigure on RHEL6.x and SLES11.x
-..........................................................
-
-Perform the following steps:
-
-1. Log on your BYOL, and copy the zvmguestconfigure script that is located at
-   <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure to your
-   zLinux, where zvmsdk_path can be found at section z/VM SDK install
-
-2. Logon on your zLinux, change the script to specify the authorizedSenders in 
-   zvmguestconfigure file. It is recommended that this be set to a list of user IDs
-   which are allowed to transmit changes to the machine. At a minimum, this list
-   should include the userid of BYOL, which is usually OPNCLOUD. (It can be set
-   to '*', which indicates any virtual machine on the same LPAR may
-   send configuration requests to it)
-
-3. zvmguestconfigure is configured to run with run level 2, 3 and 5. It is not
-   configured to run as part of custom run level 4. If that run level is going to
-   be used, then the # Default-Start: line at the beginning of the file should be
-   updated to specify run level 4 in addition to the current run levels.
-
-4. Copy the zvmguestconfigure file to /etc/init.d and make it executable
-
-5. Add the zvmguestconfigure as a service by issuing:
-
-   .. code-block:: text
-
-       chkconfig --add zvmguestconfigure
-
-6. Activate the script by issuing:
-
-   .. code-block:: text
-
-       chkconfig zvmguestconfigure on
-
-   If you wish to run with custom run level 4, then add 4 to the list of levels:
-
-   .. code-block:: text
-
-       chkconfig --level 2345 zvmguestconfigure on
-
-7. Verify that you installed the correct version of zvmguestconfigure on the
-   target machine. Do this by issuing the following service command:
-
-   .. code-block:: text
-
-       service zvmguestconfigure version
-       zvmguestconfigure version: 1.0
-
-8. Verify that zvmguestconfigure on the target machine is configured to handle
-   requests from the server specified at step 2. Do this by issuing the following
-   service command:
-
-   .. code-block:: text
-
-       service zvmguestconfigure status
-       zvmguestconfigure is enabled to accept configuration reader files from: OPNCLOUD
-
-   If zvmguestconfigure is not enabled to accept configuration reader files then verify
-   that you followed Step 2.
-
-Configuration of zvmguestconfigure on RHEL 7.x and SLES 12.x
-............................................................
+Configuration of zvmguestconfigure on RHEL and SLES
+...................................................
 
 Perform the following steps:
 
@@ -261,7 +200,7 @@ Perform the following steps:
    script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/ folder
    to your zLinux, where zvmsdk_path can be found at the section z/VM SDK install.
 
-2. Logon on your zLinux, change the script to specify the authorizedSenders in 
+2. Logon on your zLinux, change the script to specify the authorizedSenders in
    zvmguestconfigure file. It is recommended that this be set to a list of user IDs
    which are allowed to transmit changes to the machine. At a minimum, this list
    should include the userid of BYOL, which is usually OPNCLOUD. (It can be set
@@ -271,9 +210,9 @@ Perform the following steps:
 
 4. Install the zvmguestconfigure.service in the target zLinux:
 
-- If the target Linux machine is RHEL7.x, copy the zvmguestconfigureconf4z.service file to: /lib/systemd/system
+- If the target Linux machine is RHEL, copy the zvmguestconfigureconf4z.service file to: /lib/systemd/system
 
-- If the target Linux machine is SLES12.x and SLES15, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
+- If the target Linux machine is SLES, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
   and it is recommended that you change the NetworkManager.service to be wicked.service in the zvmguestconfigure.service
 
 5. Enable the zvmguestconfigure service by issuing:
@@ -288,14 +227,14 @@ Perform the following steps:
 
        systemctl start zvmguestconfigure.service
 
-Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
-...................................................................
+Configuration of zvmguestconfigure on Ubuntu
+............................................
 
 1. Logon your BYOL, and copy the zvmguestconfigure and zvmguestconfigure.service
-   script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure 
+   script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure
    to your zLinux, where zvmsdk_path can be found at the section z/VM SDK install
 
-2. Logon your zLinux, change the script to specify the authorizedSenders in 
+2. Logon your zLinux, change the script to specify the authorizedSenders in
    zvmguestconfigure file. It is recommended that this be set to a list of user IDs
    which are allowed to transmit changes to the machine. At a minimum, this list
    should include the userid of BYOL. (It can be set to '*', which indicates any
@@ -305,7 +244,7 @@ Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
    it executable.
 
 4. Install the zvmguestconfigure.service in the target Ubuntu machine, tailor the
-   zvmguestconfigure.service file for an Ubuntu 16.04 image by modifying the file 
+   zvmguestconfigure.service file for an Ubuntu image by modifying the file
    contents as follows:
 
    .. code-block:: text
@@ -322,8 +261,8 @@ Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
        [Install]
        WantedBy=multi-user.target
 
-   After that, copy the zvmguestconfigure.service file to /lib/systemd/system. If the 
-   target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file 
+   After that, copy the zvmguestconfigure.service file to /lib/systemd/system. If the
+   target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file
    to: /lib/systemd/system, and rename to zvmguestconfigure.service.
 
 5. Enable the zvmguestconfigure service by issuing:
@@ -357,262 +296,27 @@ cloud-init is installed correctly.
     cloud-init init --local
 
 Installation and configuration of cloud-init differs among different Linux
-distributions, and cloud-init source code may change. This section provides 
+distributions, and cloud-init source code may change. This section provides
 general information, but you may have to tailor cloud-init to meet the needs
 of your Linux distribution. You can find a community-maintained list of
 dependencies at http://ibm.biz/cloudinitLoZ.
 
-The z/VM OpenStack support has been tested with cloud-init 0.7.4 and 0.7.5 for
-RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 18.4 for SLES15, and 
-18.5 for RHEL8.1, and 0.7.8 for Ubuntu 16.04.
+The z/VM OpenStack support has been tested with:
+- cloud-init 0.7.6 for RHEL 7.x and SLES 12.x
+- cloud-init 18.4 for SLES 15
+- cloud-init 18.5 for RHEL 8.1
+- cloud-init 20.1 for Ubuntu 20.04.
 
 If you are using a different version of cloud-init, you should change your
-specification of the indicated commands accordingly.During cloud-init
+specification of the indicated commands accordingly. During cloud-init
 installation, some dependency packages may be required. You can use yum/zypper
 and python setuptools to easily resolve these dependencies.
 See https://pypi.python.org/pypi/setuptools for more information.
 
-Installation and Configuration of cloud-init on RHEL 6.x
-........................................................
+Installation and Configuration of cloud-init on RHEL 7 and SLES 12
+..................................................................
 
-1. Download the cloud-init tar file from Init scripts for use on cloud images
-   https://launchpad.net/cloud-init/+download
-
-2. Using the file cloud-init-0.7.5 as an example,
-   untar this file by issuing the following command:
-
-   .. code-block:: text
-
-       tar -zxvf cloud-init-0.7.5.tar.gz
-
-3. Issue the following to install cloud-init:
-
-   .. code-block:: text
-
-       cd ./cloud-init-0.7.5
-       python setup.py build
-       python setup.py install
-       cp ./sysvinit/redhat/* /etc/init.d
-
-4. Update /etc/init.d/cloud-init-local to ensure that it starts after the
-   zvmguestconfigure and sshd services. On RHEL 6, change the # Required-Start
-   line in the ### BEGIN INIT INFO section from:
-
-   .. code-block:: text
-
-       ### BEGIN INIT INFO
-       # Provides: cloud-init-local
-       # Required-Start: $local_fs $remote_fs
-       # Should-Start: $time
-       # Required-Stop:
-
-   to:
-
-   .. code-block:: text
-
-        ### BEGIN INIT INFO
-        # Provides: cloud-init-local
-        # Required-Start: $local_fs $remote_fs zvmguestconfigure sshd
-        # Should-Start: $time
-        # Required-Stop:
-
-5. The default configuration file /etc/cloud/cloud.cfg is for ubuntu, not RHEL.
-   To tailor it for RHEL:
-
-  a. Replace distro:ubuntu with distro:rhel at around line 79.
-
-  b. Change the default user name, password and gecos as you wish, at around lines 82 to 84
-
-  c. Change the groups tag to remove user groups that are not available for this distribution.
-     After the change, the groups tag at around line 85 should appear similar to the following:
-     groups: [adm, audio, cdrom, dialout, floppy, video, dip]
-
-   For more information on how to configure cloud-init, please check the cloud-init documentation
-   http://cloudinit.readthedocs.org/.
-
-6. Cloud-init will try to add user syslog to group adm. This needs to be
-   changed. RHEL does not have a syslog user by default, so issue:
-
-   .. code-block:: text
-
-       useradd syslog
-
-7. Add the cloud-init related service with the following commands:
-
-   .. code-block:: text
-
-       chkconfig --add cloud-init-local
-       chkconfig --add cloud-init
-       chkconfig --add cloud-config
-       chkconfig --add cloud-final
-
-8. Then start them with the following sequence:
-
-   .. code-block:: text
-
-       chkconfig cloud-init-local on
-       chkconfig cloud-init on
-       chkconfig cloud-config on
-       chkconfig cloud-final on
-
-   You can issue ls -l /etc/rc5.d/ | grep -e xcat -e cloud to find the services.
-   (Make sure that zvmguestconfigure starts before any cloud-init service.)
-
-   .. code-block:: text
-
-       lrwxrwxrwx. 1 root root 22 Jun 13 04:39 S50xcatconfinit -> ../init.d/zvmguestconfigure
-       lrwxrwxrwx. 1 root root 26 Jun 13 04:39 S51cloud-init-local -> ../init.d/cloud-init-local
-       lrwxrwxrwx. 1 root root 20 Jun 13 04:39 S52cloud-init -> ../init.d/cloud-init
-       lrwxrwxrwx. 1 root root 22 Jun 13 04:39 S53cloud-config -> ../init.d/cloud-config
-       lrwxrwxrwx. 1 root root 21 Jun 13 04:39 S54cloud-final -> ../init.d/cloud-final
-
-9. To verify cloud-init configuration, issue: cloud-init init --local
-
-   .. code-block:: text
-
-       cloud-init init --local
-
-   Make sure that no errors occur. The following warning messages can be ignored:
-
-   /usr/lib/python2.6/site-packages/Cheetah-2.4.4-py2.6.egg/Cheetah/Compiler.py:1509: UserWarning:
-   You don’t have the C version of NameMapper installed! I’m disabling Cheetah’s useStackFrames
-   option as it is painfully slow with the Python version of NameMapper. You should get a copy
-   of Cheetah with the compiled C version of NameMapper. You don’t have the C version of NameMapper installed!
-
-10. Issue following command, if this file exists, or cloud-init will not work after reboot.
-
-    .. code-block:: text
-
-        rm -rf /var/lib/cloud 
-
-Installation and Configuration of cloud-init on SLES11.x
-........................................................
-
-1. Download the cloud-init tar file from https://launchpad.net/cloud-init/+download.
-
-2. Using the file cloud-init-0.7.5 as an example, untar this file by issuing
-   the following command:
-
-   .. code-block:: text
-
-       tar -zxvf cloud-init-0.7.5.tar.gz
-
-
-3. Issue the following commands to install cloud-init:
-
-   .. code-block:: text
-
-       cd ./cloud-init-0.7.5
-       python setup.py build
-       python setup.py install
-
-   **NOTE:**: After you issue the command tar -zxvf cloud-init-0.7.5.tar.gz,
-   the directory ./sysvinit/sles/ does not exist. So you have to copy the
-   cloud-init related services from ./sysvinit/redhat/* to /etc/init.d/:
-
-   .. code-block:: text
-
-       cp ./sysvinit/redhat/* /etc/init.d
-
-   You will find that four scripts, cloud-init-local, cloud-init, cloud-config,
-   and cloud-final are added to /etc/init.d/. Modify each of them by replacing
-   the variable:
-
-   .. code-block:: text
-
-       cloud_init="/usr/bin/cloud-init"
-
-   with:
-
-   .. code-block:: text
-
-       cloud_init="/usr/local/bin/cloud-init"
-
-4. Update /etc/init.d/cloud-init-local to ensure that it starts after the
-   zvmguestconfigure service. On SLES, change the # Required-Start line in the 
-   ### BEGIN INIT INFO section from:
-
-   .. code-block:: text
-
-       ### BEGIN INIT INFO
-       # Provides: cloud-init-local
-       # Required-Start: $local_fs $remote_fs
-       # Should-Start: $time
-       # Required-Stop:
-
-   to:
-
-   .. code-block:: text
-
-       ### BEGIN INIT INFO
-       # Provides: cloud-init-local
-       # Required-Start: $local_fs $remote_fs zvmguestconfigure
-       # Should-Start: $time
-       # Required-Stop:
-
-5. The default configuration file /etc/cloud/cloud.cfg is for ubuntu, not SLES. To tailor it for SLES:
-
-  a. Replace distro:ubuntu with distro:sles at around line 79.
-
-  b. Change the default user name, password and gecos as you wish, at around lines 82 to 84.
-
-  c. Change the groups at around line 85: groups: [adm, audio, cdrom, dialout, floppy, video, dip]
-
-  d. Cloud-init will try to add user syslog to group adm. This needs to be changed. For SLES, issue the following commands:
-
-     .. code-block:: text
-
-         useradd syslog
-         groupadd adm
-
-  For more information on changing these values, see the cloud-init documentation http://cloudinit.readthedocs.org/ 
-
-6. Start the cloud-init related services with the following commands, 
-   ignoring the error “insserv: Service network is missed in the runlevels 4
-   to use service cloud-init” if it occurs:
-
-   .. code-block:: text
-
-       insserv cloud-init-local
-       insserv cloud-init
-       insserv cloud-config
-       insserv cloud-final
-
-   At this point, you should find that the services in /etc/init.d/rcX.d appear as
-   you would expect (make sure that zvmguestconfigure starts before any cloud-init service):
-
-   .. code-block:: text
-
-       lrwxrwxrwx. 1 root root 22 Jun 13 04:39 S50xcatconfinit -> ../init.d/zvmguestconfigure
-       lrwxrwxrwx. 1 root root 26 Jun 13 04:39 S51cloud-init-local -> ../init.d/cloud-init-local
-       lrwxrwxrwx. 1 root root 20 Jun 13 04:39 S52cloud-init -> ../init.d/cloud-init
-       lrwxrwxrwx. 1 root root 22 Jun 13 04:39 S53cloud-config -> ../init.d/cloud-config
-       lrwxrwxrwx. 1 root root 21 Jun 13 04:39 S54cloud-final -> ../init.d/cloud-final
-
-7. To verify cloud-init configuration, issue:
-
-   .. code-block:: text
-
-       cloud-init init --local
-
-   Make sure that no errors occur. The following warning messages can be ignored:
-   /usr/lib/python2.6/site-packages/Cheetah-2.4.4-py2.6.egg/Cheetah/Compiler.py:1509:
-   UserWarning:
-   You don’t have the C version of NameMapper installed! I’m disabling Cheetah’s useStackFrames
-   option as it is painfully slow with the Python version of NameMapper. You should get a copy
-   of Cheetah with the compiled C version of NameMapper.
-   You don’t have the C version of NameMapper installed!
-
-8. Issue following command, if this file exists, or cloud-init will not work after reboot.
-
-   .. code-block:: text
-
-       rm -rf /var/lib/cloud 
-
-Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
-......................................................................
-
-1. Download cloud-init0.7.6 from https://launchpad.net/cloud-init/+download.
+1. Download cloud-init (for example 0.7.6) from https://launchpad.net/cloud-init/+download.
 
 2. Untar it with this command:
 
@@ -640,7 +344,7 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
        #
        # metadata_urls: [ ’blah.com’ ]
        #
-       # timeout: 5 # (defaults to 50 seconds) 
+       # timeout: 5 # (defaults to 50 seconds)
        #
        #     max_wait: 10 # (defaults to 120 seconds)
        datasource_list: [ ConfigDrive, None ]
@@ -689,7 +393,7 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
      [Install]
      WantedBy=multi-user.target
 
-6. Manually create the cloud-init-tmpfiles.conf file: 
+6. Manually create the cloud-init-tmpfiles.conf file:
 
    .. code-block:: text
 
@@ -701,7 +405,7 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
 
        echo "d /run/cloud-init 0700 root root - -" > /etc/tmpfiles.d/cloud-init-tmpfiles.conf
 
-7. Because RHEL does not have a syslog user by default, you have to add it manually: 
+7. Because RHEL does not have a syslog user by default, you have to add it manually:
 
    .. code-block:: text
 
@@ -771,7 +475,7 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
        name: sles
        lock_passwd: false
        plain_text_passwd: ’sles’
-       gecos: sles12user
+       gecos: sles15user
        groups: users
        sudo: ["ALL=(ALL) NOPASSWD:ALL"]
        shell: /bin/bash
@@ -812,26 +516,26 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
         systemctl status multipathd
 
 14. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
-    not run after a reboot: 
+    not run after a reboot:
 
     .. code-block:: text
 
         rm -rf /var/lib/cloud
 
-Installation and Configuration of cloud-init on RHEL8.1 and SLES15
-..................................................................
+Installation and Configuration of cloud-init on RHEL 8, RHEL 9, SLES 15, and SLES 16
+....................................................................................
 
-Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can install software via yum and zypper.
+Enable the system repositories of the RHEL8, RHEL9, SLES15, and SLES16 to ensure that they can install software via yum and zypper.
 
 1. Install cloud-init by the command:
 
-  a. For the RHEL8.1:
+  a. For RHEL:
 
      .. code-block:: text
 
-        yum install cloud-init 
+        yum install cloud-init
 
-  b. For the SLES15:
+  b. For SLES:
 
      .. code-block:: text
 
@@ -839,7 +543,7 @@ Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can
 
 2. OpenStack on z/VM uses ConfigDrive as the data source during the
    installation process. You must add the following lines to the
-   default configuration file, /etc/cloud/cloud.cfg. Remember to disable network 
+   default configuration file, /etc/cloud/cloud.cfg. Remember to disable network
    configuration because network configuration is done by zvmguestconfigure.
 
    .. code-block:: text
@@ -850,7 +554,7 @@ Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can
        #
        # metadata_urls: [ ’blah.com’ ]
        #
-       # timeout: 5 # (defaults to 50 seconds) 
+       # timeout: 5 # (defaults to 50 seconds)
        #
        #     max_wait: 10 # (defaults to 120 seconds)
        datasource_list: [ ConfigDrive, None ]
@@ -866,7 +570,7 @@ Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can
 
    .. code-block:: text
 
-       disable_root: false 
+       disable_root: false
 
 4. Enable and start the cloud-init related services by issuing the following commands:
 
@@ -891,44 +595,21 @@ Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can
        systemctl status cloud-init-local.service
        systemctl status cloud-init.service
        systemctl status cloud-config.service
-       systemctl status cloud-final.service 
+       systemctl status cloud-final.service
 
 6. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
-    not run after a reboot: 
+    not run after a reboot:
 
    .. code-block:: text
 
        rm -rf /var/lib/cloud
 
-Installation and Configuration of cloud-init on Ubuntu 16.04 and Ubuntu 20.04
-.............................................................................
+Installation and Configuration of cloud-init on Ubuntu
+......................................................
 
-For Ubuntu 16.04, cloud-init0.7.8 or higher is required. The examples in this
-section use cloud-init0.7.8.
+For Ubuntu, cloud-init is installed by default.
 
-For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below step1-2.
-
-1. Download cloud-init0.7.8 from https://launchpad.net/cloud-init/+download. 
-   Untar it with this command:
-
-   .. code-block:: text
-
-       tar -zxvf cloud-init-0.7.8.tar.gz
-
-2. Issue the following commands to install cloud-init:
-
-   .. code-block:: text
-
-       cd ./cloud-init-0.7.8
-       python3 setup.py build
-       python3 setup.py install --init-system systemd
-
-   **NOTE:** You might have to install all the dependencies that cloud-init 
-   requires according to your source z/VM environment. For example, you might
-   have to install setuptools before installing cloud-init. For more information,
-   see https://pypi.python.org/pypi/setuptools.
-
-3. OpenStack on z/VM uses ConfigDrive as the data source during the
+1. OpenStack on z/VM uses ConfigDrive as the data source during the
    installation process. You must add the following lines to the
    default configuration file, /etc/cloud/cloud.cfg:
 
@@ -940,7 +621,7 @@ For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below st
        #
        # metadata_urls: [ ’blah.com’ ]
        #
-       # timeout: 5 # (defaults to 50 seconds) 
+       # timeout: 5 # (defaults to 50 seconds)
        #
        #     max_wait: 10 # (defaults to 120 seconds)
        datasource_list: [ ConfigDrive, None ]
@@ -951,13 +632,13 @@ For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below st
    **NOTE:** please pay attention to the indentation, otherwise, cloud-init may not
    work as expected.
 
-4. Enable root login by configuring the /etc/cloud/cloud.cfg file:
+2. Enable root login by configuring the /etc/cloud/cloud.cfg file:
 
    .. code-block:: text
 
        disable_root: false
 
-5. Optionally, you can tailor the modules that run during the cloud-config
+3. Optionally, you can tailor the modules that run during the cloud-config
    stage or the cloud-final stage by modifying cloud_config_modules or
    cloud_final_modules in /etc/cloud/cloud.cfg file.
    Enable and start the cloud-init related services by issuing the following commands:
@@ -974,7 +655,7 @@ For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below st
       systemctl enable cloud-final.service
       systemctl start cloud-final.service
 
-6. Ensure all cloud-init services are in active status by issuing the following commands:
+4. Ensure all cloud-init services are in active status by issuing the following commands:
 
    .. code-block:: text
 
@@ -983,7 +664,7 @@ For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below st
       systemctl status cloud-config.service
       systemctl status cloud-final.service
 
-7. If you intend to use persistent disks, start the multipath service:
+5. If you intend to use persistent disks, start the multipath service:
 
    .. code-block:: text
 
@@ -991,7 +672,7 @@ For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below st
       systemctl start multipathd
       systemctl status multipathd
 
-8. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
+6. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
    not run after a reboot:
 
    .. code-block:: text
@@ -1011,8 +692,8 @@ Logon your BYOL, type the command:
     /opt/zthin/bin/creatediskimage <zLinux_userid> <vdev> <image_location>
 
 Where:
-<zLinux_userid> is the userid of the zLinux, 
-<vdev> is the device number for capture, 
+<zLinux_userid> is the userid of the zLinux,
+<vdev> is the device number for capture,
 <image_location> is the image's store location
 
 
@@ -1024,7 +705,7 @@ Type the following command:
 
 .. code-block:: text
 
-    # curl http://1.2.3.4:8080/images -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>' -X POST -d '{"image": {"url": "file:///var/lib/zvmsdk/images/0100", "image_meta": {"os_version": "rhel6.7"}, "image_name": "0100", "remote_host": "root@6.7.8.9"}}'
+    # curl http://1.2.3.4:8080/images -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>' -X POST -d '{"image": {"url": "file:///var/lib/zvmsdk/images/0100", "image_meta": {"os_version": "rhel8.1"}, "image_name": "0100", "remote_host": "root@6.7.8.9"}}'
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": "", "errmsg": ""}
 
 Please note that if the source image is located at same server as BYOL, there is no need
@@ -1036,7 +717,7 @@ Verify the import result by command:
 .. code-block:: text
 
     # curl http://127.0.0.1:8080/images?imagename=0100 -X GET -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>'
-    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": [{"image_size_in_bytes": "236435482", "disk_size_units": "1100:CYL", "md5sum": "26ddd19301d4f9c8a85e812412164bb8", "comments": null, "imagename": "0100", "imageosdistro": "rhel6.7", "type": "rootonly"}], "errmsg": ""}
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": [{"image_size_in_bytes": "236435482", "disk_size_units": "1100:CYL", "md5sum": "26ddd19301d4f9c8a85e812412164bb8", "comments": null, "imagename": "0100", "imageosdistro": "rhel8.1", "type": "rootonly"}], "errmsg": ""}
 
 During image import you may meet following error:
 

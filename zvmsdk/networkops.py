@@ -159,7 +159,8 @@ class NetworkOPS(object):
                              first, active=active)
 
         (net_conf_files, net_conf_cmds,
-         clean_cmd, net_enable_cmd) = files_and_cmds
+         clean_cmd, net_enable_cmd,
+         vdev_list) = files_and_cmds
 
         # Add network configure files to path_contents
         if len(net_conf_files) > 0:
@@ -171,6 +172,7 @@ class NetworkOPS(object):
         net_cmd_file = self._create_znetconfig(net_conf_cmds,
                                                linuxdist,
                                                net_enable_cmd,
+                                               vdev_list,
                                                active=active)
         # Add znetconfig file to path_contents
         if len(net_cmd_file) > 0:
@@ -206,12 +208,12 @@ class NetworkOPS(object):
             yaml.dump(data, stream)
 
     def _create_znetconfig(self, commands, linuxdist, append_cmd,
-                           active=False):
+                           vdev_list, active=False):
         LOG.debug('Creating znetconfig file')
         if active:
             znet_content = linuxdist.get_simple_znetconfig_contents()
         else:
-            znet_content = linuxdist.get_znetconfig_contents()
+            znet_content = linuxdist.get_znetconfig_contents(vdev_list)
         net_cmd_file = []
         if znet_content:
             if len(commands) == 0:
@@ -292,7 +294,7 @@ class NetworkOPS(object):
         cmd += linuxdist.delete_vdev_info(vdev)
 
         net_cmd_file = self._create_znetconfig(cmd, linuxdist, '',
-                                               active=active)
+                                               [vdev], active=active)
         del_file = 'DEL%s.sh' % str(vdev).zfill(4)
         file_name = os.path.join(network_file_path, del_file)
         file_content = net_cmd_file[0][1]
