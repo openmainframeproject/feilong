@@ -28,9 +28,7 @@ options:
 
 - images: Test image file path plus operating system version, separated by ':'.
   Several images can be specified to test, separated by ','. Sample value:
-
-  * "/var/lib/zvmsdk/images/netboot/rhel6.7/46a4aea3_54b6_4b1c_8a49_01f302e70c60:rhel6.7"
-  * "/var/lib/zvmsdk/images/netboot/rhel6.7/test_image1:rhel6.7, /var/lib/zvmsdk/images/netboot/sles12/test_image2:sles12"
+  '/var/lib/zvmsdk/images/netboot/rhel8.9/test_image1:rhel8.9, /var/lib/zvmsdk/images/netboot/sles15/test_image2:sles15'
 
 - vswitch: The vswitch that test guests connect to.
 
