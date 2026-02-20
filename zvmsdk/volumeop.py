@@ -2108,7 +2108,7 @@ class FCPVolumeManager(object):
 
     def _do_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                    multipath, os_version, mount_point, is_root_volume,
-                   fcp_template_id, do_rollback=True):
+                   fcp_template_id, update_connections_only, do_rollback=True):
         """Attach a volume
 
         :param do_rollback (Bool)
@@ -2149,11 +2149,19 @@ class FCPVolumeManager(object):
                 self._rollback_reserved_fcp_devices(fcp_list)
                 raise
 
-        if is_root_volume:
-            LOG.info("We are attaching root volume, dedicating FCP devices %s "
-                     "to virtual machine %s has been done by refresh_bootmap; "
-                     "skip the remain steps of volume attachment."
-                     % (fcp_list, assigner_id))
+        # If update_connections set to True, means upper layer want
+        # to update database record only. For example, try to create
+        # the instance, then no need to dedicate the FCP device.
+        if is_root_volume or update_connections_only:
+            if update_connections_only:
+                LOG.info("Update connections only, dedicating FCP devices %s "
+                         "from virtual machine %s has been done; skip the remain "
+                         "steps of volume attachment" % (fcp_list, assigner_id))
+            else:
+                LOG.info("We are attaching root volume, dedicating FCP devices %s "
+                         "to virtual machine %s has been done by refresh_bootmap; "
+                         "skip the remain steps of volume attachment."
+                         % (fcp_list, assigner_id))
             return []
 
         # Operation on z/VM: dedicate FCP devices to the assigner_id in z/VM
@@ -2327,6 +2335,8 @@ class FCPVolumeManager(object):
         is_root_volume = connection_info.get('is_root_volume', False)
         fcp_template_id = connection_info['fcp_template_id']
         do_rollback = connection_info.get('do_rollback', True)
+        update_connections_only = connection_info.get(
+            'update_connections_only', False)
         LOG.info("attach with do_rollback as {}".format(do_rollback))
 
         if is_root_volume is False and \
@@ -2343,7 +2353,7 @@ class FCPVolumeManager(object):
                                 target_wwpns, target_lun,
                                 multipath, os_version,
                                 mount_point, is_root_volume,
-                                fcp_template_id, do_rollback=do_rollback)
+                                fcp_template_id, update_connections_only, do_rollback=do_rollback)
             except Exception:
                 for fcp in fcp_list:
                     with zvmutils.ignore_errors():
