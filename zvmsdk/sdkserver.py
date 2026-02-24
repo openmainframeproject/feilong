@@ -22,12 +22,15 @@ import socket
 import sys
 import threading
 import traceback
+from time import time, sleep
+from random import randrange
 
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
+from zvmsdk import constants
 
 if six.PY3:
     import queue as Queue
@@ -46,6 +49,18 @@ class SDKServer(object):
         self.server_socket = None
         self.request_queue = Queue.Queue(maxsize=
                                          CONF.sdkserver.request_queue_size)
+        
+        rate_limit_config_dict = {}
+        for entry in [cnf_entry.strip() for cnf_entry in CONF.sdkserver.smapi_rate_limit_per_window.split(',')]:
+            fields = entry.split(':')
+            rate_limit_config_dict[fields[0].strip()] = int(fields[1].strip())
+        
+        self.outstanding_requests = 0
+        self.outstanding_counter_lock = threading.Lock()
+        self.rate_limit_config = rate_limit_config_dict
+        self.rate_window_records = {}
+        self.rate_window_lock = threading.Lock()
+        self.postponed_requests = {}
 
     def log_error(self, msg):
         thread = threading.current_thread().name
@@ -110,13 +125,107 @@ class SDKServer(object):
         else:
             self.log_debug("(%s:%s) Results sent back to client successfully."
                            % (addr[0], addr[1]))
+    
+    def _assert_within_rate_limit(self, client, addr):
+        """
+        Ensures that handling the request does not violate rate-limit
+        specified configuration. It peeks the data from accepted clients socket, so that
+        it is still available for processing the request later. If configuration value of
+        smapi_rate_limit_window_size_seconds is less than or equal to 0, rate limit check
+        would be bypassed. The check is done on the basis values specified in "smapi_rate_limit_per_window"
+        in the configuration. The format for its value is "total:N1, FUNC1: N2, FUNC2: N3, ...".
+        For example,
+        [sdkserver]
+        smapi_rate_limit_per_window = total:30, guests_get_nic_info:5, guest_get_info : 20 ...
+        For all the available function names, refer zvmsdk.api.SDKAPI class
+
+        Raises:
+            _RateLimitReached: If the configured rate threshold is reached
+        """
+        
+        if CONF.sdkserver.smapi_rate_limit_window_size_seconds <= 0:
+            return
+        
+        data = client.recv(4096, socket.MSG_PEEK)
+        data = bytes.decode(data)
+        
+        # Any error getting the data sent by client is an error condition
+        # and SMAPI request won't be made in such cases. So, such cases
+        # do not apply for rate limit check. Not logging any error message
+        # as that would be logged during "recv" also.
+        if not data:
+            return
+        
+        api_data = json.loads(data)
+
+        if not isinstance(api_data, list) or len(api_data) != 3:
+            return
+
+        # Check called API is supported by SDK
+        (func_name, api_args, api_kwargs) = api_data
+        current_window_num = int(time() / CONF.sdkserver.smapi_rate_limit_window_size_seconds)
+        self.log_debug(f'Checking rate limit filter for {func_name}. Current window = {current_window_num}')
+        counts = self.rate_window_records.get(current_window_num, {})
+        if not counts:
+            # Cleanup previously existing entries
+            with self.rate_window_lock:
+                self.rate_window_records = {
+                    current_window_num: {
+                        'total': 1,
+                        func_name: 1
+                    }
+                }
+        else:
+            new_total = counts['total'] + 1
+            new_func_name_count = counts.get('func_name', 0) + 1
+            allowed_total = int(self.rate_limit_config.get('total', constants.SMAPI_RATE_LIMIT_DEFAULT_TOTAL))
+            allowed_func_name_count = int(self.rate_limit_config.get(func_name, sys.maxsize))
+            if new_total <= allowed_total and new_func_name_count <= allowed_func_name_count:
+                self.log_debug(f'Request for {func_name} passes rate limit filter. New total = {new_total}, \
+                    new {func_name} count = {new_func_name_count}')
+                with self.rate_window_lock:
+                    self.rate_window_records[current_window_num].update({
+                        'total': new_total,
+                        func_name: new_func_name_count
+                    })
+            else:
+                self.log_warn(f'Request for {func_name} cannot be made as rate limit is reached. \
+                    Current counts are: {self.rate_window_records}')
+                raise _RateLimitReached(f'Request {func_name}({api_args}, {api_kwargs}) skipped as rate limit is reached')
+    
+    def _assert_within_outstanding_limit(self):
+        """
+        Ensures that number of transactions for which response is yet to be received does not
+        exceed configured value (smapi_max_outstanding_requests). If configured value is less
+        than or equal to 0, the outstanding limit check is bypassed.
+
+        Raises:
+            _MaxOutstandingLimitReached: If number of outstanding requests has reached the configured max value
+        """
+        if CONF.sdkserver.smapi_max_outstanding_requests <= 0:
+            return
+        
+        self.log_debug(f'Checking outstanding limit. Max outstanding requests = {CONF.sdkserver.smapi_max_outstanding_requests}')
+        if self.outstanding_requests > CONF.sdkserver.smapi_max_outstanding_requests:
+            raise _MaxOutstandingLimitReached(
+                f'Max outstanding requests limit reached. Current outstanding = {self.outstanding_requests}')
 
     def serve_API(self, client, addr):
         """ Read client request and call target SDK API"""
         self.log_debug("(%s:%s) Handling new request from client." %
                        (addr[0], addr[1]))
         results = None
+        api_request_made = False
+        request_postponed = False
         try:
+            self._assert_within_outstanding_limit()
+            self._assert_within_rate_limit(client, addr)
+            
+            # The rate limit has passed, so clear the postponed requests entry for this connection
+            # if present. This is for scenario in which request from client was postponed and now
+            # it is tried again.
+            self.postponed_requests.pop(f'{addr[0]}:{addr[1]}', None)
+            
             data = client.recv(4096)
             data = bytes.decode(data)
             # When client failed to send the data or quit before sending the
@@ -138,6 +247,7 @@ class SDKServer(object):
 
             # Check called API is supported by SDK
             (func_name, api_args, api_kwargs) = api_data
+            
             self.log_debug("(%s:%s) Request func: %s, args: %s, kwargs: %s" %
                            (addr[0], addr[1], func_name, str(api_args),
                             str(api_kwargs)))
@@ -150,7 +260,31 @@ class SDKServer(object):
                 return
 
             # invoke target API function
+            with self.outstanding_counter_lock:
+                self.outstanding_requests += 1
+            api_request_made = True
+            self.log_info(f'Requesting API for {func_name} ({api_args}, {api_kwargs})')
             return_data = api_func(*api_args, **api_kwargs)
+        except (_RateLimitReached, _MaxOutstandingLimitReached) as e:
+            request_postponed = True
+            request_key = f'{addr[0]}:{addr[1]}'
+            if request_key not in self.postponed_requests:
+                self.postponed_requests[request_key] = int(time())
+            elapsed_seconds = int(time()) - self.postponed_requests[request_key]
+            if elapsed_seconds > CONF.sdkserver.smapi_request_postpone_threshold_seconds:
+                self.postponed_requests.pop(request_key, None)
+                request_postponed = False
+                results = self.construct_internal_error(
+                    f'Unable to process request as sdkserver is under heavy load. Waited for {elapsed_seconds} seconds')
+            else:
+                self.log_error(f'({addr[0]}:{addr[1]} {str(e)}). Limit reached, postponing the request.')
+                # The sleep is necessary because there are other worker threads waiting on ".get" of request_queue.
+                # If sleep is not added, it will immediately picked from the queue by any worker thread and
+                # same rate limit condition would be met. Sleep for random duration is added so that postponed
+                # requests are not attempted at once.
+                sleep(randrange(1000, 3000) / 1000)
+                self.request_queue.put((client, addr))
+            
         except exception.SDKBaseException as e:
             self.log_error("(%s:%s) %s" % (addr[0], addr[1],
                                            traceback.format_exc()))
@@ -183,6 +317,10 @@ class SDKServer(object):
                        'rc': 0, 'rs': 0,
                        'errmsg': '',
                        'output': return_data}
+        finally:
+            if api_request_made:
+                with self.outstanding_counter_lock:
+                    self.outstanding_requests -= 1
         # Send back the final results
         try:
             if results is not None:
@@ -193,11 +331,14 @@ class SDKServer(object):
             # before the send() action.
             self.log_error("(%s:%s) %s" % (addr[0], addr[1], repr(e)))
         finally:
-            # Close the connection to make sure the thread socket got
-            # closed even when it got unexpected exceptions.
-            self.log_debug("(%s:%s) Finish handling request, closing "
-                           "socket." % (addr[0], addr[1]))
-            client.close()
+            # If rate limit is exceeded, the request from client will be processed later.
+            # So, let's not close the client connection in this case
+            if not request_postponed:
+                # Close the connection to make sure the thread socket got
+                # closed even when it got unexpected exceptions.
+                self.log_debug("(%s:%s) Finish handling request, closing "
+                            "socket." % (addr[0], addr[1]))
+                client.close()
 
     def worker_loop(self):
         # The worker thread would continuously fetch request from queue
@@ -277,3 +418,11 @@ def start_daemon():
         if server.server_socket is not None:
             server.log_info("Closing the server socket.")
             server.server_socket.close()
+
+
+class _RateLimitReached(RuntimeError):
+    pass
+
+
+class _MaxOutstandingLimitReached(RuntimeError):
+    pass
