@@ -68,7 +68,7 @@ class FileAction(object):
             target_fpath = '/'.join([importDir, fname])
 
             # The following steps save the imported file into sdkserver
-            checksum = hashlib.md5()
+            checksum = utils.get_hash_object()
             bytes_written = 0
 
             with open(target_fpath, 'wb') as f:
