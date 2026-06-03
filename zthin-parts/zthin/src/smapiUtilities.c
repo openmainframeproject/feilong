@@ -1537,6 +1537,19 @@ void *vmbkendMain(void *data) {
         useridLength = *(int *) &readBuffer;
         useridLength = ntohl(useridLength);
 
+        // Validate useridLength to prevent Loop DoS and buffer overflow
+        // VM userids in z/VM are maximum 8 characters
+        // cacheUserID buffer is only 9 bytes (8 + 1 for null terminator)
+        // Without this check, an attacker could:
+        // 1. Send useridLength = 0xFFFFFFFF causing the for loop to run billions of times (Loop DoS)
+        // 2. Send useridLength > 8 causing buffer overflow in cacheUserID
+        if (useridLength > 8 || useridLength == 0) {
+            TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
+            sprintf(line, "vmbkendMain:  Invalid userid length %d (must be 1-8)", useridLength);
+            TRACE_END_DEBUG(vmapiContextP, line);
+            continue;
+        }
+
         // Get the userid
         memset(userID, 0, sizeof userID);
         strncpy(userID, readBuffer + 4, useridLength);
