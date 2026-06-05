@@ -1559,10 +1559,12 @@ void *vmbkendMain(void *data) {
         useridLength = *(int *) &readBuffer;
         useridLength = ntohl(useridLength);
 
-        // Validate userid length to prevent buffer overflow
-        if (useridLength >= sizeof(userID)) {
+        // Validate useridLength to prevent Loop DoS and buffer overflow
+        // VM userids in z/VM are maximum 8 characters
+        // cacheUserID buffer is only 9 bytes (8 + 1 for null terminator)
+        if (useridLength > 8 || useridLength == 0 || useridLength >= sizeof(userID)) {
             TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
-            sprintf(line, "vmbkendMain: Invalid userid length %u (max %zu), rejecting packet\n",
+            sprintf(line, "vmbkendMain: Invalid userid length %u (must be 1-8, buffer max %zu), rejecting packet\n",
                     useridLength, sizeof(userID) - 1);
             TRACE_END_DEBUG(vmapiContextP, line);
             continue;  // Skip this malformed packet
@@ -1572,7 +1574,6 @@ void *vmbkendMain(void *data) {
         memset(userID, 0, sizeof userID);
         strncpy(userID, readBuffer + 4, useridLength);
         userID[useridLength] = '\0';  // Ensure null termination
-
         TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendMain:  User ID length is >%d< and User ID is >%s<\n", useridLength, userID);
         TRACE_END_DEBUG(vmapiContextP, line);
