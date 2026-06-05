@@ -119,9 +119,16 @@ Preparation on BYOL
    If something like 'is already  online' is returned, it means punch already
    online and feel free to ignore the warning.
 
+6. Add privilege class B
+
+   If you are planning to use Fiber Channel storage and attach volumes, you need
+   to add privilege class B to your BYOL:
+
+   replace G with BG at the end of the first definition line (starting with USER).
+
 .. note::
-   Preparation step 2 and step 3 require to logoff then re-logon the
-   BYOL to make the updates become effective.
+   Preparation step 2, step 3, and step 6 require to logoff then
+   re-logon the BYOL to make the updates become effective.
 
 Installation Requirements
 -------------------------
@@ -495,13 +502,15 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
   * /opt/zthin/bin/creatediskimage
   * /opt/zthin/bin/linkdiskandbringonline
   * /opt/zthin/bin/offlinediskanddetach
+  * /opt/zthin/bin/IUCV/iucvclnt
+  * /opt/zthin/bin/refresh_bootmap
 
   A sample is given in the following block, copy the content to /etc/sudoers.d/sudoers-zvmsdk:
 
   .. code-block:: text
 
       # cat /etc/sudoers.d/sudoers-zvmsdk
-      zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /opt/zthin/bin/smcli, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach
+      zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /opt/zthin/bin/smcli, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach, /opt/zthin/bin/IUCV/iucvclnt, /opt/zthin/bin/refresh_bootmap
 
 * Setup home directory
 

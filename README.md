@@ -21,8 +21,7 @@ Please refer to [Documentation of Feilong](https://feilong.readthedocs.io/en/lat
 This package is licensed under the [Apache 2.0 License](LICENSE)
 
 ## Bug reporting
-If you encounter any problem with this package, please open a bug against
-[feilong issue tracker](https://github.com/openmainframeproject/feilong/issues)
+If you encounter any problem with this package, please open a bug in [Feilong issues](https://github.com/openmainframeproject/feilong/issues) (software bugs) or in [Build Feilong issues](https://github.com/openmainframeproject/build-feilong/issues) (packaging bugs).
 
 ## Governance
 Feilong is a project hosted at the [Open Mainframe Project](https://openmainframeproject.com), and is openly governed as defined in [GOVERNANCE.md](GOVERNANCE.md).

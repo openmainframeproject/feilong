@@ -411,18 +411,14 @@ utilities to get the inspected guest's monitor data.
         default='none',
         opt_type='str',
         help='''
-Whether auth will be used.
+Whether auth will be used when sending HTTP requests to a running zvmsdk instance.
 
-When sending http request from outside to running zvmsdk,
-Client will be requested to input username/password in order
-to authorize the call.
-Set this to 'none' indicated no auth will be used and 'auth'
-means username and password need to be specified.
+This option determines the authentication mechanism required for external API calls.
 
 Possible value:
-'none': no auth will be required
-'auth': need auth, currently pyjwt is used to return a token
-        to caller if the username and password is correct.
+'none': No authentication will be required.
+'token': Token-based authentication is required. A JWT token will be issued to the caller
+        if the request is valid and properly authenticated.
 ''',
         ),
     Opt('token_validation_period',

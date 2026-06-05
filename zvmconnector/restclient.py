@@ -1,7 +1,7 @@
 #  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2017,2024 IBM Corp.
+# Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -332,6 +332,18 @@ def req_guest_get_power_state_real(start_index, *args, **kwargs):
 
 def req_guest_get_info(start_index, *args, **kwargs):
     url = '/guests/%s/info'
+    body = None
+    return url, body
+
+
+def req_guest_get_os_info(start_index, *args, **kwargs):
+    url = '/guests/%s/os_info'
+    body = None
+    return url, body
+
+
+def req_guest_get_online_cpu_num(start_index, *args, **kwargs):
+    url = '/guests/%s/online_cpu_num'
     body = None
     return url, body
 
@@ -877,6 +889,18 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_info},
+    'guest_get_os_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_os_info
+    },
+    'guest_get_online_cpu_num': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_online_cpu_num
+    },
     'guest_get_user_direct': {
         'method': 'GET',
         'args_required': 1,

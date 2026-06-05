@@ -46,9 +46,21 @@ class SMT(object):
         self.reqIdPrefix = int(time() * 100)
         self.reqCnt = 0           # Number of requests so far
 
+        level = config.CONF.logging.log_level.upper()
+        log_level_str = "logging.INFO"  # default fallback log level
+
+        if level in ("INFO", "LOGGING.INFO"):
+            log_level_str = "logging.INFO"
+        elif level in ("DEBUG", "LOGGING.DEBUG"):
+            log_level_str = "logging.DEBUG"
+        elif level in ("WARN", "LOGGING.WARN"):
+            log_level_str = "logging.WARN"
+        elif level in ("ERROR", "LOGGING.ERROR"):
+            log_level_str = "logging.ERROR"
+
         logger = log.Logger('SMT')
         logger.setup(log_dir=config.CONF.logging.log_dir,
-                          log_level='logging.DEBUG',
+                          log_level=log_level_str,
                           log_file_name='smt.log')
         self.logger = logger.getlog()
 

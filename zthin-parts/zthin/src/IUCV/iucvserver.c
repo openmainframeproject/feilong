@@ -76,8 +76,11 @@ int check_client_authorization(int newsockfd, char *req_userid)
             syslog(LOG_ERR, "ERROR: Fail to close authorized file after reading: %s\n",strerror(errno));
         }
         fp = NULL;
+        /* trim invisible characters from the userid */
+        len = strcspn(client_userid, "\r\n ");
+        client_userid[len] = '\0';
         /* if the userid is not authorized, send error message back*/
-        if (strcasecmp(req_userid,client_userid))
+        if (strcasecmp(req_userid, client_userid))
         {
             sprintf(err_msg, "UNAUTHORIZED_ERROR: Userid %s is not authorized, IUCV agent only can communicate with specified open cloud user!#0", req_userid);
             syslog(LOG_ERR, err_msg);

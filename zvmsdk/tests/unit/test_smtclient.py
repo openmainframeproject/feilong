@@ -2874,14 +2874,26 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_query(self, image_query, access_time):
+        base.set_conf("zvm", "user_root_vdev", "0100")
         image_name = "testimage"
         fake_access_time = 1581910539.3330014
         access_time.return_value = fake_access_time
-        image_query.return_value = [{'imagename': 'testimage'}]
+        image_query.return_value = [{'imagename': 'testimage',
+                                     'type': 'rootonly',
+                                     'imageosdistro': 'rhel9'
+                                     }]
         image_info = self._smtclient.image_query(image_name)
         image_query.assert_called_once_with(image_name)
         self.assertEqual(image_info[0]['last_access_time'],
                          fake_access_time)
+        expected_image_path = '/'.join([
+            CONF.image.sdk_image_repository,
+            'netboot',
+            'rhel9',
+            image_name,
+            CONF.zvm.user_root_vdev
+        ])
+        self.assertEqual(image_info[0]['image_path'], expected_image_path)
 
     @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
