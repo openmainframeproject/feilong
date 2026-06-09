@@ -68,7 +68,7 @@ class HandlersImageTest(unittest.TestCase):
                                  "url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "os_version": "rhel7.2",
-                                 "md5sum": "12345678912345678912345678912345"
+                                 "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
                                  },
                                  "remotehost": "hostname"
                                 }
@@ -81,7 +81,7 @@ class HandlersImageTest(unittest.TestCase):
                        'image_meta':
                        {
                             'os_version': 'rhel7.2',
-                            'md5sum': '12345678912345678912345678912345'
+                            'checksum': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
                        },
                        'url': 'file:///tmp/test.img',
                        'image_name': '46a4aea3-54b6-4b1c'
@@ -98,7 +98,7 @@ class HandlersImageTest(unittest.TestCase):
                                  "url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "os_version": "rhcos4.2",
-                                 "md5sum": "12345678912345678912345678912345",
+                                 "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                                  "disk_type": "DASD"
                                  },
                                  "remotehost": "hostname"
@@ -112,7 +112,7 @@ class HandlersImageTest(unittest.TestCase):
                        'image_meta':
                        {
                             'os_version': 'rhcos4.2',
-                            'md5sum': '12345678912345678912345678912345',
+                            'checksum': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
                             "disk_type": "DASD"
                        },
                        'url': 'file:///tmp/test.img',
@@ -136,7 +136,7 @@ class HandlersImageTest(unittest.TestCase):
                          "url": "file:///tmp/test.img",
                          "image_meta": {
                          "os_version": "rhel2.2",
-                         "md5sum": "12345678912345678912345678912345"
+                         "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
                          }
                         }
               }"""
@@ -150,7 +150,7 @@ class HandlersImageTest(unittest.TestCase):
                          "url": "file:///tmp/test.img",
                          "image_meta": {
                          "os_version": "rhcos43",
-                         "md5sum": "12345678912345678912345678912345",
+                         "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                          "disk_type": "DASD"
                          }
                         }
@@ -165,7 +165,7 @@ class HandlersImageTest(unittest.TestCase):
                          "url": "file:///tmp/test.img",
                          "image_meta": {
                          "os_version": "rhcos4.2",
-                         "md5sum": "12345678912345678912345678912345",
+                         "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                          "disk_type": "any"
                          }
                         }
@@ -183,7 +183,7 @@ class HandlersImageTest(unittest.TestCase):
         # miss os_version param
         body_str = """{"image": {"url": "file:///tmp/test.img",
                                  "image_meta": {
-                                 "md5sum": "12345678912345678912345678912345"
+                                 "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
                                  }
                                 }
                       }"""
@@ -192,12 +192,12 @@ class HandlersImageTest(unittest.TestCase):
         self.assertRaises(exception.ValidationError, image.image_create,
                           self.req)
 
-    def test_image_create_invalid_image_meta_md5sum(self):
-        # md5sum is less than 32 chars
+    def test_image_create_invalid_image_meta_checksum(self):
+        # checksum is less than 64 chars (invalid SHA-256)
         body_str = """{"image": {"url": "file://tmp/test.img",
                                  "image_meta": {
                                  "os_version": "rhel7.2",
-                                 "md5sum": "2345678912345678912345678912345"
+                                 "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85"
                                  }
                                 }
                       }"""

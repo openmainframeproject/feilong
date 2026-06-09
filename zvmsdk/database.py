@@ -2318,7 +2318,7 @@ class ImageDbOperator(object):
                 'CREATE TABLE IF NOT EXISTS image (',
                 'imagename         varchar(128) PRIMARY KEY COLLATE NOCASE,',
                 'imageosdistro            varchar(16),',
-                'md5sum                   varchar(512),',
+                'checksum                 varchar(512),',
                 'disk_size_units          varchar(512),',
                 'image_size_in_bytes      varchar(512),',
                 'type                     varchar(16),',
@@ -2326,23 +2326,23 @@ class ImageDbOperator(object):
         with get_image_conn() as conn:
             conn.execute(create_image_table_sql)
 
-    def image_add_record(self, imagename, imageosdistro, md5sum,
+    def image_add_record(self, imagename, imageosdistro, checksum,
                          disk_size_units, image_size_in_bytes,
                          type, comments=None):
         if comments is not None:
             with get_image_conn() as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
-                             "md5sum, disk_size_units, image_size_in_bytes,"
+                             "checksum, disk_size_units, image_size_in_bytes,"
                              " type, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                             (imagename, imageosdistro, md5sum,
+                             (imagename, imageosdistro, checksum,
                               disk_size_units, image_size_in_bytes, type,
                               comments))
         else:
             with get_image_conn() as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
-                             "md5sum, disk_size_units, image_size_in_bytes,"
+                             "checksum, disk_size_units, image_size_in_bytes,"
                              " type) VALUES (?, ?, ?, ?, ?, ?)",
-                             (imagename, imageosdistro, md5sum,
+                             (imagename, imageosdistro, checksum,
                               disk_size_units, image_size_in_bytes, type))
 
     def image_query_record(self, imagename=None):
@@ -2366,7 +2366,7 @@ class ImageDbOperator(object):
 
         # Map each image record to be a dict, with the key is the field name in
         # image DB
-        image_keys_list = ['imagename', 'imageosdistro', 'md5sum',
+        image_keys_list = ['imagename', 'imageosdistro', 'checksum',
                       'disk_size_units', 'image_size_in_bytes', 'type',
                       'comments']
 

@@ -487,8 +487,8 @@ image_meta = {
     'type': 'object',
     'properties': {
         'os_version': os_version,
-        # md5 shoule be 32 hexadeciaml numbers
-        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'},
+        # SHA-256 checksum should be 64 hexadecimal characters
+        'checksum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{64}$'},
         'disk_type': disk_type
     },
     'required': ['os_version'],

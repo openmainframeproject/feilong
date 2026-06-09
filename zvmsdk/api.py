@@ -540,10 +540,10 @@ class SDKAPI(object):
                https://netloc/path/to/file.tar.gz.0
                file:///path/to/file.tar.gz.0
         :param dict image_meta:
-               a dictionary to describe the image info, such as md5sum,
+               a dictionary to describe the image info, such as checksum,
                os_version. For example:
                {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
+               'checksum': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
                'disk_type': 'DASD'}
         :param string remote_host:
                 if the image url schema is file, the remote_host is used to
@@ -587,7 +587,7 @@ class SDKAPI(object):
         'image_name': the image_name that exported
         'image_path': the image_path after exported
         'os_version': the OS version of the exported image
-        'md5sum': the md5sum of the original image
+        'checksum': the checksum of the original image
         'comments': the comments of the original image
         }
         """
