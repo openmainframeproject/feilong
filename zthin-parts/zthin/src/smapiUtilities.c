@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 #include <ctype.h>
+#include <limits.h>
 #include <arpa/inet.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -1138,12 +1139,53 @@ const char* vmApiMessageText(vmApiInternalContext* contextP) {
  */
 int vmbkendCacheEntryInvalidate(struct _vmApiInternalContext* vmapiContextP, char *pathP, char *useridP) {
     char cacheEntry[CACHEENTRYLEN];
+    char resolvedPath[PATH_MAX];
     int rc;
     int exitrc;
     struct stat statBuf;
 
     exitrc = 0;  // Initialize to success
-    sprintf(cacheEntry, "%s%.8s.direct", pathP, useridP);
+    // Validate input parameters
+    if (vmapiContextP == NULL || pathP == NULL || useridP == NULL) {
+        if (vmapiContextP != NULL) {
+            vmapiContextP->errnoSaved = EINVAL;
+        }
+        return 2;
+    }
+
+    if (strlen(pathP) == 0 || strlen(useridP) == 0) {
+        vmapiContextP->errnoSaved = EINVAL;
+        return 2;
+    }
+
+    // Resolve and validate pathP to prevent path traversal
+    if (realpath(pathP, resolvedPath) == NULL) {
+        vmapiContextP->errnoSaved = errno;
+        return 2;
+    }
+    // Verify the resolved path matches the original path (no traversal occurred)
+    // This prevents attacks like "/valid/path/../../../etc"
+    if (strcmp(pathP, resolvedPath) != 0) {
+        // If paths differ, ensure resolved path is still within a safe directory
+        // For now, we reject any path that resolves differently
+        vmapiContextP->errnoSaved = EACCES;
+        return 2;
+    }
+
+    // Sanitize useridP - allow only alphanumeric characters and underscores
+    for (i = 0; useridP[i] != '\0' && i < 8; i++) {
+        if (!isalnum(useridP[i]) && useridP[i] != '_') {
+            vmapiContextP->errnoSaved = EINVAL;
+            return 2;
+        }
+    }
+
+    // Use snprintf instead of sprintf to prevent buffer overflow
+    if (snprintf(cacheEntry, CACHEENTRYLEN, "%s%.8s.direct", resolvedPath, useridP) >= CACHEENTRYLEN) {
+        // Path too long
+        vmapiContextP->errnoSaved = ENAMETOOLONG;
+        return 2;
+    }
 
     // If the cache file doesn't exist, nothing to do
     rc = stat(cacheEntry, &statBuf);
