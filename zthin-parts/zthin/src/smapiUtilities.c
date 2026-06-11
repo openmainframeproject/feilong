@@ -1575,6 +1575,28 @@ void *vmbkendMain(void *data) {
             continue;
         }
 
+        /**
+         * SECURITY FIX: Buffer Overflow Prevention
+         *
+         * Issue: Network-supplied length fields (useridLength, cmdLength) were used
+         * directly without validation, allowing potential buffer overflow attacks.
+         *
+         * Vulnerability Details:
+         * - useridLength and cmdLength come from untrusted network data
+         * - No bounds checking before strncpy() operations
+         * - userID[BUFLEN=256] and cmd[BUFLEN=256] could be overflowed
+         * - Malicious packets could cause stack corruption and potential RCE
+         *
+         * Attack Scenario:
+         * An attacker could send a crafted UDP packet with:
+         *   useridLength = 0xFFFFFFFF (or any value > 256)
+         *   This would cause strncpy() to write beyond buffer bounds
+         *   Result: Stack corruption, crash, or code execution
+         *
+         * Fix: Validate all network-supplied lengths before use
+         * Reference: CWE-120 (Buffer Copy without Checking Size of Input)
+         */
+
         // Pull out the userid length
         useridLength = *(int *) &readBuffer;
         useridLength = ntohl(useridLength);
@@ -1582,17 +1604,18 @@ void *vmbkendMain(void *data) {
         // Validate useridLength to prevent Loop DoS and buffer overflow
         // VM userids in z/VM are maximum 8 characters
         // cacheUserID buffer is only 9 bytes (8 + 1 for null terminator)
-        if (useridLength > 8 || useridLength == 0) {
+        if (useridLength > 8 || useridLength == 0 || useridLength >= sizeof(userID)) {
             TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
-            sprintf(line, "vmbkendMain:  Invalid userid length %d (must be 1-8)", useridLength);
+            sprintf(line, "vmbkendMain: Invalid userid length %u (must be 1-8, buffer max %zu), rejecting packet\n",
+                    useridLength, sizeof(userID) - 1);
             TRACE_END_DEBUG(vmapiContextP, line);
-            continue;
+            continue;  // Skip this malformed packet
         }
 
         // Get the userid
         memset(userID, 0, sizeof userID);
         strncpy(userID, readBuffer + 4, useridLength);
-
+        userID[useridLength] = '\0';  // Ensure null termination
         TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendMain:  User ID length is >%d< and User ID is >%s<\n", useridLength, userID);
         TRACE_END_DEBUG(vmapiContextP, line);
@@ -1601,9 +1624,19 @@ void *vmbkendMain(void *data) {
         cmdLength = *(int *) (readBuffer + 4 + useridLength);
         cmdLength = ntohl(cmdLength);
 
+        // Validate command length to prevent buffer overflow
+        if (cmdLength >= sizeof(cmd)) {
+            TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
+            sprintf(line, "vmbkendMain: Invalid command length %u (max %zu), rejecting packet\n",
+                    cmdLength, sizeof(cmd) - 1);
+            TRACE_END_DEBUG(vmapiContextP, line);
+            continue;  // Skip this malformed packet
+        }
+
         // Get the command
         memset(cmd, 0, sizeof cmd);
         strncpy(cmd, readBuffer + 4 + useridLength + 4, cmdLength);
+        cmd[cmdLength] = '\0';  // Ensure null termination
 
         TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendMain:  Command is >%s<\n", cmd);
@@ -1617,18 +1650,45 @@ void *vmbkendMain(void *data) {
         sprintf(line, "vmbkendMain:  Invalidating cache for user ID (%s)\n", userID);
         TRACE_END_DEBUG(vmapiContextP, line);
 
-        for (x = 0; x < useridLength; ++x) {
+        /**
+         * SECURITY FIX: Prevent buffer overflow in cacheUserID
+         *
+         * Issue: cacheUserID is only 9 bytes but useridLength could be up to 256
+         *
+         * Vulnerability: Loop could write beyond cacheUserID bounds causing
+         * stack corruption if useridLength > 8
+         *
+         * Fix: Limit copy length to actual buffer size
+         */
+        size_t copyLen = useridLength;
+        if (copyLen > sizeof(cacheUserID) - 1) {
+            copyLen = sizeof(cacheUserID) - 1;  // Truncate to fit buffer
+            TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
+            sprintf(line, "vmbkendMain: Userid truncated from %u to %zu bytes for cache\n",
+                    useridLength, copyLen);
+            TRACE_END_DEBUG(vmapiContextP, line);
+        }
+
+        for (x = 0; x < copyLen; ++x) {
             cacheUserID[x] = tolower(userID[x]);
         }
-        cacheUserID[useridLength] = '\0';  // Make the copy be a string
+        cacheUserID[copyLen] = '\0';  // Make the copy be a string
 
+        /**
+         * SECURITY FIX: Replace strcpy/strcat with snprintf
+         *
+         * Issue: strcpy() and strcat() don't perform bounds checking
+         *
+         * Vulnerability: If cacheUserID was corrupted or too long, strcpy/strcat
+         * could overflow cacheFile buffer
+         *
+         * Fix: Use snprintf which guarantees null termination and bounds checking
+         */
         // Unfortunately, we're not told if this is a
         // USER/IDENTITY/SUBCONFIG entry or a PROFILE entry, so invalidate both to be safe.
-        strcpy(cacheFile, cacheUserID);
-        strcat(cacheFile, ".image");
+        snprintf(cacheFile, sizeof(cacheFile), "%s.image", cacheUserID);
         vmbkendCacheEntryInvalidate(vmapiContextP, path, cacheFile);
-        strcpy(cacheFile, cacheUserID);
-        strcat(cacheFile, ".profile");
+        snprintf(cacheFile, sizeof(cacheFile), "%s.profile", cacheUserID);
         vmbkendCacheEntryInvalidate(vmapiContextP, path, cacheFile);
 
         // If cmd is in 'add', 'purge', 'replace', send message for directory change indication.
@@ -1648,8 +1708,28 @@ void *vmbkendMain(void *data) {
                 dir_chng_message_struct msgDirChng;
                 dir_chng_message_buf msgDirChngBuf;
                 size_t buf_length;
-                strcpy(msgDirChng.userid, userID);
-                strcpy(msgDirChng.userWord, cmd);
+                
+                /**
+                 * SECURITY FIX: Prevent buffer overflow in message structure
+                 *
+                 * Issue: strcpy() was used to copy potentially large buffers into
+                 * fixed-size message structure fields
+                 *
+                 * Vulnerability Details:
+                 * - userID (256 bytes) copied to msgDirChng.userid (9 bytes)
+                 * - cmd (256 bytes) copied to msgDirChng.userWord (17 bytes)
+                 * - strcpy() has no bounds checking
+                 *
+                 * Impact: Stack corruption, adjacent memory corruption in struct
+                 *
+                 * Fix: Use strncpy with explicit size limits and null termination
+                 * Reference: CWE-120, CWE-787 (Out-of-bounds Write)
+                 */
+                strncpy(msgDirChng.userid, userID, sizeof(msgDirChng.userid) - 1);
+                msgDirChng.userid[sizeof(msgDirChng.userid) - 1] = '\0';
+                
+                strncpy(msgDirChng.userWord, cmd, sizeof(msgDirChng.userWord) - 1);
+                msgDirChng.userWord[sizeof(msgDirChng.userWord) - 1] = '\0';
                 buf_length = sizeof(dir_chng_message_struct);
                 msgDirChngBuf.mType = 1;
                 msgDirChngBuf.messageStruct = msgDirChng;
