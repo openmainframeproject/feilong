@@ -1036,7 +1036,7 @@ Verify the import result by command:
 .. code-block:: text
 
     # curl http://127.0.0.1:8080/images?imagename=0100 -X GET -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>'
-    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": [{"image_size_in_bytes": "236435482", "disk_size_units": "1100:CYL", "md5sum": "26ddd19301d4f9c8a85e812412164bb8", "comments": null, "imagename": "0100", "imageosdistro": "rhel6.7", "type": "rootonly"}], "errmsg": ""}
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": [{"image_size_in_bytes": "236435482", "disk_size_units": "1100:CYL", "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "comments": null, "imagename": "0100", "imageosdistro": "rhel6.7", "type": "rootonly"}], "errmsg": ""}
 
 During image import you may meet following error:
 

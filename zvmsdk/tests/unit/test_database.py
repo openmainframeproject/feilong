@@ -2323,13 +2323,13 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
     def test_image_add_query_delete_record(self):
         imagename = 'test'
         imageosdistro = 'rhel6.5'
-        md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
+        checksum = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
         type = 'netboot'
         # Add an record
         self.db_op.image_add_record(
-            imagename, imageosdistro, md5sum, disk_size_units,
+            imagename, imageosdistro, checksum, disk_size_units,
             image_size_in_bytes, type)
         # Query the record
         image_record = self.db_op.image_query_record(imagename)
@@ -2337,7 +2337,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual(
             [{'imagename': u'test',
               'imageosdistro': u'rhel6.5',
-              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'checksum': u'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
               'type': u'netboot',
@@ -2352,19 +2352,19 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
     def test_image_add_record_with_existing_imagename(self):
         imagename = 'test'
         imageosdistro = 'rhel6.5'
-        md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
+        checksum = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
         type = 'netboot'
 
         # Add an record
         self.db_op.image_add_record(
-            imagename, imageosdistro, md5sum, disk_size_units,
+            imagename, imageosdistro, checksum, disk_size_units,
             image_size_in_bytes, type)
         self.assertRaises(
             exception.SDKDatabaseException,
             self.db_op.image_add_record,
-            imagename, imageosdistro, md5sum, disk_size_units,
+            imagename, imageosdistro, checksum, disk_size_units,
             image_size_in_bytes, type)
         self.db_op.image_delete_record(imagename)
 
@@ -2372,17 +2372,17 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         imagename1 = 'testimage1'
         imagename2 = 'testimage2'
         imageosdistro = 'rhel6.5'
-        md5sum = 'c73ce117eef8077c3420bfc8f473ac2f'
+        checksum = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
         disk_size_units = '3338:CYL'
         image_size_in_bytes = '5120000'
         type = 'netboot'
 
         # Add two records
         self.db_op.image_add_record(
-            imagename1, imageosdistro, md5sum, disk_size_units,
+            imagename1, imageosdistro, checksum, disk_size_units,
             image_size_in_bytes, type)
         self.db_op.image_add_record(
-            imagename2, imageosdistro, md5sum, disk_size_units,
+            imagename2, imageosdistro, checksum, disk_size_units,
             image_size_in_bytes, type)
 
         image_records = self.db_op.image_query_record()
@@ -2390,14 +2390,14 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual(
             [{'imagename': u'testimage1',
               'imageosdistro': u'rhel6.5',
-              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'checksum': u'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
               'type': u'netboot',
               'comments': None},
              {'imagename': u'testimage2',
               'imageosdistro': u'rhel6.5',
-              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'checksum': u'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
               'disk_size_units': u'3338:CYL',
               'image_size_in_bytes': u'5120000',
               'type': u'netboot',

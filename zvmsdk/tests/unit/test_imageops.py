@@ -37,7 +37,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = 'file:///path/to/image/file'
         image_meta = {'os_version': 'rhel7.2',
-                      'md5sum': 'e34166f61130fc9221415d76298d7987'}
+                      'checksum': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
         remote_host = 'image@192.168.99.1'
         self._image_ops.image_import(image_name, url, image_meta,
                                      remote_host)

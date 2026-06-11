@@ -1389,15 +1389,15 @@ class SMTClient(object):
 
         msg = ('Updating the metadata for captured image %s ' % image_name)
         LOG.info(msg)
-        # Get md5sum of image
-        real_md5sum = self._get_md5sum(image_final_path)
+        # Get checksum of image
+        real_checksum = self._get_checksum(image_final_path)
         # Get disk_size_units of image
         disk_size_units = self._get_disk_size_units(image_final_path)
         # Get the image physical size
         image_size = self._get_image_size(image_final_path)
         # Create the image record in image database
         self._ImageDbOperator.image_add_record(image_name, os_version,
-            real_md5sum, disk_size_units, image_size,
+            real_checksum, disk_size_units, image_size,
             capture_type)
         if restart_flag:
             LOG.info('Try start %s for capture completed successfully.'
@@ -2699,12 +2699,12 @@ class SMTClient(object):
                                                     import_image_fpath,
                                                     remote_host=remote_host)
 
-            # Check md5 after import to ensure import a correct image
+            # Check checksum after import to ensure import a correct image
             # TODO change to use query image name in DB
-            expect_md5sum = image_meta.get('md5sum')
-            real_md5sum = self._get_md5sum(import_image_fpath)
-            if expect_md5sum and expect_md5sum != real_md5sum:
-                msg = ("The md5sum after import is not same as source image,"
+            expect_checksum = image_meta.get('checksum')
+            real_checksum = self._get_checksum(import_image_fpath)
+            if expect_checksum and expect_checksum != real_checksum:
+                msg = ("The checksum after import is not same as source image,"
                        " the image has been broken")
                 LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=4)
@@ -2734,10 +2734,10 @@ class SMTClient(object):
                                                             final_image_fpath)
             image_size = self._get_image_size(final_image_fpath)
 
-            # TODO: update the real_md5sum field to include each disk image
+            # TODO: update the real_checksum field to include each disk image
             self._ImageDbOperator.image_add_record(image_name,
                                                    image_os_version,
-                                                   real_md5sum,
+                                                   real_checksum,
                                                    disk_size_units,
                                                    image_size,
                                                    image_type,
@@ -2762,7 +2762,7 @@ class SMTClient(object):
          'image_name': the image_name that exported
          'image_path': the image_path after exported
          'os_version': the os version of the exported image
-         'md5sum': the md5sum of the original image
+         'checksum': the checksum of the original image
          'comments': the comments of the original image
         }
         """
@@ -2791,11 +2791,11 @@ class SMTClient(object):
                                                     remote_host=remote_host)
 
         # TODO: (nafei) for multiple disks image, update the expect_dict
-        # to be the tgz's md5sum
+        # to be the tgz's checksum
         export_dict = {'image_name': image_name,
                        'image_path': dest_url,
                        'os_version': image_info[0]['imageosdistro'],
-                       'md5sum': image_info[0]['md5sum'],
+                       'checksum': image_info[0]['checksum'],
                        'comments': image_info[0]['comments']}
         LOG.info("Image %s export successfully" % image_name)
         return export_dict
@@ -2918,24 +2918,24 @@ class SMTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=2, schema=scheme)
 
-    def _get_md5sum(self, fpath):
-        """Calculate the md5sum of the specific image file"""
+    def _get_checksum(self, fpath):
+        """Calculate the SHA-256 checksum of the specific image file"""
         try:
-            current_md5 = hashlib.md5()
+            current_checksum = hashlib.sha256()
             if isinstance(fpath, six.string_types) and os.path.exists(fpath):
                 with open(fpath, "rb") as fh:
                     for chunk in self._read_chunks(fh):
-                        current_md5.update(chunk)
+                        current_checksum.update(chunk)
 
             elif (fpath.__class__.__name__ in ["StringIO", "StringO"] or
                   isinstance(fpath, IOBase)):
                 for chunk in self._read_chunks(fpath):
-                    current_md5.update(chunk)
+                    current_checksum.update(chunk)
             else:
                 return ""
-            return current_md5.hexdigest()
+            return current_checksum.hexdigest()
         except Exception:
-            msg = ("Failed to calculate the image's md5sum")
+            msg = ("Failed to calculate the image's checksum")
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=3)
 
