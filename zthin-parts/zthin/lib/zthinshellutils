@@ -707,6 +707,9 @@ function connectDisk {
   # @Code:
   [[ $mode ]] || mode='rr'
 
+  # Ensure rawTrackAccess 1 is passed for raw mode
+  vmcp "link $userID $vdev as $alias $mode" 2>&1
+
   # Obtain the disk connection lock.
   local attempts=1
   while [[ $(mkdir $diskConnectionLock; echo $?) -ne 0 ]]; do
