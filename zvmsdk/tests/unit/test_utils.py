@@ -656,7 +656,7 @@ class ZVMUtilsTestCases(base.SDKTestCase):
                                "Failed to run command zhypinfo: "
                                "No such file or directory: \'/usr/bin/zhypinfo\'. "
                                "To run zhypinfo, you must install the package of "
-                               "qclib \(Query Capacity Library\)",
+                               "qclib (Query Capacity Library)",
                                zvmutils.get_zhypinfo,
                                filter='lpar')
 

@@ -1,9 +1,10 @@
 #!/bin/bash
-#  Copyright Contributors to the Feilong Project.
-#  SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
-# Copyright 2017,2020 IBM Corp.
+#  SPDX-License-Identifier: Apache-2.0
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -16,7 +17,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-#                            #
+#
 ###############################################################################
 # COMPONENT: unpackdiskimage                                                  #
 #                                                                             #
@@ -321,8 +322,8 @@ function resizePartition {
     out=`e2fsck -yf ${lastPartition} 2>&1`
     rc=$?
 
-    #Considering that the e2fsck version of rhel77 is too low to support 
-    #the rhel8 guest VM, so the return value of 8 is ignored.
+    # Considering that the e2fsck version of rhel77 is too low to support
+    # the rhel8 and rhel9 guest VMs, the return value of 8 is ignored.
     if (( rc != 0 && rc != 1 && rc != 2 && rc != 8 )); then
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
       return 1
@@ -745,8 +746,6 @@ function deployDiskImage {
 
     #Get target os version
     local osRelease="$deviceMountPoint/etc/os-release"
-    local slesRelease="$deviceMountPoint/etc/SuSE-release"
-    local rhelRelease="$deviceMountPoint/etc/redhat-release"
 
     if [[ -e $osRelease ]]; then
       os=`cat $osRelease | grep "^ID=" | sed \
@@ -757,38 +756,10 @@ function deployDiskImage {
         -e 's/"//g' \
         -e 's/\.//'`
       os=$os$version
-
-    #The /etc/SuSE-release file will be deprecated in sles11.4 and later release
-    elif [[ -e $slesRelease ]]; then
-      os='sles'
-      version=`cat $slesRelease | grep "VERSION =" | sed \
-        -e 's/^.*VERSION =//' \
-        -e 's/\s*$//' \
-        -e 's/.//' \
-        -e 's/[^0-9]*([0-9]+).*/$1/'`
-      os=$os$version
-
-      # Append service level
-      level=`echo $slesRelease | grep "LEVEL =" | sed \
-        -e 's/^.*LEVEL =//' \
-        -e 's/\s*$//' \
-        -e 's/.//' \
-        -e 's/[^0-9]*([0-9]+).*/$1/'`
-      os=$os'sp'$level
-
-    #The /etc/redhat-release file will be deprecated in rhel7 and later release
-    elif [[ -e $rhelRelease ]]; then
-      os='rhel'
-      version=`cat $rhelRelease | grep -i "Red Hat Enterprise Linux Server" | sed \
-        -e 's/[A-Za-z\/\.\(\)]//g' \
-        -e 's/^ *//g' \
-        -e 's/ *$//g' \
-        -e 's/\s.*$//'`
-      os=$os$version
     fi
 
     # Exec zipl command to prepare device for initial problem load
-    if [[ $os == sles12* || $os == sles15* ]]; then
+    if [[ $os == sles* ]]; then
       out=`chroot $deviceMountPoint /sbin/zipl -c /boot/zipl/config 2>&1`
       rc=$?
       if (( rc != 0 )); then
@@ -797,7 +768,7 @@ function deployDiskImage {
         rm -rf $deviceMountPoint
         return 1
       fi
-    elif [[ $os == sles11* || $os == rhel* || $os == ubuntu* ]]; then
+    elif [[ $os == rhel* || $os == ubuntu* ]]; then
       out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
       rc=$?
       if (( rc != 0 )); then

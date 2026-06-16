@@ -1,7 +1,6 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2025 IBM Corp.
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2025 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -430,7 +429,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                           img_query, get_atime):
         image_get_os_distro.return_value = 'fake-distro'
         get_atime.return_value = 1581910539.3330014
-        img_query.return_value = [{'imageosdistro': 'rhel6.7'}]
+        img_query.return_value = [{'imageosdistro': 'rhel8.9'}]
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
         image_get_os_distro.assert_called_once_with('fakeimg')
@@ -445,7 +444,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_guest_deploy_sethostname(self, deploy_image_to_vm, img_query,
                                       set_hostname, get_atime):
         fake_hostname = 'fakehost'
-        img_query.return_value = [{'imageosdistro': 'rhel6.7'}]
+        img_query.return_value = [{'imageosdistro': 'rhel8.9'}]
         get_atime.return_value = 1581910539.3330014
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 hostname=fake_hostname)
@@ -453,7 +452,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                               None, False)
         img_query.assert_called_once_with('fakeimg')
         set_hostname.assert_called_once_with('fakevm', fake_hostname,
-                                             'rhel6.7')
+                                             'rhel8.9')
 
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_capture")
     def test_guest_capture(self, guest_capture):

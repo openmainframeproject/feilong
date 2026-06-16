@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2018 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2018 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -88,7 +88,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
     def _guest_deploy(self, conn_type, vdev=None, image=None):
         api_name = 'guest_deploy'
         if image is None:
-            image = 'rhel67eckd_small_1100cyl.img'
+            image = 'rhel89eckd_small_1100cyl.img'
         if vdev is None:
             vdev = '100'
         if conn_type == CONN_REST:
@@ -105,7 +105,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
         image_fname = 'rhel67eckd_small_1100cyl.img'
         image_fpath = self.image_path
         url = "file://" + image_fpath
-        image_meta = {"os_version": "rhel6.7"}
+        image_meta = {"os_version": "rhel8.9"}
         api_name = 'image_import'
         if conn_type == CONN_REST:
             res = self.restclient.send_request(api_name, image_fname, url,
@@ -137,7 +137,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
 
     def _guest_create_network_interface(self, conn_type):
         api_name = 'guest_create_network_interface'
-        os_version = "rhel6.7"
+        os_version = "rhel8.9"
         guest_network = [{'ip_addr': '192.168.95.10',
                           'dns_addr': ['9.0.2.1', '9.0.3.1'],
                           'gateway_addr': '192.168.95.1',
@@ -156,7 +156,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
 
     def _guest_delete_network_interface(self, conn_type, vdev="3000"):
         api_name = 'guest_delete_network_interface'
-        os_version = "rhel6.7"
+        os_version = "rhel8.9"
         if conn_type == CONN_REST:
             userid = self.userid_rest
             res = self.restclient.send_request(api_name, userid, os_version,

@@ -1,7 +1,7 @@
-#  Copyright Contributors to the Feilong Project.
 #  SPDX-License-Identifier: Apache-2.0
-
-# Copyright 2017,2022 IBM Corp.
+#
+#  Copyright 2025 Contributors to the Feilong Project.
+#  Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -153,7 +153,7 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_image_import(self, image_import):
         image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = "file:///install/temp/test.img"
-        image_meta = {'os_version': "rhel6.7"}
+        image_meta = {'os_version': "rhel8.9"}
         self.api.image_import(image_name, url, image_meta)
         image_import.assert_called_once_with(image_name, url,
                                              image_meta,

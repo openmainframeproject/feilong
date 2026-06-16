@@ -1,5 +1,6 @@
 #!/bin/bash
 ###############################################################################
+# Copyright 2025 Contributors to the Feilong Project
 # Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -28,7 +29,7 @@ function getOsVersion {
   #   None
   # @Output:
   #   os - Variable set with OS and version information.  For example:
-  #        "rhel62" or "sles11sp2"
+  #        "rhel89" or "sles12sp5"
   # @Code:
   if [[ -e "/etc/os-release" ]]; then
     os=`cat /etc/os-release | grep "^ID=" | sed \
@@ -38,34 +39,6 @@ function getOsVersion {
       -e 's/VERSION_ID=//' \
       -e 's/"//g' \
       -e 's/\.//'`
-    os=$os$version
-
-  #The /etc/SuSE-release file will be deprecated in sles11.4 and later release
-  elif [[ -e "/etc/SuSE-release" ]]; then
-    os='sles'
-    version=`cat /etc/SuSE-release | grep "VERSION =" | sed \
-      -e 's/^.*VERSION =//' \
-      -e 's/\s*$//' \
-      -e 's/.//' \
-      -e 's/[^0-9]*([0-9]+).*/$1/'`
-    os=$os$version
-
-    # Append service level
-    level=`echo "/etc/SuSE-release" | grep "LEVEL =" | sed \
-      -e 's/^.*LEVEL =//' \
-      -e 's/\s*$//' \
-      -e 's/.//' \
-      -e 's/[^0-9]*([0-9]+).*/$1/'`
-    os=$os'sp'$level
-
-  #The /etc/redhat-release file will be deprecated in rhel7 and later release
-  elif [[ -e "/etc/redhat-release" ]]; then
-    os='rhel'
-    version=`cat /etc/redhat-release | grep -i "Red Hat Enterprise Linux Server" | sed \
-      -e 's/[A-Za-z\/\.\(\)]//g' \
-      -e 's/^ *//g' \
-      -e 's/ *$//g' \
-      -e 's/\s.*$//'`
     os=$os$version
   fi
   return
