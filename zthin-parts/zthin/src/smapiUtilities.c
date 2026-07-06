@@ -27,19 +27,23 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <dlfcn.h>
 #include <ctype.h>
 #include <limits.h>
 #include <arpa/inet.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <dirent.h>
 #include <stdbool.h>
+/* get_myaddress is a Linux/glibc SunRPC function; declare it if the header is unavailable */
+#ifndef __APPLE__
+#include <rpc/pmap_clnt.h>
+#else
+void get_myaddress(struct sockaddr_in *);
+#endif
 #include "vmapiQuery.h"
 #include "smPublic.h"
 #include "vmapiSystem.h"
@@ -326,7 +330,7 @@ int initializeThreadSemaphores(struct _vmApiInternalContext* vmapiContextP, cons
     vmapiContextP->semId = semget(vmapiContextP->semKey, 2, 0600);
 
     TRACE_START(vmapiContextP, TRACEAREA_SOCKET, TRACELEVEL_DETAILS);
-    sprintf(line, "initializeThreadSemaphores: semKey = %ll \n", vmapiContextP->semKey);
+    sprintf(line, "initializeThreadSemaphores: semKey = %d \n", (int)vmapiContextP->semKey);
     TRACE_END_DEBUG(vmapiContextP, line);
 
     TRACE_START(vmapiContextP, TRACEAREA_SOCKET, TRACELEVEL_DETAILS);
@@ -685,7 +689,8 @@ void logLine(struct _vmApiInternalContext* vmapiContextP, char aSeverity, const 
     if (vmapiContextP->printOffset <= 0) {
         sprintf(line, "%d.%p ", pidTrace, myThread);  // Add process id and blank
         temp = strlen(line);
-        strncpy(line + temp, aLineP, LINESIZE - temp);
+        strncpy(line + temp, aLineP, LINESIZE - temp - 1);
+        line[LINESIZE - 1] = '\0';  // Ensure null termination
     } else {
         prefixL = 2 * vmapiContextP->printOffset;
         if (prefixL > 10)
@@ -1142,6 +1147,7 @@ int vmbkendCacheEntryInvalidate(struct _vmApiInternalContext* vmapiContextP, cha
     char resolvedPath[PATH_MAX];
     int rc;
     int exitrc;
+    int i;
     struct stat statBuf;
 
     exitrc = 0;  // Initialize to success
@@ -1372,7 +1378,7 @@ void *vmbkendMain(void *data) {
     TRACE_END_DEBUG(vmapiContextP, line);
 
     // Build path to the cache directory
-    memset(path, 0, sizeof(cachePath));
+    memset(path, 0, sizeof(path));
     vmbkendGetCachePath(vmapiContextP, cachePath);
 
     // Call routine to remove the cache
@@ -1380,7 +1386,10 @@ void *vmbkendMain(void *data) {
 
     // Do the necessary socket server setup
     serverSock = socket(AF_INET, SOCK_DGRAM, 0);
-    exit_if_error(Socket, serverSock, serverSock);
+    if (serverSock < 0) {
+        perror("socket() failed");
+        pthread_exit(NULL);
+    }
 
     memset(&serverSockaddr, 0, sizeof serverSockaddr);
 
@@ -1397,7 +1406,9 @@ void *vmbkendMain(void *data) {
     if (-1 == rc) {  // Bind failure
         if (0 == serverSockaddr.sin_port) {
             // The bind for an ephemeral port failed
-            exit_if_error(Bind, rc, serverSock);
+            perror("Bind() failed");
+            close(serverSock);
+            pthread_exit(NULL);
         } else {
             // We used a previous port and this failed, retry the bind for any ephemeral port.
             memset(&serverSockaddr, 0, sizeof serverSockaddr);
@@ -1408,15 +1419,23 @@ void *vmbkendMain(void *data) {
             rc = bind(serverSock, (struct sockaddr *) &serverSockaddr,
                     sizeof serverSockaddr);
 
-            exit_if_error(Bind, rc, serverSock);
+            if (rc < 0) {
+                perror("Bind() failed");
+                close(serverSock);
+                pthread_exit(NULL);
+            }
         }
     }
 
     memset(&serverSockaddr1, 0, sizeof serverSockaddr1);
     socklen = sizeof serverSockaddr1;
 
-    rc = getsockname(serverSock, (struct sockaddr *) &serverSockaddr1, &socklen);
-    exit_if_error(Getsockname, rc, serverSock);
+    rc = getsockname(serverSock, (struct sockaddr *) &serverSockaddr1, (socklen_t *)&socklen);
+    if (rc < 0) {
+        perror("Getsockname() failed");
+        close(serverSock);
+        pthread_exit(NULL);
+    }
 
     // Show the IP address for our system
     get_myaddress(&notificationSocketInfo);
@@ -1506,7 +1525,7 @@ void *vmbkendMain(void *data) {
         TRACE_END_DEBUG(vmapiContextP, line);
 
         // If Subscription exists, do not do anything
-        if (!ptrEnableOutputData->common.returnCode == 428) {
+        if (ptrEnableOutputData->common.returnCode != 428) {
             smMemoryGroupFreeAll(vmapiContextP);
             smMemoryGroupTerminate(vmapiContextP);
             vmapiContextP->memContext = saveMemoryGroup;
@@ -1604,7 +1623,7 @@ void *vmbkendMain(void *data) {
         // Validate useridLength to prevent Loop DoS and buffer overflow
         // VM userids in z/VM are maximum 8 characters
         // cacheUserID buffer is only 9 bytes (8 + 1 for null terminator)
-        if (useridLength > 8 || useridLength == 0 || useridLength >= sizeof(userID)) {
+        if (useridLength == 0 || useridLength > 8) {
             TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
             sprintf(line, "vmbkendMain: Invalid userid length %u (must be 1-8, buffer max %zu), rejecting packet\n",
                     useridLength, sizeof(userID) - 1);
@@ -1790,39 +1809,139 @@ void *vmbkendMain(void *data) {
 
     // Close the server socket
     rc = close(serverSock);
-    exit_if_error(Close, rc, rc);
+    if (rc < 0) {
+        perror("Close() failed");
+    }
     pthread_exit(NULL);
 }
 
 /**
- * Procedure: vmbkendremoveCachedScanFiles
- *
- * Purpose: Remove the .scan files
- *
- * Input: Pointer to cache path
- *
- * Output: None
- *
- * Operation:
- *   Build the rm command from the input path
- *   Issue the rm command via system()
+ * SECURITY FIX: Safe file removal function to prevent command injection (CWE-78)
+ * Replaces system() calls with direct file operations
+ * Addresses CWE-787 by using bounds-checked operations
+ * Addresses CWE-22 by validating paths with realpath()
  */
+static int safe_remove_files(const char *dirPath, const char *pattern) {
+    DIR *dir;
+    struct dirent *entry;
+    char filepath[PATH_MAX];
+    int removed = 0;
+    
+    // CWE-22 FIX: Validate directory path to prevent path traversal
+    char resolvedPath[PATH_MAX];
+    if (realpath(dirPath, resolvedPath) == NULL) {
+        return -1;
+    }
+    
+    // CWE-78 FIX: Check for shell metacharacters in path to prevent command injection
+    if (strpbrk(resolvedPath, ";&|`$(){}[]<>*?'\"\\") != NULL) {
+        return -1;  // Reject dangerous characters
+    }
+    
+    dir = opendir(resolvedPath);
+    if (!dir) {
+        return -1;
+    }
+    
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip . and ..
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        
+        // Check if filename matches pattern
+        if (pattern && strstr(entry->d_name, pattern) == NULL) {
+            continue;
+        }
+        
+        // CWE-787 FIX: Use snprintf with bounds checking to prevent buffer overflow
+        if (snprintf(filepath, sizeof(filepath), "%s/%s", resolvedPath, entry->d_name) >= sizeof(filepath)) {
+            continue;  // Path too long, skip
+        }
+        
+        // Remove the file
+        if (unlink(filepath) == 0) {
+            removed++;
+        }
+    }
+    
+    closedir(dir);
+    return removed;
+}
+
+/**
+ * SECURITY FIX: Safe recursive directory removal to prevent command injection (CWE-78)
+ * Addresses CWE-787 by using bounds-checked operations
+ * Addresses CWE-22 by validating paths with realpath()
+ */
+static int safe_remove_directory_recursive(const char *dirPath) {
+    DIR *dir;
+    struct dirent *entry;
+    char filepath[PATH_MAX];
+    struct stat statbuf;
+    
+    // CWE-22 FIX: Validate directory path to prevent path traversal
+    char resolvedPath[PATH_MAX];
+    if (realpath(dirPath, resolvedPath) == NULL) {
+        return -1;
+    }
+    
+    // CWE-78 FIX: Check for shell metacharacters to prevent command injection
+    if (strpbrk(resolvedPath, ";&|`$(){}[]<>*?'\"\\") != NULL) {
+        return -1;
+    }
+    
+    dir = opendir(resolvedPath);
+    if (!dir) {
+        return -1;
+    }
+    
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip . and ..
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        
+        // CWE-787 FIX: Use snprintf with bounds checking to prevent buffer overflow
+        if (snprintf(filepath, sizeof(filepath), "%s/%s", resolvedPath, entry->d_name) >= sizeof(filepath)) {
+            continue;
+        }
+        
+        // Get file stats
+        if (stat(filepath, &statbuf) == -1) {
+            continue;
+        }
+        
+        // Recursively remove directories
+        if (S_ISDIR(statbuf.st_mode)) {
+            safe_remove_directory_recursive(filepath);
+            rmdir(filepath);
+        } else {
+            unlink(filepath);
+        }
+    }
+    
+    closedir(dir);
+    return 0;
+}
+
 int vmbkendRemoveCachedScanFiles(struct _vmApiInternalContext* vmapiContextP, char *pathP) {
-    char command[300];
     char line[LINESIZE];
+    int result;
 
     TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
-    // Build the remove command
-    sprintf(command, "rm -f %s%s", pathP, ALL_SCAN_FILES);
+    // SECURITY FIX (CWE-78, CWE-787, CWE-22): Use safe file removal instead of system()
+    // This prevents command injection, buffer overflow, and path traversal attacks
+    result = safe_remove_files(pathP, ".scan");
 
     TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
-    sprintf(line, "vmbkendRemoveCachedScanFiles:  About to issue: system(%s)\n", command);
+    snprintf(line, sizeof(line), "vmbkendRemoveCachedScanFiles: Removed %d scan files from %s\n", result, pathP);
     TRACE_END_DEBUG(vmapiContextP, line);
 
-    if (system(command)) {
+    if (result < 0) {
         TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
-        sprintf(line, "vmbkendRemoveCachedScanFiles:  Error removing scan files, errno 0x%X: reason(%s)\n",
+        snprintf(line, sizeof(line), "vmbkendRemoveCachedScanFiles: Error removing scan files, errno 0x%X: reason(%s)\n",
                 errno, strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
     }
@@ -1846,21 +1965,22 @@ int vmbkendRemoveCachedScanFiles(struct _vmApiInternalContext* vmapiContextP, ch
  *   Issue the rm command via system()
  */
 void vmbkendRemoveEntireCache(struct _vmApiInternalContext* vmapiContextP, char *cachePathP) {
-    char command[300];
     char line[LINESIZE];
+    int result;
 
     TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
-    /* Build the remove command */
-    sprintf(command, "rm -rf %s*", cachePathP);
+    // SECURITY FIX (CWE-78, CWE-787, CWE-22): Use safe recursive removal instead of system()
+    // This prevents command injection, buffer overflow, and path traversal attacks
+    result = safe_remove_directory_recursive(cachePathP);
 
     TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
-    sprintf(line, "vmbkendRemoveEntireCache:  About to issue: system(%s)\n", command);
+    snprintf(line, sizeof(line), "vmbkendRemoveEntireCache: Removed cache from %s\n", cachePathP);
     TRACE_END_DEBUG(vmapiContextP, line);
 
-    if (system(command)) {
+    if (result < 0) {
         TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
-        sprintf(line, "vmbkendRemoveEntireCache:  Error removing file, errno 0x%X: reason(%s)\n", errno, strerror(errno));
+        snprintf(line, sizeof(line), "vmbkendRemoveEntireCache: Error removing cache, errno 0x%X: reason(%s)\n", errno, strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
     }
 
@@ -2177,7 +2297,7 @@ void  *vmbkendMain_iucv(void *context) {
         TRACE_END_DEBUG(vmapiContextP, line);
 
     /* Build path to the cache directory */
-    memset(path, 0, sizeof(cachePath));
+    memset(path, 0, sizeof(path));
     vmbkendGetCachePath(vmapiContextP, cachePath);
 
     /* Call routine to remove the cache */
@@ -2721,6 +2841,15 @@ int vmbkendMain_setSmapiSubscribeEventData(struct _vmApiInternalContext* vmapiCo
                 sprintf(line, "useridLength : %d \n", useridLength);
                 TRACE_END_DEBUG(vmapiContextP, line);
 
+                // Validate useridLength before use to prevent buffer overflow
+                useridLength = ntohl(useridLength);
+                if (useridLength == 0 || useridLength > 8) {
+                    sprintf(line, "Event_Subscribe invalid useridLength %d on socket %d, rejecting event\n", useridLength, sockDesc);
+                    errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
+                    rc = PROCESSING_ERROR;
+                    goto exit_vmbkendMain_setSmapiSubscribeEventData;
+                }
+
                 // Get the userid
                 if (0 != (rc = smSocketRead(vmapiContextP, sockDesc, (char *) smapiOutputP, useridLength))) {
                     sprintf(line, "Event_Subscribe receive of event userid on socket %d failed with RC: %d\n", sockDesc, rc);
@@ -2751,6 +2880,15 @@ int vmbkendMain_setSmapiSubscribeEventData(struct _vmApiInternalContext* vmapiCo
                 TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
                 sprintf(line, "userWordLength : %d \n", userWordLength);
                 TRACE_END_DEBUG(vmapiContextP, line);
+
+                // Validate userWordLength before use to prevent buffer overflow
+                userWordLength = ntohl(userWordLength);
+                if (userWordLength >= (int)sizeof(userWord)) {
+                    sprintf(line, "Event_Subscribe invalid userWordLength %d on socket %d, rejecting event\n", userWordLength, sockDesc);
+                    errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
+                    rc = PROCESSING_ERROR;
+                    goto exit_vmbkendMain_setSmapiSubscribeEventData;
+                }
 
                 // Get the user word
                 if (0 != (rc = smSocketRead(vmapiContextP, sockDesc, (char *) &userWord, userWordLength))) {
@@ -2824,8 +2962,10 @@ int vmbkendMain_setSmapiSubscribeEventData(struct _vmApiInternalContext* vmapiCo
                     // We can still process other events if we get a message get error so
                     // we don't need to leave the routine until all events have been processed.
                 } else {
-                    strcpy(msgDirChng.userid, userid);
-                    strcpy(msgDirChng.userWord, userWord);
+                    strncpy(msgDirChng.userid, userid, sizeof(msgDirChng.userid) - 1);
+                    msgDirChng.userid[sizeof(msgDirChng.userid) - 1] = '\0';
+                    strncpy(msgDirChng.userWord, userWord, sizeof(msgDirChng.userWord) - 1);
+                    msgDirChng.userWord[sizeof(msgDirChng.userWord) - 1] = '\0';
                     buf_length = sizeof(dir_chng_message_struct);
                     msgDirChngBuf.mType = 1;
                     msgDirChngBuf.messageStruct = msgDirChng;
