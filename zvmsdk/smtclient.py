@@ -47,6 +47,8 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
+from smtLayer import vmcpHandler
+from smtLayer.ReqHandle import ReqHandle
 
 
 CONF = config.CONF
@@ -85,6 +87,8 @@ class SMTClient(object):
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
         self._FCPDbOperator = database.FCPDbOperator()
+        rh = ReqHandle(smt=self._smt)
+        self._VMCPHandler = vmcpHandler.VMCPHandler(rh)
 
     def _request(self, requestData):
         try:
@@ -4594,6 +4598,25 @@ class SMTClient(object):
     def host_get_ssi_info(self):
         msg = ('Start SSI_Query')
         LOG.info(msg)
+
+        if CONF.zvm.prefer_vmcp_query == 'yes':
+            try:
+                results = self._VMCPHandler.ssi_info()
+            except exception.SDKSMTRequestFailed as err:
+                LOG.error("Failed to query SSI information from VMCP command.")
+                err_msg = "SMT error: %s" % err.format_message()
+                LOG.error(err_msg)
+                raise exception.SDKSMTRequestFailed(err.results, err_msg)
+            # Host is not a member of an SSI cluster
+            if (results.get('rc') == 0 and
+                    "This system is not a member of an SSI cluster."
+                    in "\n".join(results.get('response', []))):
+                LOG.debug("Host is not a member of an SSI cluster.")
+                return []
+
+            if results.get('rc') == 0 and results.get('response'):
+                return results['response']
+            return []
 
         rd = 'SMAPI HYPERVISOR API SSI_Query'
         try:
