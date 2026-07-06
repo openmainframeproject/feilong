@@ -335,7 +335,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
-    def _validate_diskpool_format(pool_str):
+    def _validate_diskpool_format(self, pool_str):
         """Validate and parse disk pool format.
 
         :param pool_str: Disk pool string in format "TYPE:NAME"
