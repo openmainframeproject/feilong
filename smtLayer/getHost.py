@@ -22,6 +22,7 @@ import subprocess
 
 from smtLayer import generalUtils
 from smtLayer import msgs
+from smtLayer.vmcpHandler import VMCPHandler
 from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
@@ -472,6 +473,7 @@ def getGeneralInfo(rh):
     """
 
     rh.printSysLog("Enter getHost.getGeneralInfo")
+    handler = VMCPHandler(rh)
 
     # Get host using VMCP
     rh.results['overallRC'] = 0
@@ -564,36 +566,47 @@ def getGeneralInfo(rh):
 
     lparMemTotal = "no info"
     lparMemStandby = "no info"
-    results = invokeSMCLI(rh, "System_Information_Query", parm)
     ipl = ""
-    ipl_data = {}
-    if results['overallRC'] == 0:
-        for line in results['response'].splitlines():
-            if "STORAGE=" in line:
-                lparMemOnline = line.split()[0]
-                lparMemStandby = line.split()[4]
-                lparMemTotal = lparMemOnline.split("=")[2]
-                lparMemStandby = lparMemStandby.split("=")[1]
 
-            # Checks the ipl data
-            if "IPL_TIME=" in line:
-                ipl_time_line = line.split()[5]
-                ipl_data['IPL_TIME'] = ipl_time_line.split("=")[1]
-                ipl_date_line = line.split()[6]
-                ipl_data['IPL_DATE'] = ipl_date_line.split("=")[1]
-                date_obj = datetime.strptime(ipl_data['IPL_DATE'], "%Y-%m-%d")
-                ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
-                ipl_timezone_line = line.split()[7]
-                ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
-                ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
+    if config.CONF.zvm.prefer_vmcp_query.lower() == "yes":
+        # Use VMCP to query CP level (IPL time) and storage totals.
+        ipl = handler.query_cplevel()
+
+        storage        = handler.query_storage()
+        lparMemTotal   = storage["lparMemTotal"]
+        lparMemStandby = storage["lparMemStandby"]
+
     else:
-        # SMAPI API failed, so we put out messages
-        # 300 and 405 for consistency
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-        msg = msgs.msg['0405'][1] % (modId, "LPAR memory",
-            "(see message 300)", results['response'])
-        rh.printLn("ES", msg)
+        ipl_data = {}
+        results = invokeSMCLI(rh, "System_Information_Query", parm)
+        if results['overallRC'] == 0:
+            for line in results['response'].splitlines():
+                if "STORAGE=" in line:
+                    lparMemOnline = line.split()[0]
+                    # Changed from 4 to 3. line.split()[3] -> STANDBY=0, line.split()[4] -> RESERVED=0
+                    lparMemStandby = line.split()[3]
+                    lparMemTotal = lparMemOnline.split("=")[2]
+                    lparMemStandby = lparMemStandby.split("=")[1]
+
+                # Checks the ipl data
+                if "IPL_TIME=" in line:
+                    ipl_time_line = line.split()[5]
+                    ipl_data['IPL_TIME'] = ipl_time_line.split("=")[1]
+                    ipl_date_line = line.split()[6]
+                    ipl_data['IPL_DATE'] = ipl_date_line.split("=")[1]
+                    date_obj = datetime.strptime(ipl_data['IPL_DATE'], "%Y-%m-%d")
+                    ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
+                    ipl_timezone_line = line.split()[7]
+                    ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
+                    ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
+        else:
+            # SMAPI API failed, so we put out messages
+            # 300 and 405 for consistency
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            msg = msgs.msg['0405'][1] % (modId, "LPAR memory",
+                "(see message 300)", results['response'])
+            rh.printLn("ES", msg)
 
     # Get LPAR memory in use
     parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]

@@ -17,8 +17,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from zvmsdk import config
+
 from smtLayer import generalUtils
 from smtLayer import msgs
+from smtLayer.vmcpHandler import VMCPHandler
 from smtLayer.vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 
 modId = "DVM"
@@ -97,19 +100,25 @@ def deleteMachine(rh):
         results['rs'] = 0
 
     if state == 'on':
-        parms = ["-T", rh.userid, "-f IMMED"]
-        results = invokeSMCLI(rh, "Image_Deactivate", parms)
-        if results['overallRC'] == 0:
-            pass
-        elif (results['overallRC'] == 8 and results['rc'] == 200 and
-            (results['rs'] == 12 or results['rs'] == 16)):
-            # Tolerable error.  Machine is already in or going into the state
-            # that we want it to enter.
-            rh.updateResults({}, reset=1)
+        # Log off the user
+        if config.CONF.zvm.prefer_vmcp_query == "yes":
+            handler = VMCPHandler(rh)
+            handler.deactivate(rh.userid, force=True)
+            results = rh.results
         else:
-            # SMAPI API failed.
-            rh.printLn("ES", results['response'])
-            rh.updateResults(results)  # Use results returned by invokeSMCLI
+            parms = ["-T", rh.userid, "-f IMMED"]
+            results = invokeSMCLI(rh, "Image_Deactivate", parms)
+            if results['overallRC'] == 0:
+                pass
+            elif (results['overallRC'] == 8 and results['rc'] == 200 and
+                (results['rs'] == 12 or results['rs'] == 16)):
+                # Tolerable error.  Machine is already in or going into the state
+                # that we want it to enter.
+                rh.updateResults({}, reset=1)
+            else:
+                # SMAPI API failed.
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)  # Use results returned by invokeSMCLI
 
     # Clean up the reader before delete
     if results['overallRC'] == 0:
