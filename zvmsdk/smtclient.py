@@ -47,6 +47,8 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
+from smtLayer import vmcpHandler
+from smtLayer.ReqHandle import ReqHandle
 
 
 CONF = config.CONF
@@ -85,6 +87,8 @@ class SMTClient(object):
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
         self._FCPDbOperator = database.FCPDbOperator()
+        rh = ReqHandle(smt=self._smt)
+        self._VMCPHandler = vmcpHandler.VMCPHandler(rh)
 
     def _request(self, requestData):
         try:
@@ -290,7 +294,6 @@ class SMTClient(object):
             self._request(rd)
 
     def get_fcp_info_by_status(self, userid, status=None):
-
         """get fcp information by the status.
 
         :userid: (str) The name of the image to query fcp info
@@ -4558,9 +4561,88 @@ class SMTClient(object):
                 lun = ent.split()[2].strip()
         return (wwpn, lun)
 
+    def _parse_ssi_info(self, vmcp_response):
+
+        # Pass vmcp query ssi raw output
+        if isinstance(vmcp_response, tuple):
+            vmcp_response = vmcp_response[0]
+
+        response = []
+
+        # Parse SSI information
+        ssi_name = re.search(r"SSI Name:\s*(.+)", vmcp_response)
+        ssi_mode = re.search(r"SSI Mode:\s*(.+)", vmcp_response)
+        cst = re.search(r"Cross-System Timeouts:\s*(.+)", vmcp_response)
+        pdr = re.search(
+            r"SSI Persistent Data Record \(PDR\) device:\s*(\S+)\s+on\s+(\S+)",
+            vmcp_response
+        )
+
+        if ssi_name:
+            response.append(f"ssi_name = {ssi_name.group(1)}")
+        if ssi_mode:
+            response.append(f"ssi_mode = {ssi_mode.group(1)}")
+        if pdr:
+            response.append(f"ssi_pdr = {pdr.group(1)}_on_{pdr.group(2)}")
+        if cst:
+            response.append(f"cross_system_timeouts = {cst.group(1)}")
+
+        # Parse member information
+        member_pattern = re.compile(
+            r"^\s*(\d+)\s+(\S+)\s+(\S+)"
+            r"(?:\s+(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2}:\d{2})"
+            r"\s+(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2}:\d{2}))?$",
+            re.MULTILINE
+        )
+
+        member_matches = list(member_pattern.finditer(vmcp_response))
+
+        response.append(f"output.ssiInfoCount = {len(member_matches)}")
+        response.append("")
+
+        for match in member_matches:
+            (
+                slot,
+                system_id,
+                state,
+                pdr_date,
+                pdr_time,
+                recv_date,
+                recv_time,
+            ) = match.groups()
+
+            if system_id == "--------":
+                system_id = "N/A"
+
+            pdr_hb = (
+                f"{pdr_date}_{pdr_time}"
+                if pdr_date and pdr_time else "N/A"
+            )
+
+            recv_hb = (
+                f"{recv_date}_{recv_time}"
+                if recv_date and recv_time else "N/A"
+            )
+
+            response.extend([
+                f"member_slot = {slot}",
+                f"member_system_id = {system_id}",
+                f"member_state = {state}",
+                f"member_pdr_heartbeat = {pdr_hb}",
+                f"member_received_heartbeat = {recv_hb}",
+                ""
+            ])
+
+        return {"response": response}
+
     def host_get_ssi_info(self):
         msg = ('Start SSI_Query')
         LOG.info(msg)
+
+        if CONF.zvm.prefer_vmcp_query == 'yes':
+            vmcp_response = self._VMCPHandler._run(['QUERY SSI'])
+            results = self._parse_ssi_info(vmcp_response)
+            return results.get('response', [])
 
         rd = 'SMAPI HYPERVISOR API SSI_Query'
         try:

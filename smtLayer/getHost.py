@@ -20,17 +20,20 @@
 import os
 import subprocess
 
+import re
 from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
 from datetime import datetime
+from smtLayer.vmcpHandler import VMCPHandler
 
 modId = 'GHO'
 version = "1.0.0"
 # maximum I knew is 60019, so make it double
 maximumCyl = 130000
+CONF = config.CONF
 
 """
 List of subfunction handlers.
@@ -456,6 +459,139 @@ def getCPUCount(rh):
     return cpu_total, cpu_use
 
 
+def vmcp_image_performance_query(rh):
+    """
+    Collect System_Image_Performance_Query information using VMCP.
+    Returns a list of strings in the same format as SMCLI.
+    """
+
+    try:
+        results = []
+        handler = VMCPHandler(rh)
+
+        # QUERY PROCESSOR
+        processor_out, rc = handler._run(["query", "processor"])
+        if rc != 0:
+            raise Exception("QUERY PROCESSOR failed: %s" % processor_out)
+
+        cpu_count = len(re.findall(r"^PROCESSOR", processor_out,
+                                   re.MULTILINE))
+        results.append("CPU_COUNT=%04X" % cpu_count)
+
+        # INDICATE LOAD
+        load_out, rc = handler._run(["indicate", "load"])
+        if rc != 0:
+            raise Exception("INDICATE LOAD failed: %s" % load_out)
+
+        m = re.search(r"AVGPROC-(\d+)%", load_out)
+        if m:
+            results.append("CPU_AVERAGE_USE=%d%%" % int(m.group(1)))
+        else:
+            results.append("CPU_AVERAGE_USE=0%")
+
+        m = re.search(r"PAGING-(\d+)/SEC", load_out)
+        if m:
+            results.append("PAGING_RATE=%s" % m.group(1))
+        else:
+            results.append("PAGING_RATE=0")
+
+        # QUERY FRAMES
+        frames_out, rc = handler._run(["query", "frames"])
+        if rc != 0:
+            raise Exception("QUERY FRAMES failed: %s" % frames_out)
+
+        configured = 0
+
+        m = re.search(r"Configured=(\d+)", frames_out)
+        if m:
+            configured = int(m.group(1))
+
+        results.append("MEMORY_TOTAL=%d" % configured)
+
+        free_frames = 0
+
+        m = re.search(r"GlobalClearedAvail=(\d+)", frames_out)
+        if m:
+            free_frames += int(m.group(1))
+
+        m = re.search(r"LocalClearedAvail=(\d+)", frames_out)
+        if m:
+            free_frames += int(m.group(1))
+
+        m = re.search(r"LocalUnclearedAvail=(\d+)", frames_out)
+        if m:
+            free_frames += int(m.group(1))
+
+        gua = re.findall(r"GlobalUnclearedAvail=(\d+)", frames_out)
+        for value in gua:
+            free_frames += int(value)
+
+        memory_in_use = configured - free_frames
+
+        results.append("MEMORY_IN_USE=%d" % memory_in_use)
+
+        # QUERY MONITOR
+        monitor_out, rc = handler._run(["query", "monitor"])
+        if rc != 0:
+            raise Exception("QUERY MONITOR failed: %s" % monitor_out)
+
+        event_section = monitor_out.split("MONITOR SAMPLE ACTIVE")[0]
+        sample_section = monitor_out.split("MONITOR SAMPLE ACTIVE")[-1]
+
+        m = re.search(r"RATE\s+([0-9.]+\s+SECONDS)", sample_section)
+        if m:
+            results.append("MONITOR_RATE=%s" % m.group(1))
+
+        m = re.search(r"INTERVAL\s+(\d+\s+MINUTES)", sample_section)
+        if m:
+            results.append("MONITOR_INTERVAL=%s" % m.group(1))
+
+        m = re.search(r"PARTITION\s+([0-9A-F]+)", event_section)
+        if m:
+            event_count = int(m.group(1), 16) // 1024
+            results.append("MONITOR_EVENT_COUNT=%d" % event_count)
+
+        # mapping all the information
+        domain_map = {
+            "MONITOR": "DOMAIN_MONITOR",
+            "PROCESSOR": "DOMAIN_PROCESSOR",
+            "STORAGE": "DOMAIN_STORAGE",
+            "SCHEDULER": "DOMAIN_SCHEDULER",
+            "SEEKS": "DOMAIN_SEEKS",
+            "USER": "DOMAIN_USER",
+            "I/O": "DOMAIN_I/O",
+            "NETWORK": "DOMAIN_NETWORK",
+            "ISFC": "DOMAIN_ISFC",
+            "APPLDATA": "DOMAIN_APPLDATA",
+            "SSI": "DOMAIN_SSI",
+            "COMMAND": "DOMAIN_COMMAND",
+        }
+
+        for line in event_section.splitlines():
+            line = line.strip()
+
+            for vmcp_name, smcli_name in domain_map.items():
+                if line.startswith(vmcp_name):
+                    if "ENABLED" in line:
+                        state = "ENABLED"
+                    else:
+                        state = "DISABLED"
+
+                    results.append("%s=%s" % (smcli_name, state))
+                    break
+
+        return {
+            "overallRC": 0,
+            "response": "\n".join(results)
+        }
+
+    except Exception as err:
+        return {
+            "overallRC": 1,
+            "response": str(err)
+        }
+
+
 def getGeneralInfo(rh):
     """
     Obtain general information about the host.
@@ -596,11 +732,14 @@ def getGeneralInfo(rh):
         rh.printLn("ES", msg)
 
     # Get LPAR memory in use
-    parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
-
     lparMemUsed = "no info"
-    results = invokeSMCLI(rh, "System_Performance_Information_Query",
-                          parm)
+    if CONF.zvm.prefer_vmcp_query == 'yes':
+        results = vmcp_image_performance_query(rh)  # Return dict like invokeSMCLI
+    else:
+        # Get LPAR memory in use
+        parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
+        results = invokeSMCLI(rh, "System_Performance_Information_Query", parm)
+
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "MEMORY_IN_USE=" in line:

@@ -24,11 +24,14 @@ from smtLayer import msgs
 from smtLayer.vmUtils import execCmdThruIUCV, invokeSMCLI
 from smtLayer.vmUtils import isLoggedOn
 from smtLayer.vmUtils import waitForOSState, waitForVMState
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 modId = 'PVM'
 vmOSUpStates = ['on', 'up']
 vmOSUpDownStates = ['down', 'off', 'on', 'up']
 version = "1.0.0"
+CONF = config.CONF
 
 """
 List of subfunction handlers.
@@ -144,6 +147,13 @@ def activate(rh):
        Return code - 0: ok, non-zero: error
     """
     rh.printSysLog("Enter powerVM.activate, userid: " + rh.userid)
+
+    if CONF.zvm.prefer_vmcp_query == 'yes':
+        handler = VMCPHandler(rh)
+        response, rc = handler._run(['xautolog', rh.userid])
+        rh.printSysLog(response)
+        rh.printSysLog("RC: %s" % rc)
+        return rc
 
     parms = ["-T", rh.userid]
     smcliResults = invokeSMCLI(rh, "Image_Activate", parms)
