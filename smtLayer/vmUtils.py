@@ -24,6 +24,7 @@ import time
 
 from smtLayer import msgs
 from smtLayer import vmStatus
+from smtLayer.vmcpHandler import VMCPHandler
 
 from zvmsdk import config
 
@@ -1272,7 +1273,12 @@ def purgeReader(rh):
 
     parms = ['-T', rh.userid, '-k', 'spoolids=all']
 
-    results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
+    handler = VMCPHandler(rh)
+
+    if config.CONF.zvm.prefer_vmcp_query == 'yes':
+        results = handler.purge_reader()
+    else:
+        results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
 
     if results['overallRC'] != 0:
         rh.printLn("ES", results['response'])

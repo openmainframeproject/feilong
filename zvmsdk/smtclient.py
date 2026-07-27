@@ -47,6 +47,7 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
+from smtLayer.vmcpHandler import VMCPHandler
 
 
 CONF = config.CONF
@@ -2049,40 +2050,46 @@ class SMTClient(object):
             if mac_addr is not None:
                 LOG.warning("Ignore the mac address %s when "
                             "adding nic on an active system" % mac_addr)
-            requestData = ' '.join((
-                'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
-                userid,
-                "--operands",
-                "-k image_device_number=%s" % vdev,
-                "-k adapter_type=QDIO"))
-
-            try:
-                self._request(requestData)
-            except (exception.SDKSMTRequestFailed,
-                    exception.SDKInternalError) as err1:
-                msg1 = err1.format_message()
-                persist_OK = True
+            handler = VMCPHandler(rh)
+            if config.CONF.zvm.prefer_vmcp_query == 'yes':
+                result = handler.create_nic(
+                    userid, vdev)
+            else:
                 requestData = ' '.join((
-                    'SMAPI %s API Virtual_Network_Adapter_Delete_DM' % userid,
+                    'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
+                    userid,
                     "--operands",
-                    '-v %s' % vdev))
+                    "-k image_device_number=%s" % vdev,
+                    "-k adapter_type=QDIO"))
+
                 try:
                     self._request(requestData)
                 except (exception.SDKSMTRequestFailed,
-                        exception.SDKInternalError) as err2:
-                    results = err2.results
-                    msg2 = err2.format_message()
-                    if ((results['rc'] == 404) and
-                        (results['rs'] == 8)):
-                        persist_OK = True
+                        exception.SDKInternalError) as err1:
+                    msg1 = err1.format_message()
+                    persist_OK = True
+                    requestData = ' '.join((
+                        'SMAPI %s API Virtual_Network_Adapter_Delete_DM' %
+                        userid,
+                        "--operands",
+                        '-v %s' % vdev))
+                    try:
+                        self._request(requestData)
+                    except (exception.SDKSMTRequestFailed,
+                            exception.SDKInternalError) as err2:
+                        results = err2.results
+                        msg2 = err2.format_message()
+                        if ((results['rc'] == 404) and
+                            (results['rs'] == 8)):
+                            persist_OK = True
+                        else:
+                            persist_OK = False
+                    if persist_OK:
+                        self._create_nic_active_exception(err1, userid, vdev)
                     else:
-                        persist_OK = False
-                if persist_OK:
-                    self._create_nic_active_exception(err1, userid, vdev)
-                else:
-                    raise exception.SDKNetworkOperationError(rs=4,
-                                    nic=vdev, userid=userid,
-                                    create_err=msg1, revoke_err=msg2)
+                        raise exception.SDKNetworkOperationError(rs=4,
+                                        nic=vdev, userid=userid,
+                                        create_err=msg1, revoke_err=msg2)
 
         self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
         msg = ('Create nic device %(vdev)s for guest %(vm)s successfully'
@@ -3364,6 +3371,11 @@ class SMTClient(object):
                 return False
 
     def _query_OSA(self):
+        handler = VMCPHandler(rh)
+
+        if config.CONF.zvm.prefer_vmcp_query == 'yes':
+            return handler.query_osa()
+        
         smt_userid = zvmutils.get_smt_userid()
         rd = "SMAPI %s API Virtual_Network_OSA_Query" % smt_userid
         OSA_info = {}
