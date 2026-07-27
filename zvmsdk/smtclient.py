@@ -47,6 +47,8 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
+from smtLayer import vmcpHandler
+from smtLayer.ReqHandle import ReqHandle
 
 
 CONF = config.CONF
@@ -85,6 +87,8 @@ class SMTClient(object):
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
         self._FCPDbOperator = database.FCPDbOperator()
+        rh = ReqHandle(smt=self._smt)
+        self._VMCPHandler = vmcpHandler.VMCPHandler(rh)
 
     def _request(self, requestData):
         try:
@@ -290,7 +294,6 @@ class SMTClient(object):
             self._request(rd)
 
     def get_fcp_info_by_status(self, userid, status=None):
-
         """get fcp information by the status.
 
         :userid: (str) The name of the image to query fcp info
@@ -2049,40 +2052,67 @@ class SMTClient(object):
             if mac_addr is not None:
                 LOG.warning("Ignore the mac address %s when "
                             "adding nic on an active system" % mac_addr)
-            requestData = ' '.join((
-                'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
-                userid,
-                "--operands",
-                "-k image_device_number=%s" % vdev,
-                "-k adapter_type=QDIO"))
+            if config.CONF.zvm.prefer_vmcp_query == 'yes':
+                LOG.debug("prefer_vmcp_query=yes: using vmcp for "
+                          "create_nic_for_guest userid=%s vdev=%s",
+                          userid, vdev)
 
-            try:
-                self._request(requestData)
-            except (exception.SDKSMTRequestFailed,
-                    exception.SDKInternalError) as err1:
-                msg1 = err1.format_message()
-                persist_OK = True
+                self._VMCPHandler._rh.userid = userid
+                result = self._VMCPHandler.create_nic_for_guest(userid, vdev)
+                if result['overallRC'] != 0:
+                    rd = ' '.join((
+                        'SMAPI %s API Virtual_Network_Adapter_Delete_DM' %
+                        userid,
+                        "--operands", '-v %s' % vdev))
+                    revoke_err = ''
+                    try:
+                        self._request(rd)
+                    except (exception.SDKSMTRequestFailed,
+                            exception.SDKInternalError) as rev_err:
+                        revoke_err = rev_err.format_message()
+                        LOG.error("Failed to roll back NIC %s _DM entry "
+                                  "for %s after vmcp create failed: %s",
+                                  vdev, userid, revoke_err)
+                    raise exception.SDKNetworkOperationError(
+                        rs=4, nic=vdev, userid=userid,
+                        create_err=result.get('strError', '') or result.get('response', ''),
+                        revoke_err=revoke_err)
+            else:
                 requestData = ' '.join((
-                    'SMAPI %s API Virtual_Network_Adapter_Delete_DM' % userid,
+                    'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
+                    userid,
                     "--operands",
-                    '-v %s' % vdev))
+                    "-k image_device_number=%s" % vdev,
+                    "-k adapter_type=QDIO"))
+
                 try:
                     self._request(requestData)
                 except (exception.SDKSMTRequestFailed,
-                        exception.SDKInternalError) as err2:
-                    results = err2.results
-                    msg2 = err2.format_message()
-                    if ((results['rc'] == 404) and
-                        (results['rs'] == 8)):
-                        persist_OK = True
+                        exception.SDKInternalError) as err1:
+                    msg1 = err1.format_message()
+                    persist_OK = True
+                    requestData = ' '.join((
+                        'SMAPI %s API Virtual_Network_Adapter_Delete_DM' %
+                        userid,
+                        "--operands",
+                        '-v %s' % vdev))
+                    try:
+                        self._request(requestData)
+                    except (exception.SDKSMTRequestFailed,
+                            exception.SDKInternalError) as err2:
+                        results = err2.results
+                        msg2 = err2.format_message()
+                        if ((results['rc'] == 404) and
+                            (results['rs'] == 8)):
+                            persist_OK = True
+                        else:
+                            persist_OK = False
+                    if persist_OK:
+                        self._create_nic_active_exception(err1, userid, vdev)
                     else:
-                        persist_OK = False
-                if persist_OK:
-                    self._create_nic_active_exception(err1, userid, vdev)
-                else:
-                    raise exception.SDKNetworkOperationError(rs=4,
-                                    nic=vdev, userid=userid,
-                                    create_err=msg1, revoke_err=msg2)
+                        raise exception.SDKNetworkOperationError(rs=4,
+                                        nic=vdev, userid=userid,
+                                        create_err=msg1, revoke_err=msg2)
 
         self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
         msg = ('Create nic device %(vdev)s for guest %(vm)s successfully'
@@ -3364,6 +3394,12 @@ class SMTClient(object):
                 return False
 
     def _query_OSA(self):
+        if config.CONF.zvm.prefer_vmcp_query == 'yes':
+            LOG.debug("prefer_vmcp_query=yes: using vmcp for _query_OSA")
+
+            self._VMCPHandler._rh.userid = ''
+            return self._VMCPHandler.query_osa()
+
         smt_userid = zvmutils.get_smt_userid()
         rd = "SMAPI %s API Virtual_Network_OSA_Query" % smt_userid
         OSA_info = {}
