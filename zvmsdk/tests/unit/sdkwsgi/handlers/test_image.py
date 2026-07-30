@@ -27,6 +27,9 @@ from zvmsdk.sdkwsgi import util
 
 
 CONF = config.CONF
+_SHA512 = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921'
+           'd36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81'
+           'a538327af927da3e')
 
 FAKE_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -64,15 +67,11 @@ class HandlersImageTest(unittest.TestCase):
 
     @mock.patch.object(image.ImageAction, 'create')
     def test_image_create(self, mock_create):
-        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
-                                 "url": "file:///tmp/test.img",
-                                 "image_meta": {
-                                 "os_version": "rhel7.2",
-                                 "md5sum": "12345678912345678912345678912345"
-                                 },
-                                 "remotehost": "hostname"
-                                }
-                      }"""
+        body_str = ('{"image": {"image_name": "46a4aea3-54b6-4b1c",'
+                    '"url": "file:///tmp/test.img",'
+                    '"image_meta": {"os_version": "rhel7.2",'
+                    '"checksum": "%s"},'
+                    '"remotehost": "hostname"}}' % _SHA512)
         self.req.body = body_str
         body = {
                   'image':
@@ -81,7 +80,7 @@ class HandlersImageTest(unittest.TestCase):
                        'image_meta':
                        {
                             'os_version': 'rhel7.2',
-                            'md5sum': '12345678912345678912345678912345'
+                            'checksum': _SHA512
                        },
                        'url': 'file:///tmp/test.img',
                        'image_name': '46a4aea3-54b6-4b1c'
@@ -94,16 +93,11 @@ class HandlersImageTest(unittest.TestCase):
 
     @mock.patch.object(image.ImageAction, 'create')
     def test_image_create_rhcos(self, mock_create):
-        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
-                                 "url": "file:///tmp/test.img",
-                                 "image_meta": {
-                                 "os_version": "rhcos4.2",
-                                 "md5sum": "12345678912345678912345678912345",
-                                 "disk_type": "DASD"
-                                 },
-                                 "remotehost": "hostname"
-                                }
-                      }"""
+        body_str = ('{"image": {"image_name": "46a4aea3-54b6-4b1c",'
+                    '"url": "file:///tmp/test.img",'
+                    '"image_meta": {"os_version": "rhcos4.2",'
+                    '"checksum": "%s", "disk_type": "DASD"},'
+                    '"remotehost": "hostname"}}' % _SHA512)
         self.req.body = body_str
         body = {
                   'image':
@@ -112,7 +106,7 @@ class HandlersImageTest(unittest.TestCase):
                        'image_meta':
                        {
                             'os_version': 'rhcos4.2',
-                            'md5sum': '12345678912345678912345678912345',
+                            'checksum': _SHA512,
                             "disk_type": "DASD"
                        },
                        'url': 'file:///tmp/test.img',
@@ -132,44 +126,30 @@ class HandlersImageTest(unittest.TestCase):
                           self.req)
 
     def test_image_create_invalid_os_version(self):
-        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
-                         "url": "file:///tmp/test.img",
-                         "image_meta": {
-                         "os_version": "rhel2.2",
-                         "md5sum": "12345678912345678912345678912345"
-                         }
-                        }
-              }"""
+        body_str = ('{"image": {"image_name": "46a4aea3-54b6-4b1c",'
+                    '"url": "file:///tmp/test.img",'
+                    '"image_meta": {"os_version": "rhel2.2",'
+                    '"checksum": "%s"}}}' % _SHA512)
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
                           self.req)
 
     def test_image_create_invalid_rhcos_os_version(self):
-        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
-                         "url": "file:///tmp/test.img",
-                         "image_meta": {
-                         "os_version": "rhcos43",
-                         "md5sum": "12345678912345678912345678912345",
-                         "disk_type": "DASD"
-                         }
-                        }
-              }"""
+        body_str = ('{"image": {"image_name": "46a4aea3-54b6-4b1c",'
+                    '"url": "file:///tmp/test.img",'
+                    '"image_meta": {"os_version": "rhcos43",'
+                    '"checksum": "%s", "disk_type": "DASD"}}}' % _SHA512)
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
                           self.req)
 
     def test_image_create_rhcos_invalid_disktype(self):
-        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
-                         "url": "file:///tmp/test.img",
-                         "image_meta": {
-                         "os_version": "rhcos4.2",
-                         "md5sum": "12345678912345678912345678912345",
-                         "disk_type": "any"
-                         }
-                        }
-              }"""
+        body_str = ('{"image": {"image_name": "46a4aea3-54b6-4b1c",'
+                    '"url": "file:///tmp/test.img",'
+                    '"image_meta": {"os_version": "rhcos4.2",'
+                    '"checksum": "%s", "disk_type": "any"}}}' % _SHA512)
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
@@ -181,30 +161,36 @@ class HandlersImageTest(unittest.TestCase):
 
     def test_image_create_invalid_image_meta(self):
         # miss os_version param
+        body_str = ('{"image": {"url": "file:///tmp/test.img",'
+                    '"image_meta": {"checksum": "%s"}}}' % _SHA512)
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_invalid_image_meta_checksum(self):
+        # checksum is less than 128 chars (invalid SHA-512)
+        body_str = ('{"image": {"url": "file://tmp/test.img",'
+                    '"image_meta": {"os_version": "rhel7.2",'
+                    '"checksum": "%s"}}}' % _SHA512[:-1])
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    @mock.patch.object(image.ImageAction, 'create')
+    def test_image_create_with_md5sum_backward_compat(self, mock_create):
+        # md5sum accepted for backward compatibility
         body_str = """{"image": {"url": "file:///tmp/test.img",
                                  "image_meta": {
+                                 "os_version": "rhel7.2",
                                  "md5sum": "12345678912345678912345678912345"
                                  }
                                 }
                       }"""
         self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, image.image_create,
-                          self.req)
-
-    def test_image_create_invalid_image_meta_md5sum(self):
-        # md5sum is less than 32 chars
-        body_str = """{"image": {"url": "file://tmp/test.img",
-                                 "image_meta": {
-                                 "os_version": "rhel7.2",
-                                 "md5sum": "2345678912345678912345678912345"
-                                 }
-                                }
-                      }"""
-        self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, image.image_create,
-                          self.req)
+        mock_create.return_value = ''
+        image.image_create(self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(image.ImageAction, 'get_root_disk_size')

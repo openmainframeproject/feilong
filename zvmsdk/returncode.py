@@ -202,9 +202,9 @@ errors = {
     'image': [{'overallRC': 300, 'modID': ModRCs['image'], 'rc': 300},
               {1: "Database operation failed, error: %(msg)s",
                2: "No image schema found for %(schema)s",
-               3: "Image import error: Failed to calculate the md5sum of the"
+               3: "Image import error: Failed to calculate the checksum of the"
                   " image",
-               4: "Image import error: The md5sum after import is not same as"
+               4: "Image import error: The checksum after import is not same as"
                   " source image, it is possible that the image has been "
                   "broken during import",
                5: "Image import error: Failed to get the root disk size units"

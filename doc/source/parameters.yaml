@@ -689,9 +689,9 @@ image_name_path:
   in: path
   required: true
   type: string
-image_md5sum:
+image_checksum:
   description: |
-    md5sum for the specific image.
+    SHA-512 checksum for the specific image.
   in: body
   required: true
   type: string
@@ -727,7 +727,7 @@ image_export_url:
 image_metadata:
   description: |
     The metadata that describes the image.
-    The valid keys are os_version, md5sum, and disk_type.
+    The valid keys are os_version, checksum, and disk_type.
     os_version is a required key, the valid values are: ``rhel6.x``,
     ``rhel7.x``, ``rhel8.x``, ``rhel9.x``, ``sles11.x``, ``sles12.x``,
     ``sles15.x``, ``ubuntu16.x``, ``ubuntu20.x``, ``ubuntu22.x``, and ``rhcos4.x``,
@@ -1192,9 +1192,9 @@ imported_file_size:
   in: body
   required: true
   type: integer
-file_md5sum:
+file_checksum:
   description: |
-    The md5sum of the file after it has been imported.
+    The SHA-512 checksum of the file after it has been imported.
   in: body
   required: true
   type: string

@@ -35,6 +35,12 @@ from zvmsdk.tests.unit import base
 
 
 CONF = config.CONF
+_SHA512 = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921'
+           'd36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81'
+           'a538327af927da3e')
+_SHA512_ALT = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921'
+               'd36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81'
+               'a538327af927da3f')
 
 
 class SDKSMTClientTestCases(base.SDKTestCase):
@@ -1438,8 +1444,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_image_get_os_distro(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
-                                    'md5sum': '370cd177c51e39f0e2e2b\
-                                        eecbb88f701',
+                                    'checksum': _SHA512,
                                     'comments': "{'disk_type':'DASD'}",
                                     'imagename': '0b3013e1-1356-431c-\
                                         b680-ba06a1768aea',
@@ -1452,8 +1457,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_image_disk_type_dasd(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
-                                    'md5sum': '370cd177c51e39f0e2e2b\
-                                        eecbb88f701',
+                                    'checksum': _SHA512,
                                     'comments': "{'disk_type':'DASD'}",
                                     'imagename': '0b3013e1-1356-431c-\
                                         b680-ba06a1768aea',
@@ -1466,8 +1470,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_image_disk_type_scsi(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
-                                    'md5sum': '370cd177c51e39f0e2e2b\
-                                        eecbb88f701',
+                                    'checksum': _SHA512,
                                     'comments': "{'disk_type':'SCSI'}",
                                     'imagename': '0b3013e1-1356-431c-\
                                         b680-ba06a1768aea',
@@ -1480,8 +1483,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_image_disk_type_failed(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
-                                    'md5sum': '370cd177c51e39f0e2e2b\
-                                        eecbb88f701',
+                                    'checksum': _SHA512,
                                     'comments': "{'disk_type':'FCP'}",
                                     'imagename': '0b3013e1-1356-431c-\
                                         b680-ba06a1768aea',
@@ -2737,23 +2739,23 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
     @mock.patch.object(zvmutils.PathUtils,
                        'create_import_image_repository')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import(self, image_query, create_path, image_import,
-                          get_md5sum, disk_size_units, image_size,
+                          get_checksum, disk_size_units, image_size,
                           image_add_record, rename):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+                      'checksum': _SHA512}
         import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
         final_image_fpath = '/home/netboot/rhel6.5/testimage/0100'
         image_query.return_value = []
         create_path.return_value = '/home/netboot/rhel6.5/testimage'
-        get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
+        get_checksum.return_value = _SHA512
         disk_size_units.return_value = '3338:CYL'
         image_size.return_value = '512000'
         self._smtclient.image_import(image_name, url, image_meta)
@@ -2761,12 +2763,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_import.assert_called_once_with(image_name, url,
                                              import_image_fpath,
                                              remote_host=None)
-        get_md5sum.assert_called_once_with(import_image_fpath)
+        get_checksum.assert_called_once_with(import_image_fpath)
         disk_size_units.assert_called_once_with(final_image_fpath)
         image_size.assert_called_once_with(final_image_fpath)
         image_add_record.assert_called_once_with(image_name,
                                     'rhel6.5',
-                                    'c73ce117eef8077c3420bfc8f473ac2f',
+                                    _SHA512,
                                     '3338:CYL',
                                     '512000',
                                     'rootonly',
@@ -2776,24 +2778,24 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units_rhcos')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
     @mock.patch.object(zvmutils.PathUtils,
                        'create_import_image_repository')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import_rhcos(self, image_query, create_path, image_import,
-                          get_md5sum, disk_size_units, image_size,
+                          get_checksum, disk_size_units, image_size,
                           image_add_record, rename):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhcos4.2',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f',
+                      'checksum': _SHA512,
                       'disk_type': 'DASD'}
         import_image_fpath = '/home/netboot/rhcos4.2/testimage/testdummyimg'
         final_image_fpath = '/home/netboot/rhcos4.2/testimage/0100'
         image_query.return_value = []
         create_path.return_value = '/home/netboot/rhcos4.2/testimage'
-        get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
+        get_checksum.return_value = _SHA512
         disk_size_units.return_value = '3338:CYL'
         image_size.return_value = '512000'
         self._smtclient.image_import(image_name, url, image_meta)
@@ -2801,12 +2803,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_import.assert_called_once_with(image_name, url,
                                              import_image_fpath,
                                              remote_host=None)
-        get_md5sum.assert_called_once_with(import_image_fpath)
+        get_checksum.assert_called_once_with(import_image_fpath)
         disk_size_units.assert_called_once_with(final_image_fpath)
         image_size.assert_called_once_with(final_image_fpath)
         image_add_record.assert_called_once_with(image_name,
                                     'rhcos4.2',
-                                    'c73ce117eef8077c3420bfc8f473ac2f',
+                                    _SHA512,
                                     '3338:CYL',
                                     '512000',
                                     'rootonly',
@@ -2819,9 +2821,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+                      'checksum': _SHA512}
         image_query.return_value = [(u'testimage', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
+            _SHA512,
             u'3338:CYL', u'5120000', u'netboot', None)]
         self.assertRaises(exception.SDKImageOperationError,
                           self._smtclient.image_import,
@@ -2829,17 +2831,165 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_query.assert_called_once_with(image_name)
         get_image_path.assert_not_called()
 
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
-    def test_image_import_invalid_md5sum(self, image_query, image_import,
-                                         get_md5sum):
+    def test_image_import_invalid_checksum(self, image_query, image_import,
+                                          get_checksum):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+                      'checksum': _SHA512}
         image_query.return_value = []
-        get_md5sum.return_value = 'c73ce117eef8077c3420bfc000000'
+        get_checksum.return_value = _SHA512_ALT
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient.image_import,
+                          image_name, url, image_meta)
+
+    @mock.patch.object(os, 'rename')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_with_os_hash_algo_sha512(self, image_query,
+                                                   create_path, image_import,
+                                                   get_checksum,
+                                                   disk_size_units, image_size,
+                                                   image_add_record, rename):
+        # os_hash_algo + os_hash_value both provided (SHA-512): _get_checksum
+        # is called twice — once with default algo for DB, once with os_hash_algo
+        # for validation.
+        sha512_val = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a9'
+                      '21d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd474'
+                      '17a81a538327af927da3e')
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'os_hash_algo': 'sha512',
+                      'os_hash_value': sha512_val}
+        import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
+        image_query.return_value = []
+        create_path.return_value = '/home/netboot/rhel6.5/testimage'
+        get_checksum.return_value = sha512_val
+        disk_size_units.return_value = '3338:CYL'
+        image_size.return_value = '512000'
+        self._smtclient.image_import(image_name, url, image_meta)
+        # first call: default sha512 for DB; second call: sha512 for validation
+        from unittest.mock import call
+        get_checksum.assert_has_calls([
+            call(import_image_fpath),
+            call(import_image_fpath, algo='sha512'),
+        ])
+        image_add_record.assert_called_once_with(
+            image_name, 'rhel6.5', sha512_val,
+            '3338:CYL', '512000', 'rootonly', comments=None)
+
+    @mock.patch.object(os, 'rename')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_with_os_hash_algo_sha256(self, image_query,
+                                                   create_path, image_import,
+                                                   get_checksum,
+                                                   disk_size_units, image_size,
+                                                   image_add_record, rename):
+        # Glance uses sha256; zvmsdk stores sha512. _get_checksum is called
+        # with sha256 for validation and default sha512 for DB — both succeed.
+        sha512_val = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a9'
+                      '21d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd474'
+                      '17a81a538327af927da3e')
+        sha256_val = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'os_hash_algo': 'sha256',
+                      'os_hash_value': sha256_val}
+        import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
+        image_query.return_value = []
+        create_path.return_value = '/home/netboot/rhel6.5/testimage'
+
+        def checksum_side_effect(fpath, algo='sha512'):
+            return sha256_val if algo == 'sha256' else sha512_val
+
+        get_checksum.side_effect = checksum_side_effect
+        disk_size_units.return_value = '3338:CYL'
+        image_size.return_value = '512000'
+        self._smtclient.image_import(image_name, url, image_meta)
+        from unittest.mock import call
+        get_checksum.assert_has_calls([
+            call(import_image_fpath),
+            call(import_image_fpath, algo='sha256'),
+        ])
+        # DB record stores SHA-512, not the Glance SHA-256 value
+        image_add_record.assert_called_once_with(
+            image_name, 'rhel6.5', sha512_val,
+            '3338:CYL', '512000', 'rootonly', comments=None)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_invalid_os_hash_algo_mismatch(self, image_query,
+                                                        image_import,
+                                                        get_checksum):
+        # os_hash_algo + os_hash_value provided but computed value differs
+        sha512_val = ('cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a9'
+                      '21d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd474'
+                      '17a81a538327af927da3e')
+        sha256_val = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'os_hash_algo': 'sha256',
+                      'os_hash_value': sha256_val}
+        image_query.return_value = []
+        # both calls return sha512_val; sha512_val != sha256_val -> error
+        get_checksum.return_value = sha512_val
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient.image_import,
+                          image_name, url, image_meta)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_no_checksum_match(self, image_query, image_import,
+                                            get_checksum):
+        # Fallback path: checksum provided but does not match -> error
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {
+            'os_version': 'rhel6.5',
+            'checksum': _SHA512,
+        }
+        image_query.return_value = []
+        get_checksum.return_value = _SHA512_ALT
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient.image_import,
+                          image_name, url, image_meta)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_md5sum_deprecated(self, image_query, image_import,
+                                            get_checksum):
+        # md5sum key is deprecated and always rejected, regardless of
+        # whether the image itself is valid.
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {
+            'os_version': 'rhel6.5',
+            'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f',
+        }
+        image_query.return_value = []
+        get_checksum.return_value = _SHA512
         self.assertRaises(exception.SDKImageOperationError,
                           self._smtclient.image_import,
                           image_name, url, image_meta)
@@ -2859,13 +3009,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhcos4.2',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+                      'checksum': _SHA512}
         self.assertRaises(exception.SDKImageOperationError,
                   self._smtclient.image_import,
                   image_name, url, image_meta)
 
         image_meta = {'os_version': 'rhcos4.2',
-                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f',
+                      'checksum': _SHA512,
                       'disk_type': 'error'}
         self.assertRaises(exception.SDKImageOperationError,
                   self._smtclient.image_import,
@@ -2913,7 +3063,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_query.return_value = [{u'image_size_in_bytes': u'719045489',
                                      u'last_access_time': 1581910539.3330014,
                                      u'disk_size_units': u'3339:CYL',
-                                     u'md5sum': u'157e2a2c3be1d49ef6e69324',
+                                     u'checksum': _SHA512,
                                      u'comments': None,
                                      u'imagename': u'testimage',
                                      u'imageosdistro': u'rhel7',
@@ -2947,7 +3097,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_query.return_value = [
             {'imagename': u'testimage',
              'imageosdistro': u'rhel6.5',
-             'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+             'checksum': _SHA512,
              'disk_size_units': u'3338:CYL',
              'image_size_in_bytes': u'5120000',
              'type': u'rootonly',
@@ -2956,7 +3106,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             'image_name': u'testimage',
             'image_path': u'file:///path/to/exported/image',
             'os_version': u'rhel6.5',
-            'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+            'checksum': _SHA512,
             'comments': None
         }
         real_return = self._smtclient.image_export(image_name, dest_url,
@@ -3281,7 +3431,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
@@ -3293,7 +3443,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             self,
             guest_connection_status, execcmd,
             get_os_version, get_capture_devices,
-            guest_stop, mkdir, execute, md5sum,
+            guest_stop, mkdir, execute, checksum,
             disk_size_units, imagesize, rm_folder,
             image_add_record, get_user_direct,
             guest_start, get_power_state, get_os_mock):
@@ -3320,7 +3470,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
@@ -3339,7 +3489,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
@@ -3358,7 +3508,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
@@ -3369,7 +3519,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_guest_capture_good_path_poweroff(self, guest_connection_status,
                                      execcmd,
                                      get_os_version, get_capture_devices,
-                                     guest_stop, mkdir, execute, md5sum,
+                                     guest_stop, mkdir, execute, checksum,
                                      disk_size_units, imagesize, rm_folder,
                                      image_add_record, get_user_direct,
                                      guest_start, get_power_state,
@@ -3397,7 +3547,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
@@ -3415,7 +3565,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
@@ -3434,7 +3584,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
@@ -3448,7 +3598,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                  get_os_version,
                                                  get_capture_devices,
                                                  guest_stop, mkdir,
-                                                 execute, md5sum,
+                                                 execute, checksum,
                                                  disk_size_units,
                                                  imagesize, rm_folder,
                                                  image_add_record,
@@ -3479,7 +3629,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
@@ -3497,7 +3647,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'RHEL8.3',
@@ -3518,7 +3668,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
@@ -3534,7 +3684,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                     guest_stop,
                                                     mkdir,
                                                     execute,
-                                                    md5sum,
+                                                    checksum,
                                                     disk_size_units,
                                                     imagesize,
                                                     rm_folder,
@@ -3567,7 +3717,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
@@ -3585,7 +3735,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
@@ -3603,7 +3753,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_stop')
@@ -3619,7 +3769,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                     guest_stop,
                                                     mkdir,
                                                     execute,
-                                                    md5sum,
+                                                    checksum,
                                                     disk_size_units,
                                                     imagesize,
                                                     rm_folder,
@@ -3652,7 +3802,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
@@ -3671,7 +3821,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
@@ -3690,7 +3840,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
     @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
-    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.SMTClient, '_get_checksum')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smtclient.SMTClient, 'guest_softstop')
@@ -3701,7 +3851,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_guest_capture_good_path_poweron(self, guest_connection_status,
                                      execcmd,
                                      get_os_version, get_capture_devices,
-                                     softstop, mkdir, execute, md5sum,
+                                     softstop, mkdir, execute, checksum,
                                      disk_size_units, imagesize, rm_folder,
                                      image_add_record, guest_start,
                                      get_os_mock):
@@ -3726,7 +3876,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         image_final_path = '/'.join((image_final_dir,
                                      '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
-        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        checksum.return_value = _SHA512
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = True
@@ -3742,7 +3892,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                                [mock.call(image_final_dir)])
         rm_folder.assert_called_once_with(image_temp_dir)
-        md5sum.assert_called_once_with(image_final_path)
+        checksum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'rhel7.0',

@@ -335,47 +335,73 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
-    def host_get_diskpool_volumes(self, disk_pool=None):
-        """ Retrieve diskpool volumes.
-        :param str disk_pool: the disk pool info. It use ':' to separate
-        disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
-        :returns: Dictionary describing disk pool usage info
+    def _validate_diskpool_format(self, pool_str):
+        """Validate and parse disk pool format.
+
+        :param pool_str: Disk pool string in format "TYPE:NAME"
+        :returns: Tuple of (pool_type, pool_name) in uppercase
+        :raises: SDKInvalidInputFormat if format is invalid
         """
-        # disk_pool is optional. disk_pool default to None because
-        # it is more convenient for users to just type function name when
-        # they want to get the disk pool info of CONF.zvm.disk_pool.
-        # The default value of CONF.zvm.disk_pool is None, if it's configured,
-        # the format must be "ECKD:eckdpool" or "FBA:fbapool".
-        disk_pool = disk_pool
-        if disk_pool is None:
-            disk_pool = CONF.zvm.disk_pool
-            if disk_pool is not None:
-                disk_pools = disk_pool.split(",")
-                if len(disk_pools) == 1:
-                    disk_pool = disk_pools[0]
-                else:
-                    errmsg = ("disk_pool input is required if multiple disk_pool"
-                              " is configured for sdkserver.")
-                    LOG.error(errmsg)
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
-        if disk_pool is None:
-            # Support disk_pool not configured, return empty list
-            return {}
-        if ':' not in disk_pool:
-            msg = ('Invalid input parameter disk_pool, expect ":" in'
-                   'disk_pool, eg. ECKD:eckdpool')
-            LOG.error(msg)
-            raise exception.SDKInvalidInputFormat(msg)
-        diskpool_type = disk_pool.split(':')[0].upper()
-        if diskpool_type not in ('ECKD', 'FBA'):
-            msg = ('Invalid disk pool type found in disk_pool, expect'
-                   'disk_pool like ECKD:eckdpool or FBA:fbapool')
+        if ':' not in pool_str:
+            msg = ('Invalid disk_pool format: "%s". '
+                'Expected format: "TYPE:NAME" (e.g., "ECKD:eckdpool")') % pool_str
             LOG.error(msg)
             raise exception.SDKInvalidInputFormat(msg)
 
-        action = "get the volumes of disk pool: '%s'" % disk_pool
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._hostops.diskpool_get_volumes(disk_pool)
+        pool_type, pool_name = pool_str.split(':', 1)
+        pool_type = pool_type.strip().upper()
+        pool_name = pool_name.strip().upper()
+
+        if not pool_type or not pool_name:
+            msg = ('Invalid disk_pool format: "%s". '
+                'Both type and name must be non-empty') % pool_str
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+
+        if pool_type not in ('ECKD', 'FBA'):
+            msg = ('Invalid disk pool type: "%s". '
+                'Expected "ECKD" or "FBA"') % pool_type
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+
+        return pool_type, pool_name
+
+    def host_get_diskpool_volumes(self, disk_pool=None):
+        """Retrieve diskpool volumes.
+
+        :param disk_pool: Disk pool info. Format: "TYPE:NAME" (e.g., "ECKD:eckdpool")
+                        Can be a string, comma-separated string, or list of strings.
+        :returns: Dictionary mapping pool names to their volumes
+        """
+        # Use configured disk_pool if not provided
+        if disk_pool is None:
+            disk_pool = CONF.zvm.disk_pool
+
+        if not disk_pool:
+            return {}
+
+        # Normalize input to list
+        if isinstance(disk_pool, str):
+            disk_pools = [p.strip() for p in disk_pool.split(",") if p.strip()]
+        elif isinstance(disk_pool, list):
+            disk_pools = [p.strip() for p in disk_pool if p and p.strip()]
+        else:
+            return {}
+
+        if not disk_pools:
+            return {}
+
+        # Process each disk pool
+        results = {}
+        for pool_str in disk_pools:
+            pool_type, pool_name = self._validate_diskpool_format(pool_str)
+
+            action = "get the volumes of disk pool: '%s'" % pool_str
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                results[pool_name] = self._hostops.diskpool_get_volumes(pool_str)
+
+        LOG.info("Diskpool volumes are %s" % results)
+        return results
 
     def host_get_volume_info(self, volume=None):
         """ Retrieve volume information.
@@ -514,10 +540,10 @@ class SDKAPI(object):
                https://netloc/path/to/file.tar.gz.0
                file:///path/to/file.tar.gz.0
         :param dict image_meta:
-               a dictionary to describe the image info, such as md5sum,
+               a dictionary to describe the image info, such as checksum,
                os_version. For example:
                {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
+               'checksum': '<sha512-hex-value>',
                'disk_type': 'DASD'}
         :param string remote_host:
                 if the image url schema is file, the remote_host is used to
@@ -561,7 +587,7 @@ class SDKAPI(object):
         'image_name': the image_name that exported
         'image_path': the image_path after exported
         'os_version': the OS version of the exported image
-        'md5sum': the md5sum of the original image
+        'checksum': the checksum of the original image
         'comments': the comments of the original image
         }
         """

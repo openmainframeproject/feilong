@@ -68,7 +68,7 @@ class FileAction(object):
             target_fpath = '/'.join([importDir, fname])
 
             # The following steps save the imported file into sdkserver
-            checksum = hashlib.md5()
+            checksum = hashlib.sha512()
             bytes_written = 0
 
             with open(target_fpath, 'wb') as f:
@@ -86,7 +86,7 @@ class FileAction(object):
                        'checksum_hex': checksum_hex})
             return_data = {'filesize_in_bytes': bytes_written,
                            'dest_url': 'file://' + target_fpath,
-                           'md5sum': checksum_hex}
+                           'checksum': checksum_hex}
 
             results = {'overallRC': 0, 'modID': None,
                        'rc': 0, 'rs': 0,
@@ -199,7 +199,7 @@ def file_export(request):
         request.response.content_type = 'application/json'
         return request.response
 
-    # Result contains (image_iter, md5sum, image_size)
+    # Result contains (image_iter, checksum, image_size)
     else:
         request.response.headers['Content-Type'] = 'application/octet-stream'
         request.response.app_iter = results

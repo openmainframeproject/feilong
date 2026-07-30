@@ -487,7 +487,15 @@ image_meta = {
     'type': 'object',
     'properties': {
         'os_version': os_version,
-        # md5 shoule be 32 hexadeciaml numbers
+        # SHA-512 checksum should be 128 hexadecimal characters
+        'checksum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{128}$'},
+        # os_hash_algo + os_hash_value mirror Glance image properties;
+        # os_hash_value length varies by os_hash_algo so only hex chars are enforced
+        'os_hash_algo': {'type': 'string'},
+        'os_hash_value': {'type': 'string', 'pattern': '^[0-9a-fA-F]+$'},
+        # md5sum is deprecated and rejected with a deprecation error in
+        # smtclient.py; accepted here only so that error can be raised
+        # instead of a generic "additional property" schema failure.
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'},
         'disk_type': disk_type
     },
