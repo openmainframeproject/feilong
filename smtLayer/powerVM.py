@@ -19,8 +19,11 @@
 
 import time
 
+from zvmsdk import config
+
 from smtLayer import generalUtils
 from smtLayer import msgs
+from smtLayer.vmcpHandler import VMCPHandler
 from smtLayer.vmUtils import execCmdThruIUCV, invokeSMCLI
 from smtLayer.vmUtils import isLoggedOn
 from smtLayer.vmUtils import waitForOSState, waitForVMState
@@ -250,20 +253,26 @@ def deactivate(rh):
     rh.printSysLog("Enter powerVM.deactivate, userid: " +
         rh.userid)
 
-    parms = ["-T", rh.userid, "-f", "IMMED"]
-    results = invokeSMCLI(rh, "Image_Deactivate", parms)
-    if results['overallRC'] == 0:
-        pass
-    elif (results['overallRC'] == 8 and results['rc'] == 200 and
-        (results['rs'] == 12 or results['rs'] == 16)):
-        # Tolerable error.  Machine is already in or going into the state
-        # we want it to enter.
-        rh.printLn("N", rh.userid + ": off")
-        rh.updateResults({}, reset=1)
+    # Log off the user
+    if config.CONF.zvm.prefer_vmcp_query == "yes":
+        handler = VMCPHandler(rh)
+        handler.deactivate(rh.userid, force=True)
+        results = rh.results
     else:
-        # SMAPI API failed.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
+        parms = ["-T", rh.userid, "-f", "IMMED"]
+        results = invokeSMCLI(rh, "Image_Deactivate", parms)
+        if results['overallRC'] == 0:
+            pass
+        elif (results['overallRC'] == 8 and results['rc'] == 200 and
+            (results['rs'] == 12 or results['rs'] == 16)):
+            # Tolerable error.  Machine is already in or going into the state
+            # we want it to enter.
+            rh.printLn("N", rh.userid + ": off")
+            rh.updateResults({}, reset=1)
+        else:
+            # SMAPI API failed.
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         results = waitForVMState(
@@ -592,20 +601,25 @@ def reset(rh):
     """
 
     rh.printSysLog("Enter powerVM.reset, userid: " + rh.userid)
-
+    
     # Log off the user
-    parms = ["-T", rh.userid]
-    results = invokeSMCLI(rh, "Image_Deactivate", parms)
-    if results['overallRC'] != 0:
-        if results['rc'] == 200 and results['rs'] == 12:
-            # Tolerated error.  Machine is already in the desired state.
-            results['overallRC'] = 0
-            results['rc'] = 0
-            results['rs'] = 0
-        else:
-            # SMAPI API failed.
-            rh.printLn("ES", results['response'])
-            rh.updateResults(results)    # Use results from invokeSMCLI
+    if config.CONF.zvm.prefer_vmcp_query == "yes":
+        handler = VMCPHandler(rh)
+        handler.deactivate(rh.userid)
+        results = rh.results
+    else:
+        parms = ["-T", rh.userid]
+        results = invokeSMCLI(rh, "Image_Deactivate", parms)
+        if results['overallRC'] != 0:
+            if results['rc'] == 200 and results['rs'] == 12:
+                # Tolerated error.  Machine is already in the desired state.
+                results['overallRC'] = 0
+                results['rc'] = 0
+                results['rs'] = 0
+            else:
+                # SMAPI API failed.
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)    # Use results from invokeSMCLI
 
     # Wait for the logoff to complete
     if results['overallRC'] == 0:
@@ -790,19 +804,24 @@ def softDeactivate(rh):
             " is unreachable. Treating it as already shutdown.")
 
     # Tell z/VM to log off the system.
-    parms = ["-T", rh.userid]
-    smcliResults = invokeSMCLI(rh, "Image_Deactivate", parms)
-    if smcliResults['overallRC'] == 0:
-        pass
-    elif (smcliResults['overallRC'] == 8 and smcliResults['rc'] == 200 and
-        (smcliResults['rs'] == 12 or + smcliResults['rs'] == 16)):
-        # Tolerable error.
-        # Machine is already logged off or is logging off.
-        rh.printLn("N", rh.userid + " is already logged off.")
+    # Tell z/VM to log off the system.
+    if config.CONF.zvm.prefer_vmcp_query == "yes":
+        handler = VMCPHandler(rh)
+        handler.deactivate(rh, rh.userid)
     else:
-        # SMAPI API failed.
-        rh.printLn("ES", smcliResults['response'])
-        rh.updateResults(smcliResults)    # Use results from invokeSMCLI
+        parms = ["-T", rh.userid]
+        smcliResults = invokeSMCLI(rh, "Image_Deactivate", parms)
+        if smcliResults['overallRC'] == 0:
+            pass
+        elif (smcliResults['overallRC'] == 8 and smcliResults['rc'] == 200 and
+            (smcliResults['rs'] == 12 or + smcliResults['rs'] == 16)):
+            # Tolerable error.
+            # Machine is already logged off or is logging off.
+            rh.printLn("N", rh.userid + " is already logged off.")
+        else:
+            # SMAPI API failed.
+            rh.printLn("ES", smcliResults['response'])
+            rh.updateResults(smcliResults)    # Use results from invokeSMCLI
 
     if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         # Wait for the system to log off.
