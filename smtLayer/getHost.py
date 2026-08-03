@@ -397,7 +397,14 @@ def getFcpDevices(rh):
     rh.printSysLog("Enter getHost.getFcpDevices")
 
     parms = ["-T", "dummy"]
-    results = invokeSMCLI(rh, "System_WWPN_Query", parms)
+
+    handler = VMCPHandler(rh)
+
+    if config.CONF.zvm.prefer_vmcp_query == 'yes':
+        results = handler.query_fcp()
+    else :
+        results = invokeSMCLI(rh, "System_WWPN_Query", parms)
+        
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
