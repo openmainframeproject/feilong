@@ -24,6 +24,8 @@ from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import execCmdThruIUCV, getPerfInfo, invokeSMCLI
 from smtLayer.vmUtils import isLoggedOn
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 modId = 'GVM'
 version = "1.0.0"
@@ -666,10 +668,16 @@ def fcpinfo(rh):
     parms = ["-T", rh.userid, "-k OWNER=YES"]
 
     hideList = []
-    results = invokeSMCLI(rh,
-                          "System_WWPN_Query",
-                          parms,
-                          hideInLog=hideList)
+
+    handler = VMCPHandler(rh)
+
+    if not config.CONF.zvm.use_smapi:
+        results = handler.query_fcp_formatted()
+    else:
+        results = invokeSMCLI(rh,
+                            "System_WWPN_Query",
+                            parms,
+                            hideInLog=hideList)
 
     if results['overallRC'] == 0:
         # extract data from smcli return
