@@ -1,0 +1,196 @@
+import subprocess
+
+from smtLayer import msgs
+
+
+class VMCPHandler:
+
+    def __init__(self, rh):
+        """
+        Initialise the handler with a Request Handle.
+
+        Input:
+           rh - smtLayer ReqHandle instance
+        """
+        self._rh = rh
+
+    def query_system_processor(self):
+        """
+        To get LPAR total cpu and cpu in use
+
+        Returns cpu_total and cpu_use.
+        """
+
+        cmd = ["sudo", "/sbin/vmcp", "query PROCESSORS EXPANDED"]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
+
+        cpu_total = 0 
+        cpu_use   = 0
+        rh = self._rh
+
+        try:
+            response = subprocess.check_output(
+                cmd,
+                close_fds=True,
+                stderr=subprocess.STDOUT)
+            response = bytes.decode(response)
+
+            for line in response.splitlines():
+                parts = line.split()
+
+                if len(parts) < 4 or parts[0] != 'PROCESSOR':
+                    continue
+                status_row = parts[2]
+                type_row   = parts[3]
+                if (status_row.find('MASTER') != -1 or
+                        status_row == 'ALTERNATE' or
+                        status_row == 'PARKED'):
+                    cpu_use = cpu_use + 1
+                if (type_row == 'CP' or type_row == 'IFL'):
+                    cpu_total = cpu_total + 1
+
+        except subprocess.CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+
+        except Exception as e:
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
+            
+        return cpu_total, cpu_use
+
+    def purge_reader(self):
+        """
+        Purge all reader files for rh.userid
+
+        Returns a standard results dict.
+        """
+        rh = self._rh
+        cmd = ["sudo", "/sbin/vmcp", 'purge', rh.userid, 'rdr', 'all']
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
+
+
+        results = {'overallRC': 0,
+                'rc': 0,
+                'rs': 0,
+                'errno': 0,
+                'strError': '',
+                'response': ''}
+        
+        try:
+            output = subprocess.check_output(
+                cmd,
+                close_fds=True,
+                stderr=subprocess.STDOUT)
+            
+            results['response'] = output.decode().strip()
+
+        except subprocess.CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+
+        except Exception as e:
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
+            
+        return results
+
+    def create_nic(self, vdev):
+        """
+        Create a QDIO NIC at virtual device address <vdev> for rh.userid.
+
+        Returns a standard results dict.
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.create_nic, userid: %s vdev: %s"
+                       % (rh.userid, vdev))
+
+        try:
+            result = self._run(['FOR', userid, 'DEFINE', 'NIC', vdev, 'TYPE', 'QDIO'])
+            if result['overallRC'] != 0:
+                rh.printSysLog("Exit VMCPHandler.create_nic, rc: " +
+                            str(result['overallRC']))
+                return result
+
+            verify = self._run(['FOR', userid, 'QUERY', 'VIRTUAL', 'NIC', vdev])
+            if verify['overallRC'] == 0:
+                result['response'] = verify['response']
+
+        except subprocess.CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+
+        except Exception as e:
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
+
+        rh.printSysLog("Exit VMCPHandler.create_nic, rc: " +
+                       str(result['overallRC']))
+        return result
+
+    def query_osa(self):
+        """
+        Query OSA for rh.userid.
+
+        Returns a standard results dict.
+        """
+        OSA_info = {}
+
+        try:
+            result = self._run(['QUERY', 'OSA'])
+            if result['overallRC'] != 0:
+                return OSA_info
+
+            output = result['response']
+            for line in output.splitlines():
+                parts = line.split()
+                if len(parts) < 3 or parts[0] != 'OSA':
+                    continue
+
+                osa_addr    = parts[1]
+                status_word = parts[2]
+
+                osa_type = 'OSA'
+                if 'DEVTYPE' in parts:
+                    dt_idx = parts.index('DEVTYPE')
+                    if dt_idx + 1 < len(parts):
+                        osa_type = parts[dt_idx + 1]
+
+                if osa_type not in OSA_info:
+                    OSA_info[osa_type] = {
+                        'FREE': [], 'BOXED': [], 'OFFLINE': [], 'ATTACHED': []}
+
+                if status_word == 'ATTACHED':
+                    attached_id = parts[4] if len(parts) > 4 else 'UNKNOWN'
+                    OSA_info[osa_type]['ATTACHED'].append((attached_id, osa_addr))
+                elif status_word in OSA_info[osa_type]:
+                    OSA_info[osa_type][status_word].append(osa_addr)
+
+        except subprocess.CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+
+        except Exception as e:
+            # All other exceptions.
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
+
+        return OSA_info
