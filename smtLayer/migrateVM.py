@@ -20,6 +20,8 @@
 from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 modId = 'MIG'
 version = "1.0.0"
@@ -370,31 +372,46 @@ def moveVM(rh):
         else:
             parms.extend(["-k", "max_total=" + str(rh.parms['maxTotal'])])
 
-    results = invokeSMCLI(rh, "VMRELOCATE", parms)
-    if results['overallRC'] != 0:
-        # SMAPI API failed.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-        if results['rc'] == 8 and results['rs'] == 3000:
-            if "0045" in results['response']:
-                # User not logged on
-                msg = msgs.msg['0418'][1] % (modId, rh.userid)
-                rh.printLn("ES", msg)
-                rh.updateResults(msgs.msg['0418'][0])
-            else:
-                codes = ''
-                # More details in message codes
-                lines = results['response'].split("\n")
-                for line in lines:
-                    if "Details:" in line:
-                        codes = line.split(' ', 1)[1]
-                msg = msgs.msg['0420'][1] % (modId, "VMRELOCATE Move",
-                                             rh.userid, codes)
-                rh.printLn("ES", msg)
+    if config.CONF.zvm.prefer_vmcp_query == "yes":
+        handler = VMCPHandler(rh)
+        results = handler.query_relocate(rh)
 
-    rh.printSysLog("Exit migrateVM.moveVM, rc: " +
-        str(rh.results['overallRC']))
-    return rh.results['overallRC']
+        if results["overallRC"] != 0:
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)
+        else:
+            rh.printLn("N", "VMRELOCATE move is success : %s." % rh.userid)
+
+        rh.printSysLog("Exit migrateVM.moveVM, rc: " +
+                       str(rh.results['overallRC']))
+        return results["overallRC"]
+
+    else:
+        results = invokeSMCLI(rh, "VMRELOCATE", parms)
+        if results['overallRC'] != 0:
+            # SMAPI API failed.
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            if results['rc'] == 8 and results['rs'] == 3000:
+                if "0045" in results['response']:
+                    # User not logged on
+                    msg = msgs.msg['0418'][1] % (modId, rh.userid)
+                    rh.printLn("ES", msg)
+                    rh.updateResults(msgs.msg['0418'][0])
+                else:
+                    codes = ''
+                    # More details in message codes
+                    lines = results['response'].split("\n")
+                    for line in lines:
+                        if "Details:" in line:
+                            codes = line.split(' ', 1)[1]
+                    msg = msgs.msg['0420'][1] % (modId, "VMRELOCATE Move",
+                                                 rh.userid, codes)
+                    rh.printLn("ES", msg)
+
+        rh.printSysLog("Exit migrateVM.moveVM, rc: " +
+            str(rh.results['overallRC']))
+        return rh.results['overallRC']
 
 
 def parseCmdline(rh):

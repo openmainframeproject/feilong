@@ -29,6 +29,8 @@ from smtLayer.vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
 from smtLayer.vmUtils import invokeSMCLI, isLoggedOn
 from smtLayer.vmUtils import punch2reader, purgeReader
 
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 modId = "CVM"
 version = "1.0.0"
@@ -362,6 +364,19 @@ def dedicate(rh):
     """
     rh.printSysLog("Enter changeVM.dedicate")
 
+    if config.CONF.zvm.prefer_vmcp_query == "yes":
+        handler = VMCPHandler(rh)
+        results = handler.query_attach(rh)
+
+        if results["overallRC"] != 0:
+            rh.updateResults(results)
+        else:
+            rh.printLn("N", "Dedicated device %s successfully." % rh.parms['vaddr'])
+
+        rh.printSysLog("Exit changeVM.dedicate, rc: " +
+                       str(rh.results['overallRC']))
+        return results["overallRC"]
+
     parms = [
         "-T", rh.userid,
         "-v", rh.parms['vaddr'],
@@ -420,6 +435,18 @@ def undedicate(rh):
        Return code - 0: ok, non-zero: error
     """
     rh.printSysLog("Enter changeVM.undedicate")
+    if config.CONF.zvm.prefer_vmcp_query == 'yes':
+        handler = VMCPHandler(rh)
+        results = handler.query_detach(rh)
+
+        if results["overallRC"] != 0:
+            rh.updateResults(results)
+        else:
+            rh.printLn("N", "UnDedicated device %s from the active configuration." % rh.parms['vaddr'])
+
+        rh.printSysLog("Exit changeVM.undedicate, rc: " +
+                       str(rh.results['overallRC']))
+        return results["overallRC"]
 
     parms = [
         "-T", rh.userid,
