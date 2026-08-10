@@ -1,0 +1,126 @@
+import subprocess
+
+from smtLayer import msgs
+
+
+class VMCPHandler:
+
+    def __init__(self, rh):
+        """
+        Initialise the handler with a Request Handle.
+
+        Input:
+           rh - smtLayer ReqHandle instance
+        """
+        self._rh = rh
+
+
+    def _run_for(self, userid, cp_cmd):
+        """
+        Execute a vmcp "FOR <userid> CMD <cp_cmd>" call.
+
+        Equivalent command:
+            sudo /sbin/vmcp "FOR <userid> CMD <cp_cmd>"
+
+        Input:
+           userid  - target z/VM guest userid, e.g. "KUNA0006"
+           cp_cmd  - CP command string, e.g. "DEFINE NIC 0600 TYPE QDIO"
+
+        Output:
+           dict with keys:
+             response   - decoded stdout/stderr string
+             overallRC  - 0 on success, non-zero on failure
+        """
+        rh = self._rh
+        operand = "FOR %s CMD %s" % (userid, cp_cmd)
+        strCmd = 'sudo /sbin/vmcp "%s"' % operand
+        rh.printSysLog("Invoking: " + strCmd)
+        try:
+            raw = subprocess.check_output(
+                strcmd, close_fds=True, stderr=subprocess.STDOUT)
+            return {"response": bytes.decode(raw), "overallRC": 0}
+        except subprocess.CalledProcessError as e:
+            err_out = bytes.decode(e.output) if isinstance(e.output, bytes) else (e.output or '')
+            msg = msgs.msg['0405'][1] % (modId, strCmd, strCmd, e.output)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0405'][0])
+            return {'response': err_out, 'overallRC': e.returncode}
+        except Exception as e:
+            rh.printLn("ES", msgs.msg['0421'][1] % (
+                modId, strCmd, type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
+            return {'response': '', 'overallRC': 1}
+
+        
+    def delete_nic_for_guest(self, rh, vdev):
+        """
+        Detach a NIC from the active configuration of a target guest.
+
+        Equivalent command:
+            vmcp "FOR <userid> CMD DETACH NIC <vdev>"
+
+        Returns:
+           dict with keys:
+             response   - decoded stdout/stderr string
+             overallRC  - 0 on success, non-zero on failure
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.delete_nic_for_guest, "
+                       "userid: %s vdev: %s" % (rh.userid, vdev))
+
+        result = self._run_for(rh.userid, "DETACH NIC %s" % vdev)
+
+        if result['overallRC'] != 0:
+            if 'HCP' in result['response'] and '040E' in result['response']:
+                rh.printSysLog(
+                    "VMCPHandler.delete_nic_for_guest: NIC %s already absent "
+                    "for %s, treating as success" % (vdev, userid))
+                result = {'response': '', 'overallRC': 0}
+            else:
+                rh.printSysLog(
+                    "Exit VMCPHandler.delete_nic_for_guest, rc: " +
+                    str(result['overallRC']))
+                return result
+
+        rh.printSysLog("Exit VMCPHandler.delete_nic_for_guest, rc: " +
+                       str(result['overallRC']))
+        return result
+
+    def uncouple_nic_for_guest(self, rh, vdev):
+        """
+        Uncouple a NIC from its vswitch on the active configuration of a
+        target guest.
+
+        Equivalent command:
+            vmcp "FOR <userid> CMD UNCOUPLE <vdev>"
+
+        Returns:
+           dict with keys:
+             response   - decoded stdout/stderr string
+             overallRC  - 0 on success, non-zero on failure
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.uncouple_nic_for_guest, "
+                       "userid: %s vdev: %s" % (rh.userid, vdev))
+
+        result = self._run_for(rh.userid, "UNCOUPLE %s" % vdev)
+
+        if result['overallRC'] != 0:
+            resp = result['response']
+            if (('HCP' in resp and '040E' in resp) or
+                    ('HCP' in resp and '2788E' in resp) or
+                    'not coupled' in resp.lower()):
+                rh.printSysLog(
+                    "VMCPHandler.uncouple_nic_for_guest: NIC %s already "
+                    "uncoupled or absent for %s, treating as success"
+                    % (vdev, userid))
+                result = {'response': '', 'overallRC': 0}
+            else:
+                rh.printSysLog(
+                    "Exit VMCPHandler.uncouple_nic_for_guest, rc: " +
+                    str(result['overallRC']))
+                return result
+
+        rh.printSysLog("Exit VMCPHandler.uncouple_nic_for_guest, rc: " +
+                       str(result['overallRC']))
+        return result
