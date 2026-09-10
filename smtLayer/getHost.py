@@ -26,6 +26,7 @@ from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
 from datetime import datetime
+from smtLayer.vmcpHandler import VMCPHandler
 
 modId = 'GHO'
 version = "1.0.0"
@@ -596,11 +597,16 @@ def getGeneralInfo(rh):
         rh.printLn("ES", msg)
 
     # Get LPAR memory in use
-    parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
-
     lparMemUsed = "no info"
-    results = invokeSMCLI(rh, "System_Performance_Information_Query",
-                          parm)
+    if config.CONF.zvm.prefer_vmcp_query == 'yes':
+        handler = VMCPHandler(rh)
+        results = handler.query_image_performance(rh)
+
+    else:
+        # Get LPAR memory in use
+        parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
+        results = invokeSMCLI(rh, "System_Performance_Information_Query", parm)
+
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "MEMORY_IN_USE=" in line:

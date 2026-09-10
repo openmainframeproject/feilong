@@ -47,6 +47,8 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
+from smtLayer import vmcpHandler
+from smtLayer.ReqHandle import ReqHandle
 
 
 CONF = config.CONF
@@ -85,6 +87,8 @@ class SMTClient(object):
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
         self._FCPDbOperator = database.FCPDbOperator()
+        rh = ReqHandle(smt=self._smt)
+        self._VMCPHandler = vmcpHandler.VMCPHandler(rh)
 
     def _request(self, requestData):
         try:
@@ -290,7 +294,6 @@ class SMTClient(object):
             self._request(rd)
 
     def get_fcp_info_by_status(self, userid, status=None):
-
         """get fcp information by the status.
 
         :userid: (str) The name of the image to query fcp info
@@ -1766,6 +1769,22 @@ class SMTClient(object):
         return pi_dict
 
     def virtual_network_vswitch_query_byte_stats(self):
+
+        if CONF.zvm.prefer_vmcp_query == 'yes':
+            try:
+                results = self._VMCPHandler.query_vswitch_details()
+                LOG.info(results["rc"])
+            except exception.SDKSMTRequestFailed as err:
+                LOG.error("Failed to query vswitch byte stats via VMCP.")
+                err_msg = "SMT error: %s" % err.format_message()
+                LOG.error(err_msg)
+                raise exception.SDKSMTRequestFailed(err.results, err_msg)
+            if results.get('rc') != 0 or not results.get('response'):
+                raise exception.SDKSMTRequestFailed(
+                    {'rc': results.get('rc', 1), 'rs': 0},
+                    "VMCP QUERY VSWITCH DETAILS returned no data")
+            return self._parse_vswitch_inspect_data(results['response'])
+
         smt_userid = zvmutils.get_smt_userid()
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Query_Byte_Stats" %
@@ -1777,6 +1796,7 @@ class SMTClient(object):
         action = "query vswitch usage info"
         with zvmutils.log_and_reraise_smt_request_failed(action):
             results = self._request(rd)
+        LOG.info(results["rc"])
         return self._parse_vswitch_inspect_data(results['response'])
 
     def get_host_info(self):
@@ -4594,6 +4614,25 @@ class SMTClient(object):
     def host_get_ssi_info(self):
         msg = ('Start SSI_Query')
         LOG.info(msg)
+
+        if CONF.zvm.prefer_vmcp_query == 'yes':
+            try:
+                results = self._VMCPHandler.ssi_info()
+            except exception.SDKSMTRequestFailed as err:
+                LOG.error("Failed to query SSI information from VMCP command.")
+                err_msg = "SMT error: %s" % err.format_message()
+                LOG.error(err_msg)
+                raise exception.SDKSMTRequestFailed(err.results, err_msg)
+            # Host is not a member of an SSI cluster
+            if (results.get('rc') == 0 and
+                    "This system is not a member of an SSI cluster."
+                    in "\n".join(results.get('response', []))):
+                LOG.debug("Host is not a member of an SSI cluster.")
+                return []
+
+            if results.get('rc') == 0 and results.get('response'):
+                return results['response']
+            return []
 
         rd = 'SMAPI HYPERVISOR API SSI_Query'
         try:
