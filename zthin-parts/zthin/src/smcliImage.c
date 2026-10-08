@@ -4475,6 +4475,102 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     return rc;
 }
 
+int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "Image_Rename_DM";
+    int rc;
+    int option;
+    char * targetIdentifier = NULL;
+    char * newImageName = NULL;
+    vmApiImageRenameDmOutput * output;
+
+    opterr = 0;
+    const char * argumentsRequired = "Tk";
+    char tempStr[1];
+    char strMsg[250];
+    const char * newImageNamePrefix = "new_image_name=";
+
+    // Parse command-line options
+    // -T target_identifier (current VM name)
+    // -k new_image_name=<new VM name>
+    while ((option = getopt(argC, argV, "-T:k:h?")) != -1)
+        switch (option) {
+            case 'T':
+                targetIdentifier = optarg;
+                break;
+
+            case 'k':
+                if (!strncmp(optarg, newImageNamePrefix, strlen(newImageNamePrefix))) {
+                    newImageName = optarg + strlen(newImageNamePrefix);
+                }
+                break;
+
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  Image_Rename_DM\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli Image_Rename_DM [-T] target_identifier [-k] new_image_name=<new_image_name>\n\n"
+                    "DESCRIPTION\n"
+                    "  Use Image_Rename_DM to rename a virtual image.\n"
+                    "  This executes: DIRM FOR <target_identifier> CHNGID TO <new_image_name>\n\n"
+                    "  The following options are required:\n"
+                    "    -T    The current name of the image (target_identifier)\n"
+                    "    -k    Keyed operand in the form new_image_name=<new_image_name>\n\n"
+                    "EXAMPLE\n"
+                    "  smcli Image_Rename_DM -T tstsys2 -k new_image_name=tstsyst\n");
+                printRCheaderHelp();
+                return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    sprintf(tempStr,"%c", optopt);
+                    if (strstr(argumentsRequired, tempStr)) {
+                        printf("This option requires an argument: -%c\n", optopt);
+                    } else {
+                        printf("Unknown option -%c\n", optopt);
+                    }
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            case 1:
+                break;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    if (!targetIdentifier || !newImageName || !strlen(newImageName)) {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("ERROR: Missing required options\n");
+        printf("Both -T (target_identifier) and -k new_image_name=<new_image_name> are required\n");
+        return 1;
+    }
+
+    snprintf(strMsg, sizeof(strMsg), "Renaming %s to %s... ",
+             targetIdentifier, newImageName);
+
+    rc = smImage_Rename_DM(vmapiContextP, "", 0, "",  // Authorizing user, password
+            targetIdentifier, newImageName, &output);
+
+    if (rc) {
+        printAndLogProcessingErrors("Image_Rename_DM", rc, vmapiContextP, strMsg, 0);
+    } else if (output->common.returnCode || output->common.reasonCode) {
+        rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Rename_DM",
+                output->common.returnCode, output->common.reasonCode,
+                vmapiContextP, strMsg);
+    } else {
+        DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+        printf("Done\n");
+    }
+
+    return rc;
+}
+
+
 int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "Image_SCSI_Characteristics_Define_DM";
     int rc;

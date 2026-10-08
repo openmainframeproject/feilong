@@ -596,3 +596,50 @@ class VMOps(object):
         # Do resize
         self._smtclient.resize_memory(userid, memory)
         LOG.info("Complete resize memory on vm %s", userid)
+
+    def rename_guest(self, old_userid, new_userid):
+        """Rename a virtual machine.
+
+        Calls image_rename_dm() which performs the SMAPI rename, then updates
+        the local guests, switch and fcp tables and the vswitch
+        authorization. Finally the SMAPI namelist is updated. The updates are
+        not atomic (the tables are in separate databases): if one of them
+        fails after the SMAPI rename, the remaining updates are skipped and
+        the error is raised to the caller, with the steps that failed and
+        that were done, so that the state can be corrected manually.
+
+        :param str old_userid: Current userid of the VM
+        :param str new_userid: New userid for the VM
+        :returns: Dictionary with rename result
+        :raises: SDKConflictError if the guest is not powered off
+        :raises: SDKSMTRequestFailed if the SMAPI rename fails, nothing is
+                 changed in this case
+        :raises: SDKGuestOperationError if a local update fails after the
+                 SMAPI rename succeeded
+        """
+        old_userid = old_userid.upper()
+        new_userid = new_userid.upper()
+
+        # the guest must be powered off to be renamed
+        if self._smtclient.get_power_state(old_userid) != 'off':
+            LOG.error("Failed to rename guest %s, error: guest is not "
+                      "powered off." % old_userid)
+            raise exception.SDKConflictError(modID='guest', rs=25,
+                                             userid=old_userid)
+
+        LOG.info("Renaming VM from '%s' to '%s'", old_userid, new_userid)
+        try:
+            self._smtclient.image_rename_dm(old_userid, new_userid)
+        except exception.SDKBaseException as e:
+            LOG.error("Rename failed for VM '%s' to '%s': %s",
+                      old_userid, new_userid, str(e))
+            raise
+
+        # update the smapi namelist: remove the old userid, add the new one,
+        # as delete_vm() and create_vm() do
+        self._smtclient.namelist_remove(self._namelist, old_userid)
+        self._smtclient.namelist_add(self._namelist, new_userid)
+
+        LOG.info("Successfully renamed VM from '%s' to '%s'",
+                 old_userid, new_userid)
+        return {'old_userid': old_userid, 'new_userid': new_userid}

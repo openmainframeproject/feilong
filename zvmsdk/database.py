@@ -257,6 +257,26 @@ class NetworkDbOperator(object):
             switch_result.append(switch_item)
         return switch_result
 
+    def switch_rename_userid(self, old_userid, new_userid):
+        """Update all switch records belonging to old_userid to new_userid.
+
+        The userid column is declared COLLATE NOCASE, so old_userid matches
+        regardless of case. new_userid is written in uppercase.
+
+        Called after a successful guest rename so that NIC-to-vswitch
+        associations are kept consistent.
+
+        :param str old_userid: the current (old) z/VM userid
+        :param str new_userid: the replacement z/VM userid
+        """
+        new_userid = new_userid.upper()
+        with get_network_conn() as conn:
+            conn.execute(
+                "UPDATE switch SET userid=? WHERE userid=?",
+                (new_userid, old_userid))
+            LOG.debug("switch table: renamed userid '%s' -> '%s'",
+                      old_userid, new_userid)
+
     def switch_select_table(self):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch")
@@ -489,6 +509,30 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             conn.executemany("UPDATE fcp set state=? "
                              "WHERE fcp_id=?", data_to_update)
+
+    def fcp_rename_assigner_id(self, old_userid, new_userid):
+        """Rename old_userid to new_userid in the assigner_id and owner
+        columns of the fcp table.
+
+        The two columns are renamed by independent statements, so FCP devices
+        with different owners are each handled correctly. The columns are
+        declared COLLATE NOCASE, so old_userid matches regardless of case.
+        new_userid is written in uppercase.
+
+        Called after a successful guest rename so that FCP device assignments
+        remain consistent with the renamed guest.
+
+        :param str old_userid: the current (old) z/VM userid
+        :param str new_userid: the replacement z/VM userid
+        """
+        new_userid = new_userid.upper()
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET assigner_id=? WHERE assigner_id=?",
+                         (new_userid, old_userid))
+            conn.execute("UPDATE fcp SET owner=? WHERE owner=?",
+                         (new_userid, old_userid))
+            LOG.debug("fcp table: renamed assigner_id/owner '%s' -> '%s'",
+                      old_userid, new_userid)
 
     def reset_fcps_of_assigner(self, userid):
         """Reset fcp records for a given assigner."""
@@ -2449,6 +2493,22 @@ class GuestDbOperator(object):
             conn.execute(
                 "INSERT INTO guests VALUES (?, ?, ?, ?, ?)",
                 (guest_id, userid, meta, net_set, comments))
+
+    def guest_rename_userid(self, old_userid, new_userid):
+        """Change the userid of a guest record in place.
+
+        Only the userid column is updated, so the id (uuid), metadata,
+        net_set and comments of the guest are all preserved. The column is
+        declared COLLATE NOCASE, so old_userid matches regardless of case.
+        new_userid is written in uppercase.
+        """
+        self._check_existence_by_userid(old_userid)
+        new_userid = new_userid.upper()
+        with get_guest_conn() as conn:
+            conn.execute("UPDATE guests SET userid=? WHERE userid=?",
+                         (new_userid, old_userid))
+        LOG.debug("guests table: renamed userid '%s' -> '%s'",
+                  old_userid, new_userid)
 
     def delete_guest_by_id(self, guest_id):
         # First check whether the guest exist in db table

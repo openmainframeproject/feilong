@@ -177,7 +177,11 @@ errors = {
                     "error: enable new defined cpus failed: '%(err)s'."),
                16: ("Failed to start the guest: '%(userid)s', %(msg)s"),
                17: ("Failed to live resize memory of guest: '%(userid)s', "
-                    "error: chmem command failed: '%(err)s'.")
+                    "error: chmem command failed: '%(err)s'."),
+               18: ("Guest '%(userid)s' was renamed to '%(new_userid)s' in "
+                    "the z/VM directory, but updating the %(step)s failed, "
+                    "error: %(msg)s. Already updated: %(done)s. The "
+                    "remaining state must be corrected manually.")
                },
               "Operation on Guest failed"
               ],
@@ -346,7 +350,9 @@ errors = {
                   23: ("Failed to create or update FCP Multipath Template, "
                        "error: %(msg)s"),
                   24: ("Failed to edit FCP Multipath Template, "
-                       "error: %(msg)s")
+                       "error: %(msg)s"),
+                  25: ("Failed to rename guest '%(userid)s', error: the "
+                       "guest must be powered off.")
                   },
                  "The operated object status conflict"
                  ],

@@ -16,6 +16,7 @@
 #    under the License.
 
 
+import re
 import netaddr
 import six
 import ast
@@ -1141,6 +1142,84 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.resize_memory(userid, size)
         LOG.info("%s successfully." % action)
+
+    @check_guest_exist()
+    def guest_rename(self, old_userid, new_userid):
+        """Rename a virtual machine.
+
+        This operation renames a VM by changing its userid in the z/VM directory
+        using the DIRMAINT facility.
+
+        After a successful rename:
+        - The VM's directory entry is updated with the new userid
+        - The SDK database (guests, switch and fcp tables) is updated to
+          reflect the new userid, and the guest id, metadata and comments
+          are preserved
+        - The SMAPI namelist and the vswitch authorization (including the
+          user VLAN ids) are updated
+
+        :param str old_userid: Current userid of the VM (will be converted to
+               uppercase)
+        :param str new_userid: New userid for the VM (will be converted to
+               uppercase)
+
+        :returns: Dictionary with rename result
+            {
+                'old_userid': 'OLDVM01',
+                'new_userid': 'NEWVM01'
+            }
+
+        :raises: SDKObjectNotExistError if old_userid doesn't exist
+        :raises: SDKObjectAlreadyExistError if new_userid already exists
+        :raises: SDKConflictError if the VM is not powered off
+        :raises: SDKSMTRequestFailed if the DIRMAINT rename operation fails
+
+        Example:
+            >>> api = SDKAPI()
+            >>> # Ensure VM is powered off first
+            >>> api.guest_stop('OLDVM01')
+            >>> # Perform the rename
+            >>> result = api.guest_rename('OLDVM01', 'NEWVM01')
+            >>> print(result)
+            {'old_userid': 'OLDVM01', 'new_userid': 'NEWVM01'}
+
+        Note:
+            - This function requires z/VM APAR VM66893
+            - The VM must be in a powered-off state before renaming
+            - The new userid must not already exist in the system
+            - The new userid must be 1-8 alphanumeric characters, otherwise
+            SDKInvalidInputFormat is raised
+            - This operation cannot be undone; to revert, you must rename again
+        """
+        # Validate new_userid length and format (1-8 alphanumeric chars, same
+        # rule as the REST API 'userid' parameter type) before touching DB
+        # or backend
+        if (not isinstance(new_userid, six.string_types) or
+                not re.match(r'^[a-zA-Z0-9]{1,8}$', new_userid)):
+            raise exception.SDKInvalidInputFormat(
+                msg=("new_userid '%s' must be 1-8 characters long and contain "
+                     "only alphanumeric characters" % new_userid))
+
+        # old_userid is already upper-cased and verified to exist in the
+        # database by the @check_guest_exist() decorator.
+        new_userid = new_userid.upper()
+
+        # new_userid must exist neither in the guests database nor on z/VM
+        if (self._vmops.check_guests_exist_in_db(new_userid, raise_exc=False) or
+                zvmutils.check_userid_exist(new_userid)):
+            LOG.error("Guest '%s' already exists" % new_userid)
+            raise exception.SDKObjectAlreadyExistError(
+                obj_desc=("Guest '%s'" % new_userid), modID='guest')
+
+        # Perform the rename operation
+        action = ("rename guest from '%(old)s' to '%(new)s'" %
+                  {'old': old_userid, 'new': new_userid})
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            result = self._vmops.rename_guest(old_userid, new_userid)
+
+        LOG.info("Successfully renamed guest from '%s' to '%s'" %
+                 (old_userid, new_userid))
+        return result
 
     @check_guest_exist()
     def guest_create_disks(self, userid, disk_list):

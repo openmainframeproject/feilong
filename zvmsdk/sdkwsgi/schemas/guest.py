@@ -186,6 +186,16 @@ delete_disks = {
 }
 
 
+rename = {
+    'type': 'object',
+    'properties': {
+        'new_userid': parameter_types.userid,
+    },
+    'required': ['new_userid'],
+    'additionalProperties': False,
+}
+
+
 nic_couple_uncouple = {
     'type': 'object',
     'properties': {

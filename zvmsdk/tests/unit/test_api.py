@@ -460,6 +460,84 @@ class SDKAPITestCase(base.SDKTestCase):
         cge.assert_called_once_with(self.userid, raise_exc=False)
         cue.assert_called_once_with(self.userid)
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename(self, cge, rename_guest, cue):
+        # 1st call: decorator (old_userid), 2nd call: new_userid check
+        cge.side_effect = [True, False]
+        cue.return_value = False
+        rename_guest.return_value = {'old_userid': 'OLDVM01', 'new_userid': 'NEWVM01'}
+        res = self.api.guest_rename('OLDVM01', 'NEWVM01')
+        self.assertEqual(res, {'old_userid': 'OLDVM01', 'new_userid': 'NEWVM01'})
+        cue.assert_called_once_with('NEWVM01')
+        rename_guest.assert_called_once_with('OLDVM01', 'NEWVM01')
+
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_old_not_exist(self, cge, rename_guest):
+        cge.side_effect = exception.SDKObjectNotExistError(
+            obj_desc="Guest 'OLDVM01'", modID='guest')
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.api.guest_rename, 'OLDVM01', 'NEWVM01')
+        rename_guest.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_new_exists_in_db(self, cge, rename_guest, cue):
+        cge.side_effect = [True, True]
+        cue.return_value = False
+        self.assertRaises(exception.SDKObjectAlreadyExistError,
+                          self.api.guest_rename, 'OLDVM01', 'NEWVM01')
+        rename_guest.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_new_exists_only_on_zvm(self, cge, rename_guest, cue):
+        cge.side_effect = [True, False]
+        cue.return_value = True
+        self.assertRaises(exception.SDKObjectAlreadyExistError,
+                          self.api.guest_rename, 'OLDVM01', 'NEWVM01')
+        cue.assert_called_once_with('NEWVM01')
+        rename_guest.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_invalid_userid(self, cge):
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', 'TOOLONGUSERID')
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', 'BAD*ID')
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_invalid_new_userid_formats(self, cge, rename_guest):
+        for bad in ('NEWVM0123', 'NEW VM', 'NEW-VM', 'NEW_VM', 'NEW.VM',
+                    ' ', None, 123):
+            self.assertRaises(exception.SDKInvalidInputFormat,
+                              self.api.guest_rename, 'OLDVM01', bad)
+        # invalid input must be rejected before the new_userid checks/rename
+        rename_guest.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_valid_new_userid_formats(self, cge, rename_guest,
+                                                   cue):
+        cue.return_value = False
+        # 1 and 8 characters are the boundaries, lowercase is accepted
+        # and converted to uppercase
+        for new, expected in (('A', 'A'), ('NEWVM123', 'NEWVM123'),
+                              ('newvm01', 'NEWVM01'), ('1234', '1234')):
+            cge.reset_mock()
+            rename_guest.reset_mock()
+            cge.side_effect = [True, False]
+            self.api.guest_rename('oldvm01', new)
+            rename_guest.assert_called_once_with('OLDVM01', expected)
+
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
     def test_guest_inspect_cpus_list(self, inspect_stats):
         self.api.guest_inspect_stats(self.userid_list)
