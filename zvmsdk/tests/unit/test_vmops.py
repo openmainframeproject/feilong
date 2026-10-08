@@ -654,3 +654,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         punch_file.assert_called_once_with(userid,
                                            ("%s/gpartvol.sh" % tmp_inst_dir),
                                            "X")
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_rename_dm")
+    def test_rename_guest(self, mock_rename):
+        mock_rename.return_value = ['Done']
+        res = self.vmops.rename_guest('testuid', 'newuid')
+        mock_rename.assert_called_once_with('TESTUID', 'NEWUID')
+        self.assertEqual(res, {'old_userid': 'TESTUID', 'new_userid': 'NEWUID'})
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_rename_dm")
+    def test_rename_guest_failed(self, mock_rename):
+        mock_rename.side_effect = exception.SDKSMTRequestFailed({'rs': 1}, 'failed')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self.vmops.rename_guest, 'testuid', 'newuid')

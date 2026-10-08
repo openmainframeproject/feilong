@@ -2405,3 +2405,10 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         # Clean up the images
         self.db_op.image_delete_record(imagename1)
         self.db_op.image_delete_record(imagename2)
+
+    def test_switch_rename_userid(self):
+        self.net_db.switch_add_record("OLDVM", "1000", "VSW1")
+        self.net_db.switch_rename_userid("OLDVM", "NEWVM")
+        records = self.net_db.switch_select_record_for_userid("NEWVM")
+
+        self.assertEqual(len(records), 1)

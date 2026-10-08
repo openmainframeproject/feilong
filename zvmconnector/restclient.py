@@ -436,6 +436,12 @@ def req_guest_config_minidisks(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_rename(start_index, *args, **kwargs):
+    url = '/guests/%s/rename'
+    body = {'new_userid': args[start_index]}
+    return url, body
+
+
 def req_volume_attach(start_index, *args, **kwargs):
     url = '/guests/volumes'
     body = {'info': {'connection': args[start_index]}}
@@ -967,6 +973,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_disks_info},
+    'guest_rename': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_rename},
     'volume_attach': {
         'method': 'POST',
         'args_required': 1,

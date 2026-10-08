@@ -5437,3 +5437,26 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         # case 3: error
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.host_get_ssi_info)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch('zvmsdk.database.GuestDbOperator.get_guest_by_userid')
+    @mock.patch('zvmsdk.database.GuestDbOperator.delete_guest_by_userid')
+    @mock.patch('zvmsdk.database.GuestDbOperator.add_guest')
+    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
+    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
+    def test_image_rename_dm(self, mock_fcp_rename, mock_switch_rename,
+                             mock_add_guest, mock_del_guest, mock_get_guest,
+                             mock_req):
+        mock_req.return_value = {'response': ['Done']}
+        mock_get_guest.return_value = (1, 'OLDVM', 'meta', None, None)
+
+        res = self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+
+        mock_req.assert_called_once_with(
+            "SMAPI OLDVM API Image_Rename_DM --operands -k new_image_name=NEWVM")
+        mock_get_guest.assert_called_once_with('OLDVM')
+        mock_del_guest.assert_called_once_with('OLDVM')
+        mock_add_guest.assert_called_once_with('NEWVM', meta='meta')
+        mock_switch_rename.assert_called_once_with('OLDVM', 'NEWVM')
+        mock_fcp_rename.assert_called_once_with('OLDVM', 'NEWVM')
+        self.assertEqual(res, ['Done'])

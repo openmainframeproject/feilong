@@ -945,3 +945,56 @@ class SDKAPITestCase(base.SDKTestCase):
         results = self.api.host_diskpool_get_info(details=True)
         self.assertEqual(results, disk_pool_details)
         dp_info.assert_has_calls([mock.call('fakepool1', True), mock.call('fakepool2', True)])
+
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename(self, cge, rename_guest):
+        cge.side_effect = [True, False]
+        rename_guest.return_value = {'old_userid': 'OLDVM01', 'new_userid': 'NEWVM01'}
+        res = self.api.guest_rename('OLDVM01', 'NEWVM01')
+        self.assertEqual(res, {'old_userid': 'OLDVM01', 'new_userid': 'NEWVM01'})
+        rename_guest.assert_called_once_with('OLDVM01', 'NEWVM01')
+
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_old_not_exist(self, cge):
+        cge.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.api.guest_rename, 'OLDVM01', 'NEWVM01')
+
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_new_already_exists(self, cge):
+        cge.side_effect = [True, True]
+        self.assertRaises(exception.SDKObjectAlreadyExistError,
+                          self.api.guest_rename, 'OLDVM01', 'NEWVM01')
+
+    def test_guest_rename_invalid_userid(self):
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', 'TOOLONGUSERID')
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', 'BAD*ID')
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_rename, 'OLDVM01', '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_invalid_new_userid_formats(self, cge, rename_guest):
+        for bad in ('NEWVM012', 'NEW VM', 'NEW-VM', 'NEW_VM', 'NEW.VM',
+                    ' ', None, 123):
+            self.assertRaises(exception.SDKInvalidInputFormat,
+                              self.api.guest_rename, 'OLDVM01', bad)
+        # invalid input must be rejected before DB check or rename
+        cge.assert_not_called()
+        rename_guest.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.rename_guest")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_rename_valid_new_userid_formats(self, cge, rename_guest):
+        # 1 and 8 characters are the boundaries, lowercase is accepted
+        # and converted to uppercase
+        for new, expected in (('A', 'A'), ('NEWVM123', 'NEWVM123'),
+                              ('newvm01', 'NEWVM01'), ('1234', '1234')):
+            cge.reset_mock()
+            rename_guest.reset_mock()
+            cge.side_effect = [True, False]
+            self.api.guest_rename('oldvm01', new)
+            rename_guest.assert_called_once_with('OLDVM01', expected)

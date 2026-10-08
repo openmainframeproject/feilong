@@ -596,3 +596,27 @@ class VMOps(object):
         # Do resize
         self._smtclient.resize_memory(userid, memory)
         LOG.info("Complete resize memory on vm %s", userid)
+
+    def rename_guest(self, old_userid, new_userid):
+        """Rename a virtual machine.
+        Calls image_rename_dm() which performs the SMAPI rename and updates
+        all three ZCC local database tables (guests, switch, fcp) atomically.
+        :param str old_userid: Current userid of the VM
+        :param str new_userid: New userid for the VM
+        :returns: Dictionary with rename result
+        :raises: SDKSMTRequestFailed if the SMAPI rename fails
+        """
+        old_userid = old_userid.upper()
+        new_userid = new_userid.upper()
+
+        LOG.info("Renaming VM from '%s' to '%s'", old_userid, new_userid)
+        try:
+            self._smtclient.image_rename_dm(old_userid, new_userid)
+        except exception.SDKSMTRequestFailed as e:
+            LOG.error("SMAPI rename failed for VM '%s' to '%s': %s",
+                      old_userid, new_userid, str(e))
+            raise
+
+        LOG.info("Successfully renamed VM from '%s' to '%s'",
+                 old_userid, new_userid)
+        return {'old_userid': old_userid, 'new_userid': new_userid}
