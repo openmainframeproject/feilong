@@ -100,8 +100,8 @@ class SDKAPI(object):
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
         self._volumeop = volumeop.get_volumeop()
-        self._GuestDbOperator = database.GuestDbOperator()
-        self._NetworkDbOperator = database.NetworkDbOperator()
+        self._GuestDbOperator = database.get_db_backend().guest()
+        self._NetworkDbOperator = database.get_db_backend().network()
 
     @check_guest_exist()
     def guest_start(self, userid, timeout=0):

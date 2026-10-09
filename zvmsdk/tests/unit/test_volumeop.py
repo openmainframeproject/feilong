@@ -25,6 +25,7 @@ from zvmsdk import config
 from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
+from zvmsdk import fcp_ops
 from zvmsdk import volumeop
 from zvmsdk.tests.unit import base
 
@@ -507,12 +508,11 @@ class TestFCPManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.database.FCPDbOperator.get_pchids_by_fcp_template")
     def test__check_missing_pchids(self, m_get_pchids_by_tmpl):
-        """Test _check_missing_pchids"""
+        """Test check_missing_pchids"""
         _purge_fcp_db()
         # mock
         m_get_pchids_by_tmpl.return_value = ['02E0', '02C0']
         # fake param
-        assigner_id = 'fakeuser'
         fcp_template_id = '0001'
         pchid_info_correct = {
             '02C0': {'allocated': 128, 'max': 128},
@@ -522,14 +522,14 @@ class TestFCPManager(base.SDKTestCase):
         pchid_info_missing = {
             'AAAA': {'allocated': 128, 'max': 128},
             'BBBB': {'allocated': 109, 'max': 110}}
-        self.fcpops._check_missing_pchids(assigner_id, fcp_template_id, pchid_info_correct)
+        fcp_ops.check_missing_pchids(self.fcpops.db, fcp_template_id, pchid_info_correct)
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
                                ".*the statistics of PCHIDs \[\'02C0\', \'02E0\'\] "
                                "are missing.*",
-                               self.fcpops._check_missing_pchids,
-                               assigner_id, fcp_template_id, pchid_info_missing)
+                               fcp_ops.check_missing_pchids,
+                               self.fcpops.db, fcp_template_id, pchid_info_missing)
 
-    @mock.patch("zvmsdk.volumeop.FCPManager._check_missing_pchids")
+    @mock.patch("zvmsdk.fcp_ops.check_missing_pchids")
     def test_allocate_fcp_devices_with_existed_reserved_fcp(self, mock_check_pchids):
         _purge_fcp_db()
         mock_check_pchids.return_value = None
@@ -587,8 +587,11 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             _purge_fcp_db()
 
-    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
-    @mock.patch("zvmsdk.volumeop.FCPManager._check_missing_pchids")
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_zvm_fcp_tuples",
+                mock.Mock(return_value={}))
+    @mock.patch("zvmsdk.fcp_ops.TransactionalFcpOperations.sync_with_zvm",
+                mock.Mock())
+    @mock.patch("zvmsdk.fcp_ops.check_missing_pchids")
     def test_allocate_fcp_devices_without_existed_reserved_fcp(self, mock_check_pchids):
         """
         reserve fcp devices for the assigner which hasn't reserved any
@@ -634,7 +637,9 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(
                 (is_reserved_changed, template_id, 2),
                 (True, fcp_tmpl_id, len(actual_fcp_list)))
-            mock_check_pchids.assert_called_once_with(assinger_id, template_id, pchid_info)
+            # called by both passes of the two-pass allocate
+            mock_check_pchids.assert_called_with(mock.ANY, template_id, pchid_info)
+            self.assertEqual(2, mock_check_pchids.call_count)
         finally:
             _purge_fcp_db()
 
@@ -660,10 +665,13 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             _purge_fcp_db()
 
-    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm", mock.Mock())
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_zvm_fcp_tuples",
+                mock.Mock(return_value={}))
+    @mock.patch("zvmsdk.fcp_ops.TransactionalFcpOperations.sync_with_zvm",
+                mock.Mock())
     @mock.patch("zvmsdk.database.FCPDbOperator.get_allocated_fcps_from_assigner")
     @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_devices")
-    @mock.patch("zvmsdk.volumeop.FCPManager._check_missing_pchids")
+    @mock.patch("zvmsdk.fcp_ops.check_missing_pchids")
     def test_allocate_fcp_devices_without_free_fcp_device(self, mock_check_pchids,
                                                           mocked_get_fcp_devices,
                                                           mocked_get_allocated_fcps):
@@ -676,6 +684,7 @@ class TestFCPManager(base.SDKTestCase):
         sp_name = "fake_sp_name"
         pchid_info = dict()
         mock_check_pchids.return_value = None
+        self._insert_data_into_template_table([(template_id, 'name1', 'desc1', 1)])
         try:
             is_reserved_changed, available_list, fcp_tmpl_id, empty_reson = self.fcpops.allocate_fcp_devices(
                 assinger_id, template_id, sp_name, pchid_info)
@@ -724,6 +733,7 @@ class TestFCPManager(base.SDKTestCase):
                         ('1b10', template_id, 1)]
         self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
             template_fcp)
+        self._insert_data_into_template_table([(template_id, 'name1', 'desc1', 1)])
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
@@ -761,6 +771,7 @@ class TestFCPManager(base.SDKTestCase):
                         ('1b11', template_id, 1)]
         self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
             template_fcp)
+        self._insert_data_into_template_table([(template_id, 'name1', 'desc1', 1)])
 
         try:
             is_reserved_changed, fcp_list = self.fcpops.release_fcp_devices(assinger_id, template_id)
@@ -808,6 +819,7 @@ class TestFCPManager(base.SDKTestCase):
                         ('1b11', template_id, 1)]
         self.fcp_vol_mgr._insert_data_into_template_fcp_mapping_table(
             template_fcp)
+        self._insert_data_into_template_table([(template_id, 'name1', 'desc1', 1)])
 
         try:
             mock_sync.side_effect = Exception("fake exception")
@@ -834,13 +846,13 @@ class TestFCPManager(base.SDKTestCase):
         fcp_list_1 = [('1a10', '', ''), ('1b10', 'wwpn_npiv_0', 'wwpn_phy_0')]
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
                                "NPIV WWPN of FCP device 1a10 not found",
-                               self.fcpops._valid_fcp_devcie_wwpn,
+                               fcp_ops.validate_fcp_wwpns,
                                fcp_list_1, assigner_id)
 
         fcp_list_2 = [('1a10', 'wwpn_npiv_0', ''), ('1b10', 'wwpn_npiv_0', 'wwpn_phy_0')]
         self.assertRaisesRegex(exception.SDKVolumeOperationError,
                                "Physical WWPN of FCP device 1a10 not found",
-                               self.fcpops._valid_fcp_devcie_wwpn,
+                               fcp_ops.validate_fcp_wwpns,
                                fcp_list_2, assigner_id)
 
     @mock.patch("zvmsdk.utils.print_all_pchids")
@@ -2114,6 +2126,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         # verify
         self.assertDictEqual(expected, result)
 
+    @mock.patch("zvmsdk.utils.get_lpar_name", mock.Mock())
+    @mock.patch("zvmsdk.utils.get_cpc_name", mock.Mock())
+    @mock.patch("zvmsdk.utils.get_cpc_sn", mock.Mock())
+    @mock.patch("zvmsdk.utils.get_zhypinfo", mock.Mock())
     @mock.patch("zvmsdk.utils.get_zvm_name")
     def test_get_volume_connector_reserve_with_template_not_exist(self, m_get_zvm_name):
         """The specified FCP Multipath Template doesn't exist, should raise error."""

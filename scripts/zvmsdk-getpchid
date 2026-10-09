@@ -22,9 +22,7 @@ import json
 import logging
 import argparse
 from datetime import datetime
-from zvmsdk import database
-from zvmsdk import utils
-from zvmsdk import volumeop
+from zvmsdk import config
 
 
 LOG = logging.getLogger(__name__)
@@ -98,25 +96,24 @@ def get_fcp_devices_per_pchid():
     """
 
     # init FCPManager, which sync FCP DB with the FCP info queried from zVM
+    # imported after load_config(): these modules keep the CONF they see
+    from zvmsdk import utils
+    from zvmsdk import volumeop
     fcp_mgr = volumeop.FCPManager()
-    # put all related DB queries in one DB session
-    with database.get_fcp_conn():
-        # get the PCHIDs of all the FCP devices
-        # that are included in any FCP multipath template
-        # all_pchids ex: a list of pchids
-        # ['03FC', '0240', '02E0', '0260']
-        all_pchids = fcp_mgr.db.get_pchids_from_all_fcp_templates()
-        # sort all_pchids to later append into pchids ordered by PCHID No.
-        # ['0240', '0260', '02E0', '03FC']
-        all_pchids.sort()
-        # get the PCHIDs of all the inuse FCP devices
-        # inuse_pchids ex:
-        # (dict) PCHIDs as keys, FCP devices as values
-        # {
-        #    '02E0': '1A01 - 1A03',
-        #    '03FC': '1B02, 1B05'
-        # }
-        inuse_pchids = fcp_mgr.db.get_pchids_of_all_inuse_fcp_devices()
+    # get both PCHID lists from one consistent DB read
+    # all_pchids ex: the PCHIDs of all the FCP devices
+    # that are included in any FCP multipath template
+    # ['03FC', '0240', '02E0', '0260']
+    # inuse_pchids ex: PCHIDs of all the inuse FCP devices as keys,
+    # FCP devices as values
+    # {
+    #    '02E0': '1A01 - 1A03',
+    #    '03FC': '1B02, 1B05'
+    # }
+    all_pchids, inuse_pchids = fcp_mgr.fcp_ops.get_pchid_usage()
+    # sort all_pchids to later append into pchids ordered by PCHID No.
+    # ['0240', '0260', '02E0', '03FC']
+    all_pchids.sort()
 
     # get the unused PCHIDs
     # unuse_pchids ex:
@@ -161,6 +158,8 @@ def get_fcp_devices_per_pchid():
 if __name__ == "__main__":
     # Parse the arguments that were provided on the command line
     _parse_arguments()
+    # zvmsdk.conf: [database] backend and dir, [zvm] settings
+    config.load_config()
     # setup_logging
     setup_logging()
     # Get PCHIDs and FCP devices from all FCP templates

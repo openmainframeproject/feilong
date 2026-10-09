@@ -75,6 +75,14 @@ def read_config(config_path):
     return config
 
 
+def get_db_backend(config_path):
+    """Return [database] backend from zvmsdk.conf ('sqlite' if unset)."""
+    parser = configparser.ConfigParser()
+    if os.path.exists(config_path):
+        parser.read(config_path)
+    return parser.get('database', 'backend', fallback='sqlite').strip()
+
+
 def calculate_sha512(filepath):
     sha512_hash = hashlib.sha512()
     try:
@@ -257,6 +265,13 @@ def main():
     parser.add_argument('--image-repository', type=str,
                         help='Override image repository path from config')
     args = parser.parse_args()
+
+    backend = get_db_backend(args.config)
+    if backend != 'sqlite':
+        print("Error: [database] backend is '{}'. This script only migrates "
+              "the local SQLite database; migrate the data in that backend "
+              "instead.".format(backend))
+        return 1
 
     if not os.path.exists(args.db_path):
         print("Error: Database not found: {}".format(args.db_path))
