@@ -17,6 +17,7 @@
 
 
 import contextlib
+import importlib
 import random
 import os
 import six
@@ -28,7 +29,9 @@ import itertools
 
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import db_interface
 from zvmsdk import exception
+from zvmsdk import fcp_ops
 from zvmsdk import log
 from zvmsdk import utils
 
@@ -47,6 +50,8 @@ _DBLOCK_NETWORK = threading.RLock()
 _DBLOCK_IMAGE = threading.RLock()
 _DBLOCK_GUEST = threading.RLock()
 _DBLOCK_FCP = threading.RLock()
+_DB_BACKEND = None
+_DB_BACKEND_LOCK = threading.Lock()
 
 
 @contextlib.contextmanager
@@ -151,7 +156,7 @@ def _init_db_conn(db_file):
                            isolation_level=None)
 
 
-class NetworkDbOperator(object):
+class NetworkDbOperator(db_interface.NetworkDbOperatorBase):
 
     def __init__(self):
         self._module_id = 'network'
@@ -298,7 +303,7 @@ class NetworkDbOperator(object):
         return self._parse_switch_record(switch_list)
 
 
-class FCPDbOperator(object):
+class FCPDbOperator(db_interface.FCPDbOperatorBase):
 
     def __init__(self):
         self._module_id = 'volume'
@@ -2307,7 +2312,7 @@ class FCPDbOperator(object):
         return pchid_to_phy_wwpn_dict
 
 
-class ImageDbOperator(object):
+class ImageDbOperator(db_interface.ImageDbOperatorBase):
 
     def __init__(self):
         self._create_image_table()
@@ -2382,7 +2387,7 @@ class ImageDbOperator(object):
             conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
 
 
-class GuestDbOperator(object):
+class GuestDbOperator(db_interface.GuestDbOperatorBase):
 
     def __init__(self):
         self._create_guests_table()
@@ -2642,3 +2647,57 @@ class GuestDbOperator(object):
             return None
         # Code shouldn't come here, just in case
         return None
+
+
+class SqliteBackend(db_interface.DbBackend):
+    """The default backend: local SQLite files under CONF.database.dir."""
+
+    def network(self):
+        return NetworkDbOperator()
+
+    def guest(self):
+        return GuestDbOperator()
+
+    def image(self):
+        return ImageDbOperator()
+
+    def fcp(self):
+        return FCPDbOperator()
+
+    def fcp_ops(self):
+        return fcp_ops.TransactionalFcpOperations(FCPDbOperator(),
+                                                  get_fcp_conn)
+
+
+def _load_db_backend(name):
+    if name == 'sqlite':
+        return SqliteBackend()
+    module_name, _, attr = name.rpartition('.')
+    if not module_name:
+        raise exception.SDKDatabaseException(
+            msg="Invalid [database] backend '%s': expected 'sqlite' or "
+                "the dotted path of a backend factory" % name)
+    try:
+        factory = getattr(importlib.import_module(module_name), attr)
+        backend = factory()
+    except Exception as err:
+        raise exception.SDKDatabaseException(
+            msg="Failed to load database backend '%s': %s"
+                % (name, six.text_type(err)))
+    if not isinstance(backend, db_interface.DbBackend):
+        raise exception.SDKDatabaseException(
+            msg="Database backend '%s' returned %r, which is not a "
+                "zvmsdk.db_interface.DbBackend" % (name, backend))
+    return backend
+
+
+def get_db_backend():
+    """Return the database backend selected by [database] backend."""
+    global _DB_BACKEND
+    if _DB_BACKEND is None:
+        with _DB_BACKEND_LOCK:
+            if _DB_BACKEND is None:
+                name = CONF.database.backend
+                _DB_BACKEND = _load_db_backend(name)
+                LOG.info("Using database backend: %s", name)
+    return _DB_BACKEND

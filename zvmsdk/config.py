@@ -521,6 +521,19 @@ tell SDK where to store the database files, make sure the process
 running SDK is able to read write and execute the directory.
 '''
         ),
+    Opt('backend',
+        section='database',
+        default='sqlite',
+        opt_type='str',
+        help='''
+Database backend used by SDK.
+
+'sqlite' (the default) keeps the SDK data in local SQLite files under the
+directory set by the 'dir' option. Any other value is the dotted path of a
+callable, for example 'mypackage.backend.create', that takes no arguments
+and returns a zvmsdk.db_interface.DbBackend instance.
+'''
+        ),
     Opt('refresh_bootmap_timeout',
         section='volume',
         default=1200,
