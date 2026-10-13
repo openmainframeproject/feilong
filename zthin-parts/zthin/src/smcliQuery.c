@@ -394,9 +394,18 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
     } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 710 && output->common.reasonCode < 720))) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V7.1\n");
-    } else if ((output->common.returnCode == 0) && (output->common.reasonCode >= 720)) {
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 720 && output->common.reasonCode < 730))) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V7.2\n");
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 730 && output->common.reasonCode < 740))) {
+        DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
+        printf("The API functional level is z/VM V7.3\n");
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 740 && output->common.reasonCode < 750))) {
+        DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
+        printf("The API functional level is z/VM V7.4\n");
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 750 && output->common.reasonCode < 760))) {
+        DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
+        printf("The API functional level is z/VM V7.5\n");
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_API_Functional_Level", output->common.returnCode,
