@@ -30,6 +30,8 @@ def _make_rh():
     rh.printSysLog = mock.MagicMock()
     rh.printLn = mock.MagicMock()
     rh.updateResults = mock.MagicMock()
+    rh.userid = "TESTUSER"
+    rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
     return rh
 
 
@@ -192,3 +194,125 @@ class VMCPHandlerTest(base.SMTTestCase):
         with self._patch_run(output):
             result = self.handler.query_pcif()
         self.assertEqual([], result)
+
+    def test_query_storage_success(self):
+        output = "STORAGE = 65536M  STANDBY = 0  REMAINDER = 0"
+        with self._patch_run(output, rc=0) as mock_run:
+            result = self.handler.query_storage()
+            mock_run.assert_called_once_with(["query", "storage"])
+            self.assertEqual("65536M", result["lparMemTotal"])
+            self.assertEqual("0", result["lparMemStandby"])
+
+    def test_query_storage_missing_standby(self):
+        output = "STORAGE = 32G"
+        with self._patch_run(output, rc=0):
+            result = self.handler.query_storage()
+            self.assertEqual("32G", result["lparMemTotal"])
+            self.assertEqual("no info", result["lparMemStandby"])
+
+    def test_query_storage_malformed_output(self):
+        output = "STORAGE"
+        with self._patch_run(output, rc=0):
+            result = self.handler.query_storage()
+            self.assertEqual("no info", result["lparMemTotal"])
+            self.assertEqual("no info", result["lparMemStandby"])
+
+    def test_query_storage_error_rc(self):
+        with self._patch_run("", rc=1):
+            result = self.handler.query_storage()
+            self.assertEqual("no info", result["lparMemTotal"])
+            self.assertEqual("no info", result["lparMemStandby"])
+
+    def test_query_cplevel_success(self):
+        output = "z/VM Version 7 Release 2.0 00/00/00 (64-bit)\nIPL at 01/15/24 08:30:00 EST\n"
+        with self._patch_run(output, rc=0) as mock_run:
+            ipl = self.handler.query_cplevel()
+            mock_run.assert_called_once_with(["query", "cplevel"])
+            self.assertEqual("IPL at 01/15/24 08:30:00 EST", ipl)
+
+    def test_query_cplevel_no_ipl_line(self):
+        output = "z/VM Version 7 Release 2.0 00/00/00 (64-bit)\n"
+        with self._patch_run(output, rc=0):
+            ipl = self.handler.query_cplevel()
+            self.assertEqual("", ipl)
+
+    def test_query_cplevel_error_rc(self):
+        with self._patch_run("", rc=1):
+            ipl = self.handler.query_cplevel()
+            self.assertEqual("", ipl)
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_guest_not_logged_on(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        with self._patch_run("", rc=0) as mock_run:
+            result = self.handler.deactivate("TESTUSER")
+            mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
+            mock_run.assert_not_called()
+            self.rh.updateResults.assert_called_once_with(
+                {'overallRC': 0, 'rc': 0, 'rs': 0})
+            self.assertEqual({"response": "", "overallRC": 0}, result)
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_guest_logged_on_no_force(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        with self._patch_run("", rc=0) as mock_run:
+            result = self.handler.deactivate("TESTUSER", force=False)
+            mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
+            mock_run.assert_called_once_with(
+                ["force", "TESTUSER", "logoff"],
+                tolerated=mock.ANY)
+            self.assertEqual(0, result['overallRC'])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_guest_logged_on_with_force(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        with self._patch_run("", rc=0) as mock_run:
+            result = self.handler.deactivate("TESTUSER", force=True)
+            mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
+            mock_run.assert_called_once_with(
+                ["force", "TESTUSER", "logoff", "IMMED"],
+                tolerated=mock.ANY)
+            self.assertEqual(0, result['overallRC'])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_guest_is_logged_on_failed_acts_as_on(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 1, 'rc': 1, 'rs': 1}
+        with self._patch_run("", rc=0) as mock_run:
+            result = self.handler.deactivate("TESTUSER")
+            mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
+            mock_run.assert_called_once_with(
+                ["force", "TESTUSER", "logoff"],
+                tolerated=mock.ANY)
+            self.assertEqual(0, result['overallRC'])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_uses_userid_arg_not_rh_userid(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        self.assertEqual("TESTUSER", self.rh.userid)
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.deactivate("OTHERUSR", force=True)
+            mock_is_logged_on.assert_called_once_with(self.rh, "OTHERUSR")
+            mock_run.assert_called_once_with(
+                ["force", "OTHERUSR", "logoff", "IMMED"],
+                tolerated=mock.ANY)
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_run_returns_failure_rc(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        with self._patch_run("", rc=8) as mock_run:
+            result = self.handler.deactivate("TESTUSER")
+            mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
+            mock_run.assert_called_once_with(
+                ["force", "TESTUSER", "logoff"],
+                tolerated=mock.ANY)
+            self.assertEqual(8, result['overallRC'])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_failure_already_recorded_not_overwritten(
+            self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        self.rh.results['overallRC'] = 99
+        with self._patch_run("", rc=1):
+            result = self.handler.deactivate("TESTUSER")
+            self.assertEqual(1, result['overallRC'])
+            self.rh.updateResults.assert_not_called()

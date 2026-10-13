@@ -286,18 +286,14 @@
 [wsgi]
 
 # 
-# Whether auth will be used.
+# Whether auth will be used when sending HTTP requests to a running zvmsdk instance.
 # 
-# When sending http request from outside to running zvmsdk,
-# Client will be requested to input username/password in order
-# to authorize the call.
-# Set this to 'none' indicated no auth will be used and 'auth'
-# means username and password need to be specified.
+# This option determines the authentication mechanism required for external API calls.
 # 
 # Possible value:
-# 'none': no auth will be required
-# 'auth': need auth, currently pyjwt is used to return a token
-#         to caller if the username and password is correct.
+# 'none': No authentication will be required.
+# 'token': Token-based authentication is required. A JWT token will be issued to the caller
+#         if the request is valid and properly authenticated.
 # 
 # This param is optional
 #auth=none
@@ -507,6 +503,21 @@
 # 
 # This param is optional
 #swap_force_mdisk=False
+
+
+# 
+# Select whether SMAPI or vmcp is used.
+# 
+# When set to True (the default), SDK uses SMAPI to perform power operations
+# such as deactivating and querying virtual machines. When set to False, SDK
+# uses vmcp instead of SMAPI for those operations.
+# 
+# Possible values:
+#     True   - Use SMAPI query to execute (default).
+#     False  - Use vmcp.
+#     
+# This param is optional
+#use_smapi=True
 
 
 # 

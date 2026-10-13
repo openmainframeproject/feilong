@@ -168,6 +168,22 @@ Sample disk_pool values:
     ECKD:diskpo1
     FBA:testpool
     '''),
+    Opt('use_smapi',
+        section='zvm',
+        default=True,
+        required=False,
+        opt_type='bool',
+        help='''
+Select whether SMAPI or vmcp is used.
+
+When set to True (the default), SDK uses SMAPI to perform power operations
+such as deactivating and querying virtual machines. When set to False, SDK
+uses vmcp instead of SMAPI for those operations.
+
+Possible values:
+    True   - Use SMAPI query to execute (default).
+    False  - Use vmcp.
+    '''),
     Opt('user_profile',
         section='zvm',
         required=True,

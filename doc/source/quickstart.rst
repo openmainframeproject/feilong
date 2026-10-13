@@ -126,8 +126,38 @@ Preparation on BYOL
 
    replace G with BG at the end of the first definition line (starting with USER).
 
+7. Add privilege classes A and B for the VMCP path (optional)
+
+   If you set ``use_smapi=False`` in ``zvmsdk.conf``, Feilong will issue CP
+   commands directly via ``vmcp`` instead of going through the SMAPI servers.
+   The CP commands used by this path and their required privilege classes are:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 40 15 45
+
+      * - CP command
+        - Class
+        - Purpose
+      * - ``QUERY USERID``
+        - G
+        - Identify the BYOL's own userid
+      * - ``QUERY STORAGE``
+        - A, B, E
+        - Retrieve LPAR total and standby memory
+      * - ``QUERY CPLEVEL``
+        - G
+        - Retrieve z/VM CP version and IPL date
+      * - ``FORCE <userid> LOGOFF [IMMED]``
+        - A
+        - Power off (deactivate) a guest
+
+   Class G is included in every z/VM user by default. Class A must be
+   added explicitly to the BYOL's directory entry. If you also need FCP
+   volume management (step 6), add both A and B.
+
 .. note::
-   Preparation step 2, step 3, and step 6 require to logoff then
+   Preparation step 2, step 3, step 6, and step 7 require to logoff then
    re-logon the BYOL to make the updates become effective.
 
 Installation Requirements
