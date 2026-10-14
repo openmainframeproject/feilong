@@ -798,6 +798,33 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.host_get_guest_list()
         guest_list.assert_called_once_with()
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list(self, get_pcif_list):
+        pcif_list = [{"pcif": "0000015E", "status": "ATTACHED",
+                      "userid": "IIM00CA", "state": "ENABLED",
+                      "type": "NETH"},
+                     {"pcif": "0000015F", "status": "FREE",
+                      "userid": "", "state": "DISABLED",
+                      "type": "NETH"}]
+        get_pcif_list.return_value = pcif_list
+        result = self.api.host_get_pcif_list()
+        get_pcif_list.assert_called_once_with()
+        self.assertEqual(pcif_list, result)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list_empty(self, get_pcif_list):
+        get_pcif_list.return_value = []
+        result = self.api.host_get_pcif_list()
+        get_pcif_list.assert_called_once_with()
+        self.assertEqual([], result)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list_error(self, get_pcif_list):
+        get_pcif_list.side_effect = exception.SDKInternalError(msg="fake")
+        self.assertRaises(exception.SDKInternalError,
+                          self.api.host_get_pcif_list)
+        get_pcif_list.assert_called_once_with()
+
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_volumes")
     def test_host_get_diskpool_volumes(self, diskpool_vols):
         base.set_conf('zvm', 'disk_pool', None)
