@@ -42,7 +42,8 @@ create = {
                 'cschedule': parameter_types.cpupool,
                 'cshare': parameter_types.share,
                 'rdomain': parameter_types.rdomain,
-                'pcif': parameter_types.pcif
+                'pcif': parameter_types.pcif,
+                'logon_by': parameter_types.userid
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
