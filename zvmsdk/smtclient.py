@@ -4622,6 +4622,80 @@ class SMTClient(object):
                       % (userid, msg))
         return ''
 
+    def image_rename_dm(self, old_userid, new_userid):
+        """Rename a virtual machine using DIRMAINT and update all ZCC local tables.
+        Executes the SMAPI Image_Rename_DM call:
+            DIRM FOR old_userid CHNGID TO new_userid
+        After a successful SMAPI rename, updates all three ZCC local database
+        tables that store the guest userid so they remain consistent:
+          - guests.userid    (guest registry — delete old row, insert new row)
+          - switch.userid    (NIC-to-vswitch associations)
+          - fcp.assigner_id  (FCP device assignments)
+        :param str old_userid: Current userid (e.g., "TSTSYS2")
+        :param str new_userid: New userid (e.g., "TSTSYST")
+        :returns: SMAPI response list
+        :raises: SDKSMTRequestFailed if the SMAPI call fails
+        """
+
+        LOG.info("Calling SMAPI Image_Rename_DM: %s -> %s" % 
+                (old_userid, new_userid))
+
+        # Invokes: sudo /opt/zthin/bin/smcli Image_Rename_DM -T <old_userid> -k new_image_name=<new_userid>
+        rd = "SMAPI %s API Image_Rename_DM --operands -k new_image_name=%s" % (
+            old_userid, new_userid)
+
+        # Execute SMAPI call
+        action = "rename VM from '%s' to '%s'" % (old_userid, new_userid)
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+
+        LOG.info("SMAPI Image_Rename_DM completed successfully: %s -> %s",
+                 old_userid, new_userid)
+
+        # Update guests table — delete old row, re-insert with new userid.
+        # SELECT first to read the exact stored case of userid and the existing
+        # metadata, then write new_userid in matching case.
+        # row tuple: (id, userid, metadata, net_set, comments)
+        try:
+            row = self._GuestDbOperator.get_guest_by_userid(old_userid)
+            if row is None:
+                LOG.debug("guests table: no row found for userid '%s', "
+                          "nothing to rename", old_userid)
+            else:
+                stored_userid = row[1]
+                meta = row[2] if row[2] is not None else ''
+                new_userid_to_write = (new_userid.upper()
+                                       if stored_userid == stored_userid.upper()
+                                       else new_userid.lower())
+                self._GuestDbOperator.delete_guest_by_userid(old_userid)
+                self._GuestDbOperator.add_guest(new_userid_to_write, meta=meta)
+                LOG.debug("guests table: renamed userid '%s' -> '%s'",
+                          stored_userid, new_userid_to_write)
+        except Exception as e:
+            LOG.error("Failed to update guests table after renaming "
+                      "'%s' -> '%s': %s. Manual correction may be required.",
+                      old_userid, new_userid, str(e))
+
+        # Update switch table — NIC-to-vswitch associations keyed by userid.
+        # Case matching is handled inside switch_rename_userid().
+        try:
+            self._NetDbOperator.switch_rename_userid(old_userid, new_userid)
+        except Exception as e:
+            LOG.error("Failed to update switch table after renaming "
+                      "'%s' -> '%s': %s. Manual correction may be required.",
+                      old_userid, new_userid, str(e))
+
+        # Update fcp table — FCP device assignments keyed by assigner_id.
+        # Case matching is handled inside fcp_rename_assigner_id().
+        try:
+            self._FCPDbOperator.fcp_rename_assigner_id(old_userid, new_userid)
+        except Exception as e:
+            LOG.error("Failed to update fcp table after renaming "
+                      "'%s' -> '%s': %s. Manual correction may be required.",
+                      old_userid, new_userid, str(e))
+
+        return results['response']
+
 
 class FilesystemBackend(object):
     @classmethod

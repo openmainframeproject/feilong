@@ -242,6 +242,13 @@ class VMHandler(object):
 
         return info
 
+    @validation.schema(guest.rename)
+    def rename(self, userid, body=None):
+        new_userid = body['new_userid']
+        rename_value = self.client.send_request('guest_rename', userid, new_userid)
+        LOG.info(rename_value)
+        return rename_value
+
     @validation.schema(guest.nic_couple_uncouple)
     def nic_couple_uncouple(self, userid, vdev, body):
         info = body['info']
@@ -707,6 +714,21 @@ def guest_create(req):
     req.response.content_type = 'application/json'
     return req.response
 
+@util.SdkWsgify
+@tokens.validate
+def guest_rename(req):
+    def _guest_rename(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.rename(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_rename(userid, req)
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 @util.SdkWsgify
 @tokens.validate
