@@ -1699,6 +1699,49 @@ Get the SSI(Single System Image) cluster information of the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_ssi_info.tpl
    :language: javascript
 
+Get host PCI function list
+--------------------------
+
+**GET /host/pcif**
+
+Get the list of PCI functions (PCIFs) on the host, queried with the
+``vmcp query pcif`` command.
+
+.. note::
+
+   * Minimum prerequisite: z/VM 7.3 or later (or applicable APAR) is required
+     to support PCI functions.
+   * The command runs through ``vmcp`` on the guest that hosts Feilong, so
+     that guest must have privilege class B, which is required to run
+     QUERY PCIF. If it does not, the ``vmcp`` command fails and this API
+     returns an error.
+
+* Request:
+
+  No parameters needed.
+
+* Response code:
+
+  HTTP status code 200 on success. If the PCIF query fails, or if CP reports
+  that no PCI function was found on the host, an error is returned instead of
+  an empty list.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: host_pcif_list
+  - pcif: pcif_id
+  - status: pcif_status
+  - userid: pcif_userid
+  - state: pcif_state
+  - type: pcif_type
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_pcif_list.tpl
+   :language: javascript
+
 Image(s)
 ========
 

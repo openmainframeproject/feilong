@@ -134,6 +134,9 @@ ROUTE_LIST = (
     ('/host', {
         'GET': host.host_get_info,
     }),
+    ('/host/pcif', {
+        'GET': host.host_get_pcif_list,
+    }),
     ('/host/guests', {
         'GET': host.host_get_guest_list,
     }),

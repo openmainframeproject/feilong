@@ -39,6 +39,8 @@ import tempfile
 import time
 
 from smtLayer import smt
+from smtLayer.ReqHandle import ReqHandle
+from smtLayer.vmcpHandler import VMCPHandler
 
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -4621,6 +4623,14 @@ class SMTClient(object):
             LOG.error("Get kernel info from the guest %s failed: %s"
                       % (userid, msg))
         return ''
+
+    def get_pcif_list(self):
+        LOG.info("Querying PCIF list via vmcp")
+        rh = ReqHandle(smt=self._smt, captureLogs=False)
+        handler = VMCPHandler(rh)
+        pcif_list = handler.query_pcif()
+        LOG.debug("get_pcif_list: found %d PCIF entries" % len(pcif_list))
+        return pcif_list
 
 
 class FilesystemBackend(object):

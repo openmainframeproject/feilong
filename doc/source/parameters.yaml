@@ -664,6 +664,44 @@ host_ssi_info:
   in: body
   required: true
   type: list
+host_pcif_list:
+  description: |
+    The list of PCI functions (PCIFs) on the host. Each PCIF is one dict.
+    If there are no PCI functions on the host, an error is returned.
+  in: body
+  required: true
+  type: list
+pcif_id:
+  description: |
+    The PCI function device number, e.g. ``0000015E``.
+  in: body
+  required: true
+  type: string
+pcif_status:
+  description: |
+    The status of the PCI function, ``ATTACHED`` or ``FREE``.
+  in: body
+  required: true
+  type: string
+pcif_userid:
+  description: |
+    The userid of the virtual machine the PCI function is attached to.
+    It is an empty string when the PCI function is ``FREE``.
+  in: body
+  required: true
+  type: string
+pcif_state:
+  description: |
+    The state of the PCI function, ``ENABLED`` or ``DISABLED``.
+  in: body
+  required: true
+  type: string
+pcif_type:
+  description: |
+    The type of the PCI function, e.g. ``NETH``.
+  in: body
+  required: true
+  type: string
 image_info:
   description: |
     The image information for a specific image or all images.
