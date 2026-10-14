@@ -692,7 +692,7 @@ class SMTClient(object):
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
                   dedicate_vdevs, loaddev, account, comment_list,
-                  cschedule='', cshare='', rdomain='', pcif=''):
+                  cschedule='', cshare='', rdomain='', pcif='', logon_by=''):
         """ Create VM and add disks if specified. """
         if memory % 1024 == 0:
             mem = str(int(memory / 1024)) + 'G'
@@ -707,8 +707,9 @@ class SMTClient(object):
                'cpu': cpu, 'prof': profile,
                'max_cpu': max_cpu, 'max_mem': max_mem})
 
-        if CONF.zvm.default_admin_userid:
-            ids = CONF.zvm.default_admin_userid.split(' ')
+        logon_by_value = logon_by if logon_by else CONF.zvm.default_admin_userid
+        if logon_by_value:
+            ids = logon_by_value.split(' ')
             id_str = ':'.join(ids)
 
             rd += (' --logonby %s' % id_str)

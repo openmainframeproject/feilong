@@ -921,7 +921,7 @@ class SDKAPI(object):
                      ipl_from='', ipl_param='', ipl_loadparam='',
                      dedicate_vdevs=None, loaddev={}, account='',
                      comment_list=None, cschedule='', cshare='',
-                     rdomain='', pcif=''):
+                     rdomain='', pcif='', logon_by=''):
         """create a VM in z/VM
 
         :param userid: (str) the userid of the VM to be created
@@ -1095,7 +1095,7 @@ class SDKAPI(object):
                                          ipl_from, ipl_param, ipl_loadparam,
                                          dedicate_vdevs, loaddev, account,
                                          comment_list, cschedule, cshare,
-                                         rdomain, pcif)
+                                         rdomain, pcif, logon_by)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt, cpu_share=''):
