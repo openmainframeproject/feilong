@@ -2381,3 +2381,27 @@ class SDKAPI(object):
         :rtype: list
         """
         return self._hostops.host_get_ssi_info()
+
+    def host_get_pcif_list(self):
+        """Retrieve the list of PCI functions (PCIFs) visible on the z/VM host.
+
+        Returns an empty list when no PCIFs are found or on error.
+        :rtype: list
+            [{
+                "pcif": "0000015E",
+                "status": "ATTACHED",
+                "userid": "IIM00CA",
+                "state": "ENABLED",
+                "type": "NETH"
+            },
+            {
+                "pcif": "0000015F",
+                "status": "FREE",
+                "userid": "",
+                "state": "DISABLED",
+                "type": "NETH"
+            }]
+        """
+        action = "get host PCIF list"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._smtclient.get_pcif_list()
