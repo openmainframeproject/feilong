@@ -168,6 +168,22 @@ Sample disk_pool values:
     ECKD:diskpo1
     FBA:testpool
     '''),
+    Opt('use_smapi',
+        section='zvm',
+        default=True,
+        required=False,
+        opt_type='bool',
+        help='''
+Set to False to prioritize vmcp for guest query operations.
+
+When disabled, the SDK will attempt the vmcp query command first.
+If not set or set to any other value, smcli is used as the default
+query mechanism, with vmcp as a fallback.
+
+Possible values:
+    False  - Use vmcp query as the first preference.
+    True   - Use smcli (default), with vmcp as a fallback.
+    '''),
     Opt('user_profile',
         section='zvm',
         required=True,
