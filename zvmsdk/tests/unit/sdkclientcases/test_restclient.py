@@ -1071,7 +1071,7 @@ class RESTClientTestCase(unittest.TestCase):
     def test_image_import(self, get_token, request):
         method = 'POST'
         image_uri = 'file:///tmp/100.img'
-        image_meta = {'os_version': 'rhel7.2', 'md5sum': 'dummy'}
+        image_meta = {'os_version': 'rhel7.2', 'checksum': 'dummy'}
         url = '/images'
         body = {'image': {'image_name': '100.img',
                           'url': image_uri,
