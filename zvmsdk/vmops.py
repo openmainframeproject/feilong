@@ -77,6 +77,8 @@ class VMOps(object):
                 os_distro: (str) the operating system distribution of the guest
                 kernel_info: (str) the kernel version of the guest
         """
+        os_distro = ''
+        kernel_info = ''
         try:
             os_distro = self._smtclient.guest_get_os_version(userid)
             kernel_info = self._smtclient.guest_get_kernel_info(userid)
