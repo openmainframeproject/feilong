@@ -1842,7 +1842,7 @@ class SMTClient(object):
             "--operands",
             "-k grant_userid=%s" % userid,
             "-k switch_name=%s" % vswitch_name,
-            "-k user_vlan_id=%s" % vlan_id,
+            "-k user_vlan_id='%s'" % vlan_id,
             "-k persist=YES"))
 
         try:
