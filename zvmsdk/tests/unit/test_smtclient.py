@@ -2120,7 +2120,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             "--operands",
             "-k grant_userid=FakeID",
             "-k switch_name=FakeVS",
-            "-k user_vlan_id=FakeVLAN",
+            "-k user_vlan_id='FakeVLAN'",
+            "-k persist=YES"))
+
+        self._smtclient.set_vswitch_port_vlan_id(vswitch_name,
+                                                  userid, vlan_id)
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(zvmutils, 'get_smt_userid')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_set_vswitch_port_vlan_id_multi_vlan(self, request, get_smt_userid):
+        get_smt_userid.return_value = "SMTUSER"
+        request.return_value = {'overallRC': 0}
+        userid = 'FakeID'
+        vswitch_name = 'FakeVS'
+        vlan_id = '10 20'
+        rd = ' '.join((
+            "SMAPI SMTUSER API Virtual_Network_Vswitch_Set_Extended",
+            "--operands",
+            "-k grant_userid=FakeID",
+            "-k switch_name=FakeVS",
+            "-k user_vlan_id='10 20'",
             "-k persist=YES"))
 
         self._smtclient.set_vswitch_port_vlan_id(vswitch_name,
