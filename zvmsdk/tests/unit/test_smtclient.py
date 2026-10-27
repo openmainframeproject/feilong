@@ -5620,3 +5620,29 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         # case 3: error
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.host_get_ssi_info)
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list(self, rh_cls, handler_cls):
+        pcif_list = [{"pcif": "00000110", "status": "FREE", "userid": "",
+                      "state": "ENABLED", "type": "NETH"}]
+        rh_cls.return_value.results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                                       'logEntries': []}
+        handler_cls.return_value.query_pcif.return_value = pcif_list
+        self.assertEqual(pcif_list, self._smtclient.get_pcif_list())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list_no_pcif(self, rh_cls, handler_cls):
+        rh_cls.return_value.results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                                       'logEntries': []}
+        handler_cls.return_value.query_pcif.return_value = []
+        self.assertEqual([], self._smtclient.get_pcif_list())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list_query_failed(self, rh_cls, handler_cls):
+        handler_cls.return_value.query_pcif.side_effect = (
+            exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed'))
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.get_pcif_list)

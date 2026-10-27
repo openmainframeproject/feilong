@@ -570,6 +570,12 @@ def req_host_get_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_host_get_pcif_list(start_index, *args, **kwargs):
+    url = '/host/pcif'
+    body = None
+    return url, body
+
+
 def req_host_get_guest_list(start_index, *args, **kwargs):
     url = '/host/guests'
     body = None
@@ -1039,6 +1045,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_info},
+    'host_get_pcif_list': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_pcif_list},
     'host_get_guest_list': {
         'method': 'GET',
         'args_required': 0,
