@@ -459,17 +459,29 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     #########################################################
     #             Test cases for Table fcp                  #
     #########################################################
+    def _get_state_and_owner(self, fcp_id):
+        """Helper: read state/owner directly, since get_usage_of_fcp()
+        does not expose them."""
+        with database.get_fcp_conn() as conn:
+            result = conn.execute(
+                "SELECT state, owner FROM fcp WHERE fcp_id=?", (fcp_id,))
+            row = result.fetchone()
+            return row['state'], row['owner']
+
     def test_unreserve_fcps(self):
         """Test API unreserve_fcps"""
         # pre create data in FCP DB for test
         template_id = 'fakehost-1111-1111-1111-111111111111'
+        # 1111: assigner_id already '' - verify it stays ''
+        # 2222, 3333: assigner_id='user1', reserved=1 - verify reserved is
+        #       cleared and assigner_id is kept for cleanup on VM delete
         fcp_info_list = [('1111', '', 0, 0, 'c05076de33000111',
                           'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id),
-                         ('2222', '', 0, 1, 'c05076de33000222',
+                         ('2222', 'user1', 0, 1, 'c05076de33000222',
                           'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id),
-                         ('3333', '', 0, 1, 'c05076de33000333',
+                         ('3333', 'user1', 0, 1, 'c05076de33000333',
                           'c05076de33002641', '27', '02e4', 'active', 'user1',
                           template_id)]
         fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
@@ -488,12 +500,14 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # tmpl_id set to ''
             self.assertEqual('', tmpl_id)
             userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('2222')
-            self.assertEqual('', userid)
+            # assigner_id is kept, so reset_fcps_of_assigner() still finds
+            # the FCP when the VM is deleted
+            self.assertEqual('user1', userid)
             self.assertEqual(0, conn)
             self.assertEqual(0, reserved)
             self.assertEqual('', tmpl_id)
             userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp('3333')
-            self.assertEqual('', userid)
+            self.assertEqual('user1', userid)
             self.assertEqual(0, conn)
             self.assertEqual(0, reserved)
             self.assertEqual('', tmpl_id)
@@ -502,7 +516,90 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
     def test_reserve_fcps(self):
         """Test API reserve_fcps"""
-        pass
+        template_id = 'fakehost-2222-2222-2222-222222222222'
+        fcp_info_list = [('4444', '', 0, 0, 'c05076de33000444',
+                          'c05076de33002641', '27', '02e4', 'free', 'NONE',
+                          ''),
+                         ('5555', '', 0, 0, 'c05076de33000555',
+                          'c05076de33002641', '27', '02e4', 'free', 'NONE',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            self.db_op.reserve_fcps(fcp_id_list, 'user1', template_id)
+            for fcp_id in fcp_id_list:
+                userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp(
+                    fcp_id)
+                self.assertEqual('user1', userid)
+                self.assertEqual(1, reserved)
+                self.assertEqual(template_id, tmpl_id)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_reset_fcps_of_assigner(self):
+        """reset_fcps_of_assigner() clears the usage fields, sets an
+        FCP that is 'active' for the assigner 'free'/'none', leaves offline
+        FCPs and FCPs owned by another user alone, and returns the count.
+        """
+        template_id = 'fakehost-3333-3333-3333-333333333333'
+        fcp_info_list = [('6666', 'user1', 2, 1, 'c05076de33000666',
+                          'c05076de33002641', '27', '02e4', 'active', 'user1',
+                          template_id),
+                         ('7777', 'user1', 1, 1, 'c05076de33000777',
+                          'c05076de33002641', '27', '02e4', 'active', 'USER1',
+                          template_id),
+                         ('9999', 'user1', 1, 1, 'c05076de33000999',
+                          'c05076de33002641', '27', '02e4', 'offline', 'NONE',
+                          template_id),
+                         ('aaaa', 'user1', 1, 1, 'c05076de33000aaa',
+                          'c05076de33002641', '27', '02e4', 'active', 'user3',
+                          template_id),
+                         ('8888', 'user2', 1, 1, 'c05076de33000888',
+                          'c05076de33002641', '27', '02e4', 'active', 'user2',
+                          template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            # only user1's three FCPs should be reset; user2's must be
+            # untouched
+            count = self.db_op.reset_fcps_of_assigner('user1')
+            self.assertEqual(4, count)
+            for fcp_id in ('6666', '7777', '9999', 'aaaa'):
+                userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp(
+                    fcp_id)
+                self.assertEqual('', userid)
+                self.assertEqual(0, reserved)
+                self.assertEqual(0, conn)
+                self.assertEqual('', tmpl_id)
+            for fcp_id in ('6666', '7777'):
+                state, owner = self._get_state_and_owner(fcp_id)
+                self.assertEqual('free', state)
+                self.assertEqual('none', owner)
+            # an offline FCP must not become 'free' (allocatable)
+            state, owner = self._get_state_and_owner('9999')
+            self.assertEqual('offline', state)
+            self.assertEqual('NONE', owner)
+            # active for another user: still dedicated there, not 'free'
+            state, owner = self._get_state_and_owner('aaaa')
+            self.assertEqual('active', state)
+            self.assertEqual('user3', owner)
+            userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp(
+                '8888')
+            self.assertEqual('user2', userid)
+            self.assertEqual(1, reserved)
+            self.assertEqual(1, conn)
+            self.assertEqual(template_id, tmpl_id)
+            # user2's FCP must be untouched, including state/owner
+            state, owner = self._get_state_and_owner('8888')
+            self.assertEqual('active', state)
+            self.assertEqual('user2', owner)
+            # resetting an assigner with no FCPs left is a no-op, count=0
+            count = self.db_op.reset_fcps_of_assigner('user1')
+            self.assertEqual(0, count)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
     def test_bulk_insert(self):
         """Test API bulk_insert_zvm_fcp_info_into_fcp_table"""

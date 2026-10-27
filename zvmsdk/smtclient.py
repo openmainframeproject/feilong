@@ -2619,6 +2619,18 @@ class SMTClient(object):
     def delete_vm(self, userid):
         self.delete_userid(userid)
 
+        # Release the FCPs as soon as the user is gone, so a later failed
+        # step can't leave them reserved; logged here for every backend
+        try:
+            count = self._FCPDbOperator.reset_fcps_of_assigner(userid)
+            if count:
+                LOG.info("Released %d FCP device(s) of deleted user %s"
+                         % (count, userid))
+        except Exception:
+            LOG.exception("Failed to release the FCP devices of deleted "
+                          "user %s; they stay reserved until released "
+                          "manually." % userid)
+
         # remove userid from smapi namelist
         self.namelist_remove(zvmutils.get_namelist(), userid)
 
@@ -2639,11 +2651,6 @@ class SMTClient(object):
         action = "delete network record for user %s" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._NetDbOperator.switch_delete_record_for_userid(userid)
-
-        # cleanup db records from FCP table
-        action = "delete FCP records for user %s" % userid
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._FCPDbOperator.reset_fcps_of_assigner(userid)
 
         # cleanup persistent folder for guest
         self._pathutils.remove_guest_path(userid)

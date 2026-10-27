@@ -19,7 +19,7 @@
 import os
 import importlib
 from importlib.machinery import SourceFileLoader
-from mock import MagicMock, Mock, patch
+from mock import Mock, patch
 from scripts.tests.unit import base
 
 TEST_MODULE = None
@@ -72,7 +72,6 @@ class ZvmSdkGetPchidTestCase(base.ScriptsTestCase):
         mock_basicCfg.assert_called_once()
 
     @patch('zvmsdk.volumeop.FCPManager')
-    @patch('zvmsdk.database.get_fcp_conn', MagicMock())
     @patch('zvmsdk.utils.get_zhypinfo', Mock())
     @patch('zvmsdk.utils.get_cpc_sn')
     @patch('zvmsdk.utils.get_cpc_name')
@@ -90,12 +89,9 @@ class ZvmSdkGetPchidTestCase(base.ScriptsTestCase):
         mock_lpar_name.return_value = 'fake_lpar'
         mock_zvm_name.return_value = 'fake_zvm'
         # case1: part of PCHIDs has no inuse FCP
-        mock_fcg_mgr.db.get_pchids_of_all_inuse_fcp_devices.return_value = {
-            '02E0': '1A01 - 1A03',
-            '03FC': '1B02, 1B05'
-        }
-        mock_fcg_mgr.db.get_pchids_from_all_fcp_templates.return_value = [
-            '0A20', '0240', '0260', '03FC', '02E0']
+        mock_fcg_mgr.fcp_ops.get_pchid_usage.return_value = (
+            ['0A20', '0240', '0260', '03FC', '02E0'],
+            {'02E0': '1A01 - 1A03', '03FC': '1B02, 1B05'})
         expect = {'cpc_sn': 'fake_cpc_sn',
                   'cpc_name': 'fake_cpc_name',
                   'hypervisor_hostname': 'fake_zvm',
@@ -130,8 +126,8 @@ class ZvmSdkGetPchidTestCase(base.ScriptsTestCase):
         result = TEST_MODULE.get_fcp_devices_per_pchid()
         self.assertDictEqual(expect, result)
         # case2: all PCHIDs without inuse FCP
-        mock_fcg_mgr.db.get_pchids_of_all_inuse_fcp_devices.return_value = {}
-        mock_fcg_mgr.db.get_pchids_from_all_fcp_templates.return_value = ['0260', '0240']
+        mock_fcg_mgr.fcp_ops.get_pchid_usage.return_value = (
+            ['0260', '0240'], {})
         expect = {'cpc_sn': 'fake_cpc_sn',
                   'cpc_name': 'fake_cpc_name',
                   'hypervisor_hostname': 'fake_zvm',
@@ -150,8 +146,7 @@ class ZvmSdkGetPchidTestCase(base.ScriptsTestCase):
         result = TEST_MODULE.get_fcp_devices_per_pchid()
         self.assertDictEqual(expect, result)
         # case3: no FCP devices / PCHIDs in any FCP template
-        mock_fcg_mgr.db.get_pchids_of_all_inuse_fcp_devices.return_value = {}
-        mock_fcg_mgr.db.get_pchids_from_all_fcp_templates.return_value = []
+        mock_fcg_mgr.fcp_ops.get_pchid_usage.return_value = ([], {})
         expect = {'cpc_sn': 'fake_cpc_sn',
                   'cpc_name': 'fake_cpc_name',
                   'hypervisor_hostname': 'fake_zvm',

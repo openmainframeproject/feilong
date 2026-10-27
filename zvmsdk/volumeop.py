@@ -545,8 +545,13 @@ class FCPManager(object):
 
     def sync_db(self):
         """Sync FCP DB with the FCP info queried from zVM"""
-        with zvmutils.ignore_errors():
+        try:
             self._sync_db_with_zvm()
+        except Exception:
+            # don't break FCPManager() callers, but don't hide the failure
+            LOG.exception("Failed to sync FCP database with z/VM. FCP "
+                          "records may be stale until the next successful "
+                          "sync.")
 
     def _get_all_fcp_info(self, assigner_id, status=None):
         fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
@@ -2079,6 +2084,15 @@ class FCPVolumeManager(object):
     def _undedicate_fcp(self, fcp, assigner_id):
         try:
             self._smtclient.undedicate_device(assigner_id, fcp)
+            # Undedicated from this user, so z/VM now reports it free; write
+            # that at once so the FCP is allocatable before the next sync.
+            # Best-effort: a DB error must not fail a detach that worked.
+            try:
+                self.db.bulk_update_state_in_fcp_table([fcp], 'free', 'none')
+            except Exception:
+                LOG.exception("Failed to set FCP %s free in the FCP "
+                              "database after undedicating it from %s; the "
+                              "next sync will correct it." % (fcp, assigner_id))
         except exception.SDKSMTRequestFailed as err:
             rc = err.results['rc']
             rs = err.results['rs']
