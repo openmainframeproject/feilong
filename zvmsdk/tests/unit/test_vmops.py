@@ -288,9 +288,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         os_details = self.vmops.get_os_details('fakeid')
 
         ggov.assert_called_once_with('fakeid')
+        ggki.assert_not_called()
         mock_log.error.assert_called_once()
-        self.assertIn('os_distro', os_details)
-        self.assertIn('kernel_info', os_details)
+        self.assertEqual(os_details['os_distro'], '')
+        self.assertEqual(os_details['kernel_info'], '')
 
     @mock.patch("zvmsdk.vmops.LOG")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
@@ -302,9 +303,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
             msg="SMT request failed"
         )
 
+        os_details = self.vmops.get_os_details('fakeid')
+
         ggov.assert_called_once_with('fakeid')
         ggki.assert_called_once_with('fakeid')
         mock_log.error.assert_called_once()
+        self.assertEqual(os_details['os_distro'], 'RHEL8.4')
+        self.assertEqual(os_details['kernel_info'], '')
 
     @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")
