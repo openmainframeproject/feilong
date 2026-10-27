@@ -89,7 +89,33 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile, max_cpu, max_mem,
                                           '', '', '', vdevs, loaddev, account,
-                                          comment_list, '', '', '', '')
+                                          comment_list, '', '', '', '', logon_by='')
+        namelistadd.assert_called_once_with('TSTNLIST', userid)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_add")
+    @mock.patch("zvmsdk.smtclient.SMTClient.create_vm")
+    def test_create_vm_with_logon_by(self, create_vm, namelistadd):
+        userid = 'fakeuser'
+        cpu = 2
+        memory = '2g'
+        disk_list = []
+        user_profile = 'testprof'
+        max_cpu = 10
+        max_mem = '4G'
+        vdevs = ['1234']
+        loaddev = {'portname': '5678', 'lun': '0000000000000000'}
+        account = "dummy dummy"
+        comment_list = ['comment1', 'comment2 is here']
+        logon_by = 'BYUSER12'
+        self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile,
+                             max_cpu, max_mem, '', '', '', vdevs, loaddev,
+                             account, comment_list, '', '', '', '',
+                             logon_by=logon_by)
+        create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
+                                          user_profile, max_cpu, max_mem,
+                                          '', '', '', vdevs, loaddev, account,
+                                          comment_list, '', '', '', '',
+                                          logon_by=logon_by)
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.process_additional_minidisks")
@@ -262,9 +288,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         os_details = self.vmops.get_os_details('fakeid')
 
         ggov.assert_called_once_with('fakeid')
+        ggki.assert_not_called()
         mock_log.error.assert_called_once()
-        self.assertIn('os_distro', os_details)
-        self.assertIn('kernel_info', os_details)
+        self.assertEqual(os_details['os_distro'], '')
+        self.assertEqual(os_details['kernel_info'], '')
 
     @mock.patch("zvmsdk.vmops.LOG")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_get_kernel_info")
@@ -276,9 +303,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
             msg="SMT request failed"
         )
 
+        os_details = self.vmops.get_os_details('fakeid')
+
         ggov.assert_called_once_with('fakeid')
         ggki.assert_called_once_with('fakeid')
         mock_log.error.assert_called_once()
+        self.assertEqual(os_details['os_distro'], 'RHEL8.4')
+        self.assertEqual(os_details['kernel_info'], '')
 
     @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_active_cpu_addrs")

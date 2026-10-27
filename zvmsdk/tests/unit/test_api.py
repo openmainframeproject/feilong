@@ -181,7 +181,42 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, '', '', '',
-                                  '')
+                                  '', '')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_logon_by(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        logon_by = 'BYUSER12'
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              logon_by=logon_by)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', None, '', '', '',
+                                  '', logon_by)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_logon_by_lowercase(self, create_vm):
+        self.api.guest_create(self.userid, 1, 1024, [], 'profile', 10, '4G',
+                              logon_by='byuser12')
+        create_vm.assert_called_once_with(self.userid, 1, 1024, [],
+                                  'profile', 10, '4G',
+                                  '', '', '', [], {}, '', None, '', '', '',
+                                  '', 'BYUSER12')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_invalid_logon_by(self, create_vm):
+        for bad in ('USER1 USER2', 'TOOLONGID1', 'BAD$ID', 123):
+            self.assertRaises(exception.SDKInvalidInputFormat,
+                              self.api.guest_create, self.userid, 1, 1024,
+                              [], 'profile', 10, '4G', logon_by=bad)
+        create_vm.assert_not_called()
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_account(self, create_vm):
@@ -199,7 +234,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, account, None, '', '',
-                                  '', '')
+                                  '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_cpupool(self, create_vm):
@@ -217,7 +252,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, cschedule, '',
-                                  '', '')
+                                  '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_share(self, create_vm):
@@ -235,7 +270,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, '', cshare, '',
-                                  '')
+                                  '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_rdomain(self, create_vm):
@@ -253,7 +288,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, '', '',
-                                  rdomain, '')
+                                  rdomain, '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_pcif(self, create_vm):
@@ -271,7 +306,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, '', '',
-                                  '', pcif)
+                                  '', pcif, '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_comment(self, create_vm):
@@ -289,7 +324,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
                                   '', '', '', [], {}, '', comment_list, '',
-                                  '', '', '')
+                                  '', '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_profile(self, create_vm):
@@ -306,7 +341,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, 'abc', max_cpu, max_mem,
                                   '', '', '', [], {}, '', None, '', '', '',
-                                  '')
+                                  '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_no_disk_pool(self, create_vm):
@@ -356,7 +391,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, max_cpu, max_mem,
                                           '', '', '', [], {}, '', None, '', '', '',
-                                          '')
+                                          '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_no_disk_pool_swap_only(self, create_vm):
@@ -371,7 +406,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
                                           '', '', '', [], {}, '', None, '',
-                                          '', '', '')
+                                          '', '', '', '')
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_no_disk_pool_force_mdisk(self, create_vm):
@@ -417,7 +452,7 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
                                           '', '', '', [], {}, '', None, '',
-                                          '', '', '')
+                                          '', '', '', '')
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
@@ -797,6 +832,33 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_host_get_guest_list(self, guest_list):
         self.api.host_get_guest_list()
         guest_list.assert_called_once_with()
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list(self, get_pcif_list):
+        pcif_list = [{"pcif": "0000015E", "status": "ATTACHED",
+                      "userid": "IIM00CA", "state": "ENABLED",
+                      "type": "NETH"},
+                     {"pcif": "0000015F", "status": "FREE",
+                      "userid": "", "state": "DISABLED",
+                      "type": "NETH"}]
+        get_pcif_list.return_value = pcif_list
+        result = self.api.host_get_pcif_list()
+        get_pcif_list.assert_called_once_with()
+        self.assertEqual(pcif_list, result)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list_empty(self, get_pcif_list):
+        get_pcif_list.return_value = []
+        result = self.api.host_get_pcif_list()
+        get_pcif_list.assert_called_once_with()
+        self.assertEqual([], result)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
+    def test_host_get_pcif_list_error(self, get_pcif_list):
+        get_pcif_list.side_effect = exception.SDKInternalError(msg="fake")
+        self.assertRaises(exception.SDKInternalError,
+                          self.api.host_get_pcif_list)
+        get_pcif_list.assert_called_once_with()
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_volumes")
     def test_host_get_diskpool_volumes(self, diskpool_vols):

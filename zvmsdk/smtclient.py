@@ -39,6 +39,8 @@ import tempfile
 import time
 
 from smtLayer import smt
+from smtLayer.ReqHandle import ReqHandle
+from smtLayer.vmcpHandler import VMCPHandler
 
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -692,7 +694,7 @@ class SMTClient(object):
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
                   dedicate_vdevs, loaddev, account, comment_list,
-                  cschedule='', cshare='', rdomain='', pcif=''):
+                  cschedule='', cshare='', rdomain='', pcif='', logon_by=''):
         """ Create VM and add disks if specified. """
         if memory % 1024 == 0:
             mem = str(int(memory / 1024)) + 'G'
@@ -707,7 +709,9 @@ class SMTClient(object):
                'cpu': cpu, 'prof': profile,
                'max_cpu': max_cpu, 'max_mem': max_mem})
 
-        if CONF.zvm.default_admin_userid:
+        if logon_by:
+            rd += (' --logonby %s' % logon_by)
+        elif CONF.zvm.default_admin_userid:
             ids = CONF.zvm.default_admin_userid.split(' ')
             id_str = ':'.join(ids)
 
@@ -4621,6 +4625,14 @@ class SMTClient(object):
             LOG.error("Get kernel info from the guest %s failed: %s"
                       % (userid, msg))
         return ''
+
+    def get_pcif_list(self):
+        LOG.info("Querying PCIF list via vmcp")
+        rh = ReqHandle(smt=self._smt, captureLogs=False)
+        handler = VMCPHandler(rh)
+        pcif_list = handler.query_pcif()
+        LOG.debug("get_pcif_list: found %d PCIF entries" % len(pcif_list))
+        return pcif_list
 
 
 class FilesystemBackend(object):
