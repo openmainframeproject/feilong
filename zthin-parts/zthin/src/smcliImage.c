@@ -4485,7 +4485,7 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
 
     opterr = 0;
     const char * argumentsRequired = "Tk";
-    char tempStr[1];
+    char tempStr[2];
     char strMsg[250];
     const char * newImageNamePrefix = "new_image_name=";
 
@@ -4501,6 +4501,10 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             case 'k':
                 if (!strncmp(optarg, newImageNamePrefix, strlen(newImageNamePrefix))) {
                     newImageName = optarg + strlen(newImageNamePrefix);
+				} else {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    printf("ERROR: -k must be in the form new_image_name=<new_image_name>\n");
+                    return 1;
                 }
                 break;
 
@@ -4524,7 +4528,7 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 if (isprint (optopt)) {
-                    sprintf(tempStr,"%c", optopt);
+                    snprintf(tempStr, sizeof(tempStr), "%c", optopt);
                     if (strstr(argumentsRequired, tempStr)) {
                         printf("This option requires an argument: -%c\n", optopt);
                     } else {
