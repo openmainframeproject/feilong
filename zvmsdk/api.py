@@ -19,6 +19,7 @@
 import netaddr
 import six
 import ast
+import re
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -921,7 +922,7 @@ class SDKAPI(object):
                      ipl_from='', ipl_param='', ipl_loadparam='',
                      dedicate_vdevs=None, loaddev={}, account='',
                      comment_list=None, cschedule='', cshare='',
-                     rdomain='', pcif=''):
+                     rdomain='', pcif='', logon_by=''):
         """create a VM in z/VM
 
         :param userid: (str) the userid of the VM to be created
@@ -993,10 +994,26 @@ class SDKAPI(object):
         :param cshare: a command input for share settings
         :param rdomain: a command input for relocation domain
         :param pcif: a command input for PCI function
+        :param logon_by: (str) a single userid (1-8 alphanumeric characters,
+               converted to upper case) that is allowed to log on to the
+               guest (the LOGONBY statement in the user directory). If
+               specified, it replaces ``CONF.zvm.default_admin_userid`` for
+               this guest, so the cloud administrators listed in that option
+               will not be able to log on to the guest. If not specified,
+               ``CONF.zvm.default_admin_userid`` is used.
         """
         dedicate_vdevs = dedicate_vdevs or []
 
         userid = userid.upper()
+        if logon_by:
+            # same rule as the REST schema: a single 1-8 char alphanumeric userid
+            if (not isinstance(logon_by, six.string_types) or
+                    not re.match(r'^[a-zA-Z0-9]{1,8}\Z', logon_by)):
+                errmsg = ('Invalid "logon_by" input, it should be a single '
+                          'userid of 1-8 alphanumeric characters.')
+                LOG.error(errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
+            logon_by = logon_by.upper()
         if disk_list:
 
             # special case for swap disk, for boot from volume, might add swap
@@ -1095,7 +1112,7 @@ class SDKAPI(object):
                                          ipl_from, ipl_param, ipl_loadparam,
                                          dedicate_vdevs, loaddev, account,
                                          comment_list, cschedule, cshare,
-                                         rdomain, pcif)
+                                         rdomain, pcif, logon_by)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt, cpu_share=''):

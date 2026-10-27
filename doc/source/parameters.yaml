@@ -188,6 +188,17 @@ guest_comment_list:
   in: body
   required: false
   type: list
+guest_logon_by:
+  description: |
+    A single userid (1-8 alphanumeric characters, converted to upper case)
+    that is allowed to log on to the guest (the LOGONBY
+    statement in the user directory). If specified, it replaces
+    ``CONF.zvm.default_admin_userid`` for this guest, so the cloud
+    administrators listed in that option will not be able to log on to
+    the guest. If not specified, ``CONF.zvm.default_admin_userid`` is used.
+  in: body
+  required: false
+  type: string
 user_profile_guest:
   description: |
     Profile of guest, ``null`` is also allowed.
