@@ -222,6 +222,34 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_with_logon_by(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        base.set_conf('zvm', 'user_default_share_unit', 0)
+        rd = ('makevm fakeuser directory LBYONLY 1G G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setIniStandbyRem '
+              '--logonby BYUSER12 --ipl 0100')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                  max_cpu, max_mem, '', '', '', [], {}, '',
+                                  [], logon_by='BYUSER12')
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
     def test_create_vm_1025m(self, add_guest, request, add_mdisks):
         user_id = 'fakeuser'
         cpu = 2
@@ -3269,8 +3297,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         remove_mdisk.assert_any_call(userid, vdev_list[0])
         remove_mdisk.assert_any_call(userid, vdev_list[1])
 
-    @mock.patch.object(smtclient.SMTClient, 'image_performance_query')
-    def test_get_image_performance_info(self, ipq):
+    @mock.patch.object(zvmutils, 'get_namelist')
+    @mock.patch.object(smtclient.SMTClient, 'system_image_performance_query')
+    def test_get_image_performance_info(self, ipq, get_namelist):
+        get_namelist.return_value = 'TSTNLIST'
         ipq.return_value = {
             u'FAKEVM': {
                 'used_memory': u'5222192 KB',
@@ -3279,12 +3309,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                 'userid': u'FKAEVM',
                 'max_memory': u'8388608 KB'}}
         info = self._smtclient.get_image_performance_info('FAKEVM')
+        ipq.assert_called_once_with('TSTNLIST')
         self.assertEqual(info['used_memory'], '5222192 KB')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_performance_query')
-    def test_get_image_performance_info_not_exist(self, ipq):
+    @mock.patch.object(zvmutils, 'get_namelist')
+    @mock.patch.object(smtclient.SMTClient, 'system_image_performance_query')
+    def test_get_image_performance_info_not_exist(self, ipq, get_namelist):
+        get_namelist.return_value = 'TSTNLIST'
         ipq.return_value = {}
         info = self._smtclient.get_image_performance_info('fakevm')
+        ipq.assert_called_once_with('TSTNLIST')
         self.assertEqual(info, None)
 
     def test_is_vdev_valid_true(self):
@@ -3513,7 +3547,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
-            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            _SHA512, '1000:CYL', '1024000',
             'rootonly')
         get_user_direct.assert_called_once_with(userid)
         guest_start.assert_called_once_with(userid)
@@ -3589,7 +3623,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
-            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            _SHA512, '1000:CYL', '1024000',
             'rootonly')
         get_user_direct.assert_called_once_with(userid)
         get_power_state.assert_called_once_with(userid)
@@ -3671,8 +3705,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'RHEL8.3',
-                                                 '547396211b558490d31e'
-                                                 '0de8e15eef0c',
+                                                 _SHA512,
                                                  '1000:CYL', '1024000',
                                                  'rootonly')
         get_user_direct.assert_called_once_with(userid)
@@ -3759,7 +3792,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
-            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            _SHA512, '1000:CYL', '1024000',
             'rootonly')
         guest_start.assert_not_called()
         get_power_state.assert_called_with(userid)
@@ -3845,8 +3878,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
-                                                 '547396211b558490d31e0'
-                                                 'de8e15eef0c',
+                                                 _SHA512,
                                                  '1000:CYL',
                                                  '1024000',
                                                  'rootonly')
@@ -3916,7 +3948,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'rhel7.0',
-            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            _SHA512, '1000:CYL', '1024000',
             'rootonly')
         guest_start.assert_called_once_with(userid)
         get_os_mock.assert_not_called()
@@ -4729,6 +4761,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                             resize, get_avail,
                                             exec_cmd, request,
                                             get_offline, get_defined):
+        base.set_conf('zvm', 'user_default_share_unit', 0)
         userid = 'testuid'
         count = 4
         cpu_share = 'RELATIVE 100'
@@ -5870,3 +5903,29 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         # case 3: error
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.host_get_ssi_info)
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list(self, rh_cls, handler_cls):
+        pcif_list = [{"pcif": "00000110", "status": "FREE", "userid": "",
+                      "state": "ENABLED", "type": "NETH"}]
+        rh_cls.return_value.results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                                       'logEntries': []}
+        handler_cls.return_value.query_pcif.return_value = pcif_list
+        self.assertEqual(pcif_list, self._smtclient.get_pcif_list())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list_no_pcif(self, rh_cls, handler_cls):
+        rh_cls.return_value.results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                                       'logEntries': []}
+        handler_cls.return_value.query_pcif.return_value = []
+        self.assertEqual([], self._smtclient.get_pcif_list())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    def test_get_pcif_list_query_failed(self, rh_cls, handler_cls):
+        handler_cls.return_value.query_pcif.side_effect = (
+            exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed'))
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.get_pcif_list)
