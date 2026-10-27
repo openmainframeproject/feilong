@@ -4722,12 +4722,23 @@ class SMTClient(object):
                     self.set_vswitch_port_vlan_id(vswitch, new_userid,
                                                   ' '.join(vlan_ids))
                 except exception.SDKBaseException as err:
-                    # Clean up newly granted user authorization to prevent dual authorization
+                    msg = err.format_message()
+                    # Clean up the newly granted authorization to prevent
+                    # dual authorization. A failure here must not mask the
+                    # original error, but it must not be silent either:
+                    # log it and tell the caller.
                     try:
                         self.revoke_user_from_vswitch(vswitch, new_userid)
-                    except Exception:
-                        pass
-                    msg = err.format_message()
+                    except Exception as revoke_err:
+                        LOG.error("Failed to revoke '%s' from vswitch '%s' "
+                                  "while cleaning up after the failure to "
+                                  "set its VLAN ids (%s): %s",
+                                  new_userid, vswitch, msg, revoke_err)
+                        msg = ("%s; additionally, revoking '%s' from vswitch "
+                               "'%s' failed (%s), so '%s' may still be "
+                               "authorized on this vswitch together with "
+                               "'%s'" % (msg, new_userid, vswitch,
+                                         revoke_err, new_userid, old_userid))
                     LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
                               "directory, but updating the %s failed: %s. "
                               "Already updated: %s. Manual correction is "
