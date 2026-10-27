@@ -16,7 +16,6 @@
 #    under the License.
 
 
-import re
 import netaddr
 import six
 import ast
