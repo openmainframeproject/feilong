@@ -202,6 +202,7 @@ Create a VM in z/VM.
   - loaddev: guest_loaddev
   - account: guest_account
   - comment_list: guest_comment_list
+  - logon_by: guest_logon_by
 
 
 * Request sample:
