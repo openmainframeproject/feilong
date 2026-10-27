@@ -89,7 +89,33 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile, max_cpu, max_mem,
                                           '', '', '', vdevs, loaddev, account,
-                                          comment_list, '', '', '', '')
+                                          comment_list, '', '', '', '', logon_by='')
+        namelistadd.assert_called_once_with('TSTNLIST', userid)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_add")
+    @mock.patch("zvmsdk.smtclient.SMTClient.create_vm")
+    def test_create_vm_with_logon_by(self, create_vm, namelistadd):
+        userid = 'fakeuser'
+        cpu = 2
+        memory = '2g'
+        disk_list = []
+        user_profile = 'testprof'
+        max_cpu = 10
+        max_mem = '4G'
+        vdevs = ['1234']
+        loaddev = {'portname': '5678', 'lun': '0000000000000000'}
+        account = "dummy dummy"
+        comment_list = ['comment1', 'comment2 is here']
+        logon_by = 'BYUSER12'
+        self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile,
+                             max_cpu, max_mem, '', '', '', vdevs, loaddev,
+                             account, comment_list, '', '', '', '',
+                             logon_by=logon_by)
+        create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
+                                          user_profile, max_cpu, max_mem,
+                                          '', '', '', vdevs, loaddev, account,
+                                          comment_list, '', '', '', '',
+                                          logon_by=logon_by)
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.process_additional_minidisks")
