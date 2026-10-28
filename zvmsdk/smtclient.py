@@ -83,10 +83,10 @@ class SMTClient(object):
     def __init__(self):
         self._smt = smt.SMT()
         self._pathutils = zvmutils.PathUtils()
-        self._NetDbOperator = database.NetworkDbOperator()
-        self._GuestDbOperator = database.GuestDbOperator()
-        self._ImageDbOperator = database.ImageDbOperator()
-        self._FCPDbOperator = database.FCPDbOperator()
+        self._NetDbOperator = database.get_db_backend().network()
+        self._GuestDbOperator = database.get_db_backend().guest()
+        self._ImageDbOperator = database.get_db_backend().image()
+        self._FCPDbOperator = database.get_db_backend().fcp()
 
     def _request(self, requestData):
         try:
