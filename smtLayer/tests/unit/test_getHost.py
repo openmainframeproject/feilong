@@ -146,6 +146,51 @@ class SMTGetHostTestCase(base.SMTTestCase):
         self.assertEqual(0, ret_total)
         self.assertEqual(0, ret_used)
 
+    @mock.patch.object(ReqHandle.ReqHandle, 'printLn')
+    @mock.patch('smtLayer.getHost.VMCPHandler')
+    @mock.patch('smtLayer.getHost.invokeSMCLI')
+    @mock.patch('smtLayer.getHost.config.CONF')
+    def test_getFcpDevices_vmcp_path(self, mock_conf, mock_smcli,
+                                     mock_vmcp_cls, mock_print):
+        mock_conf.zvm.use_smapi = False
+        mock_vmcp_cls.return_value.query_fcp_formatted.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': 'FCP device number: E800'}
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.assertEqual(0, getHost.getFcpDevices(rh))
+        mock_smcli.assert_not_called()
+        mock_print.assert_called_once_with('N', 'FCP device number: E800')
+
+    @mock.patch.object(ReqHandle.ReqHandle, 'printLn')
+    @mock.patch('smtLayer.getHost.VMCPHandler')
+    @mock.patch('smtLayer.getHost.invokeSMCLI')
+    @mock.patch('smtLayer.getHost.config.CONF')
+    def test_getFcpDevices_vmcp_path_fails(self, mock_conf, mock_smcli,
+                                           mock_vmcp_cls, mock_print):
+        mock_conf.zvm.use_smapi = False
+        mock_vmcp_cls.return_value.query_fcp_formatted.return_value = {
+            'overallRC': 1, 'rc': 4, 'rs': 28, 'errno': 0,
+            'strError': '', 'response': ''}
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.assertEqual(1, getHost.getFcpDevices(rh))
+        mock_smcli.assert_not_called()
+
+    @mock.patch.object(ReqHandle.ReqHandle, 'printLn')
+    @mock.patch('smtLayer.getHost.VMCPHandler')
+    @mock.patch('smtLayer.getHost.invokeSMCLI')
+    @mock.patch('smtLayer.getHost.config.CONF')
+    def test_getFcpDevices_smapi_path(self, mock_conf, mock_smcli,
+                                      mock_vmcp_cls, mock_print):
+        mock_conf.zvm.use_smapi = True
+        mock_smcli.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': 'FCP device number: E800'}
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.assertEqual(0, getHost.getFcpDevices(rh))
+        mock_smcli.assert_called_once_with(
+            rh, 'System_WWPN_Query', ['-T', 'dummy'])
+        mock_vmcp_cls.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # Minimal /proc/sysinfo content that satisfies getGeneralInfo's parser so
