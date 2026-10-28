@@ -55,8 +55,10 @@ class SMTGetHostTestCase(base.SMTTestCase):
         size = getHost._getDiskSize(parts)
         self.assertEqual(7384596480, size)
 
+    @mock.patch('smtLayer.getHost.config.CONF')
     @mock.patch.object(getHost, 'invokeSMCLI')
-    def test_getCPUCount_without_STANDBY(self, fake_smcli):
+    def test_getCPUCount_without_STANDBY(self, fake_smcli, mock_conf):
+        mock_conf.zvm.use_smapi = True
         fake_smcli.return_value = {
             'overallRC': 0, 'rc': 0,
             'rs': 0, 'errno': 0,
@@ -75,8 +77,10 @@ class SMTGetHostTestCase(base.SMTTestCase):
         self.assertEqual(4, ret_total)
         self.assertEqual(4, ret_used)
 
+    @mock.patch('smtLayer.getHost.config.CONF')
     @mock.patch.object(getHost, 'invokeSMCLI')
-    def test_getCPUCount_with_STANDBY(self, fake_smcli):
+    def test_getCPUCount_with_STANDBY(self, fake_smcli, mock_conf):
+        mock_conf.zvm.use_smapi = True
         fake_smcli.return_value = {
             'overallRC': 0, 'rc': 0,
             'rs': 0, 'errno': 0,
@@ -95,8 +99,10 @@ class SMTGetHostTestCase(base.SMTTestCase):
         self.assertEqual(4, ret_total)
         self.assertEqual(3, ret_used)
 
+    @mock.patch('smtLayer.getHost.config.CONF')
     @mock.patch.object(getHost, 'invokeSMCLI')
-    def test_getCPUCount_no_CPU(self, fake_smcli):
+    def test_getCPUCount_no_CPU(self, fake_smcli, mock_conf):
+        mock_conf.zvm.use_smapi = True
         fake_smcli.return_value = {
             'overallRC': 0, 'rc': 0,
             'rs': 0, 'errno': 0,
@@ -111,8 +117,10 @@ class SMTGetHostTestCase(base.SMTTestCase):
         self.assertEqual(0, ret_total)
         self.assertEqual(0, ret_used)
 
+    @mock.patch('smtLayer.getHost.config.CONF')
     @mock.patch.object(getHost, 'invokeSMCLI')
-    def test_getCPUCount_noTypebutOOO(self, fake_smcli):
+    def test_getCPUCount_noTypebutOOO(self, fake_smcli, mock_conf):
+        mock_conf.zvm.use_smapi = True
         fake_smcli.return_value = {
             'overallRC': 0, 'rc': 0,
             'rs': 0, 'errno': 0,
@@ -131,8 +139,10 @@ class SMTGetHostTestCase(base.SMTTestCase):
         self.assertEqual(0, ret_total)
         self.assertEqual(0, ret_used)
 
+    @mock.patch('smtLayer.getHost.config.CONF')
     @mock.patch.object(getHost, 'invokeSMCLI')
-    def test_getCPUCount_with_overallRC_error(self, fake_smcli):
+    def test_getCPUCount_with_overallRC_error(self, fake_smcli, mock_conf):
+        mock_conf.zvm.use_smapi = True
         fake_smcli.return_value = {
             'overallRC': 24, 'rc': 0,
             'rs': 0, 'errno': 0,
@@ -143,6 +153,33 @@ class SMTGetHostTestCase(base.SMTTestCase):
                                 smt=mock.Mock())
         ret_total, ret_used = getHost.getCPUCount(rh)
         print("return value5:", ret_total, ret_used)
+        self.assertEqual(0, ret_total)
+        self.assertEqual(0, ret_used)
+
+    # --- VMCP path tests for getCPUCount ---
+
+    @mock.patch('smtLayer.getHost.VMCPHandler')
+    @mock.patch('smtLayer.getHost.config.CONF')
+    def test_getCPUCount_vmcp_path(self, mock_conf, mock_vmcp_cls):
+        mock_conf.zvm.use_smapi = False
+        mock_instance = mock.Mock()
+        mock_instance.get_cpu_count.return_value = (4, 3)
+        mock_vmcp_cls.return_value = mock_instance
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
+        self.assertEqual(4, ret_total)
+        self.assertEqual(3, ret_used)
+        mock_instance.get_cpu_count.assert_called_once_with()
+
+    @mock.patch('smtLayer.getHost.VMCPHandler')
+    @mock.patch('smtLayer.getHost.config.CONF')
+    def test_getCPUCount_vmcp_path_fails(self, mock_conf, mock_vmcp_cls):
+        mock_conf.zvm.use_smapi = False
+        mock_instance = mock.Mock()
+        mock_instance.get_cpu_count.return_value = (0, 0)
+        mock_vmcp_cls.return_value = mock_instance
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        ret_total, ret_used = getHost.getCPUCount(rh)
         self.assertEqual(0, ret_total)
         self.assertEqual(0, ret_used)
 

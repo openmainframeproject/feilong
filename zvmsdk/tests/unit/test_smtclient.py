@@ -2414,6 +2414,67 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(5, request.call_count)
         self.assertEqual(4, ts.call_count)
 
+    # --- VMCP path tests for _create_nic active branch ---
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_success(self, mock_conf, mock_create,
+                                            power_state, request, add_record):
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {'overallRC': 0, 'response': '', 'strError': ''}
+        power_state.return_value = 'on'
+        # DM request must succeed too
+        request.return_value = {'overallRC': 0}
+        self._smtclient._create_nic('fakenode', '0600',
+                                    nic_id='fake_nic', active=True)
+        mock_create.assert_called_once_with('fakenode', '0600')
+        add_record.assert_called_once_with('fakenode', '0600', port='fake_nic')
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_fails_rollback_ok(
+            self, mock_conf, mock_create, power_state, request, add_record):
+        """VMCP create fails, rollback (_DM delete) succeeds -> SDKConflictError(rs=6)"""
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'strError': 'HCP045E', 'response': 'HCP045E'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}   # rollback succeeds
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient._create_nic,
+                          'fakenode', '0600', active=True)
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_fails_rollback_fails(
+            self, mock_conf, mock_create, power_state, request, add_record):
+        """VMCP create fails, rollback also fails -> SDKNetworkOperationError(rs=4)"""
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'strError': 'HCP045E', 'response': 'HCP045E'
+        }
+        power_state.return_value = 'on'
+        # First _request (DM create) succeeds; second (rollback DM delete) fails
+        request.side_effect = [
+            {'overallRC': 0},
+            exception.SDKSMTRequestFailed({'rc': 500, 'rs': 1}, 'rollback failed'),
+        ]
+        self.assertRaises(exception.SDKNetworkOperationError,
+                          self._smtclient._create_nic,
+                          'fakenode', '0600', active=True)
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_user_direct(self, req):
         req.return_value = {'response': 'OK'}
@@ -4060,6 +4121,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(result.keys(), expected.keys())
         self.assertEqual(result['OSA'], expected['OSA'])
         self.assertEqual(result['HIPER'], expected['HIPER'])
+
+    # --- VMCP path tests for _query_OSA ---
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.query_osa')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_query_OSA_vmcp_success(self, mock_conf, mock_query_osa):
+        mock_conf.zvm.use_smapi = False
+        expected = {'OSA': {'FREE': ['0440'], 'BOXED': [], 'OFFLINE': [],
+                            'ATTACHED': []}}
+        mock_query_osa.return_value = expected
+        result = self._smtclient._query_OSA()
+        self.assertEqual(result, expected)
+        mock_query_osa.assert_called_once_with()
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.query_osa')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_query_OSA_vmcp_no_osa(self, mock_conf, mock_query_osa):
+        mock_conf.zvm.use_smapi = False
+        mock_query_osa.return_value = {}
+        result = self._smtclient._query_OSA()
+        self.assertEqual(result, {})
 
     @mock.patch.object(smtclient.SMTClient, '_query_OSA')
     def test_is_OSA_free_noOSA(self, query_osa):

@@ -508,12 +508,24 @@
 # 
 # Select whether SMAPI or vmcp is used.
 # 
-# When set to True (the default), SDK uses SMAPI to perform power operations
-# such as deactivating and querying virtual machines. When set to False, SDK
-# uses vmcp instead of SMAPI for those operations.
+# When set to True (the default), SDK uses SMAPI for all operations.
+# When set to False, SDK uses the following CP commands through vmcp
+# instead of SMAPI:
+# - QUERY STORAGE               (LPAR total and standby memory)
+# - QUERY CPLEVEL               (z/VM CP version and IPL date)
+# - FORCE <userid> LOGOFF       (power off a guest)
+# - QUERY PROCESSORS EXPANDED   (host CPU counting)
+# - QUERY OSA                   (OSA device query)
+# - QUERY FCP WWPN              (FCP WWPN query)
+# - PURGE <userid> RDR ALL      (reader purge)
+# - FOR <userid> CMD DEFINE NIC (NIC creation on an active guest)
+# - QUERY NIC USERID <userid>   (NIC verification after creation)
+# - FOR <userid> CMD UNCOUPLE   (NIC uncouple on an active guest)
+# - FOR <userid> CMD DETACH NIC (NIC detach on an active guest)
+# - FOR <userid> CMD LINK       (disk link on an active guest)
 # 
 # Possible values:
-#     True   - Use SMAPI query to execute (default).
+#     True   - Use SMAPI (default).
 #     False  - Use vmcp.
 #     
 # This param is optional
