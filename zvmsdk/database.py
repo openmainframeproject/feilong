@@ -28,7 +28,9 @@ import itertools
 
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import db_interface
 from zvmsdk import exception
+from zvmsdk import fcp_ops
 from zvmsdk import log
 from zvmsdk import utils
 
@@ -47,6 +49,8 @@ _DBLOCK_NETWORK = threading.RLock()
 _DBLOCK_IMAGE = threading.RLock()
 _DBLOCK_GUEST = threading.RLock()
 _DBLOCK_FCP = threading.RLock()
+_DB_BACKEND = None
+_DB_BACKEND_LOCK = threading.Lock()
 
 
 @contextlib.contextmanager
@@ -151,7 +155,7 @@ def _init_db_conn(db_file):
                            isolation_level=None)
 
 
-class NetworkDbOperator(object):
+class NetworkDbOperator(db_interface.NetworkDbOperatorBase):
 
     def __init__(self):
         self._module_id = 'network'
@@ -318,7 +322,7 @@ class NetworkDbOperator(object):
         return self._parse_switch_record(switch_list)
 
 
-class FCPDbOperator(object):
+class FCPDbOperator(db_interface.FCPDbOperatorBase):
 
     def __init__(self):
         self._module_id = 'volume'
@@ -2351,7 +2355,7 @@ class FCPDbOperator(object):
         return pchid_to_phy_wwpn_dict
 
 
-class ImageDbOperator(object):
+class ImageDbOperator(db_interface.ImageDbOperatorBase):
 
     def __init__(self):
         self._create_image_table()
@@ -2426,7 +2430,7 @@ class ImageDbOperator(object):
             conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
 
 
-class GuestDbOperator(object):
+class GuestDbOperator(db_interface.GuestDbOperatorBase):
 
     def __init__(self):
         self._create_guests_table()
@@ -2702,3 +2706,81 @@ class GuestDbOperator(object):
             return None
         # Code shouldn't come here, just in case
         return None
+
+
+class SqliteBackend(db_interface.DbBackend):
+    """The default backend: local SQLite files under CONF.database.dir."""
+
+    def network(self):
+        return NetworkDbOperator()
+
+    def guest(self):
+        return GuestDbOperator()
+
+    def image(self):
+        return ImageDbOperator()
+
+    def fcp(self):
+        return FCPDbOperator()
+
+    def fcp_ops(self):
+        return fcp_ops.TransactionalFcpOperations(FCPDbOperator(),
+                                                  get_fcp_conn)
+
+
+# entry point group in which installed packages register backend factories
+DB_BACKEND_GROUP = 'zvmsdk.db_backends'
+
+
+def _find_backend_entry_points(name):
+    """Return the entry points called name in DB_BACKEND_GROUP."""
+    try:
+        from importlib import metadata
+    except ImportError:  # Python < 3.8
+        import pkg_resources
+        return list(pkg_resources.iter_entry_points(DB_BACKEND_GROUP, name))
+    eps = metadata.entry_points()
+    if hasattr(eps, 'select'):
+        return list(eps.select(group=DB_BACKEND_GROUP, name=name))
+    return [ep for ep in eps.get(DB_BACKEND_GROUP, ()) if ep.name == name]
+
+
+def _load_db_backend(name):
+    if name == 'sqlite':
+        return SqliteBackend()
+    entry_points = _find_backend_entry_points(name)
+    # the same package can be found twice on sys.path
+    targets = set(getattr(ep, 'value', str(ep)) for ep in entry_points)
+    if not entry_points:
+        raise exception.SDKDatabaseException(
+            msg="Invalid [database] backend '%s': expected 'sqlite' or the "
+                "name of a backend registered in the '%s' entry point group"
+                % (name, DB_BACKEND_GROUP))
+    if len(targets) > 1:
+        raise exception.SDKDatabaseException(
+            msg="Database backend '%s' is registered more than once: %s"
+                % (name, ', '.join(sorted(targets))))
+    try:
+        factory = entry_points[0].load()
+        backend = factory()
+    except Exception as err:
+        raise exception.SDKDatabaseException(
+            msg="Failed to load database backend '%s': %s"
+                % (name, six.text_type(err)))
+    if not isinstance(backend, db_interface.DbBackend):
+        raise exception.SDKDatabaseException(
+            msg="Database backend '%s' returned %r, which is not a "
+                "zvmsdk.db_interface.DbBackend" % (name, backend))
+    return backend
+
+
+def get_db_backend():
+    """Return the database backend selected by [database] backend."""
+    global _DB_BACKEND
+    if _DB_BACKEND is None:
+        with _DB_BACKEND_LOCK:
+            if _DB_BACKEND is None:
+                name = CONF.database.backend
+                _DB_BACKEND = _load_db_backend(name)
+                LOG.info("Using database backend: %s", name)
+    return _DB_BACKEND

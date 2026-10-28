@@ -1,6 +1,20 @@
 [database]
 
 # 
+# Database backend used by SDK.
+# 
+# 'sqlite' (the default) keeps the SDK data in local SQLite files under the
+# directory set by the 'dir' option. Any other value is the name of a backend
+# that an installed package registers in the 'zvmsdk.db_backends' entry point
+# group: a callable that takes no arguments and returns a
+# zvmsdk.db_interface.DbBackend instance. The backend runs inside the SDK
+# processes with their privileges, see the database backends documentation.
+# 
+# This param is optional
+#backend=sqlite
+
+
+# 
 # Directory to store database.
 # 
 # SDK databases are used to store a set of tables which contain the

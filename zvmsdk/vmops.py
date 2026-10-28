@@ -48,8 +48,8 @@ class VMOps(object):
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
         self._namelist = zvmutils.get_namelist()
-        self._GuestDbOperator = database.GuestDbOperator()
-        self._ImageDbOperator = database.ImageDbOperator()
+        self._GuestDbOperator = database.get_db_backend().guest()
+        self._ImageDbOperator = database.get_db_backend().image()
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
