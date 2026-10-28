@@ -116,6 +116,10 @@ class NetworkDbOperatorBase(abc.ABC):
         """Add a switch record for a migrated guest. Returns None."""
 
     @abc.abstractmethod
+    def switch_rename_userid(self, old_userid, new_userid):
+        """Rename all switch records of old_userid to new_userid. Returns None."""
+
+    @abc.abstractmethod
     def switch_update_record_with_switch(self, userid, interface,
                                          switch=None):
         """Set (or clear when None) the switch of userid/interface.
@@ -175,6 +179,16 @@ class GuestDbOperatorBase(abc.ABC):
     @abc.abstractmethod
     def add_guest(self, userid, meta='', comments=''):
         """Add a guest with a new UUID and net_set '0'."""
+
+    @abc.abstractmethod
+    def guest_rename_userid(self, old_userid, new_userid):
+        """Change only userid of the guest record, keeping id, metadata,
+        net_set and comments. Matches old_userid case-insensitively and
+        stores new_userid in uppercase.
+
+        Raises SDKObjectNotExistError if old_userid does not exist.
+        Returns None.
+        """
 
     @abc.abstractmethod
     def delete_guest_by_id(self, guest_id):
@@ -279,6 +293,14 @@ class FCPDbOperatorBase(abc.ABC):
     @abc.abstractmethod
     def bulk_update_state_in_fcp_table(self, fcp_id_list, new_state):
         """Set state for the FCPs."""
+
+    @abc.abstractmethod
+    def fcp_rename_assigner_id(self, old_userid, new_userid):
+        """Rename both assigner_id and owner of old_userid to new_userid.
+
+        Both updates must execute within a single atomic call/transaction.
+        Returns None.
+        """
 
     @abc.abstractmethod
     def reset_fcps_of_assigner(self, userid):

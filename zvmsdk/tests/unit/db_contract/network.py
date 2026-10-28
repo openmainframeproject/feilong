@@ -124,3 +124,17 @@ class NetworkContract(ContractBase):
         self.assertEqual([_switch('USER2', '1000', 'VSW1', 'p3')],
                          self.db.switch_select_table())
         self.db.switch_delete_record_for_userid('USER1')
+
+    def test_switch_rename_userid(self):
+        self._add_two_users()
+        self.db.switch_rename_userid('user1', 'newuser')
+
+        self.assertEqual([], self.db.switch_select_record_for_userid('USER1'))
+        self.assertEqual(
+            [_switch('NEWUSER', '1000', 'VSW1', 'p1'),
+             _switch('NEWUSER', '2000', 'VSW2', 'p2')],
+            _sorted(self.db.switch_select_record_for_userid('NEWUSER')))
+        # other user unchanged
+        self.assertEqual(
+            [_switch('USER2', '1000', 'VSW1', 'p3')],
+            self.db.switch_select_record_for_userid('USER2'))
