@@ -933,6 +933,7 @@ class TestFCPManager(base.SDKTestCase):
         a successful call's return value or side effects."""
         self.fcpops.sync_db()
         m_sync_db_with_zvm.assert_called_once()
+        self.assertTrue(self.fcpops.synced_with_zvm)
 
     @mock.patch("zvmsdk.volumeop.LOG")
     @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
@@ -941,9 +942,11 @@ class TestFCPManager(base.SDKTestCase):
         """sync_db() logs a sync failure but doesn't propagate it."""
         m_sync_db_with_zvm.side_effect = Exception('fake sync failure')
         # must not raise
+        self.fcpops.synced_with_zvm = True
         self.fcpops.sync_db()
         m_sync_db_with_zvm.assert_called_once()
         m_log.exception.assert_called_once()
+        self.assertFalse(self.fcpops.synced_with_zvm)
 
     @mock.patch("zvmsdk.utils.get_pchid")
     def test_sync_fcp_table_with_zvm(self, get_pchid):
@@ -1056,6 +1059,134 @@ class TestFCPManager(base.SDKTestCase):
                                  fcp_info_in_db_expected[fcp_id])
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_lschp")
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_once_per_chpid(self, m_chpidv, m_vmcp,
+                                                m_lschp):
+        """One CHPID virtualization check and one lookup per CHPID."""
+        m_chpidv.return_value = True
+        m_vmcp.side_effect = lambda chpid: {'10': '0240', '11': '0260'}[chpid]
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual(['0240', '0240', '0260', '0260'],
+                         [lookup(c) for c in ('10', '10', '11', '11')])
+        m_chpidv.assert_called_once_with()
+        self.assertEqual([mock.call('10'), mock.call('11')],
+                         m_vmcp.call_args_list)
+        m_lschp.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_lschp")
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_lschp(self, m_chpidv, m_vmcp, m_lschp):
+        m_chpidv.return_value = False
+        m_lschp.return_value = '02e4'
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual('02e4', lookup('27'))
+        self.assertEqual('02e4', lookup('27'))
+        m_lschp.assert_called_once_with('27')
+        m_vmcp.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_not_found(self, m_chpidv, m_vmcp):
+        """A CHPID without PCHID gets '' and doesn't stop other CHPIDs."""
+        m_chpidv.return_value = True
+
+        def fake_query(chpid):
+            if chpid == '12':
+                raise exception.SDKInternalError(msg='not associated')
+            return '0240'
+        m_vmcp.side_effect = fake_query
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual('', lookup('12'))
+        self.assertEqual('0240', lookup('10'))
+        self.assertEqual('', lookup('12'))
+        self.assertEqual([mock.call('12'), mock.call('10')],
+                         m_vmcp.call_args_list)
+
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_chpidv_failure_raises(self, m_chpidv):
+        """A failed CHPID virtualization check still fails the query."""
+        m_chpidv.side_effect = exception.SDKInternalError(msg='vmcp failed')
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertRaises(exception.SDKInternalError, lookup, '10')
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
+    def test_get_all_fcp_pool_pchid_per_chpid(self, m_fcp_info, m_chpidv,
+                                              m_vmcp):
+        """get_all_fcp_pool looks up each CHPID once for all its FCPs."""
+        m_fcp_info.return_value = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: C05076DE33000A01',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'Owner: NONE',
+            'opnstk1: FCP device number: 1A02',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: C05076DE33000A02',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'Owner: NONE',
+            'opnstk1: FCP device number: 1B01',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: C05076DE33000B01',
+            'opnstk1:   Channel path ID: 30',
+            'opnstk1:   Physical world wide port number: 20076D8500005185',
+            'Owner: UNIT0001']
+        m_chpidv.return_value = True
+        m_vmcp.side_effect = lambda chpid: {'27': '02E4', '30': '021C'}[chpid]
+        pool = self.fcpops.get_all_fcp_pool('fakeuser')
+        self.assertEqual({'1a01': '02E4', '1a02': '02E4', '1b01': '021C'},
+                         {fcp: pool[fcp].get_pchid() for fcp in pool})
+        m_chpidv.assert_called_once_with()
+        self.assertEqual(2, m_vmcp.call_count)
+
+    def test_sync_fcp_table_with_zvm_pchid_not_found(self):
+        """An FCP whose PCHID isn't found keeps its PCHID in the DB; a new
+        one gets an empty PCHID. Other columns are still synced."""
+        _purge_fcp_db()
+        self._insert_data_into_fcp_table([
+            ('1a01', 'user1', 1, 1, 'c05076de33000001', 'c05076de3300264a',
+             '27', '02e4', 'free', 'none', 'tmpl1')])
+        fcp_info_in_zvm = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: c05076de33000001',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: c05076de3300264a',
+            'Owner: USER1',
+            'opnstk1: FCP device number: 1B02',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: c05076de33000b02',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: c05076de3300264a',
+            'Owner: NONE']
+
+        def not_found(chpid):
+            return ''
+        fcp_dict_in_zvm = {
+            '1a01': volumeop.FCP(fcp_info_in_zvm[0:6], pchid_lookup=not_found),
+            '1b02': volumeop.FCP(fcp_info_in_zvm[6:12],
+                                 pchid_lookup=not_found)}
+        try:
+            self.fcpops.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
+            fcp_info_in_db = self.fcpops.get_fcp_dict_in_db()
+            self.assertEqual(
+                ('1a01', 'user1', 1, 1, 'c05076de33000001',
+                 'c05076de3300264a', '27', '02e4', 'active', 'user1',
+                 'tmpl1'),
+                tuple(fcp_info_in_db['1a01']))
+            self.assertEqual(
+                ('1b02', '', 0, 0, 'c05076de33000b02', 'c05076de3300264a',
+                 '27', '', 'free', 'none', ''),
+                tuple(fcp_info_in_db['1b02']))
+        finally:
+            _purge_fcp_db()
 
     @mock.patch("zvmsdk.utils.get_zvm_name")
     @patch('zvmsdk.utils.get_zhypinfo')
