@@ -262,7 +262,7 @@ int get_file_mod(char *fileName)
 */
 int send_file_to_server(int sockfd, char *src_path)
 {
-    char buffer[SMALL_BUFFER_SIZE],info[SMALL_BUFFER_SIZE];
+    char buffer[BUFFER_SIZE],info[BUFFER_SIZE];
     char *file_buf;
     FILE *fp = NULL;
     int n_time = 0, n = 0;
@@ -305,20 +305,20 @@ int send_file_to_server(int sockfd, char *src_path)
         free(file_buf);
         file_buf = NULL;
 
-        /* send send_over signal + md5 + file_mod*/
-        sprintf(buffer, "md5sum %s",src_path);
+        /* send send_over signal + sha512 + file_mod*/
+        sprintf(buffer, "sha512sum %s",src_path);
         if ((fp = popen(buffer, "r"))==NULL)
         {
-            printAndLogIUCVserverReturnCodeReasonCodeoutput(FILE_TRANSPORT_ERROR, errno,"ERROR: Failed to get md5 for file.", 1);
+            printAndLogIUCVserverReturnCodeReasonCodeoutput(FILE_TRANSPORT_ERROR, errno,"ERROR: Failed to get sha512 for file.", 1);
             strcpy(buffer, "FILE_SENT_OVER");
             send(sockfd, buffer, strlen(buffer) + 1, 0);
         }
         else
         {
-            bzero(buffer,SMALL_BUFFER_SIZE);
-            if (fgets(buffer, sizeof(buffer), fp) != NULL)
+            bzero(buffer,BUFFER_SIZE);
+            if (fgets(buffer, BUFFER_SIZE, fp) != NULL)
             {
-                buffer[MD5_LENGTH]='\0';
+                buffer[SHA512_LENGTH]='\0';
                 sprintf(info,"FILE_SENT_OVER %s %o", buffer, get_file_mod(src_path));
             }
             send(sockfd, info, strlen(info) + 1, 0);
@@ -328,8 +328,8 @@ int send_file_to_server(int sockfd, char *src_path)
         /* After finish sending file, wait for the message from server to get the file transport result */
         //printf("Finish sending file, just need to wait for the server's receive respond\n");
         // syslog(LOG_INFO, "Finish sending file, just need to wait for the server's receive respond\n");
-        bzero(buffer,SMALL_BUFFER_SIZE);
-        recv(sockfd, buffer, SMALL_BUFFER_SIZE, 0);
+        bzero(buffer,BUFFER_SIZE);
+        recv(sockfd, buffer, BUFFER_SIZE, 0);
         if (strcmp(buffer, "FILE_RECEIVED_OK")==0)
         {
             sprintf(buffer,"Transport file %s successfully.\n", src_path);

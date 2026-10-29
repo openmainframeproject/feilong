@@ -31,7 +31,7 @@
 /*length define*/
 #define BUFFER_SIZE 1024
 #define SMALL_BUFFER_SIZE 256
-#define MD5_LENGTH 32
+#define SHA512_LENGTH 128
 
 /*ERROR defined*/
 #define UNAUTHORIZED_ERROR 1
