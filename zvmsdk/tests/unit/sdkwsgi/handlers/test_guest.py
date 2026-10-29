@@ -1164,6 +1164,47 @@ class HandlersGuestTest(SDKWSGITest):
                        guest.guest_create_network_interface,
                        self.req)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_configure_network_interface_ip(self, mock_interface,
+                                                  mock_userid):
+        os_version = 'rhel7'
+        guest_network = {'ip_addr': '192.168.12.34',
+                         'gateway_addr': '192.168.12.1',
+                         'cidr': '192.168.12.0/24'}
+        pcif = '00000110'
+        bstr = """{"interface": {"os_version": "rhel7",
+                                 "guest_network": {"ip_addr": "192.168.12.34",
+                                                   "gateway_addr": "192.168.12.1",
+                                                   "cidr": "192.168.12.0/24"},
+                                 "pcif": "00000110"}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_configure_network_interface_ip(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_configure_network_interface_ip',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_network=guest_network,
+            pcif=pcif,
+            active=True)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_configure_network_interface_ip_missing_pcif(self,
+                                                              mock_userid):
+        bstr = """{"interface": {"os_version": "rhel7",
+                                 "guest_network": {"ip_addr": "192.168.12.34",
+                                                   "gateway_addr": "192.168.12.1",
+                                                   "cidr": "192.168.12.0/24"}}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_configure_network_interface_ip,
+                          self.req)
+
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info(self, mock_interface):
         self.req.GET = {}

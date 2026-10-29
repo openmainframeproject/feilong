@@ -126,6 +126,27 @@ delete_network_interface = {
 }
 
 
+configure_network_interface_ip = {
+    'type': 'object',
+    'properties': {
+        'interface': {
+            'type': 'object',
+            'properties': {
+                'os_version': parameter_types.os_version,
+                'guest_network': parameter_types.network_info,
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+            },
+            'required': ['os_version', 'guest_network', 'pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['interface'],
+    'additionalProperties': False,
+}
+
+
 config_minidisks = {
     'type': 'object',
     'properties': {

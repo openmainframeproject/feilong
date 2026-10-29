@@ -314,6 +314,23 @@ class SMTClient(object):
 
         return results['response']
 
+    def get_neth_interface_info(self, userid, pcif):
+        """Get the interface name configured on the Network Express
+        adapter (PCI function) of the guest.
+
+        :userid: (str) The userid of the guest
+        :pcif: (str) PCI function ID of the Network Express adapter
+        :returns: (str) the interface name, e.g. "enc1600"
+        """
+        action = "NETHINTERFACEINFO"
+        rd = ' '.join(['getvm', userid, action, pcif])
+        action = "query neth interface info of '%s'" % userid
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+
+        intf_name = results['response'][0].strip()
+        return intf_name
+
     def undedicate_device(self, userid, vaddr):
         """undedicate device
 

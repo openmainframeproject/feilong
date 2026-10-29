@@ -119,6 +119,9 @@ ROUTE_LIST = (
     ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
     }),
+    ('/guests/{userid}/interface/ip', {
+        'POST': guest.guest_configure_network_interface_ip,
+    }),
     ('/guests/{userid}/disks', {
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,
