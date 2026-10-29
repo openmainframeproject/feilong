@@ -17,13 +17,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import subprocess
 
 from smtLayer import msgs
+from smtLayer import vmUtils
 from zvmsdk import exception
 
 modId = 'VCP'
 version = "1.0.0"
+
+# CP messages meaning the guest is not logged on (same set that
+# vmUtils.isLoggedOn uses).  For a logoff this is the desired end state.
+NOT_LOGGED_ON_PATTERN = r'^HCP\w\w\w(045E|361E)'
 
 
 class VMCPHandler:
@@ -37,7 +43,7 @@ class VMCPHandler:
         """
         self._rh = rh
 
-    def _run(self, vmcp_args):
+    def _run(self, vmcp_args, tolerated=None):
         """
         Execute one vmcp sub-command.
 
@@ -47,10 +53,14 @@ class VMCPHandler:
         Input:
            vmcp_args - list of str tokens that follow '/sbin/vmcp',
                        e.g. ["query", "userid"]
+           tolerated - optional regex (str).  If the command fails and its
+                       output matches, the failure is tolerated: nothing is
+                       recorded in the request results and overallRC is 0.
 
         Output:
            dict with keys:
              response   - decoded stdout string; empty string on failure
+                          (the command output for a tolerated failure)
              overallRC  - 0 on success, non-zero on failure
         """
         rh = self._rh
@@ -62,6 +72,10 @@ class VMCPHandler:
                 cmd, close_fds=True, stderr=subprocess.STDOUT)
             return {"response": bytes.decode(raw), "overallRC": 0}
         except subprocess.CalledProcessError as e:
+            if tolerated and e.output and re.search(
+                    tolerated, bytes.decode(e.output), re.MULTILINE):
+                rh.printSysLog("Tolerated failure of: " + strCmd)
+                return {"response": bytes.decode(e.output), "overallRC": 0}
             msg = msgs.msg['0405'][1] % (
                 modId, strCmd, strCmd, e.output.decode(errors='replace'))
             rh.printLn("ES", msg)
@@ -184,3 +198,112 @@ class VMCPHandler:
         rh.printSysLog(
             "Exit %s, entries found: %d" % (log_tag, len(pcif_list)))
         return pcif_list
+
+    def query_storage(self):
+        """
+        Query total and standby storage of the z/VM LPAR.
+
+        Output:
+           dict with keys:
+             'lparMemTotal'   - e.g. "65536M";  "no info" on error
+             'lparMemStandby' - e.g. "0";        "no info" on error
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.query_storage")
+
+        lparMemTotal = "no info"
+        lparMemStandby = "no info"
+
+        result = self._run(["query", "storage"])
+        output = result["response"]
+        if result["overallRC"] == 0:
+            # Normalise:  "STORAGE = 65536M  STANDBY = 0  REMAINDER = 0"
+            #         →   ["STORAGE", "65536M", "STANDBY", "0", ...]
+            parts = output.upper().replace('=', ' ').split()
+            try:
+                if 'STORAGE' in parts:
+                    lparMemTotal = parts[parts.index('STORAGE') + 1]
+                if 'STANDBY' in parts:
+                    lparMemStandby = parts[parts.index('STANDBY') + 1]
+            except (ValueError, IndexError):
+                rh.printSysLog(
+                    "VMCPHandler.query_storage: unexpected output: " + output)
+
+        rh.printSysLog(
+            "Exit VMCPHandler.query_storage, total: %s standby: %s"
+            % (lparMemTotal, lparMemStandby))
+        return {"lparMemTotal": lparMemTotal, "lparMemStandby": lparMemStandby}
+
+    def query_cplevel(self):
+        """
+        Query the z/VM CP level and IPL date/time.
+        Output:
+           ipl - the IPL line as a string,
+                 e.g. "IPL at 01/15/24 08:30:00 EST"; "" on error / not found
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.query_cplevel")
+
+        ipl = ""
+        result = self._run(["query", "cplevel"])
+        output = result["response"]
+        if result["overallRC"] == 0:
+            for line in output.splitlines():
+                if "IPL" in line:
+                    ipl = line.strip()
+                    break
+
+        rh.printSysLog("Exit VMCPHandler.query_cplevel, ipl: " + ipl)
+        return ipl
+
+    def deactivate(self, userid, force=False):
+        """
+        Deactivate (log off) a virtual machine via vmcp.
+        Input:
+           userid - target virtual machine userid (str)
+           force  - True → append IMMED to the vmcp force logoff command
+                    (default False)
+
+        Output:
+           dict with keys:
+             response   - decoded stdout string; empty string on failure
+             overallRC  - 0 on success, non-zero on failure
+        """
+        rh = self._rh
+
+        rh.printSysLog(
+            "Enter VMCPHandler.deactivate, userid: %s force: %s"
+            % (userid, str(force)))
+
+        # Step 1: Check whether the guest is logged on.
+        results = vmUtils.isLoggedOn(rh, userid)
+        if results['overallRC'] != 0:
+            # Cannot determine the log on/off state.
+            # Message already included.  Act as if it is 'on'.
+            pass
+        elif results['rs'] == 0:
+            # State is powered on.
+            pass
+        else:
+            # Reset values for rest of subfunction
+            results['overallRC'] = 0
+            results['rc'] = 0
+            results['rs'] = 0
+            rh.updateResults(results)
+            return {"response": "", "overallRC": 0}
+
+        rh.printSysLog(
+            "VMCPHandler.deactivate: %s is logged on" % userid)
+
+        # Step 2: Force logoff — with IMMED if -f IMMED was requested.
+        # The guest may log off between the status check and the FORCE
+        # (HCP045E); that is the desired end state, so it is tolerated, as
+        # the SMAPI path tolerates rc 200 / rs 12 or 16.
+        args = ["force", userid, "logoff"]
+        if force:
+            args.append("IMMED")
+
+        response = self._run(args, tolerated=NOT_LOGGED_ON_PATTERN)
+        rh.printSysLog("Exit VMCPHandler.deactivate, rc: " +
+                       str(response['overallRC']))
+        return response
