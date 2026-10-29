@@ -4685,8 +4685,10 @@ class SMTClient(object):
         def _run_step(step, func, *args):
             try:
                 return func(*args)
-            except exception.SDKBaseException as err:
-                msg = err.format_message()
+            except Exception as err:
+                msg = (err.format_message()
+                       if isinstance(err, exception.SDKBaseException)
+                       else str(err))
                 LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
                           "directory, but updating the %s failed: %s. "
                           "Already updated: %s. Manual correction is "
@@ -4721,8 +4723,10 @@ class SMTClient(object):
                 try:
                     self.set_vswitch_port_vlan_id(vswitch, new_userid,
                                                   ' '.join(vlan_ids))
-                except exception.SDKBaseException as err:
-                    msg = err.format_message()
+                except Exception as err:
+                    msg = (err.format_message()
+                           if isinstance(err, exception.SDKBaseException)
+                           else str(err))
                     # Clean up the newly granted authorization to prevent
                     # dual authorization. A failure here must not mask the
                     # original error, but it must not be silent either:

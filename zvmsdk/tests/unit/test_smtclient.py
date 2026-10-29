@@ -5667,6 +5667,33 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                 'switch_select_record_for_userid')
     @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
     @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
+    def test_image_rename_dm_non_sdk_exception(self, mock_fcp_rename,
+                                                mock_switch_rename,
+                                                mock_switch_select,
+                                                mock_guest_rename, mock_req):
+        # non-SDK exceptions (e.g. database driver or system errors)
+        # must also be caught and wrapped in SDKGuestOperationError
+        mock_switch_select.return_value = []
+        mock_req.return_value = {'response': ['Done']}
+        mock_guest_rename.side_effect = RuntimeError('backend connection failed')
+
+        with self.assertRaises(exception.SDKGuestOperationError) as cm:
+            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        msg = cm.exception.format_message()
+        self.assertIn('OLDVM', msg)
+        self.assertIn('NEWVM', msg)
+        self.assertIn('guests table', msg)
+        self.assertIn('backend connection failed', msg)
+        self.assertIn('Already updated: none', msg)
+        mock_switch_rename.assert_not_called()
+        mock_fcp_rename.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
+    @mock.patch('zvmsdk.database.NetworkDbOperator.'
+                'switch_select_record_for_userid')
+    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
+    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
     def test_image_rename_dm_switch_db_failed(self, mock_fcp_rename,
                                               mock_switch_rename,
                                               mock_switch_select,
