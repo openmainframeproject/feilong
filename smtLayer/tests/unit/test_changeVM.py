@@ -245,3 +245,70 @@ class SMTChangeVMTestCase(base.SMTTestCase):
         # cleanup
         self.mock_reset(mock_smcli, mock_logon, mock_print)
         rh.updateResults({}, reset=2)
+
+    def _add_disk_rh(self):
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        rh.userid = 'FAKEUSER'
+        rh.parms['vaddr'] = '0100'
+        rh.parms['diskPool'] = 'POOL1'
+        rh.parms['diskSize'] = '100'
+        # the active configuration is only updated after installFS
+        rh.parms['fileSystem'] = 'ext4'
+        rh.parms['mode'] = 'MR'
+        return rh
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(changeVM, 'VMCPHandler')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    @patch.object(changeVM, 'installFS')
+    @patch.object(changeVM.generalUtils, 'cvtToCyl')
+    @patch.object(changeVM, 'config')
+    def _test_add_disk_active(self, func, disk_type, use_smapi,
+                              mock_conf, mock_cvt, mock_fs, mock_logon,
+                              mock_smcli, mock_vmcp_cls, mock_print):
+        mock_conf.CONF.zvm.use_smapi = use_smapi
+        mock_cvt.return_value = ({'overallRC': 0}, 100)
+        mock_logon.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        mock_fs.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        ok = {'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+              'strError': '', 'response': []}
+        mock_smcli.return_value = ok
+        mock_vmcp_cls.return_value.add_disk.return_value = ok
+        rh = self._add_disk_rh()
+
+        self.assertEqual(0, func(rh))
+        return rh, mock_smcli, mock_vmcp_cls
+
+    def test_add3390_active_vmcp_path(self):
+        rh, smcli, vmcp = self._test_add_disk_active(
+            changeVM.add3390, '3390', False)
+        vmcp.assert_called_once_with(rh)
+        vmcp.return_value.add_disk.assert_called_once_with('0100', 'MR')
+        # only the directory entry call uses SMAPI
+        self.assertEqual(1, smcli.call_count)
+        self.assertEqual('Image_Disk_Create_DM', smcli.call_args[0][1])
+
+    def test_add3390_active_smapi_path(self):
+        rh, smcli, vmcp = self._test_add_disk_active(
+            changeVM.add3390, '3390', True)
+        vmcp.assert_not_called()
+        self.assertEqual(2, smcli.call_count)
+        self.assertEqual('Image_Disk_Create', smcli.call_args[0][1])
+        self.assertEqual(["-T", "FAKEUSER", "-v", "0100", "-m", "MR"],
+                         smcli.call_args[0][2])
+
+    def test_add9336_active_vmcp_path(self):
+        rh, smcli, vmcp = self._test_add_disk_active(
+            changeVM.add9336, '9336', False)
+        vmcp.assert_called_once_with(rh)
+        vmcp.return_value.add_disk.assert_called_once_with('0100', 'MR')
+        self.assertEqual(1, smcli.call_count)
+
+    def test_add9336_active_smapi_path(self):
+        rh, smcli, vmcp = self._test_add_disk_active(
+            changeVM.add9336, '9336', True)
+        vmcp.assert_not_called()
+        self.assertEqual(2, smcli.call_count)
+        self.assertEqual(["-T", "FAKEUSER", "-v", "0100", "-m", "MR"],
+                         smcli.call_args[0][2])
