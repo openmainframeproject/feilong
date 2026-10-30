@@ -91,6 +91,7 @@ VMAPI_OBJECTS += vmapiImageQueryActivateTime.o
 VMAPI_OBJECTS += vmapiImageQueryDm.o
 VMAPI_OBJECTS += vmapiImageRecycle.o
 VMAPI_OBJECTS += vmapiImageReplaceDm.o
+VMAPI_OBJECTS += vmapiImageRenameDm.o
 VMAPI_OBJECTS += vmapiImageScsiCharacteristicsDefineDm.o
 VMAPI_OBJECTS += vmapiImageScsiCharacteristicsQueryDm.o
 VMAPI_OBJECTS += vmapiImageStatusQuery.o
@@ -498,6 +499,9 @@ vmapiImageRecycle.o : $(SRC_DIR)vmapiImageRecycle.c
 
 vmapiImageReplaceDm.o : $(SRC_DIR)vmapiImageReplaceDm.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiImageReplaceDm.c
+
+vmapiImageRenameDm.o : $(SRC_DIR)vmapiImageRenameDm.c
+	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiImageRenameDm.c
 
 vmapiImageScsiCharacteristicsDefineDm.o : $(SRC_DIR)vmapiImageScsiCharacteristicsDefineDm.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiImageScsiCharacteristicsDefineDm.c
