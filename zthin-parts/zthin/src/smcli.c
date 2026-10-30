@@ -174,6 +174,7 @@ int displayHelpInfo(int smapiLevel) {
            "  Image_Query_DM\n"
            "  Image_Recycle\n"
            "  Image_Replace_DM\n"
+           "  Image_Rename_DM\n"
            "  Image_SCSI_Characteristics_Define_DM\n"
            "  Image_SCSI_Characteristics_Query_DM\n"
            "  Image_Status_Query\n"
@@ -757,6 +758,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = imageRecycle(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Image_Replace_DM")) {
         rc = imageReplaceDM(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "Image_Rename_DM")) {    
+        rc = imageRenameDM(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Image_SCSI_Characteristics_Define_DM")) {
         rc = imageSCSICharacteristicsDefineDM(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Image_SCSI_Characteristics_Query_DM")) {

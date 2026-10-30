@@ -318,6 +318,15 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         expected = []
         self.assertEqual(expected, switch_record)
 
+    def test_switch_rename_userid(self):
+        self.db_op.switch_add_record('OLDUSER', '1000', 'VSW1')
+        self.db_op.switch_rename_userid('OLDUSER', 'NEWUSER')
+        old_records = self.db_op.switch_select_record_for_userid('OLDUSER')
+        new_records = self.db_op.switch_select_record_for_userid('NEWUSER')
+        self.assertEqual(0, len(old_records))
+        self.assertEqual(1, len(new_records))
+        self.db_op.switch_delete_record_for_userid('NEWUSER')
+
 
 class FCPDbOperatorTestCase(base.SDKTestCase):
     @classmethod
@@ -556,6 +565,39 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual(len(res), 1)
             self.assertEqual(len(res[0]), 11)
             self.assertEqual(res[0][1], 'user2')
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    def test_fcp_rename_assigner_id(self):
+        """Test API fcp_rename_assigner_id with devices of different owners"""
+        template_id = 'fakehost-1111-1111-1111-111111111111'
+        # (fcp_id, assigner_id, connections, reserved, wwpn_npiv, wwpn_phy,
+        #  chpid, pchid, state, owner, tmpl_id)
+        fcp_info_list = [
+            # assigner and owner are both the renamed guest
+            ('1111', 'olduser', 0, 0, 'c05076de33000111',
+             'c05076de33002641', '27', '02e4', 'active', 'OLDUSER',
+             template_id),
+            # owner is another guest
+            ('2222', 'OLDUSER', 0, 0, 'c05076de33000222',
+             'c05076de33002641', '27', '02e4', 'active', 'other1',
+             template_id),
+            # assigner is another guest, owner is the renamed guest
+            ('3333', 'other2', 0, 0, 'c05076de33000333',
+             'c05076de33002641', '27', '02e4', 'active', 'oldUser',
+             template_id)]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            self.db_op.fcp_rename_assigner_id('OLDUSER', 'newuser')
+            with database.get_fcp_conn() as conn:
+                res = conn.execute("SELECT fcp_id, assigner_id, owner "
+                                   "FROM fcp ORDER BY fcp_id")
+                rows = [tuple(row) for row in res.fetchall()]
+            self.assertEqual([('1111', 'NEWUSER', 'NEWUSER'),
+                              ('2222', 'NEWUSER', 'other1'),
+                              ('3333', 'other2', 'NEWUSER')], rows)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 
@@ -2146,6 +2188,28 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.db_op.delete_guest_by_userid(self.userid)
         guests = self.db_op.get_guest_list()
         self.assertListEqual([], guests)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_guest_rename_userid(self, get_uuid):
+        """The id, metadata, net_set and comments must be kept"""
+        guest_id = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        get_uuid.return_value = guest_id
+        self.db_op.add_guest(self.userid, meta='fakemeta=1',
+                             comments='fakecomments')
+        self.db_op.update_guest_by_userid(self.userid, net_set='1')
+        try:
+            self.db_op.guest_rename_userid(self.userid.lower(), 'newuser')
+            self.assertIsNone(self.db_op.get_guest_by_userid(self.userid))
+            self.assertEqual((guest_id, u'NEWUSER', u'fakemeta=1', 1,
+                              u'fakecomments'),
+                             self.db_op.get_guest_by_userid('NEWUSER'))
+        finally:
+            self.db_op.delete_guest_by_id(guest_id)
+
+    def test_guest_rename_userid_not_exist(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.guest_rename_userid,
+                          'NOTEXIST', 'NEWUSER')
 
     @mock.patch.object(uuid, 'uuid4')
     def test_get_guest_metadata_with_userid_exist(self, get_uuid):
