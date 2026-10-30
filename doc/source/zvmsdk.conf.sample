@@ -528,7 +528,10 @@
 # - QUERY FCP WWPN              (FCP WWPN query)
 # - PURGE <userid> RDR ALL      (reader purge)
 # - FOR <userid> CMD DEFINE NIC (NIC creation on an active guest)
-# - QUERY NIC USERID <userid>   (NIC verification after creation)
+# - QUERY NIC USERID <userid>   (NIC verification after creation, and NIC
+#                                existence check before uncouple or detach)
+# - QUERY VSWITCH ALL DETAILS USERID <userid>
+#                               (check whether a NIC is coupled to a vswitch)
 # - FOR <userid> CMD UNCOUPLE   (NIC uncouple on an active guest)
 # - FOR <userid> CMD DETACH NIC (NIC detach on an active guest)
 # - FOR <userid> CMD LINK       (disk link on an active guest)

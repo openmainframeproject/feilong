@@ -162,7 +162,11 @@ Preparation on BYOL
         - Create a NIC on an active guest
       * - ``QUERY NIC USERID userid vdev``
         - B
-        - Verify that the NIC was created on the guest
+        - Verify that the NIC was created on the guest, and check that the
+          NIC exists before it is uncoupled or detached
+      * - ``QUERY VSWITCH ALL DETAILS USERID userid``
+        - B
+        - Check whether a NIC of the guest is coupled to a vswitch
       * - ``FOR userid CMD UNCOUPLE``
         - C, G
         - Disconnect a NIC from its vswitch on an active guest
