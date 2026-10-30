@@ -546,6 +546,25 @@ network_list = {
     'additionalProperties': False
 }
 
+network_info = {
+    'type': 'object',
+    'properties': {
+        'method': method,
+        'ip_addr': ipv4,
+        'dns_addr': {'type': 'array',
+                    'items': ipv4},
+        'gateway_addr': ipv4,
+        'mac_addr': mac_address,
+        'cidr': cidr,
+        'nic_id': {'type': 'string'},
+        'osa_device': vdev,
+        'hostname': hostname},
+    'dependencies': {
+        'ip_addr': ['cidr']
+    },
+    'additionalProperties': False
+}
+
 capture_type = {
     'type': 'string',
     'enum': ['rootonly', 'alldisks']

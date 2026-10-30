@@ -218,6 +218,21 @@ class VMHandler(object):
                                         active=active)
         return info
 
+    @validation.schema(guest.configure_network_interface_ip)
+    def configure_network_interface_ip(self, userid, body=None):
+        interface = body['interface']
+        version = interface['os_version']
+        network = interface.get('guest_network', None)
+        pcif = interface['pcif']
+        active = interface.get('active', True)
+        active = util.bool_from_string(active, strict=True)
+        info = self.client.send_request('guest_configure_network_interface_ip',
+                                        userid, os_version=version,
+                                        guest_network=network,
+                                        pcif=pcif,
+                                        active=active)
+        return info
+
     @validation.schema(guest.create_disks)
     def create_disks(self, userid, body=None):
         disk_info = body['disk_info']
@@ -870,6 +885,26 @@ def guest_delete_network_interface(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_delete_network_interface(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_configure_network_interface_ip(req):
+
+    def _guest_configure_network_interface_ip(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        return action.configure_network_interface_ip(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_configure_network_interface_ip(userid, req)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
