@@ -21,6 +21,8 @@
 import json
 import logging
 import argparse
+import re
+import sys
 from datetime import datetime
 from zvmsdk import config
 
@@ -41,6 +43,20 @@ def _parse_arguments():
                     '(allocated from any FCP multipath template) \n'
                     'and the PCHIDs information from all FCP multipath templates.\n\n'
     )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--list-held',
+                       action='store_true',
+                       help='List the FCP devices that are reserved, connected or\n'
+                            'allocated from a template, per assigner, and whether the\n'
+                            'assigner still exists. Changes nothing. An assigner\n'
+                            'whose deploy is still running can show as missing.\n\n')
+    group.add_argument('--release',
+                       metavar='USERID[,USERID...]',
+                       help='Release the FCP devices of these assigners, only if the\n'
+                            'assigner does not exist on z/VM and is not a guest of\n'
+                            'this host. Run it only when no deploy is running for\n'
+                            'these userids: a boot from volume deploy reserves its\n'
+                            'FCP devices before the z/VM user exists.\n\n')
     return parser.parse_args()
 
 
@@ -100,6 +116,12 @@ def get_fcp_devices_per_pchid():
     from zvmsdk import utils
     from zvmsdk import volumeop
     fcp_mgr = volumeop.FCPManager()
+    if not fcp_mgr.synced_with_zvm:
+        # the FCP DB may be stale, so don't report it as current usage
+        errmsg = ("Failed to sync the FCP database with z/VM, see the "
+                  "latest {}{}_*.log for details.".format(LOG_DIR, LOG_PREFIX))
+        LOG.error(errmsg)
+        sys.exit(errmsg)
     # get both PCHID lists from one consistent DB read
     # all_pchids ex: the PCHIDs of all the FCP devices
     # that are included in any FCP multipath template
@@ -111,6 +133,13 @@ def get_fcp_devices_per_pchid():
     #    '03FC': '1B02, 1B05'
     # }
     all_pchids, inuse_pchids = fcp_mgr.fcp_ops.get_pchid_usage()
+    # an FCP whose PCHID lookup failed has pchid '': not a PCHID to report
+    if '' in all_pchids:
+        LOG.warning("FCP devices in FCP multipath templates without a PCHID "
+                    "are left out; in use: {}".format(
+                        inuse_pchids.get('') or 'none'))
+        all_pchids = [pd for pd in all_pchids if pd]
+        inuse_pchids = {pd: fcps for pd, fcps in inuse_pchids.items() if pd}
     # sort all_pchids to later append into pchids ordered by PCHID No.
     # ['0240', '0260', '02E0', '03FC']
     all_pchids.sort()
@@ -151,17 +180,126 @@ def get_fcp_devices_per_pchid():
         result['pchids'].append(item)
     return result
 
+
+def _zvm_userid_state(userid):
+    """'exists', 'missing' or 'unknown': only z/VM's explicit
+    'Invalid option - <userid>' reply counts as missing"""
+    from zvmsdk import utils
+    rc, output = utils.execute(['sudo', '/sbin/vmcp', 'query', userid])
+    if re.search(r'^HCP\w{3}003E Invalid option - %s\s*$' % re.escape(userid),
+                 output, re.M):
+        return 'missing'
+    if re.search(r'^(%s\b|HCP\w{3}045E|HCP\w{3}361E)' % re.escape(userid),
+                 output, re.M):
+        return 'exists'
+    LOG.warning("Unexpected output of 'vmcp query %s' (rc %s): %s"
+                % (userid, rc, output))
+    return 'unknown'
+
+
+def get_held_fcp_devices():
+    """ Get the FCP devices that are reserved, connected or allocated from a
+    template, per assigner. Reads only.
+
+    :return: (dict) for example:
+        {
+            "hypervisor_hostname": "BOEM5403",
+            "assigners": [
+                {
+                    "userid": "ABCD0001",
+                    "fcp_devices": "1A01, 1B01",
+                    "zvm_userid": "missing",
+                    "guest_of_host": false
+                },
+                {
+                    "userid": "ABCD0002",
+                    "fcp_devices": "1A02",
+                    "zvm_userid": null,
+                    "guest_of_host": true
+                }
+            ],
+            "without_assigner": "1A05"
+        }
+    """
+    from zvmsdk import database
+    from zvmsdk import smtclient
+    from zvmsdk import utils
+    db = database.get_db_backend().fcp()
+    guests = set(smtclient.get_smtclient().get_vm_list())
+    held = {}
+    without_assigner = []
+    for row in db.get_all():
+        # an assigner alone is kept after a normal release
+        if not (row['reserved'] or row['connections'] or row['tmpl_id']):
+            continue
+        if row['assigner_id']:
+            held.setdefault(row['assigner_id'], []).append(row['fcp_id'])
+        else:
+            without_assigner.append(row['fcp_id'])
+    assigners = []
+    for userid in sorted(held):
+        guest_of_host = userid.upper() in guests
+        assigners.append({
+            'userid': userid,
+            'fcp_devices': utils.shrink_fcp_list(held[userid]),
+            # a guest of this host is never released, so z/VM isn't asked
+            'zvm_userid': (None if guest_of_host
+                           else _zvm_userid_state(userid.upper())),
+            'guest_of_host': guest_of_host})
+    result = {'hypervisor_hostname': utils.get_zvm_name(),
+              'assigners': assigners,
+              'without_assigner': utils.shrink_fcp_list(without_assigner)}
+    LOG.info("held FCP devices: {}".format(result))
+    return result
+
+
+def release_fcp_devices(userids):
+    """ Release the FCP devices of the given assigners, if the assigner
+    doesn't exist on z/VM and isn't a guest of this host. Use it only when
+    no deploy is running for these userids: a boot from volume deploy
+    reserves its FCP devices before the z/VM user and the guest exist.
+
+    :param userids: (list) assigners, as listed by get_held_fcp_devices
+    :return: (dict) released: {userid: FCP count},
+                    skipped: {userid: reason}
+    """
+    from zvmsdk import database
+    from zvmsdk import smtclient
+    db = database.get_db_backend().fcp()
+    guests = set(smtclient.get_smtclient().get_vm_list())
+    result = {'released': {}, 'skipped': {}}
+    for userid in userids:
+        # assigner_id is stored in upper case
+        userid = userid.upper()
+        if userid in guests:
+            result['skipped'][userid] = 'guest of this host'
+            continue
+        state = _zvm_userid_state(userid)
+        if state != 'missing':
+            result['skipped'][userid] = 'z/VM userid %s' % state
+            continue
+        result['released'][userid] = db.reset_fcps_of_assigner(userid)
+    LOG.info("release FCP devices of {}: {}".format(userids, result))
+    return result
+
+
 #################################################
 #               Main Entry Point                #
 #################################################
 
 if __name__ == "__main__":
     # Parse the arguments that were provided on the command line
-    _parse_arguments()
+    args = _parse_arguments()
     # zvmsdk.conf: [database] backend and dir, [zvm] settings
     config.load_config()
     # setup_logging
     setup_logging()
-    # Get PCHIDs and FCP devices from all FCP templates
-    result = get_fcp_devices_per_pchid()
+    if args.list_held:
+        result = get_held_fcp_devices()
+    elif args.release:
+        result = release_fcp_devices(
+            [u.strip() for u in args.release.split(',') if u.strip()])
+    else:
+        # Get PCHIDs and FCP devices from all FCP templates
+        result = get_fcp_devices_per_pchid()
     print(json.dumps(result))

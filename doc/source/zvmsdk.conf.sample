@@ -15,6 +15,15 @@
 
 
 # 
+# Seconds a SQLite connection waits for a lock before raising "database is
+# locked". sdkserver and scripts such as zvmsdk-getpchid open the same files
+# at the same time. Only used by the 'sqlite' backend.
+# 
+# This param is optional
+#connection_timeout=30
+
+
+# 
 # Directory to store database.
 # 
 # SDK databases are used to store a set of tables which contain the

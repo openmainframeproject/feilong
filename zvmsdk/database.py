@@ -150,9 +150,20 @@ def _init_db_conn(db_file):
     if not os.path.exists(db_dir):
         os.makedirs(db_dir, _DIR_MODE)
     database = os.path.join(db_dir, db_file)
-    return sqlite3.connect(database,
+    # sdkserver and scripts like zvmsdk-getpchid share these files, so wait
+    # longer than the driver's 5s default for a lock
+    conn = sqlite3.connect(database,
                            check_same_thread=False,
-                           isolation_level=None)
+                           isolation_level=None,
+                           timeout=CONF.database.connection_timeout)
+    # WAL: readers and writers stop blocking each other. The mode persists
+    # in the file; a read-only user can't switch it, so keep going without
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.OperationalError as err:
+        LOG.warning("Could not set WAL journal mode on %s: %s",
+                    database, err)
+    return conn
 
 
 class NetworkDbOperator(db_interface.NetworkDbOperatorBase):
@@ -408,9 +419,7 @@ class FCPDbOperator(db_interface.FCPDbOperatorBase):
     def unreserve_fcps(self, fcp_ids):
         if not fcp_ids:
             return
-        fcp_update_info = []
-        for fcp_id in fcp_ids:
-            fcp_update_info.append((fcp_id,))
+        fcp_update_info = [(fcp_id,) for fcp_id in fcp_ids]
         with get_fcp_conn() as conn:
             conn.executemany("UPDATE fcp SET reserved=0, tmpl_id='' "
                              "WHERE fcp_id=?", fcp_update_info)
@@ -483,25 +492,35 @@ class FCPDbOperator(db_interface.FCPDbOperatorBase):
                              "fcp_id=?", data_to_update)
 
     def bulk_update_state_in_fcp_table(self, fcp_id_list: list,
-                                       new_state: str):
-        """Update multiple records' comments to update the state to nofound.
+                                       new_state: str, new_owner=None):
+        """Update state, and owner unless new_owner is None, for the FCPs.
         """
-        data_to_update = list()
-        for id in fcp_id_list:
-            new_record = [new_state, id]
-            data_to_update.append(new_record)
+        if new_owner is None:
+            data = [(new_state, fcp_id) for fcp_id in fcp_id_list]
+            sql = "UPDATE fcp SET state=? WHERE fcp_id=?"
+        else:
+            data = [(new_state, new_owner, fcp_id) for fcp_id in fcp_id_list]
+            sql = "UPDATE fcp SET state=?, owner=? WHERE fcp_id=?"
         with get_fcp_conn() as conn:
-            conn.executemany("UPDATE fcp set state=? "
-                             "WHERE fcp_id=?", data_to_update)
+            conn.executemany(sql, data)
 
     def reset_fcps_of_assigner(self, userid):
-        """Reset fcp records for a given assigner."""
+        """Reset fcp records for a given assigner. An FCP that is 'active'
+        for the assigner becomes 'free'/'none'; any other state or owner
+        (offline, notfound, another user) is left to the next sync.
+
+        :return count: (int) number of FCP records reset.
+        """
         with get_fcp_conn() as conn:
-            conn.execute("UPDATE fcp SET assigner_id='', reserved=0, "
-                         "connections=0, tmpl_id='' WHERE assigner_id=?",
-                         (userid,))
-            LOG.debug("FCP records for user %s are reset in "
-                      "fcp table" % userid)
+            cursor = conn.execute(
+                "UPDATE fcp SET assigner_id='', reserved=0, "
+                "connections=0, tmpl_id='', "
+                "state=CASE WHEN state='active' AND LOWER(owner)=LOWER(?) "
+                "THEN 'free' ELSE state END, "
+                "owner=CASE WHEN LOWER(owner)=LOWER(?) THEN 'none' "
+                "ELSE owner END "
+                "WHERE assigner_id=?", (userid, userid, userid))
+            return cursor.rowcount
 
     def get_all_fcps_of_assigner(self, assigner_id=None):
         """Get dict of all fcp records of specified assigner.

@@ -427,8 +427,35 @@ class VolumeConfiguratorAPI(object):
             shutil.rmtree(config_file_path)
 
 
+def _cached_pchid_lookup():
+    """Return a function that finds the PCHID of a CHPID once per z/VM FCP
+    query. A CHPID whose PCHID can't be found gets '', so it doesn't fail
+    the query for the FCP devices on other CHPIDs."""
+    pchids = {}
+    get_pchid = None
+
+    def lookup(chpid):
+        nonlocal get_pchid
+        if chpid not in pchids:
+            if get_pchid is None:
+                # one CHPID virtualization check per query, not per FCP;
+                # if it fails, the whole query fails (host-wide problem)
+                get_pchid = (zvmutils.get_pchid_by_vmcp_query
+                             if zvmutils.is_chpid_virtualization_enabled()
+                             else zvmutils.get_pchid_by_lschp)
+            try:
+                pchids[chpid] = get_pchid(chpid)
+            except exception.SDKInternalError:
+                LOG.warning("PCHID of CHPID %s not found; its FCP devices "
+                            "are synced without a new PCHID." % chpid)
+                pchids[chpid] = ''
+        return pchids[chpid]
+    return lookup
+
+
 class FCP(object):
-    def __init__(self, init_info):
+    def __init__(self, init_info, pchid_lookup=None):
+        self._pchid_lookup = pchid_lookup or zvmutils.get_pchid
         self._dev_no = None
         self._dev_status = None
         self._npiv_port = None
@@ -476,7 +503,7 @@ class FCP(object):
                                  "invalid!" % (self._chpid, self._dev_no))
                     else:
                         # get pchid from linux command lschp
-                        self._pchid = zvmutils.get_pchid(self._chpid)
+                        self._pchid = self._pchid_lookup(self._chpid)
                 elif 'Physical world wide port numbe' in line:
                     self._physical_port = self._get_value_from_line(line)
                 elif 'Owner' in line:
@@ -539,14 +566,22 @@ class FCPManager(object):
         self.fcp_ops = database.get_db_backend().fcp_ops()
         self._smtclient = smtclient.get_smtclient()
         # Sync FCP DB
+        self.synced_with_zvm = False
         self.sync_db()
         # Get available channel-paths from linux command lschp and log the info
         zvmutils.print_all_pchids()
 
     def sync_db(self):
         """Sync FCP DB with the FCP info queried from zVM"""
-        with zvmutils.ignore_errors():
+        try:
             self._sync_db_with_zvm()
+            self.synced_with_zvm = True
+        except Exception:
+            self.synced_with_zvm = False
+            # don't break FCPManager() callers, but don't hide the failure
+            LOG.exception("Failed to sync FCP database with z/VM. FCP "
+                          "records may be stale until the next successful "
+                          "sync.")
 
     def _get_all_fcp_info(self, assigner_id, status=None):
         fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
@@ -694,11 +729,12 @@ class FCPManager(object):
         lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         all_fcp_pool = {}
         num_fcps = len(all_fcp_info) // lines_per_item
+        pchid_lookup = _cached_pchid_lookup()
         for n in range(0, num_fcps):
             start_line = lines_per_item * n
             end_line = lines_per_item * (n + 1)
             fcp_init_info = all_fcp_info[start_line:end_line]
-            fcp = FCP(fcp_init_info)
+            fcp = FCP(fcp_init_info, pchid_lookup=pchid_lookup)
             dev_no = fcp.get_dev_no()
             all_fcp_pool[dev_no] = fcp
         return all_fcp_pool
@@ -758,15 +794,28 @@ class FCPManager(object):
 
     def sync_fcp_table_with_zvm(self, fcp_dict_in_zvm):
         """Update FCP records queried from zVM into FCP table."""
-        self.fcp_ops.sync_with_zvm(
-            {fcp: fcp_dict_in_zvm[fcp].to_tuple() for fcp in fcp_dict_in_zvm})
+        self.fcp_ops.sync_with_zvm(self._to_zvm_fcp_tuples(fcp_dict_in_zvm))
+
+    def _to_zvm_fcp_tuples(self, fcp_dict_in_zvm):
+        """Return {fcp_id: FCP.to_tuple()}. An FCP whose PCHID wasn't found
+        keeps the PCHID in the DB, or gets '' if it has none."""
+        zvm_fcps = {fcp: fcp_dict_in_zvm[fcp].to_tuple()
+                    for fcp in fcp_dict_in_zvm}
+        # index 4 is the PCHID, see FCP.to_tuple()
+        no_pchid = [fcp for fcp in zvm_fcps if not zvm_fcps[fcp][4]]
+        if no_pchid:
+            pchids_in_db = {row['fcp_id'].lower(): row['pchid']
+                            for row in self.db.get_all()}
+            for fcp in no_pchid:
+                zvm_fcp = list(zvm_fcps[fcp])
+                zvm_fcp[4] = pchids_in_db.get(fcp) or ''
+                zvm_fcps[fcp] = tuple(zvm_fcp)
+        return zvm_fcps
 
     def _get_zvm_fcp_tuples(self):
         """Query z/VM and return {fcp_id: FCP.to_tuple()}."""
         LOG.info("Querying FCP status on z/VM.")
-        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
-        return {fcp: fcp_dict_in_zvm[fcp].to_tuple()
-                for fcp in fcp_dict_in_zvm}
+        return self._to_zvm_fcp_tuples(self.get_fcp_dict_in_zvm())
 
     def _sync_db_with_zvm(self):
         """Sync FCP DB with the FCP info queried from zVM"""
@@ -2079,6 +2128,15 @@ class FCPVolumeManager(object):
     def _undedicate_fcp(self, fcp, assigner_id):
         try:
             self._smtclient.undedicate_device(assigner_id, fcp)
+            # Undedicated from this user, so z/VM now reports it free; write
+            # that at once so the FCP is allocatable before the next sync.
+            # Best-effort: a DB error must not fail a detach that worked.
+            try:
+                self.db.bulk_update_state_in_fcp_table([fcp], 'free', 'none')
+            except Exception:
+                LOG.exception("Failed to set FCP %s free in the FCP "
+                              "database after undedicating it from %s; the "
+                              "next sync will correct it." % (fcp, assigner_id))
         except exception.SDKSMTRequestFailed as err:
             rc = err.results['rc']
             rs = err.results['rs']

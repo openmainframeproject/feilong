@@ -277,13 +277,15 @@ class FCPDbOperatorBase(abc.ABC):
         owner) tuples."""
 
     @abc.abstractmethod
-    def bulk_update_state_in_fcp_table(self, fcp_id_list, new_state):
-        """Set state for the FCPs."""
+    def bulk_update_state_in_fcp_table(self, fcp_id_list, new_state,
+                                       new_owner=None):
+        """Set state, and owner unless new_owner is None, for the FCPs."""
 
     @abc.abstractmethod
     def reset_fcps_of_assigner(self, userid):
         """Clear assigner_id, reserved, connections and tmpl_id of the
-        assigner's FCPs."""
+        assigner's FCPs; an FCP 'active' for the assigner becomes
+        'free'/'none'. Returns the number of FCPs reset."""
 
     @abc.abstractmethod
     def get_all_fcps_of_assigner(self, assigner_id=None):

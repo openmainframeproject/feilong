@@ -564,6 +564,16 @@ zvmsdk.db_interface.DbBackend instance. The backend runs inside the SDK
 processes with their privileges, see the database backends documentation.
 '''
         ),
+    Opt('connection_timeout',
+        section='database',
+        default=30,
+        opt_type='int',
+        help='''
+Seconds a SQLite connection waits for a lock before raising "database is
+locked". sdkserver and scripts such as zvmsdk-getpchid open the same files
+at the same time. Only used by the 'sqlite' backend.
+'''
+        ),
     Opt('refresh_bootmap_timeout',
         section='volume',
         default=1200,
