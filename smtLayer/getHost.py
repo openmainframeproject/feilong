@@ -434,30 +434,35 @@ def getCPUCount(rh):
     # LPAR CPUs total and used is not support mixed CP + IFL
     # So get cpu num from System_Processor_Query
     # to override LPAR CPUs total and used
-    parms = []
-    results = invokeSMCLI(rh, "System_Processor_Query", parms)
     cpu_total = 0
     cpu_use = 0
-    if results['overallRC'] == 0:
-        flag = 0
-        for line in results['response'].splitlines():
-            line_value = line.partition(' ')[2]
-            if not line_value.strip():
-                continue
-            else:
-                type_row = line_value.split(' ')
-                if len(type_row) > 1:
-                    type_row = line_value.split(' ')[1]
-                    if type_row == 'TYPE':
-                        flag = 1
-                    if flag == 1:
-                        status_row = line_value.split(' ')[0]
-                        if (status_row.find('MASTER') != -1 or
-                            status_row == 'ALTERNATE' or
-                            status_row == 'PARKED'):
-                            cpu_use = cpu_use + 1
-                        if (type_row == 'CP' or type_row == 'IFL'):
-                            cpu_total = cpu_total + 1
+
+    if not config.CONF.zvm.use_smapi:
+        cpu_total, cpu_use = VMCPHandler(rh).get_cpu_count()
+    else:
+        parms = []
+        results = invokeSMCLI(rh, "System_Processor_Query", parms)
+        if results['overallRC'] == 0:
+            flag = 0
+            for line in results['response'].splitlines():
+                line_value = line.partition(' ')[2]
+                if not line_value.strip():
+                    continue
+                else:
+                    type_row = line_value.split(' ')
+                    if len(type_row) > 1:
+                        type_row = line_value.split(' ')[1]
+                        if type_row == 'TYPE':
+                            flag = 1
+                        if flag == 1:
+                            status_row = line_value.split(' ')[0]
+                            if (status_row.find('MASTER') != -1 or
+                                status_row == 'ALTERNATE' or
+                                status_row == 'PARKED'):
+                                cpu_use = cpu_use + 1
+                            if (type_row == 'CP' or type_row == 'IFL'):
+                                cpu_total = cpu_total + 1
+
     return cpu_total, cpu_use
 
 

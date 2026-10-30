@@ -1270,13 +1270,19 @@ def purgeReader(rh):
                'rs': 0,
                'response': []}
 
-    parms = ['-T', rh.userid, '-k', 'spoolids=all']
-
-    results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
-
-    if results['overallRC'] != 0:
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)
+    if not config.CONF.zvm.use_smapi:
+        from smtLayer.vmcpHandler import VMCPHandler
+        results = VMCPHandler(rh).purge_reader()
+        if results['overallRC'] != 0:
+            rh.printLn("ES", results.get('strError', '') or
+                       results.get('response', ''))
+            rh.updateResults(results)
+    else:
+        parms = ['-T', rh.userid, '-k', 'spoolids=all']
+        results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
+        if results['overallRC'] != 0:
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.purgeReader, rc: " +
                    str(results['overallRC']))

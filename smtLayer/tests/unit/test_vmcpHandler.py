@@ -316,3 +316,215 @@ class VMCPHandlerTest(base.SMTTestCase):
             result = self.handler.deactivate("TESTUSER")
             self.assertEqual(1, result['overallRC'])
             self.rh.updateResults.assert_not_called()
+
+
+class VMCPHandlerRunForTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler._run_for()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_success(self, mock_co):
+        mock_co.return_value = b'NIC 0600 TYPE QDIO\n'
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(0, result['overallRC'])
+        self.assertEqual(0, result['rc'])
+        self.assertIn('NIC', result['response'])
+        mock_co.assert_called_once_with(
+            ['sudo', '/sbin/vmcp',
+             'FOR TESTUSER CMD DEFINE NIC 0600 TYPE QDIO'],
+            close_fds=True, stderr=subprocess.STDOUT)
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_calledprocesserror(self, mock_co):
+        mock_co.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b'HCP045E')
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual(1, result['rc'])
+        self.assertEqual('HCP045E', result['strError'])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_generic_exception(self, mock_co):
+        mock_co.side_effect = OSError('vmcp not found')
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('vmcp not found', result['strError'])
+
+
+class VMCPHandlerGetCPUCountTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.get_cpu_count()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_get_cpu_count_success(self, mock_run):
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': (
+                'PROCESSOR 0000 MASTER IFL  CORE 0000\n'
+                'PROCESSOR 0001 ALTERNATE IFL  CORE 0000\n'
+                'PROCESSOR 0002 PARKED IFL  CORE 0001\n'
+                'PROCESSOR 0003 STANDBY IFL  CORE 0001\n'
+                'PARTITION MODE LINUX-ONLY\n'
+            )
+        }
+        total, used = self.handler.get_cpu_count()
+        self.assertEqual(4, total)
+        self.assertEqual(3, used)
+        mock_run.assert_called_once_with(['QUERY', 'PROCESSORS', 'EXPANDED'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_get_cpu_count_vmcp_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': ''}
+        total, used = self.handler.get_cpu_count()
+        self.assertEqual(0, total)
+        self.assertEqual(0, used)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_get_cpu_count_no_processors(self, mock_run):
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': 'PARTITION MODE: Z/VM\n'
+        }
+        total, used = self.handler.get_cpu_count()
+        self.assertEqual(0, total)
+        self.assertEqual(0, used)
+
+
+class VMCPHandlerPurgeReaderTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.purge_reader()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_purge_reader_success(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': ''}
+        result = self.handler.purge_reader()
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(
+            ['PURGE', 'TESTUSER', 'RDR', 'ALL'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_purge_reader_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP error'}
+        result = self.handler.purge_reader()
+        self.assertEqual(1, result['overallRC'])
+
+
+class VMCPHandlerCreateNICTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.create_nic_for_guest()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_create_nic_success(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': 'NIC 0600 DEFINED'
+        }
+        mock_run.return_value = {'overallRC': 0, 'response': 'NIC 0600 TYPE QDIO'}
+        result = self.handler.create_nic_for_guest('TESTUSER', '0600')
+        self.assertEqual(0, result['overallRC'])
+        mock_run_for.assert_called_once_with(
+            'TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        mock_run.assert_called_once_with(
+            ['QUERY', 'NIC', 'USERID', 'TESTUSER', '0600'])
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_create_nic_define_fails(self, mock_run_for):
+        mock_run_for.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'errno': 0,
+            'strError': 'HCP045E', 'response': 'HCP045E'
+        }
+        result = self.handler.create_nic_for_guest('TESTUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_create_nic_verify_fails(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': ''
+        }
+        mock_run.return_value = {'overallRC': 1, 'response': 'NIC not found'}
+        result = self.handler.create_nic_for_guest('TESTUSER', '0600')
+        self.assertEqual(2, result['overallRC'])
+        self.assertTrue(result.get('nic_not_created'))
+
+
+class VMCPHandlerQueryOSATestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.query_osa()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_osa_attached_and_free(self, mock_run):
+        mock_run.side_effect = [
+            {
+                'overallRC': 0,
+                'response': (
+                    'OSA  3000 ATTACHED TO SYSTEM   3000 DEVTYPE OSH         CHPID 70 OSH TRACESIZE 0008\n'
+                    'OSA  3001 ATTACHED TO SYSTEM   3001 DEVTYPE OSH         CHPID 70 OSH TRACESIZE 0008\n'
+                )
+            },
+            {
+                'overallRC': 0,
+                'response': 'OSA   3002 FREE    , OSA   3003 FREE    , OSA   3004 FREE\n'
+            }
+        ]
+        result = self.handler.query_osa()
+        self.assertIn('OSA', result)
+        self.assertEqual(2, len(result['OSA']['ATTACHED']))
+        self.assertIn(('SYSTEM', '3000'), result['OSA']['ATTACHED'])
+        self.assertIn(('SYSTEM', '3001'), result['OSA']['ATTACHED'])
+        self.assertIn('3002', result['OSA']['FREE'])
+        self.assertIn('3003', result['OSA']['FREE'])
+        self.assertIn('3004', result['OSA']['FREE'])
+        mock_run.assert_any_call(['QUERY', 'OSA'])
+        mock_run.assert_any_call(['QUERY', 'OSA', 'FREE'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_osa_query_osa_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': ''}
+        result = self.handler.query_osa()
+        self.assertEqual({}, result)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_osa_no_osa(self, mock_run):
+        mock_run.side_effect = [
+            {'overallRC': 0, 'response': ''},
+            {'overallRC': 0, 'response': ''}
+        ]
+        result = self.handler.query_osa()
+        self.assertEqual({}, result)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_osa_free_fails_gracefully(self, mock_run):
+        mock_run.side_effect = [
+            {
+                'overallRC': 0,
+                'response': 'OSA  3000 ATTACHED TO SYSTEM   3000 DEVTYPE OSH CHPID 70\n'
+            },
+            {'overallRC': 1, 'response': ''}
+        ]
+        result = self.handler.query_osa()
+        self.assertIn('OSA', result)
+        self.assertEqual(1, len(result['OSA']['ATTACHED']))
+        self.assertEqual([], result['OSA']['FREE'])
