@@ -1217,6 +1217,15 @@ int vmbkendCheck(struct _vmApiInternalContext* vmapiContextP) {
     rc = 0;
     pthread_t thread;
     pthread_attr_t attr;
+    // The semaphore set must exist before we can inspect the backend semaphore.
+    // Callers such as smcli Event_Subscribe reach here without any prior SMAPI call.
+    if (1 != vmapiContextP->contextCreatedFlag) {
+        rc = initializeThreadSemaphores(vmapiContextP, "", 1);
+        if (rc) {
+            return rc;
+        }
+    }
+
     // Check if backend already running and return in this case
     backendSemaphoreValue = semctl(vmapiContextP->semId, BackendSemaphoreIndex, GETVAL, 0);
 
@@ -1470,6 +1479,8 @@ void *vmbkendMain(void *data) {
                 smMemoryGroupTerminate(vmapiContextP);
                 vmapiContextP->memContext = saveMemoryGroup;
                 close(serverSock);
+                pthread_cond_signal(&thread_initialized_cv);
+                pthread_mutex_unlock(&mutex);
                 pthread_exit(NULL);
             }
             smMemoryGroupFreeAll(vmapiContextP);
@@ -1511,6 +1522,8 @@ void *vmbkendMain(void *data) {
             smMemoryGroupTerminate(vmapiContextP);
             vmapiContextP->memContext = saveMemoryGroup;
             close(serverSock);
+            pthread_cond_signal(&thread_initialized_cv);
+            pthread_mutex_unlock(&mutex);
             pthread_exit(NULL);
         }
     } else if (0 != rc) {
@@ -1518,6 +1531,8 @@ void *vmbkendMain(void *data) {
         smMemoryGroupTerminate(vmapiContextP);
         vmapiContextP->memContext = saveMemoryGroup;
         close(serverSock);
+        pthread_cond_signal(&thread_initialized_cv);
+        pthread_mutex_unlock(&mutex);
         pthread_exit(NULL);
     }
 
@@ -1529,13 +1544,43 @@ void *vmbkendMain(void *data) {
         // We can still process other events if we get a message get error so
         // we don't need to leave the routine until all events have been processed.
     }
+    // Create msqId for logon/logoff indication (read by smcli Event_Subscribe).
+    // Uses the same default permissions (0666) as the iucv thread's msgget.
+    if ((msqid = msgget(MSGKEY, IPC_CREAT | 0666)) < 0) {
+        snprintf(line, sizeof(line), "msgget for logon/logoff error, key: %d, errno: %d text: %s", MSGKEY, errno, strerror(errno));
+        logLine(vmapiContextP, 'E', line);
+    } else {
+        snprintf(line, sizeof(line), "msgget for logon/logoff ok, key: %d msqid: %d", MSGKEY, msqid);
+        logLine(vmapiContextP, 'I', line);
+    }
     smMemoryGroupFreeAll(vmapiContextP);
     smMemoryGroupTerminate(vmapiContextP);
     vmapiContextP->memContext = saveMemoryGroup;
 
-    // Wait for and handle incoming requests from the directory manager
+    // Signal the caller (vmbkendCheck) that queues are ready, then release
+    // the mutex before spawning the iucv thread — vmbkendMain_iucv also
+    // calls pthread_mutex_lock(&mutex) at startup and would deadlock otherwise.
     pthread_cond_signal(&thread_initialized_cv);
     pthread_mutex_unlock(&mutex);
+
+    // Launch the IUCV thread that calls Event_Subscribe against SMAPI and
+    // populates the IPC queues.
+    {
+        pthread_t iucvThread;
+        pthread_attr_t iucvAttr;
+        pthread_attr_init(&iucvAttr);
+        pthread_attr_setdetachstate(&iucvAttr, PTHREAD_CREATE_DETACHED);
+        rc = pthread_create(&iucvThread, &iucvAttr, vmbkendMain_iucv, (void *) vmapiContextP);
+        if (rc != 0) {
+            snprintf(line, sizeof(line), "vmbkendMain: failed to create iucv thread, rc=%d", rc);
+            logLine(vmapiContextP, 'E', line);
+        } else {
+            logLine(vmapiContextP, 'I', "vmbkendMain: iucv thread started");
+        }
+        pthread_attr_destroy(&iucvAttr);
+    }
+
+    // Wait for and handle incoming requests from the directory manager
     for (;;) {
         time(&ltime);
 
@@ -2127,8 +2172,9 @@ void  *vmbkendMain_iucv(void *context) {
     vmApiInternalContext vmapiContext;
     smMemoryGroupContext memContext;
     extern struct _smTrace externSmapiTraceFlags;
-    pthread_mutex_lock(&mutex);
-
+    /* vmbkendMain_iucv is spawned by vmbkendMain after it has already
+     * released the mutex and signalled thread_initialized_cv.  Skip the
+     * mutex/semaphore/condvar dance that was designed for standalone startup. */
     memset(&vmapiContext, 0, sizeof(*(&vmapiContext)));
     memset(&memContext, 0, sizeof(*(&memContext)));
     (&vmapiContext)->memContext = &memContext;
@@ -2158,33 +2204,11 @@ void  *vmbkendMain_iucv(void *context) {
     /* Indicate this is the backend */
     vmapiContextP->isBackend = 1;
 
-    /* Obtain the backend semaphore to before manipulating context related stuff */
-    operations[0].sem_num = BackendSemaphoreIndex;
-    operations[0].sem_op = -1;
-    operations[0].sem_flg = SEM_UNDO;
-    rc = semop(vmapiContextP->semId, operations,
-            sizeof(operations) / sizeof(operations[0]));
-    if (rc < 0) {
-        TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
-        sprintf(line, "vmbkendMain_iucv: semop (decrement) failed, errno=%d text: %s", errno, strerror(errno));
-        TRACE_END_DEBUG(vmapiContextP, line);
-    }
-
     /* OK ready to go */
     time(&ltime);
     TRACE_START(vmapiContextP, TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendMain_iucv: Entry to --> at %s", ctime(&ltime));
         TRACE_END_DEBUG(vmapiContextP, line);
-
-    /* Build path to the cache directory */
-    memset(path, 0, sizeof(cachePath));
-    vmbkendGetCachePath(vmapiContextP, cachePath);
-
-    /* Call routine to remove the cache */
-    vmbkendRemoveEntireCache(vmapiContextP, cachePath);
-
-    pthread_cond_signal(&thread_initialized_cv);
-    pthread_mutex_unlock(&mutex);
 
     /* Periodically check at least while there is at least one indication subscriber */
     for (;;) {
