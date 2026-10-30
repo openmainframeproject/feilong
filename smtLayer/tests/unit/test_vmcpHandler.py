@@ -1450,3 +1450,245 @@ class VMCPHandlerQueryVSwitchDetailsTestCase(base.SMTTestCase):
         self.assertEqual(1, result['rc'])
         self.assertEqual(0, result['response']['vswitch_count'])
         self.assertEqual([], result['response']['vswitches'])
+
+
+class VMCPHandlerIsNicCoupledTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.is_nic_coupled()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_is_nic_coupled_true(self, mock_run):
+        output = (
+            "VSWITCH SYSTEM VSICIC     Type: QDIO    Connected: 30\n"
+            " Adapter Connections:                            Connected: 30\n"
+            "    Adapter Owner: FAKEUSER NIC: 1000.P00 Name: HYD1G1      Type: QDIO\n"
+            "    Adapter Owner: FAKEUSER NIC: 0600.P00 Name: HYD1G1      Type: QDIO\n"
+        )
+        mock_run.return_value = {'response': output, 'overallRC': 0}
+
+        # 4-digit hex
+        result = self.handler.is_nic_coupled('FAKEUSER', '1000')
+        self.assertTrue(result['coupled'])
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_with(
+            ["QUERY", "VSWITCH", "ALL", "DETAILS", "USERID", "FAKEUSER"],
+            tolerated='HCPSWQ2836E')
+
+        # Unpadded hex input '600' correctly normalizes to '0600'
+        result = self.handler.is_nic_coupled('fakeuser', '600')
+        self.assertTrue(result['coupled'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_is_nic_coupled_false_prefix_mismatch(self, mock_run):
+        """Prefix like '100' must NOT match '1000.P00'."""
+        output = (
+            "VSWITCH SYSTEM VSICIC     Type: QDIO    Connected: 30\n"
+            " Adapter Connections:                            Connected: 30\n"
+            "    Adapter Owner: FAKEUSER NIC: 1000.P00 Name: HYD1G1      Type: QDIO\n"
+        )
+        mock_run.return_value = {'response': output, 'overallRC': 0}
+        result = self.handler.is_nic_coupled('FAKEUSER', '0100')
+        self.assertFalse(result['coupled'])
+        self.assertEqual(0, result['overallRC'])
+
+        result = self.handler.is_nic_coupled('FAKEUSER', '1006')
+        self.assertFalse(result['coupled'])
+        self.assertEqual(0, result['overallRC'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_is_nic_coupled_query_failure(self, mock_run):
+        mock_run.return_value = {'response': '', 'overallRC': 1}
+        result = self.handler.is_nic_coupled('FAKEUSER', '1000')
+        self.assertFalse(result['coupled'])
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('QUERY VSWITCH failed for FAKEUSER, rc: 1',
+                         result['strError'])
+
+    @mock.patch('subprocess.check_output')
+    def test_is_nic_coupled_no_adapter_on_any_vswitch(self, mock_out):
+        mock_out.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp',
+            output=b'HCPSWQ2836E USERID was not found.\n')
+        result = self.handler.is_nic_coupled('FAKEUSER', '1000')
+        self.assertFalse(result['coupled'])
+        self.assertEqual(0, result['overallRC'])
+        self.rh.updateResults.assert_not_called()
+
+
+class VMCPHandlerDeleteNICTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.delete_nic_for_guest()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_delete_nic_success(self, mock_run, mock_run_for):
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_run_for.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': ''
+        }
+        result = self.handler.delete_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(
+            ['QUERY', 'NIC', 'USERID', 'FAKEUSER', '0600'],
+            tolerated=mock.ANY)
+        mock_run_for.assert_called_once_with('FAKEUSER', 'DETACH NIC 0600')
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_delete_nic_not_found(self, mock_run, mock_run_for):
+        """NIC absent: tolerated by _run, returns nic_not_found=True and skips DETACH."""
+        mock_run.return_value = {
+            'response': 'HCPNIC2836E VDEV was not found.',
+            'overallRC': 0
+        }
+        result = self.handler.delete_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(0, result['overallRC'])
+        self.assertTrue(result.get('nic_not_found'))
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_delete_nic_query_failed_unexpected(self, mock_run, mock_run_for):
+        """QUERY NIC failed with unexpected error (e.g. privilege error): returns RC."""
+        mock_run.return_value = {
+            'response': '',
+            'overallRC': 1
+        }
+        result = self.handler.delete_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('QUERY NIC failed for FAKEUSER 0600, rc: 1',
+                         result['strError'])
+        self.assertFalse(result.get('nic_not_found', False))
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_delete_nic_for_rejected(self, mock_run, mock_run_for):
+        """FOR command rejected: non-zero overallRC, error text in response."""
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_run_for.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'errno': 0,
+            'strError': 'FOR failed',
+            'response': 'FOR failed'
+        }
+        result = self.handler.delete_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('FOR failed', result['strError'])
+        self.rh.updateResults.assert_called_once_with(mock_run_for.return_value)
+
+
+class VMCPHandlerUncoupleNICTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.uncouple_nic_for_guest()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_success(self, mock_run, mock_coupled, mock_run_for):
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_coupled.return_value = {
+            'coupled': True, 'overallRC': 0, 'response': ''}
+        mock_run_for.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': ''
+        }
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(
+            ['QUERY', 'NIC', 'USERID', 'FAKEUSER', '0600'],
+            tolerated=mock.ANY)
+        mock_coupled.assert_called_once_with('FAKEUSER', '0600')
+        mock_run_for.assert_called_once_with('FAKEUSER', 'UNCOUPLE 0600')
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_not_found(self, mock_run, mock_coupled, mock_run_for):
+        """NIC does not exist: returns nic_not_found=True and skips UNCOUPLE."""
+        mock_run.return_value = {
+            'response': 'HCPNIC2836E VDEV was not found.',
+            'overallRC': 0
+        }
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        self.assertTrue(result.get('nic_not_found'))
+        self.rh.updateResults.assert_called_once_with(result)
+        mock_coupled.assert_not_called()
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_query_failed_unexpected(
+            self, mock_run, mock_coupled, mock_run_for):
+        """QUERY NIC failed unexpectedly: returns overallRC without calling coupled."""
+        mock_run.return_value = {
+            'response': '',
+            'overallRC': 1
+        }
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('QUERY NIC failed for FAKEUSER 0600, rc: 1',
+                         result['strError'])
+        self.assertFalse(result.get('nic_not_found', False))
+        mock_coupled.assert_not_called()
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_query_vswitch_failure(
+            self, mock_run, mock_coupled, mock_run_for):
+        """is_nic_coupled failed: returns error and skips UNCOUPLE."""
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_coupled.return_value = {
+            'coupled': False, 'overallRC': 1, 'response': '',
+            'rc': 1, 'rs': 0, 'errno': 0, 'strError': 'QUERY VSWITCH failed for FAKEUSER, rc: 1'}
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_already_uncoupled(
+            self, mock_run, mock_coupled, mock_run_for):
+        """NIC already uncoupled: returns already_uncoupled=True and skips UNCOUPLE."""
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_coupled.return_value = {
+            'coupled': False, 'overallRC': 0, 'response': 'VSWITCH...'}
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(0, result['overallRC'])
+        self.assertTrue(result.get('already_uncoupled'))
+        mock_run_for.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run_for')
+    @mock.patch.object(VMCPHandler, 'is_nic_coupled')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_uncouple_nic_for_rejected(self, mock_run, mock_coupled, mock_run_for):
+        """FOR command rejected: non-zero overallRC, error text in response."""
+        mock_run.return_value = {'response': 'A MAC: ...', 'overallRC': 0}
+        mock_coupled.return_value = {
+            'coupled': True, 'overallRC': 0, 'response': ''}
+        mock_run_for.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'errno': 0,
+            'strError': 'FOR failed',
+            'response': 'FOR failed'
+        }
+        result = self.handler.uncouple_nic_for_guest('FAKEUSER', '0600')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('FOR failed', result['strError'])
+        self.rh.updateResults.assert_called_once_with(mock_run_for.return_value)

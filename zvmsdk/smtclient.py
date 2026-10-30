@@ -2185,6 +2185,9 @@ class SMTClient(object):
             raise error
 
     def delete_nic(self, userid, vdev, active=False):
+        """Delete a NIC from the user directory and optionally from the active
+        guest.
+        """
         if active:
             self._is_active(userid)
 
@@ -2259,25 +2262,43 @@ class SMTClient(object):
             self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
 
         if active:
-            rd = ' '.join((
-                "SMAPI %s API Virtual_Network_Adapter_Delete" %
-                userid,
-                "--operands",
-                '-v %s' % vdev))
-            try:
-                self._request(rd)
-            except exception.SDKSMTRequestFailed as err:
-                results = err.results
-                emsg = err.format_message()
-                if ((results['rc'] == 204) and
-                    (results['rs'] == 8)):
+            # When use_smapi is disabled, use vmcp to detach NIC.
+            if not config.CONF.zvm.use_smapi:
+                rh = ReqHandle(smt=self._smt)
+                results = VMCPHandler(rh).delete_nic_for_guest(
+                    userid, vdev)
+                if results.get('nic_not_found'):
                     LOG.warning("Virtual device %s does not exist on "
                                 "the active guest system", vdev)
-                else:
+                elif results['overallRC'] != 0:
+                    response = (results.get('strError', '') or
+                                results.get('response', ''))
                     LOG.error("Failed to delete nic %s for %s on "
-                              "the active guest system, error: %s" %
-                              (vdev, userid, emsg))
-                    self._delete_nic_active_exception(err, userid, vdev)
+                              "the active guest system, error: %s",
+                              vdev, userid, response)
+                    raise exception.SDKConflictError(
+                        modID='network', rs=8, vdev=vdev, userid=userid,
+                        msg=response)
+            else:
+                rd = ' '.join((
+                    "SMAPI %s API Virtual_Network_Adapter_Delete" %
+                    userid,
+                    "--operands",
+                    '-v %s' % vdev))
+                try:
+                    self._request(rd)
+                except exception.SDKSMTRequestFailed as err:
+                    results = err.results
+                    emsg = err.format_message()
+                    if ((results['rc'] == 204) and
+                        (results['rs'] == 8)):
+                        LOG.warning("Virtual device %s does not exist on "
+                                    "the active guest system", vdev)
+                    else:
+                        LOG.error("Failed to delete nic %s for %s on "
+                                "the active guest system, error: %s" %
+                                (vdev, userid, emsg))
+                        self._delete_nic_active_exception(err, userid, vdev)
         msg = ('Delete nic device %(vdev)s for guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
@@ -2509,7 +2530,9 @@ class SMTClient(object):
             raise error
 
     def _uncouple_nic(self, userid, vdev, active=False):
-        """Uncouple NIC from vswitch"""
+        """Uncouple a NIC from its vswitch in the user directory and optionally
+        on the active guest.
+        """
         if active:
             self._is_active(userid)
         msg = ('Start to uncouple nic device %(vdev)s of guest %(vm)s'
@@ -2542,29 +2565,52 @@ class SMTClient(object):
         self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
                                                              None)
 
-        # the inst must be active, or this call will failed
+        # the inst must be active, or this call will fail
         if active:
-            requestData = ' '.join((
-                'SMAPI %s' % userid,
-                'API Virtual_Network_Adapter_Disconnect',
-                "--operands",
-                "-v %s" % vdev))
-            try:
-                self._request(requestData)
-            except (exception.SDKSMTRequestFailed,
-                    exception.SDKInternalError) as err:
-                results = err.results
-                emsg = err.format_message()
-                if ((results is not None) and
-                    (results['rc'] == 204) and
-                    (results['rs'] == 48)):
+            # When use_smapi is disabled, use vmcp to uncouple NIC.
+            if not config.CONF.zvm.use_smapi:
+                rh = ReqHandle(smt=self._smt)
+                results = VMCPHandler(rh).uncouple_nic_for_guest(
+                    userid, vdev)
+                if results.get('nic_not_found'):
+                    obj_desc = "Guest device %s" % vdev
+                    raise exception.SDKObjectNotExistError(
+                        obj_desc=obj_desc, modID='network')
+                elif results.get('already_uncoupled'):
                     LOG.warning("Virtual device %s is already "
                                 "disconnected on the active "
                                 "guest system", vdev)
-                else:
+                elif results['overallRC'] != 0:
+                    response = (results.get('strError', '') or
+                                results.get('response', ''))
                     LOG.error("Failed to uncouple nic %s on the active "
-                              "guest system, error: %s" % (vdev, emsg))
-                    self._uncouple_active_exception(err, userid, vdev)
+                              "guest system, error: %s",
+                              vdev, response)
+                    raise exception.SDKConflictError(
+                        modID='network', rs=12, vdev=vdev, userid=userid,
+                        msg=response)
+            else:
+                requestData = ' '.join((
+                    'SMAPI %s' % userid,
+                    'API Virtual_Network_Adapter_Disconnect',
+                    "--operands",
+                    "-v %s" % vdev))
+                try:
+                    self._request(requestData)
+                except (exception.SDKSMTRequestFailed,
+                        exception.SDKInternalError) as err:
+                    results = err.results
+                    emsg = err.format_message()
+                    if ((results is not None) and
+                        (results['rc'] == 204) and
+                        (results['rs'] == 48)):
+                        LOG.warning("Virtual device %s is already "
+                                    "disconnected on the active "
+                                    "guest system", vdev)
+                    else:
+                        LOG.error("Failed to uncouple nic %s on the active "
+                                "guest system, error: %s" % (vdev, emsg))
+                        self._uncouple_active_exception(err, userid, vdev)
         msg = ('Uncouple nic device %(vdev)s of guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
