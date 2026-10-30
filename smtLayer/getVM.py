@@ -309,7 +309,7 @@ def getDirectory(rh):
     parms = ["-T", rh.userid]
     results = invokeSMCLI(rh, "Image_Query_DM", parms)
     if results['overallRC'] == 0:
-        results['response'] = re.sub('\*DVHOPT.*', '', results['response'])
+        results['response'] = re.sub(r'\*DVHOPT.*', '', results['response'])
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.
@@ -337,7 +337,7 @@ def getAllDirectory(rh):
     parms = []
     results = invokeSMCLI(rh, "Image_Name_Query_DM", parms)
     if results['overallRC'] == 0:
-        results['response'] = re.sub('\*DVHOPT.*', '', results['response'])
+        results['response'] = re.sub(r'\*DVHOPT.*', '', results['response'])
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.

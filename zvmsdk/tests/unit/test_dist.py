@@ -680,3 +680,31 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                 lun_id='0x0100000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
+
+
+class NethConfigurationFileTestCase(base.SDKTestCase):
+    """The per-interface config file of a NETH nic depends on the distro."""
+
+    def _file(self, os_version):
+        dist_cls = dist.LinuxDistManager().get_linux_dist(os_version)
+        return dist_cls().get_neth_configuration_file('enc112')
+
+    def test_rhel(self):
+        for os_version in ('rhel7.2', 'rhel8.1', 'rhel9.2', 'rhel10.0'):
+            self.assertEqual('/etc/sysconfig/network-scripts/ifcfg-enc112',
+                             self._file(os_version))
+
+    def test_sles(self):
+        for os_version in ('sles11sp4', 'sles12sp5', 'sles15sp4'):
+            self.assertEqual('/etc/sysconfig/network/ifcfg-enc112',
+                             self._file(os_version))
+
+    def test_ubuntu(self):
+        self.assertEqual('/etc/network/interfaces.d/enc112',
+                         self._file('ubuntu16.04'))
+        for os_version in ('ubuntu20.04', 'ubuntu22.04', 'ubuntu24.04'):
+            self.assertEqual('/etc/netplan/enc112.yaml',
+                             self._file(os_version))
+
+    def test_rhcos(self):
+        self.assertEqual('', self._file('rhcos4.12'))

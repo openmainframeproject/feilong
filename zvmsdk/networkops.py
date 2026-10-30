@@ -20,6 +20,8 @@ import os
 import shutil
 import tarfile
 import yaml
+import netaddr
+from zvmsdk import exception
 
 from zvmsdk import config
 from zvmsdk import dist
@@ -234,7 +236,9 @@ class NetworkOPS(object):
 
         invokeScript is included in the network.doscript, it is used to put
         the network configuration file to the directory where it belongs and
-        call znetconfig to configure the network
+        call znetconfig to configure the network.
+        Set znetconfig=False for NETH (zdirect) paths where the guest will
+        bring the interface up directly without the znetconfig helper.
         """
         LOG.debug('Creating invokeScript shell in the folder %s'
                   % network_file_path)
@@ -312,3 +316,151 @@ class NetworkOPS(object):
     def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
         return self._smtclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
                                              active=active)
+
+    def attach_pcif(self, userid, pcif, active=False):
+        self._smtclient.attach_pcif(userid, pcif, active=active)
+
+    def add_pcif_nic_record(self, userid, pcif, nic_id):
+        self._smtclient.add_pcif_nic_record(userid, pcif, nic_id)
+
+    def zdirect_delete_network_configuration(self, userid, os_version, pcif,
+                                             active=True):
+        """Remove the network configuration of a NETH interface from the
+        guest and detach its PCI function from the guest."""
+        if active:
+            # the interface only exists in the guest while pcif is attached.
+            # Failing to clean the guest must not stop the pcif detach.
+            try:
+                linuxdist = self._dist_manager.get_linux_dist(os_version)()
+                intf_name = self._smtclient.get_neth_interface_info(
+                    userid, pcif)[0]
+                conf_file = linuxdist.get_neth_configuration_file(intf_name)
+                if conf_file:
+                    self._smtclient.execute_cmd(userid,
+                                                'rm -f %s' % conf_file)
+            except exception.SDKBaseException as err:
+                LOG.warning("Failed to remove the network configuration of "
+                            "pcif %s from guest %s, detach it anyway: %s"
+                            % (pcif, userid, err.format_message()))
+        self._smtclient.detach_pcif(userid, pcif, active=active)
+
+    def zdirect_network_configuration(self, userid, pcif, network_info,
+                                      active=True, restart=True):
+        network_file_path = self._smtclient.get_guest_temp_path(userid)
+        first = self._smtclient.is_first_network_config(userid)
+        # get interface details
+        resp = self._smtclient.get_neth_interface_info(userid, pcif)
+        intf_name = resp[0]
+        (network_doscript, active_cmds) = self._generate_zdirect_network_doscript(
+            userid, intf_name,
+            network_info,
+            network_file_path,
+            first, active=active)
+
+        fileClass = "X"
+        try:
+            self._smtclient.punch_file(userid, network_doscript, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', network_file_path)
+            shutil.rmtree(network_file_path)
+
+        # update guest db to mark the network is already set
+        if first:
+            self._smtclient.update_guestdb_with_net_set(userid)
+
+        # using zvmguestconfigure tool to parse network_doscript
+        if active:
+            self._smtclient.execute_cmd(userid, active_cmds)
+
+        if restart:
+            # Restart the instance to apply the changes
+            self._smtclient.guest_reboot(userid)
+        elif active:
+            # Attaching a nic to a running guest: bring it up, no reboot.
+            # ifup only exists with network-scripts, RHEL 8 and later use
+            # NetworkManager which has to reload the new ifcfg file first.
+            # A failure to bring the interface up is reported to the caller.
+            self._smtclient.execute_cmd(
+                userid,
+                'if command -v ifup >/dev/null 2>&1; then '
+                'ifup %(i)s; '
+                'else nmcli connection reload && '
+                '(nmcli connection up "%(i)s" || '
+                'nmcli connection up "System %(i)s" || '
+                'nmcli device connect "%(i)s"); fi' % {'i': intf_name})
+
+    def _generate_zdirect_network_doscript(self, userid, intf_name, network,
+                                           network_file_path, first, active=True):
+        path_contents = []
+        content_dir = {}
+        files_map = []
+        (net_conf_files, clean_cmd) = self._create_neth_configuration_files(
+            network, intf_name, first)
+        if len(net_conf_files) > 0:
+            path_contents.extend(net_conf_files)
+
+        for (path, contents) in path_contents:
+            key = "%04i" % len(content_dir)
+            files_map.append({'target_path': path,
+                              'source_file': "%s" % key})
+            content_dir[key] = contents
+            file_name = os.path.join(network_file_path, key)
+            if 'yaml' in path:
+                self._add_yaml_file(file_name, contents)
+            else:
+                self._add_file(file_name, contents)
+
+        self._create_invokeScript(network_file_path, clean_cmd, files_map, znetconfig=False)
+        network_doscript = self._create_network_doscript(network_file_path)
+
+        # get command about zvmguestconfigure
+        active_cmds = ''
+        if active:
+            active_cmds = 'service zvmguestconfigure start'
+        return network_doscript, active_cmds
+
+    def _create_neth_configuration_files(self, network, intf_name,
+                                         first=True):
+        file_path = ("/etc/sysconfig/network-scripts/ifcfg-%s" % intf_name)
+        mtu = ''
+        cfg_str = ''
+
+        # Each ifcfg file is scoped to one interface (intf_name).  Only the
+        # first network entry is used; iterating and reassigning cfg_str would
+        # silently drop all but the last entry.
+        net = network[0]
+        method = 'static'
+        if (('method' in net.keys()) and
+                (net['method'] is not None)):
+            method = net['method'].lower()
+
+        ip_cidr = net['cidr']
+        netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
+        broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
+        if broadcast_v4 == 'None':
+            broadcast_v4 = ''
+        gateway = net['gateway_addr']
+        ip = net['ip_addr']
+
+        if (('mtu' in net.keys()) and
+                (net['mtu'] is not None)):
+            mtu = str(net['mtu'])
+
+        cfg_str = 'DEVICE=\"' + intf_name + '\"\n'
+        cfg_str += 'BOOTPROTO=\"' + method + '"\n'
+        cfg_str += 'BROADCAST=\"' + broadcast_v4 + '"\n'
+        cfg_str += 'GATEWAY=\"' + gateway + '"\n'
+        cfg_str += 'IPADDR=\"' + ip + '"\n'
+        cfg_str += 'NETMASK=\"' + netmask_v4 + '"\n'
+        cfg_str += 'NETTYPE=\"NETH\"\n'
+        cfg_str += 'ONBOOT=\"yes\"\n'
+        cfg_str += 'MTU=\"' + mtu + '"\n'
+
+        # Only clean the stale configuration files of the image on the first
+        # configuration, otherwise the files of existing nics would be lost.
+        clean_cmd = ''
+        if first:
+            interface = intf_name[:2]
+            clean_cmd = ("\nrm -f /etc/sysconfig/network-scripts/"
+                         "ifcfg-%s*\n" % interface)
+        return ([(file_path, cfg_str)], clean_cmd)

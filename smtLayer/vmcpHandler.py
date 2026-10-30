@@ -24,6 +24,7 @@ from smtLayer import msgs
 from smtLayer import vmUtils
 from zvmsdk import exception
 
+
 modId = 'VCP'
 version = "1.0.0"
 
@@ -141,6 +142,30 @@ class VMCPHandler:
                 'rc': 1, 'rs': 0, 'errno': 0,
                 'strError': str(e)
             }
+
+    def attach_pcif(self, pcif, userid):
+        """
+        Attach a PCI function to a virtual machine via
+        'vmcp attach pcif <pcif> to <userid> as <pcif>'.
+
+        Input:
+           pcif   - PCI function device number, e.g. "00000112"
+           userid - target virtual machine
+        Output:
+           0 on success, non-zero on failure (also recorded in rh.results).
+        """
+        return self._run(["attach", "pcif", pcif, "to", userid,
+                          "as", pcif])["overallRC"]
+
+    def detach_pcif(self, pcif, userid):
+        """
+        Detach a PCI function from a virtual machine via
+        'vmcp detach pcif <pcif> from <userid>'.
+
+        Output:
+           0 on success, non-zero on failure (also recorded in rh.results).
+        """
+        return self._run(["detach", "pcif", pcif, "from", userid])["overallRC"]
 
     def query_pcif(self):
         """
