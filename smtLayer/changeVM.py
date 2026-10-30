@@ -390,20 +390,26 @@ def dedicate(rh):
         results = isLoggedOn(rh, rh.userid)
         if (results['overallRC'] == 0 and results['rs'] == 0):
             # Dedicate device to active configuration.
-            parms = [
-                "-T", rh.userid,
-                "-v", rh.parms['vaddr'],
-                "-r", rh.parms['raddr'],
-                "-R", rh.parms['mode']]
+            if not config.CONF.zvm.use_smapi:
+                handler = VMCPHandler(rh)
+                results = handler.query_attach(rh)
 
-            results = invokeSMCLI(rh, "Image_Device_Dedicate", parms)
+            else:
+                parms = [
+                    "-T", rh.userid,
+                    "-v", rh.parms['vaddr'],
+                    "-r", rh.parms['raddr'],
+                    "-R", rh.parms['mode']]
+
+                results = invokeSMCLI(rh, "Image_Device_Dedicate", parms)
+
             if results['overallRC'] == 0:
                 rh.printLn("N", "Dedicated device " + rh.parms['vaddr'] +
                     " to the active configuration.")
             else:
-                # SMAPI API failed.
+                # VMCP OR SMAPI API failed.
                 rh.printLn("ES", results['response'])
-                rh.updateResults(results)    # Use results from invokeSMCLI
+                rh.updateResults(results)
 
     rh.printSysLog("Exit changeVM.dedicate, rc: " +
                    str(rh.results['overallRC']))
@@ -452,16 +458,21 @@ def undedicate(rh):
         logon_result = isLoggedOn(rh, rh.userid)
         if logon_result['overallRC'] == 0 and logon_result['rs'] == 0:
             # UnDedicate device from active configuration.
-            parms = [
-                "-T", rh.userid,
-                "-v", rh.parms['vaddr']]
+            if not config.CONF.zvm.use_smapi:
+                handler = VMCPHandler(rh)
+                results = handler.query_detach(rh)
+            else:
+                parms = [
+                    "-T", rh.userid,
+                    "-v", rh.parms['vaddr']]
 
-            results = invokeSMCLI(rh, "Image_Device_Undedicate", parms)
+                results = invokeSMCLI(rh, "Image_Device_Undedicate", parms)
+
             if results['overallRC'] == 0:
                 rh.printLn("N", "UnDedicated device " + rh.parms['vaddr'] +
                     " from the active configuration.")
             else:
-                # SMAPI API failed.
+                # VMCP OR SMAPI API failed.
                 rh.printLn("ES", results['response'])
                 rh.updateResults(results)    # Use results from invokeSMCLI
         elif results['rc'] == 404 and results['rs'] == 8:

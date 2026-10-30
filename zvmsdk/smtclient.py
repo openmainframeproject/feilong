@@ -1769,6 +1769,23 @@ class SMTClient(object):
         return pi_dict
 
     def virtual_network_vswitch_query_byte_stats(self):
+
+        if not CONF.zvm.use_smapi:
+            rh = ReqHandle(smt=self._smt, captureLogs=False)
+            handler = VMCPHandler(rh)
+            try:
+                results = handler.query_vswitch_details()
+            except exception.SDKSMTRequestFailed as err:
+                LOG.error("Failed to query vswitch byte stats via VMCP.")
+                err_msg = "SMT error: %s" % err.format_message()
+                LOG.error(err_msg)
+                raise exception.SDKSMTRequestFailed(err.results, err_msg)
+            if results.get('rc') != 0 or not results.get('response'):
+                raise exception.SDKSMTRequestFailed(
+                    {'rc': results.get('rc', 1), 'rs': 0},
+                    "VMCP QUERY VSWITCH DETAILS returned no data")
+            return results['response']
+
         smt_userid = zvmutils.get_smt_userid()
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Query_Byte_Stats" %
@@ -4638,6 +4655,27 @@ class SMTClient(object):
     def host_get_ssi_info(self):
         msg = ('Start SSI_Query')
         LOG.info(msg)
+
+        if not CONF.zvm.use_smapi:
+            rh = ReqHandle(smt=self._smt, captureLogs=False)
+            handler = VMCPHandler(rh)
+            try:
+                results = handler.ssi_info()
+            except exception.SDKSMTRequestFailed as err:
+                LOG.error("Failed to query SSI information from VMCP command.")
+                err_msg = "SMT error: %s" % err.format_message()
+                LOG.error(err_msg)
+                raise exception.SDKSMTRequestFailed(err.results, err_msg)
+            # Host is not a member of an SSI cluster
+            if (results.get('rc') == 0 and
+                    "This system is not a member of an SSI cluster."
+                    in "\n".join(results.get('response', []))):
+                LOG.debug("Host is not a member of an SSI cluster.")
+                return []
+
+            if results.get('rc') == 0 and results.get('response'):
+                return results['response']
+            return []
 
         rd = 'SMAPI HYPERVISOR API SSI_Query'
         try:

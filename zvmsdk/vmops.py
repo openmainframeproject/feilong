@@ -109,17 +109,17 @@ class VMOps(object):
             if 'rhcos' in guest_info[2].lower():
                 return 0
         except (ValueError, AttributeError, IndexError, TypeError) as err:
-            LOG.error(f"Failed to query guest type for {userid}: {err}")
+            LOG.error("Failed to query guest type for %s: %s" % (userid, err))
             return 0
 
         # Gets the  active CPU count
         try:
             active_cpus = self._smtclient.get_active_cpu_addrs(userid)
             cpu_count = len(active_cpus)
-            LOG.debug(f"Online CPUs for {userid}: {cpu_count}")
+            LOG.debug("Online CPUs for %s: %s" % (userid, cpu_count))
             return cpu_count
         except exception.SDKSMTRequestFailed as err:
-            LOG.error(f"Failed to get CPU count for {userid}: {err}")
+            LOG.error("Failed to get CPU count for %s: %s" % (userid, err))
             return 0
 
     def get_info(self, userid):

@@ -18,6 +18,8 @@
 from mock import Mock, call, patch
 from smtLayer import changeVM, ReqHandle
 from smtLayer.tests.unit import base
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 
 class SMTChangeVMTestCase(base.SMTTestCase):
@@ -312,3 +314,92 @@ class SMTChangeVMTestCase(base.SMTTestCase):
         self.assertEqual(2, smcli.call_count)
         self.assertEqual(["-T", "FAKEUSER", "-v", "0100", "-m", "MR"],
                          smcli.call_args[0][2])
+
+
+class ChangeVMVmcpTestCase(base.SMTTestCase):
+    """Test cases for VMCP paths (use_smapi=False) in changeVM.py."""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        self.rh.userid = "TESTUSER"
+        self._orig_use_smapi = config.CONF.zvm['use_smapi']
+        config.CONF.zvm['use_smapi'] = False
+
+    def tearDown(self):
+        config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+        super().tearDown()
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(VMCPHandler, 'query_attach')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    def test_dedicate_vmcp_success(self, mock_logon, mock_smcli,
+                                  mock_attach, mock_print):
+        """Dedicate on active configuration via VMCP succeeds."""
+        self.rh.parms = {'vaddr': '1000', 'raddr': '2000', 'mode': '0'}
+        mock_smcli.return_value = {'overallRC': 0, 'response': ['ok']}
+        mock_logon.return_value = {'overallRC': 0, 'rs': 0}
+        mock_attach.return_value = {'overallRC': 0, 'response': 'Device attached'}
+
+        rc = changeVM.dedicate(self.rh)
+
+        mock_attach.assert_called_once_with(self.rh)
+        mock_print.assert_called_once_with(
+            "N", "Dedicated device 1000 to the active configuration.")
+        self.assertEqual(0, rc)
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(VMCPHandler, 'query_attach')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    def test_dedicate_vmcp_failure(self, mock_logon, mock_smcli,
+                                  mock_attach, mock_print):
+        """Dedicate on active configuration via VMCP fails."""
+        self.rh.parms = {'vaddr': '1000', 'raddr': '2000', 'mode': '0'}
+        mock_smcli.return_value = {'overallRC': 0, 'response': ['ok']}
+        mock_logon.return_value = {'overallRC': 0, 'rs': 0}
+        mock_attach.return_value = {'overallRC': 1, 'response': 'HCP040E Device not found'}
+
+        rc = changeVM.dedicate(self.rh)
+
+        mock_attach.assert_called_once_with(self.rh)
+        mock_print.assert_called_once_with("ES", "HCP040E Device not found")
+        self.assertEqual(1, rc)
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(VMCPHandler, 'query_detach')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    def test_undedicate_vmcp_success(self, mock_logon, mock_smcli,
+                                    mock_detach, mock_print):
+        """Undedicate on active configuration via VMCP succeeds."""
+        self.rh.parms = {'vaddr': '1000'}
+        mock_smcli.return_value = {'overallRC': 0, 'response': ['ok']}
+        mock_logon.return_value = {'overallRC': 0, 'rs': 0}
+        mock_detach.return_value = {'overallRC': 0, 'response': 'Device detached'}
+
+        rc = changeVM.undedicate(self.rh)
+
+        mock_detach.assert_called_once_with(self.rh)
+        mock_print.assert_called_once_with(
+            "N", "UnDedicated device 1000 from the active configuration.")
+        self.assertEqual(0, rc)
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(VMCPHandler, 'query_detach')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    def test_undedicate_vmcp_failure(self, mock_logon, mock_smcli,
+                                    mock_detach, mock_print):
+        """Undedicate on active configuration via VMCP fails."""
+        self.rh.parms = {'vaddr': '1000'}
+        mock_smcli.return_value = {'overallRC': 0, 'response': ['ok']}
+        mock_logon.return_value = {'overallRC': 0, 'rs': 0}
+        mock_detach.return_value = {'overallRC': 1, 'response': 'HCP040E Device not found'}
+
+        rc = changeVM.undedicate(self.rh)
+
+        mock_detach.assert_called_once_with(self.rh)
+        mock_print.assert_called_once_with("ES", "HCP040E Device not found")
+        self.assertEqual(1, rc)

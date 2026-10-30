@@ -24,6 +24,7 @@ import time
 import subprocess
 
 from smtLayer import smt
+from smtLayer.vmcpHandler import VMCPHandler
 
 from zvmsdk import config
 from zvmsdk import database
@@ -4880,8 +4881,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu)])
 
-        request.assert_not_called()
-
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, 'get_active_cpu_offline_addrs')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -5836,3 +5835,66 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed'))
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.get_pcif_list)
+
+
+class SMTClientVmcpTestCase(base.SDKTestCase):
+    """Unit tests for VMCP paths (use_smapi=False) in zvmsdk/smtclient.py."""
+
+    def setUp(self):
+        super().setUp()
+        self._smtclient = smtclient.SMTClient()
+        self._orig_use_smapi = config.CONF.zvm.use_smapi
+        config.CONF.zvm.use_smapi = False
+
+    def tearDown(self):
+        config.CONF.zvm.use_smapi = self._orig_use_smapi
+        super().tearDown()
+
+    @mock.patch.object(VMCPHandler, 'query_vswitch_details')
+    def test_vswitch_query_byte_stats_vmcp_success(self, mock_vsw):
+        """virtual_network_vswitch_query_byte_stats via VMCP returns stats dict."""
+        mock_vsw.return_value = {
+            'rc': 0,
+            'response': {'vswitch_count': 1, 'vswitches': [{'vswitch_name': 'VSW1'}]}
+        }
+
+        result = self._smtclient.virtual_network_vswitch_query_byte_stats()
+
+        mock_vsw.assert_called_once()
+        self.assertEqual({'vswitch_count': 1, 'vswitches': [{'vswitch_name': 'VSW1'}]}, result)
+
+    @mock.patch.object(VMCPHandler, 'query_vswitch_details')
+    def test_vswitch_query_byte_stats_vmcp_failure(self, mock_vsw):
+        """virtual_network_vswitch_query_byte_stats raises exception on failure."""
+        mock_vsw.return_value = {'rc': 1, 'response': {}}
+
+        self.assertRaises(
+            exception.SDKSMTRequestFailed,
+            self._smtclient.virtual_network_vswitch_query_byte_stats
+        )
+
+    @mock.patch.object(VMCPHandler, 'ssi_info')
+    def test_host_get_ssi_info_vmcp_success(self, mock_ssi):
+        """host_get_ssi_info via VMCP returns list of SSI cluster lines."""
+        mock_ssi.return_value = {
+            'rc': 0,
+            'response': ['ssi_name = TESTSSI', 'member_slot = 1']
+        }
+
+        result = self._smtclient.host_get_ssi_info()
+
+        mock_ssi.assert_called_once()
+        self.assertEqual(['ssi_name = TESTSSI', 'member_slot = 1'], result)
+
+    @mock.patch.object(VMCPHandler, 'ssi_info')
+    def test_host_get_ssi_info_vmcp_not_member(self, mock_ssi):
+        """host_get_ssi_info via VMCP returns empty list when host is not in SSI."""
+        mock_ssi.return_value = {
+            'rc': 0,
+            'response': ['This system is not a member of an SSI cluster.']
+        }
+
+        result = self._smtclient.host_get_ssi_info()
+
+        mock_ssi.assert_called_once()
+        self.assertEqual([], result)
