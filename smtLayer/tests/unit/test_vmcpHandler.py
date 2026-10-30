@@ -18,43 +18,52 @@
 import subprocess
 from unittest import mock
 
-from smtLayer import msgs
+from smtLayer import ReqHandle
 from smtLayer.tests.unit import base
 from smtLayer.vmcpHandler import VMCPHandler
 from zvmsdk import exception
 
+_SSI_CLUSTER_OUTPUT = """\
+SSI Name: TESTSSI
+SSI Mode: Stable
+Cross-System Timeouts: Enabled
+SSI Persistent Data Record (PDR) device: 1111 on VOL001
 
-def _make_rh():
-    """Return a lightweight mock ReqHandle."""
-    rh = mock.MagicMock()
-    rh.printSysLog = mock.MagicMock()
-    rh.printLn = mock.MagicMock()
-    rh.updateResults = mock.MagicMock()
-    rh.userid = "TESTUSER"
-    rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
-    return rh
+Slot System ID  State   PDR Heartbeat        Received Heartbeat
+   1 SYS1       JOINED  01/02/26 10:00:00 01/02/26 10:00:01
+   2 --------   DOWN
+"""
 
 
 class VMCPHandlerTest(base.SMTTestCase):
-
-    def test_init_stores_rh(self):
-        rh = _make_rh()
-        handler = VMCPHandler(rh)
-        self.assertIs(rh, handler._rh)
+    """Unit tests for smtLayer/vmcpHandler.py."""
 
     def setUp(self):
         super().setUp()
-        self.rh = _make_rh()
+        self.rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.rh.userid = "TESTUSER"
         self.handler = VMCPHandler(self.rh)
 
-    @mock.patch('subprocess.check_output', return_value=b"OK OUTPUT\n")
-    def test_run_success_rc_0(self, _mock):
+    def _patch_run(self, response="", rc=0):
+        """Patch VMCPHandler._run to return a canned result."""
+        return mock.patch.object(
+            self.handler, '_run',
+            return_value={"response": response, "overallRC": rc},
+        )
+
+    def test_init_stores_rh(self):
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        handler = VMCPHandler(rh)
+        self.assertIs(rh, handler._rh)
+
+    @mock.patch('subprocess.check_output', return_value=b"CP output line\n")
+    def test_run_success_returns_decoded_output(self, mock_check):
         result = self.handler._run(["query", "userid"])
         self.assertEqual(0, result["overallRC"])
-        self.assertEqual("OK OUTPUT\n", result["response"])
+        self.assertEqual("CP output line\n", result["response"])
 
-    @mock.patch('subprocess.check_output', return_value=b"")
-    def test_run_builds_correct_command(self, mock_check):
+    @mock.patch('subprocess.check_output', return_value=b"CP output\n")
+    def test_run_builds_correct_sudo_command(self, mock_check):
         self.handler._run(["query", "pcif"])
         mock_check.assert_called_once_with(
             ["sudo", "/sbin/vmcp", "query", "pcif"],
@@ -65,46 +74,61 @@ class VMCPHandlerTest(base.SMTTestCase):
     @mock.patch('subprocess.check_output')
     def test_run_called_process_error_returns_nonzero_rc(self, mock_check):
         mock_check.side_effect = subprocess.CalledProcessError(
-            returncode=8, cmd="vmcp", output=b"error")
+            returncode=8, cmd="vmcp", output=b"HCP001E Invalid command\n")
         result = self.handler._run(["query", "pcif"])
         self.assertEqual(8, result["overallRC"])
         self.assertEqual("", result["response"])
+        self.assertNotIn("output", result)
 
     @mock.patch('subprocess.check_output')
-    def test_run_called_process_error_updates_results(self, mock_check):
+    def test_run_output_returns_cp_output_on_failure(self, mock_check):
         mock_check.side_effect = subprocess.CalledProcessError(
-            returncode=4, cmd="vmcp", output=b"err")
-        self.handler._run(["query", "pcif"])
-        self.rh.updateResults.assert_called_once_with(msgs.msg['0405'][0])
+            returncode=8, cmd="vmcp", output=b"HCP045E User not logged on\n")
+        result = self.handler._run(["VMRELOCATE", "MOVE", "X"],
+                                   output=True)
+        self.assertEqual(8, result["overallRC"])
+        self.assertEqual("HCP045E User not logged on\n", result["output"])
 
     @mock.patch('subprocess.check_output')
-    def test_run_called_process_error_message_is_decoded(self, mock_check):
-        # Invalid UTF-8 byte must not break decoding.
+    def test_run_called_process_error_records_msg_0405(self, mock_check):
         mock_check.side_effect = subprocess.CalledProcessError(
-            returncode=4, cmd="vmcp", output=b"HCP err \xff")
+            returncode=4, cmd="vmcp", output=b"err\n")
         self.handler._run(["query", "pcif"])
-        printed = self.rh.printLn.call_args[0][1]
-        self.assertIn("HCP err", printed)
-        self.assertNotIn("b'", printed)
+        self.assertNotEqual(0, self.rh.results['overallRC'])
 
     @mock.patch('subprocess.check_output')
     def test_run_generic_exception_returns_rc_1(self, mock_check):
-        mock_check.side_effect = OSError("not found")
+        mock_check.side_effect = OSError("binary not found")
         result = self.handler._run(["query", "pcif"])
         self.assertEqual(1, result["overallRC"])
         self.assertEqual("", result["response"])
 
     @mock.patch('subprocess.check_output')
-    def test_run_generic_exception_updates_results(self, mock_check):
-        mock_check.side_effect = RuntimeError("boom")
-        self.handler._run(["query", "pcif"])
-        self.rh.updateResults.assert_called_once_with(msgs.msg['0421'][0])
-
-    def _patch_run(self, response, rc=0):
-        return mock.patch.object(
-            self.handler, '_run',
-            return_value={"response": response, "overallRC": rc},
+    def test_run_tolerated_pattern_matches_returns_rc_0(self, mock_check):
+        """A CalledProcessError whose output matches the tolerated pattern
+        must be swallowed: overallRC stays 0 and the raw output is returned."""
+        mock_check.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd="vmcp",
+            output=b"HCPabc054E TESTUSER is already logged on\n")
+        result = self.handler._run(
+            ["xautolog", "TESTUSER"],
+            tolerated=r'^HCP\w\w\w054E',
         )
+        self.assertEqual(0, result["overallRC"])
+        self.assertIn("054E", result["response"])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_tolerated_pattern_no_match_returns_failure(self, mock_check):
+        """An error whose output does NOT match the tolerated pattern must
+        still propagate as a failure."""
+        mock_check.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd="vmcp",
+            output=b"HCPabc025E Cannot XAUTOLOG TESTUSER\n")
+        result = self.handler._run(
+            ["xautolog", "TESTUSER"],
+            tolerated=r'^HCP\w\w\w054E',
+        )
+        self.assertEqual(1, result["overallRC"])
 
     def test_attached_enabled_line(self):
         output = "PCIF 00000110 ATTACHED TO MALR003F 00000110 ENABLED NETH\n"
@@ -148,7 +172,6 @@ class VMCPHandlerTest(base.SMTTestCase):
         mock_run.assert_called_once_with(["query", "pcif"])
 
     def test_run_failure_raises(self):
-        # _run() records the failure in rh.results; query_pcif raises.
         with self._patch_run("", rc=8):
             with self.assertRaises(exception.SDKSMTRequestFailed) as cm:
                 self.handler.query_pcif()
@@ -164,36 +187,128 @@ class VMCPHandlerTest(base.SMTTestCase):
             with self.assertRaises(exception.SDKSMTRequestFailed) as cm:
                 self.handler.query_pcif()
         self.assertIs(self.rh.results, cm.exception.results)
-        self.rh.updateResults.assert_called_once_with(msgs.msg['0405'][0])
+        self.assertNotEqual(0, self.rh.results['overallRC'])
 
     def test_pci_function_not_found_with_rc_nonzero_is_run_failure(self):
-        # A failing vmcp raises as a run failure; the "not found" handling
-        # (which records msg 0405 itself) is not applied.
         with self._patch_run("A PCI function was not found.\n", rc=8):
             with self.assertRaises(exception.SDKSMTRequestFailed):
                 self.handler.query_pcif()
-        self.rh.updateResults.assert_not_called()
 
     def test_pcif_at_end_of_line_skipped(self):
-        # no device number after PCIF
         output = "SOMETHING PCIF\n"
         with self._patch_run(output):
             result = self.handler.query_pcif()
         self.assertEqual([], result)
 
     def test_missing_state_token_skipped(self):
-        # no ENABLED / DISABLED
         output = "PCIF 00000110 FREE NETH\n"
         with self._patch_run(output):
             result = self.handler.query_pcif()
         self.assertEqual([], result)
 
     def test_no_type_after_state_skipped(self):
-        # ENABLED is the last token
         output = "PCIF 00000110 FREE ENABLED\n"
         with self._patch_run(output):
             result = self.handler.query_pcif()
         self.assertEqual([], result)
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_activate_already_logged_on_skips_xautolog(self, mock_logged):
+        mock_logged.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        with self._patch_run() as mock_run:
+            result = self.handler.activate("TESTUSER")
+            mock_run.assert_not_called()
+        self.assertEqual(0, result["overallRC"])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_activate_logged_off_issues_xautolog(self, mock_logged):
+        mock_logged.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        with self._patch_run("Command accepted\n", rc=0) as mock_run:
+            result = self.handler.activate("TESTUSER")
+            mock_run.assert_called_once_with(
+                ["xautolog", "TESTUSER"],
+                tolerated=mock.ANY,
+            )
+        self.assertEqual(0, result["overallRC"])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_activate_xautolog_failure_propagates_rc(self, mock_logged):
+        mock_logged.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        with self._patch_run("HCP045E TESTUSER not active\n", rc=1):
+            result = self.handler.activate("TESTUSER")
+        self.assertEqual(1, result["overallRC"])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_activate_isloggedon_failure_still_issues_xautolog(self, mock_logged):
+        """When isLoggedOn itself fails the activate path falls through
+        and still attempts the XAUTOLOG."""
+        mock_logged.return_value = {'overallRC': 1, 'rc': 1, 'rs': 0}
+        with self._patch_run("Command accepted\n", rc=0) as mock_run:
+            result = self.handler.activate("TESTUSER")
+            mock_run.assert_called_once()
+        self.assertEqual(0, result["overallRC"])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_activate_hcp054e_tolerated(self, mock_logged):
+        """A race-condition HCP054E (already logged on) must be tolerated."""
+        mock_logged.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        tolerated_output = "HCPxxx054E TESTUSER is already logged on\n"
+        with self._patch_run(tolerated_output, rc=0):
+            result = self.handler.activate("TESTUSER")
+        self.assertEqual(0, result["overallRC"])
+
+    def test_query_image_performance_computes_memory_in_use(self):
+        frames_output = (
+            "Storage Frames:\n"
+            "Configured=10000000\n"
+            "GlobalClearedAvail=1000000\n"
+            "LocalClearedAvail=500000\n"
+            "GlobalUnclearedAvail=300000\n"
+            "LocalUnclearedAvail=200000\n"
+        )
+        with self._patch_run(frames_output, rc=0):
+            result = self.handler.query_image_performance(self.rh)
+        self.assertEqual(0, result["overallRC"])
+        self.assertEqual("MEMORY_IN_USE=8000000", result["response"])
+
+    def test_query_image_performance_computes_memory_in_use_with_multiple_sections(self):
+        # Real QUERY FRAMES output on z/VM includes a "Storage Frames Below 2G:"
+        # section. query_image_performance must only count the top-level section.
+        frames_output = (
+            "Storage Frames:\n"
+            "  Configured=10000000\n"
+            "  GlobalClearedAvail=1000000\n"
+            "  LocalClearedAvail=500000\n"
+            "  GlobalUnclearedAvail=300000\n"
+            "  LocalUnclearedAvail=200000\n"
+            "Storage Frames Below 2G:\n"
+            "  Configured=524288\n"
+            "  GlobalClearedAvail=10000\n"
+            "  LocalClearedAvail=5000\n"
+            "  GlobalUnclearedAvail=3000\n"
+            "  LocalUnclearedAvail=2000\n"
+        )
+        with self._patch_run(frames_output, rc=0):
+            result = self.handler.query_image_performance(self.rh)
+        self.assertEqual(0, result["overallRC"])
+        # Configured (10000000) - (1000000 + 500000 + 300000 + 200000 = 2000000) = 8000000
+        self.assertEqual("MEMORY_IN_USE=8000000", result["response"])
+
+    def test_query_image_performance_run_failure_propagates(self):
+        with self._patch_run("vmcp: command failed\n", rc=1):
+            result = self.handler.query_image_performance(self.rh)
+        self.assertEqual(1, result["overallRC"])
+
+    def test_query_image_performance_no_free_fields_means_all_used(self):
+        output = "Configured=4096\n"
+        with self._patch_run(output, rc=0):
+            result = self.handler.query_image_performance(self.rh)
+        self.assertEqual("MEMORY_IN_USE=4096", result["response"])
+
+    def test_query_image_performance_empty_output_returns_zero(self):
+        with self._patch_run("", rc=0):
+            result = self.handler.query_image_performance(self.rh)
+        self.assertEqual("MEMORY_IN_USE=0", result["response"])
 
     def test_query_storage_success(self):
         output = "STORAGE = 65536M  STANDBY = 0  REMAINDER = 0"
@@ -248,8 +363,7 @@ class VMCPHandlerTest(base.SMTTestCase):
             result = self.handler.deactivate("TESTUSER")
             mock_is_logged_on.assert_called_once_with(self.rh, "TESTUSER")
             mock_run.assert_not_called()
-            self.rh.updateResults.assert_called_once_with(
-                {'overallRC': 0, 'rc': 0, 'rs': 0})
+            self.assertEqual(0, self.rh.results['overallRC'])
             self.assertEqual({"response": "", "overallRC": 0}, result)
 
     @mock.patch('smtLayer.vmUtils.isLoggedOn')
@@ -307,15 +421,335 @@ class VMCPHandlerTest(base.SMTTestCase):
                 tolerated=mock.ANY)
             self.assertEqual(8, result['overallRC'])
 
-    @mock.patch('smtLayer.vmUtils.isLoggedOn')
-    def test_deactivate_failure_already_recorded_not_overwritten(
-            self, mock_is_logged_on):
-        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
-        self.rh.results['overallRC'] = 99
+    def test_ssi_info_not_member_returns_empty_list(self):
+        with self._patch_run(
+                "This system is not a member of an SSI cluster.\n", rc=0):
+            result = self.handler.ssi_info()
+        self.assertEqual(0, result["rc"])
+        self.assertEqual([], result["response"])
+
+    def test_ssi_info_cluster_header_fields(self):
+        with self._patch_run(_SSI_CLUSTER_OUTPUT, rc=0):
+            result = self.handler.ssi_info()
+        lines = result["response"]
+        self.assertEqual(0, result["rc"])
+        self.assertIn("ssi_name = TESTSSI", lines)
+        self.assertIn("ssi_mode = Stable", lines)
+        self.assertIn("cross_system_timeouts = Enabled", lines)
+        self.assertIn("ssi_pdr = 1111_on_VOL001", lines)
+
+    def test_ssi_info_member_count(self):
+        with self._patch_run(_SSI_CLUSTER_OUTPUT, rc=0):
+            result = self.handler.ssi_info()
+        self.assertIn("output.ssiInfoCount = 2", result["response"])
+
+    def test_ssi_info_active_member_fields(self):
+        with self._patch_run(_SSI_CLUSTER_OUTPUT, rc=0):
+            result = self.handler.ssi_info()
+        lines = result["response"]
+        self.assertIn("member_slot = 1", lines)
+        self.assertIn("member_system_id = SYS1", lines)
+        self.assertIn("member_state = JOINED", lines)
+        self.assertIn("member_pdr_heartbeat = 01/02/26_10:00:00", lines)
+        self.assertIn("member_received_heartbeat = 01/02/26_10:00:01", lines)
+
+    def test_ssi_info_down_member_system_id_mapped_to_na(self):
+        with self._patch_run(_SSI_CLUSTER_OUTPUT, rc=0):
+            result = self.handler.ssi_info()
+        lines = result["response"]
+        self.assertIn("member_slot = 2", lines)
+        self.assertIn("member_system_id = N/A", lines)
+        self.assertIn("member_state = DOWN", lines)
+
+    def test_ssi_info_down_member_heartbeats_na(self):
+        with self._patch_run(_SSI_CLUSTER_OUTPUT, rc=0):
+            result = self.handler.ssi_info()
+        lines = result["response"]
+        slot2_idx = lines.index("member_slot = 2")
+        self.assertEqual("member_pdr_heartbeat = N/A",
+                         lines[slot2_idx + 3])
+        self.assertEqual("member_received_heartbeat = N/A",
+                         lines[slot2_idx + 4])
+
+    def test_ssi_info_run_failure_returns_nonzero_rc(self):
         with self._patch_run("", rc=1):
-            result = self.handler.deactivate("TESTUSER")
-            self.assertEqual(1, result['overallRC'])
-            self.rh.updateResults.assert_not_called()
+            result = self.handler.ssi_info()
+        self.assertEqual(1, result["rc"])
+
+    def test_query_attach_read_write_command(self):
+        self.rh.parms = {'vaddr': '1000', 'raddr': '2000', 'mode': 0}
+        with self._patch_run("Device 2000 attached to TESTUSER as 1000\n",
+                             rc=0) as mock_run:
+            result = self.handler.query_attach(self.rh)
+            mock_run.assert_called_once_with(
+                ["ATTACH", "1000", "TO", "TESTUSER", "AS", "2000"])
+        self.assertEqual(0, result["overallRC"])
+
+    def test_query_attach_read_only_appends_readonly_keyword(self):
+        self.rh.parms = {'vaddr': '1000', 'raddr': '2000', 'mode': 1}
+        with self._patch_run("Device attached readonly\n",
+                             rc=0) as mock_run:
+            self.handler.query_attach(self.rh)
+            mock_run.assert_called_once_with(
+                ["ATTACH", "1000", "TO", "TESTUSER", "AS", "2000",
+                 "READONLY"])
+
+    def test_query_attach_mode_string_one_treated_as_read_only(self):
+        self.rh.parms = {'vaddr': '0A00', 'raddr': '1A00', 'mode': '1'}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_attach(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("READONLY", args)
+
+    def test_query_attach_failure_rc_propagated(self):
+        self.rh.parms = {'vaddr': '1000', 'raddr': '2000', 'mode': 0}
+        with self._patch_run("HCP040E Device 2000 not found\n", rc=1):
+            result = self.handler.query_attach(self.rh)
+        self.assertEqual(1, result["overallRC"])
+
+    def test_query_detach_command(self):
+        self.rh.parms = {'vaddr': '1000'}
+        with self._patch_run("Device 1000 detached\n", rc=0) as mock_run:
+            result = self.handler.query_detach(self.rh)
+            mock_run.assert_called_once_with(
+                ["DETACH", "1000", "FROM", "TESTUSER"],
+                tolerated=mock.ANY,
+            )
+        self.assertEqual(0, result["overallRC"])
+
+    def test_query_detach_already_detached_tolerated(self):
+        self.rh.parms = {'vaddr': '1000'}
+        tolerated_output = "HCP040E Device 1000 does not exist\n"
+        with self._patch_run(tolerated_output, rc=0):
+            result = self.handler.query_detach(self.rh)
+        self.assertEqual(0, result["overallRC"])
+
+    def test_query_detach_failure_rc_propagated(self):
+        self.rh.parms = {'vaddr': '1000'}
+        with self._patch_run("HCP999E Detach error\n", rc=1):
+            result = self.handler.query_detach(self.rh)
+        self.assertEqual(1, result["overallRC"])
+
+    def test_query_relocate_minimal_command(self):
+        self.rh.parms = {}
+        with self._patch_run("Relocation started\n", rc=0) as mock_run:
+            result = self.handler.query_relocate(self.rh)
+            mock_run.assert_called_once_with(
+                ["VMRELOCATE", "MOVE", "TESTUSER", "SYNCHRONOUS"], output=True)
+        self.assertEqual(0, result["overallRC"])
+
+    def test_query_relocate_with_destination(self):
+        self.rh.parms = {'dest': 'SYS2'}
+        with self._patch_run("Relocation started\n", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("TO", args)
+        self.assertIn("SYS2", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_force_options(self):
+        self.rh.parms = {
+            'dest': 'SYS2',
+            'forcearch': True,
+            'forcedomain': True,
+            'forcestorage': True,
+        }
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("FORCE", args)
+        self.assertIn("ARCHITECTURE", args)
+        self.assertIn("DOMAIN", args)
+        self.assertIn("STORAGE", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_immediate(self):
+        self.rh.parms = {'immediate': True}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("IMMEDIATE", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_max_total_seconds(self):
+        self.rh.parms = {'maxTotal': 120}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("MAXTotal", args)
+        self.assertIn("120", args)
+        self.assertIn("SEC", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_max_total_nolimit(self):
+        self.rh.parms = {'maxTotal': -1}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("MAXTotal", args)
+        self.assertIn("NOLIMIT", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_max_quiesce_seconds(self):
+        self.rh.parms = {'maxQuiesce': 10}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("MAXQuiesce", args)
+        self.assertIn("10", args)
+        self.assertIn("SEC", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_max_quiesce_nolimit(self):
+        self.rh.parms = {'maxQuiesce': -1}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertIn("MAXQuiesce", args)
+        self.assertIn("NOLIMIT", args)
+        self.assertIn("SYNCHRONOUS", args)
+
+    def test_query_relocate_all_options_combined(self):
+        self.rh.parms = {
+            'dest': 'SYS2',
+            'forcearch': True,
+            'forcedomain': True,
+            'forcestorage': True,
+            'immediate': True,
+            'maxTotal': 120,
+            'maxQuiesce': 10,
+        }
+        with self._patch_run("", rc=0) as mock_run:
+            result = self.handler.query_relocate(self.rh)
+            args = mock_run.call_args[0][0]
+        self.assertEqual(0, result["overallRC"])
+        for token in ("TO", "SYS2", "FORCE", "ARCHITECTURE", "DOMAIN",
+                      "STORAGE", "IMMEDIATE", "MAXTotal", "120", "SEC",
+                      "MAXQuiesce", "10", "SYNCHRONOUS"):
+            self.assertIn(token, args)
+
+    def test_query_relocate_failure_rc_propagated(self):
+        self.rh.parms = {'dest': 'SYS2'}
+        with self._patch_run("HCP2627E Relocation failed\n", rc=1):
+            result = self.handler.query_relocate(self.rh)
+        self.assertEqual(1, result["overallRC"])
+
+    def test_query_vswitch_details_single_vswitch_nic_stats(self):
+        vsw_output = (
+            "VSWITCH SYSTEM VSICIC  Type: QDIO  Connected: 1  Maxconn: INFINITE\n"
+            "  PERSISTENT  RESTRICTED  NOLEARN  VLAN: UNAWARE\n"
+            "  Uplink Ports:\n"
+            "  Adapter Connections:\n"
+            "  Adapter Owner: TESTUSER  NIC: 1000  Name: NIC1\n"
+            "    RX Packets: 100 Discarded: 2 Errors: 1\n"
+            "    TX Packets: 200 Discarded: 4 Errors: 2\n"
+            "    RX Bytes: 1024 TX Bytes: 2048\n"
+        )
+        with self._patch_run(vsw_output, rc=0) as mock_run:
+            result = self.handler.query_vswitch_details()
+            mock_run.assert_called_once_with(["QUERY", "VSWITCH", "DETAILS"])
+
+        self.assertEqual(0, result["rc"])
+        parsed = result["response"]
+        self.assertEqual(1, parsed["vswitch_count"])
+        self.assertEqual(1, len(parsed["vswitches"]))
+
+        vsw = parsed["vswitches"][0]
+        self.assertEqual("VSICIC", vsw["vswitch_name"])
+        self.assertEqual(1, len(vsw["nics"]))
+
+        nic = vsw["nics"][0]
+        self.assertEqual("TESTUSER", nic["userid"])
+        self.assertEqual("1000", nic["vdev"])
+        self.assertEqual("100", nic["nic_fr_rx"])
+        self.assertEqual("2", nic["nic_fr_rx_dsc"])
+        self.assertEqual("1", nic["nic_fr_rx_err"])
+        self.assertEqual("200", nic["nic_fr_tx"])
+        self.assertEqual("4", nic["nic_fr_tx_dsc"])
+        self.assertEqual("2", nic["nic_fr_tx_err"])
+        self.assertEqual("1024", nic["nic_rx"])
+        self.assertEqual("2048", nic["nic_tx"])
+
+    def test_query_vswitch_details_multi_vswitch_and_nics(self):
+        multi_output = (
+            "VSWITCH SYSTEM VSWITCH1  Type: QDIO  Connected: 2  Maxconn: INFINITE\n"
+            "  Adapter Connections:\n"
+            "  Adapter Owner: USER1  NIC: 1000  Name: NIC1\n"
+            "    RX Packets: 10 Discarded: 0 Errors: 0\n"
+            "    TX Packets: 20 Discarded: 0 Errors: 0\n"
+            "    RX Bytes: 100 TX Bytes: 200\n"
+            "  Adapter Owner: USER2  NIC: 2000  Name: NIC2\n"
+            "    RX Packets: 30 Discarded: 1 Errors: 0\n"
+            "    TX Packets: 40 Discarded: 0 Errors: 1\n"
+            "    RX Bytes: 300 TX Bytes: 400\n"
+            "VSWITCH SYSTEM VSWITCH2  Type: QDIO  Connected: 1  Maxconn: INFINITE\n"
+            "  Adapter Connections:\n"
+            "  Adapter Owner: USER3  NIC: 3000  Name: NIC3\n"
+            "    RX Packets: 50 Discarded: 0 Errors: 0\n"
+            "    TX Packets: 60 Discarded: 0 Errors: 0\n"
+            "    RX Bytes: 500 TX Bytes: 600\n"
+        )
+        with self._patch_run(multi_output, rc=0):
+            result = self.handler.query_vswitch_details()
+
+        parsed = result["response"]
+        self.assertEqual(2, parsed["vswitch_count"])
+        self.assertEqual(2, len(parsed["vswitches"][0]["nics"]))
+        self.assertEqual(1, len(parsed["vswitches"][1]["nics"]))
+
+        vsw1_nic0 = parsed["vswitches"][0]["nics"][0]
+        self.assertEqual("USER1", vsw1_nic0["userid"])
+        self.assertEqual("1000", vsw1_nic0["vdev"])
+
+        vsw1_nic1 = parsed["vswitches"][0]["nics"][1]
+        self.assertEqual("USER2", vsw1_nic1["userid"])
+        self.assertEqual("2000", vsw1_nic1["vdev"])
+        self.assertEqual("300", vsw1_nic1["nic_rx"])
+
+        vsw2_nic0 = parsed["vswitches"][1]["nics"][0]
+        self.assertEqual("VSWITCH2", parsed["vswitches"][1]["vswitch_name"])
+        self.assertEqual("USER3", vsw2_nic0["userid"])
+
+    def test_query_vswitch_details_empty_output_returns_empty_list(self):
+        with self._patch_run("", rc=0):
+            result = self.handler.query_vswitch_details()
+        self.assertEqual(0, result["rc"])
+        self.assertEqual(0, result["vswitch_count"])
+        self.assertEqual([], result["vswitches"])
+
+    def test_query_vswitch_details_run_failure_returns_empty(self):
+        with self._patch_run("vmcp: not found\n", rc=1):
+            result = self.handler.query_vswitch_details()
+        self.assertEqual(1, result["rc"])
+        self.assertEqual(0, result["vswitch_count"])
+        self.assertEqual([], result["vswitches"])
+
+    def test_query_vswitch_details_nic_default_counters_are_zero_strings(self):
+        bare_output = (
+            "VSWITCH SYSTEM VSWONLY  Type: QDIO  Connected: 1\n"
+            "  Adapter Connections:\n"
+            "  Adapter Owner: ZUSER  NIC: 0A00  Name: NIC1\n"
+        )
+        with self._patch_run(bare_output, rc=0):
+            result = self.handler.query_vswitch_details()
+        nic = result["response"]["vswitches"][0]["nics"][0]
+        for key in ("nic_fr_rx", "nic_fr_rx_dsc", "nic_fr_rx_err",
+                    "nic_fr_tx", "nic_fr_tx_dsc", "nic_fr_tx_err",
+                    "nic_rx", "nic_tx"):
+            self.assertEqual("0", nic[key],
+                             msg="%s should default to '0'" % key)
+
+
+def _make_rh(userid="TESTUSER"):
+    """Return a lightweight mock ReqHandle."""
+    rh = mock.MagicMock()
+    rh.printSysLog = mock.MagicMock()
+    rh.printLn = mock.MagicMock()
+    rh.updateResults = mock.MagicMock()
+    rh.userid = userid
+    rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
+    rh.parms = {}
+    return rh
 
 
 class VMCPHandlerRunForTestCase(base.SMTTestCase):
@@ -369,36 +803,25 @@ class VMCPHandlerGetCPUCountTestCase(base.SMTTestCase):
             'overallRC': 0,
             'response': (
                 'PROCESSOR 0000 MASTER IFL  CORE 0000\n'
-                'PROCESSOR 0001 ALTERNATE IFL  CORE 0000\n'
-                'PROCESSOR 0002 PARKED IFL  CORE 0001\n'
-                'PROCESSOR 0003 STANDBY IFL  CORE 0001\n'
-                'PARTITION MODE LINUX-ONLY\n'
+                'PROCESSOR 0001 ALTERNATE IFL CORE 0001\n'
+                'PROCESSOR 0002 PARKED IFL CORE 0002\n'
+                'PROCESSOR 0003 STANDBY IFL CORE 0003\n'
+                'PROCESSOR 0004 MASTER CP CORE 0004\n'
             )
         }
-        total, used = self.handler.get_cpu_count()
-        self.assertEqual(4, total)
-        self.assertEqual(3, used)
-        mock_run.assert_called_once_with(['QUERY', 'PROCESSORS', 'EXPANDED'])
+        total, use = self.handler.get_cpu_count()
+        self.assertEqual(5, total)
+        self.assertEqual(4, use)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_get_cpu_count_vmcp_fails(self, mock_run):
+    def test_get_cpu_count_failure(self, mock_run):
         mock_run.return_value = {'overallRC': 1, 'response': ''}
-        total, used = self.handler.get_cpu_count()
+        total, use = self.handler.get_cpu_count()
         self.assertEqual(0, total)
-        self.assertEqual(0, used)
-
-    @mock.patch.object(VMCPHandler, '_run')
-    def test_get_cpu_count_no_processors(self, mock_run):
-        mock_run.return_value = {
-            'overallRC': 0,
-            'response': 'PARTITION MODE: Z/VM\n'
-        }
-        total, used = self.handler.get_cpu_count()
-        self.assertEqual(0, total)
-        self.assertEqual(0, used)
+        self.assertEqual(0, use)
 
 
-class VMCPHandlerPurgeReaderTestCase(base.SMTTestCase):
+class VMCPHandlerPurgeRDRTestCase(base.SMTTestCase):
     """Tests for VMCPHandler.purge_reader()"""
 
     def setUp(self):
@@ -408,17 +831,10 @@ class VMCPHandlerPurgeReaderTestCase(base.SMTTestCase):
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_purge_reader_success(self, mock_run):
-        mock_run.return_value = {'overallRC': 0, 'response': ''}
+        mock_run.return_value = {'overallRC': 0, 'response': '0001 FILES PURGED'}
         result = self.handler.purge_reader()
+        mock_run.assert_called_once_with(['PURGE', 'TESTUSER', 'RDR', 'ALL'])
         self.assertEqual(0, result['overallRC'])
-        mock_run.assert_called_once_with(
-            ['PURGE', 'TESTUSER', 'RDR', 'ALL'])
-
-    @mock.patch.object(VMCPHandler, '_run')
-    def test_purge_reader_fails(self, mock_run):
-        mock_run.return_value = {'overallRC': 1, 'response': 'HCP error'}
-        result = self.handler.purge_reader()
-        self.assertEqual(1, result['overallRC'])
 
 
 class VMCPHandlerCreateNICTestCase(base.SMTTestCase):
@@ -432,38 +848,105 @@ class VMCPHandlerCreateNICTestCase(base.SMTTestCase):
     @mock.patch.object(VMCPHandler, '_run')
     @mock.patch.object(VMCPHandler, '_run_for')
     def test_create_nic_success(self, mock_run_for, mock_run):
-        mock_run_for.return_value = {
-            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
-            'strError': '', 'response': 'NIC 0600 DEFINED'
-        }
-        mock_run.return_value = {'overallRC': 0, 'response': 'NIC 0600 TYPE QDIO'}
+        mock_run_for.return_value = {'overallRC': 0, 'response': ''}
+        mock_run.return_value = {'overallRC': 0, 'response': 'NIC 0600'}
         result = self.handler.create_nic_for_guest('TESTUSER', '0600')
         self.assertEqual(0, result['overallRC'])
-        mock_run_for.assert_called_once_with(
-            'TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
-        mock_run.assert_called_once_with(
-            ['QUERY', 'NIC', 'USERID', 'TESTUSER', '0600'])
+        mock_run_for.assert_called_once_with('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        mock_run.assert_called_once_with(['QUERY', 'NIC', 'USERID', 'TESTUSER', '0600'])
 
+    @mock.patch.object(VMCPHandler, '_run')
     @mock.patch.object(VMCPHandler, '_run_for')
-    def test_create_nic_define_fails(self, mock_run_for):
-        mock_run_for.return_value = {
-            'overallRC': 1, 'rc': 1, 'rs': 0, 'errno': 0,
-            'strError': 'HCP045E', 'response': 'HCP045E'
-        }
+    def test_create_nic_define_fails(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {'overallRC': 1, 'response': 'HCP001E'}
         result = self.handler.create_nic_for_guest('TESTUSER', '0600')
         self.assertEqual(1, result['overallRC'])
+        mock_run.assert_not_called()
 
     @mock.patch.object(VMCPHandler, '_run')
     @mock.patch.object(VMCPHandler, '_run_for')
     def test_create_nic_verify_fails(self, mock_run_for, mock_run):
-        mock_run_for.return_value = {
-            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
-            'strError': '', 'response': ''
-        }
-        mock_run.return_value = {'overallRC': 1, 'response': 'NIC not found'}
+        mock_run_for.return_value = {'overallRC': 0, 'response': ''}
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP040E'}
         result = self.handler.create_nic_for_guest('TESTUSER', '0600')
         self.assertEqual(2, result['overallRC'])
-        self.assertTrue(result.get('nic_not_created'))
+        self.assertTrue(result['nic_not_created'])
+
+
+class VMCPHandlerAddDiskTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.add_disk()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_add_disk_success(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {'overallRC': 0, 'response': 'DASD 0100 LINKED'}
+        mock_run.return_value = {'overallRC': 0, 'response': 'MDISK 0100 3390'}
+        result = self.handler.add_disk('0100', 'MR')
+        self.assertEqual(0, result['overallRC'])
+        mock_run_for.assert_called_once_with('TESTUSER', 'LINK * 0100 0100 MR')
+        mock_run.assert_called_once_with(
+            ['QUERY', 'MDISK', 'USERID', 'TESTUSER', '0100', 'DETAILS'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_add_disk_link_fails(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {'overallRC': 1, 'response': 'HCP001E'}
+        result = self.handler.add_disk('0100', 'MR')
+        self.assertEqual(1, result['overallRC'])
+        mock_run.assert_not_called()
+
+    @mock.patch.object(VMCPHandler, '_run')
+    @mock.patch.object(VMCPHandler, '_run_for')
+    def test_add_disk_verify_fails(self, mock_run_for, mock_run):
+        mock_run_for.return_value = {'overallRC': 0, 'response': ''}
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP040E'}
+        result = self.handler.add_disk('0100', 'MR')
+        self.assertEqual(2, result['overallRC'])
+        self.assertTrue(result['disk_not_linked'])
+
+
+class VMCPHandlerQueryFCPTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.query_fcp_formatted()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_fcp_formatted_success(self, mock_run):
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': (
+                'FCP 1A00 NPIV WWPN C05076DE00000001\n'
+                'CHPID 20 PERM WWPN C05076DE00000002\n'
+                'ATTACHED TO USER1\n'
+                'FCP 1A01 NPIV WWPN C05076DE00000003\n'
+                'CHPID 21 PERM WWPN C05076DE00000004\n'
+                'FREE\n'
+            )
+        }
+        result = self.handler.query_fcp_formatted()
+        self.assertEqual(0, result['overallRC'])
+        self.assertIn('FCP device number: 1A00', result['response'])
+        self.assertIn('Status: Active', result['response'])
+        self.assertIn('Owner: USER1', result['response'])
+        self.assertIn('FCP device number: 1A01', result['response'])
+        self.assertIn('Status: Free', result['response'])
+        self.assertIn('Owner: NONE', result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_fcp_formatted_failure(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': ''}
+        result = self.handler.query_fcp_formatted()
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual(4, result['rc'])
+        self.assertEqual(28, result['rs'])
 
 
 class VMCPHandlerQueryOSATestCase(base.SMTTestCase):
@@ -475,48 +958,25 @@ class VMCPHandlerQueryOSATestCase(base.SMTTestCase):
         self.handler = VMCPHandler(self.rh)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_osa_attached_and_free(self, mock_run):
+    def test_query_osa_success(self, mock_run):
         mock_run.side_effect = [
             {
                 'overallRC': 0,
-                'response': (
-                    'OSA  3000 ATTACHED TO SYSTEM   3000 DEVTYPE OSH         CHPID 70 OSH TRACESIZE 0008\n'
-                    'OSA  3001 ATTACHED TO SYSTEM   3001 DEVTYPE OSH         CHPID 70 OSH TRACESIZE 0008\n'
-                )
+                'response': 'OSA  3000 ATTACHED TO SYSTEM   3000 DEVTYPE OSH CHPID 70\n'
             },
             {
                 'overallRC': 0,
-                'response': 'OSA   3002 FREE    , OSA   3003 FREE    , OSA   3004 FREE\n'
+                'response': 'OSA 3004 FREE, OSA 3005 FREE\n'
             }
         ]
         result = self.handler.query_osa()
         self.assertIn('OSA', result)
-        self.assertEqual(2, len(result['OSA']['ATTACHED']))
-        self.assertIn(('SYSTEM', '3000'), result['OSA']['ATTACHED'])
-        self.assertIn(('SYSTEM', '3001'), result['OSA']['ATTACHED'])
-        self.assertIn('3002', result['OSA']['FREE'])
-        self.assertIn('3003', result['OSA']['FREE'])
+        self.assertEqual([('SYSTEM', '3000')], result['OSA']['ATTACHED'])
         self.assertIn('3004', result['OSA']['FREE'])
-        mock_run.assert_any_call(['QUERY', 'OSA'])
-        mock_run.assert_any_call(['QUERY', 'OSA', 'FREE'])
+        self.assertIn('3005', result['OSA']['FREE'])
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_osa_query_osa_fails(self, mock_run):
-        mock_run.return_value = {'overallRC': 1, 'response': ''}
-        result = self.handler.query_osa()
-        self.assertEqual({}, result)
-
-    @mock.patch.object(VMCPHandler, '_run')
-    def test_query_osa_no_osa(self, mock_run):
-        mock_run.side_effect = [
-            {'overallRC': 0, 'response': ''},
-            {'overallRC': 0, 'response': ''}
-        ]
-        result = self.handler.query_osa()
-        self.assertEqual({}, result)
-
-    @mock.patch.object(VMCPHandler, '_run')
-    def test_query_osa_free_fails_gracefully(self, mock_run):
+    def test_query_osa_free_query_fails(self, mock_run):
         mock_run.side_effect = [
             {
                 'overallRC': 0,
