@@ -150,15 +150,6 @@ napoleon_use_param = True
 # description. Defaults to True.
 napoleon_use_rtype = True
 
-
-# -- Options for viewcode extension ---------------------------------------
-
-# Follow alias objects that are imported from another module such as functions
-# classes and attributes. As side effects, this option ... ???
-# If false, ... ???.
-# The default is True.
-viewcode_import = True
-
 # -- Options for man page output ----------------------------------------------
 
 # Grouping the document tree for man pages.

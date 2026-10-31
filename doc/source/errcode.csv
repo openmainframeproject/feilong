@@ -1,3 +1,4 @@
+overallRC;modID;rc;rs;errmsg
 **Invalid API Input**
 100;400;100;1;Invalid API arg count, API: %(api)s, %(expected)d expected while %(provided)d provided.
 100;400;100;2;Invalid API arg type, API: %(api)s, expected types: '%(expected)s', input types: '%(inputtypes)s'
@@ -42,8 +43,8 @@
 **Operation on Image failed**
 300;40;300;1;Database operation failed, error: %(msg)s
 300;40;300;2;No image schema found for %(schema)s
-300;40;300;3;Image import error: Failed to calculate the md5sum of the image
-300;40;300;4;Image import error: The md5sum after import is not same as source image, it is possible that the image has been broken during import
+300;40;300;3;Image import error: Failed to calculate the checksum of the image
+300;40;300;4;Image import error: The checksum after import is not same as source image, it is possible that the image has been broken during import
 300;40;300;5;Image import error: Failed to get the root disk size units of the image via hexdump
 300;40;300;6;Image import error: The header of image does not contain built-in disk size units
 300;40;300;7;Image import error: The image's disk type is not valid. Currently only FBA or CKD type image is supported
