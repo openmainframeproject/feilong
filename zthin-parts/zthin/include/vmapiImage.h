@@ -946,6 +946,25 @@ int smImage_SCSI_Characteristics_Define_DM(struct _vmApiInternalContext* vmapiCo
         char * password, char * targetIdentifier, char * bootProgram, char * brLba, char * lun, char * portName,
         char scpDatatype, int scpDataLength, char * scpData, vmApiImageScsiCharacteristicsDefineDmOutput ** outData);
 
+/* Image_Rename_DM */
+typedef struct _vmApiImageRenameDmOutput {
+    commonOutputFields common;
+} vmApiImageRenameDmOutput;
+
+/* Parser table for Image_Rename_DM */
+static tableLayout Image_Rename_DM_Layout = {
+    { APITYPE_BASE_STRUCT_LEN, 4, 4, STRUCT_INDX_0, NEST_LEVEL_0, sizeof(vmApiImageRenameDmOutput) },
+    { APITYPE_INT4,            4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiImageRenameDmOutput, common.requestId) },
+    { APITYPE_RC_INT4,         4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiImageRenameDmOutput, common.returnCode) },
+    { APITYPE_RS_INT4,         4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiImageRenameDmOutput, common.reasonCode) },
+    { APITYPE_END_OF_TABLE, 0, 0, 0, 0 }
+};
+
+int smImage_Rename_DM(struct _vmApiInternalContext* vmapiContextP, 
+        char * userid, int passwordLength, char * password,
+        char * targetIdentifier, char * newImageName,
+        vmApiImageRenameDmOutput ** outData);
+        
 /* Image_SCSI_Characteristics_Query_DM */
 typedef struct _vmApiImageScsiCharacteristicsQueryDm {
     commonOutputFields common;
