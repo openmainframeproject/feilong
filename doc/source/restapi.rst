@@ -1525,6 +1525,45 @@ Delete a NIC on the guest.
 
   No response.
 
+Rename guest
+------------
+
+**PUT /guests/{userid}/rename**
+
+Rename a guest: the userid of the guest is changed in the z/VM user directory
+(using DirMaint) and in the Feilong database (guests, switch and FCP tables).
+The id, metadata and comments of the guest are kept, and the SMAPI namelist and
+the vswitch authorization are updated with the new userid.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - new_userid: guest_new_userid
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_rename_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  A dictionary with the keys ``old_userid`` and ``new_userid``.
+
+.. note::
+
+   - This API requires z/VM APAR VM66893 to be applied on the z/VM system.
+   - The guest must be powered off, otherwise a 409 (conflict) error is returned.
+   - The new userid must be 1-8 alphanumeric characters and must not exist in
+     the Feilong database nor on the z/VM system, otherwise a 409 (already
+     exist) error is returned.
+   - The operation can not be undone, rename the guest again to revert it.
+
 Host
 ====
 
