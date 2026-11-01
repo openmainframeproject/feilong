@@ -18,7 +18,7 @@
 from unittest import mock
 
 from zvmsdk import config
-from smtLayer import powerVM
+from smtLayer import powerVM, ReqHandle
 from smtLayer.tests.unit import base
 
 
@@ -228,22 +228,22 @@ class ResetVmcpBranchTest(base.SMTTestCase):
         mock_handler_cls.return_value = mock_handler_instance
         mock_handler_instance.deactivate.return_value = {
             'overallRC': 0, 'response': ''}
+        mock_handler_instance.activate.return_value = {
+            'overallRC': 0, 'response': ''}
 
         rh = _make_rh()
         rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
 
-        # waitForVMState and Image_Activate succeed so the function exits
-        # cleanly without entering any other error path.
+        # waitForVMState succeeds so the function exits cleanly
         mock_wait.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0,
                                   'response': ''}
-        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0,
-                                   'response': ''}
 
         powerVM.reset(rh)
 
-        # VMCPHandler constructed with rh; deactivate called WITHOUT force.
-        mock_handler_cls.assert_called_once_with(rh)
+        # VMCPHandler constructed with rh for deactivate and activate
+        self.assertEqual(2, mock_handler_cls.call_count)
         mock_handler_instance.deactivate.assert_called_once_with(rh.userid)
+        mock_handler_instance.activate.assert_called_once_with(rh.userid)
 
         # No error printing or result propagation on success.
         rh.printLn.assert_not_called()
@@ -266,6 +266,8 @@ class ResetVmcpBranchTest(base.SMTTestCase):
         mock_handler_instance = mock.MagicMock()
         mock_handler_cls.return_value = mock_handler_instance
         mock_handler_instance.deactivate.return_value = {
+            'overallRC': 0, 'response': ''}
+        mock_handler_instance.activate.return_value = {
             'overallRC': 0, 'response': ''}
 
         rh = _make_rh()
@@ -555,3 +557,132 @@ class SoftDeactivateVmcpBranchTest(base.SMTTestCase):
         mock_handler_cls.assert_not_called()
         called_apis = [call.args[1] for call in mock_smcli.call_args_list]
         self.assertIn("Image_Deactivate", called_apis)
+
+
+class PowerVMVmcpTestCase(base.SMTTestCase):
+    """Test cases for VMCP power operations (use_smapi=False) in powerVM.py."""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.rh.userid = "TESTUSER"
+        self._orig_use_smapi = config.CONF.zvm['use_smapi']
+        config.CONF.zvm['use_smapi'] = False
+
+    def tearDown(self):
+        config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+        super().tearDown()
+
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    def test_activate_vmcp_success(self, mock_activate):
+        """Guest activation via VMCP (XAUTOLOG) succeeds."""
+        mock_activate.return_value = {'overallRC': 0, 'response': 'Command accepted'}
+
+        rc = powerVM.activate(self.rh)
+
+        mock_activate.assert_called_once_with("TESTUSER")
+        self.assertEqual(0, rc)
+
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    def test_activate_vmcp_already_active_tolerated(self, mock_activate):
+        """Guest activation via VMCP on an already active guest succeeds."""
+        mock_activate.return_value = {'overallRC': 0, 'response': ''}
+
+        rc = powerVM.activate(self.rh)
+
+        mock_activate.assert_called_once_with("TESTUSER")
+        self.assertEqual(0, rc)
+
+    @mock.patch.object(ReqHandle.ReqHandle, 'printLn')
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    def test_activate_vmcp_failure(self, mock_activate, mock_print):
+        """Guest activation via VMCP fails and returns non-zero rc."""
+        mock_activate.return_value = {
+            'overallRC': 1,
+            'response': 'HCP025E Cannot XAUTOLOG TESTUSER'
+        }
+
+        rc = powerVM.activate(self.rh)
+
+        mock_activate.assert_called_once_with("TESTUSER")
+        mock_print.assert_called_once_with("ES", "HCP025E Cannot XAUTOLOG TESTUSER")
+        self.assertEqual(1, rc)
+
+    @mock.patch.object(powerVM, 'waitForOSState')
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    def test_activate_vmcp_with_wait_desired_state(self, mock_activate, mock_wait):
+        """Guest activation via VMCP with maxQueries polling state."""
+        self.rh.parms = {'maxQueries': 10, 'poll': 2, 'desiredState': 'up'}
+        mock_activate.return_value = {'overallRC': 0, 'response': ''}
+        mock_wait.return_value = {'overallRC': 0}
+
+        rc = powerVM.activate(self.rh)
+
+        mock_activate.assert_called_once_with("TESTUSER")
+        mock_wait.assert_called_once_with(
+            self.rh, "TESTUSER", "up", maxQueries=10, sleepSecs=2)
+        self.assertEqual(0, rc)
+
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    @mock.patch.object(powerVM.VMCPHandler, 'deactivate', return_value={'overallRC': 0, 'response': ''})
+    @mock.patch.object(powerVM, 'waitForVMState')
+    def test_reset_vmcp_success(self, mock_wait, mock_deact, mock_activate):
+        """Reset via VMCP (deactivate VMCP -> wait -> VMCP activate)."""
+        mock_wait.return_value = {'overallRC': 0}
+        mock_activate.return_value = {'overallRC': 0, 'response': ''}
+
+        rc = powerVM.reset(self.rh)
+
+        mock_deact.assert_called_once_with("TESTUSER")
+        mock_activate.assert_called_once_with("TESTUSER")
+        self.assertEqual(0, rc)
+
+    @mock.patch.object(ReqHandle.ReqHandle, 'printLn')
+    @mock.patch.object(powerVM.VMCPHandler, 'activate')
+    @mock.patch.object(powerVM.VMCPHandler, 'deactivate', return_value={'overallRC': 0, 'response': ''})
+    @mock.patch.object(powerVM, 'waitForVMState')
+    def test_reset_vmcp_activate_failure(self, mock_wait, mock_deact,
+                                         mock_activate, mock_print):
+        """Reset via VMCP when reactivating the user fails."""
+        mock_wait.return_value = {'overallRC': 0}
+        mock_activate.return_value = {
+            'overallRC': 8,
+            'response': 'HCP025E Cannot XAUTOLOG TESTUSER'
+        }
+
+        rc = powerVM.reset(self.rh)
+
+        mock_deact.assert_called_once_with("TESTUSER")
+        mock_activate.assert_called_once_with("TESTUSER")
+        mock_print.assert_called_once_with("ES", "HCP025E Cannot XAUTOLOG TESTUSER")
+        self.assertEqual(8, rc)
+
+
+class SMTPowerVMTestCase(base.SMTTestCase):
+    """Test cases for SMCLI power operations (use_smapi=True) in powerVM.py."""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        self.rh.userid = "TESTUSER"
+        self._orig_use_smapi = config.CONF.zvm['use_smapi']
+        config.CONF.zvm['use_smapi'] = True
+
+    def tearDown(self):
+        config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+        super().tearDown()
+
+    @mock.patch.object(powerVM, 'invokeSMCLI')
+    def test_activate_smcli_success(self, mock_smcli):
+        mock_smcli.return_value = {'overallRC': 0, 'response': ''}
+        rc = powerVM.activate(self.rh)
+        mock_smcli.assert_called_once_with(self.rh, "Image_Activate", ["-T", "TESTUSER"])
+        self.assertEqual(0, rc)
+
+    @mock.patch.object(powerVM, 'invokeSMCLI')
+    def test_activate_smcli_already_active_tolerated(self, mock_smcli):
+        """Image_Activate rc 200 rs 8 (already active) is tolerated."""
+        mock_smcli.return_value = {'overallRC': 8, 'rc': 200, 'rs': 8, 'response': ''}
+        rc = powerVM.activate(self.rh)
+        mock_smcli.assert_called_once_with(self.rh, "Image_Activate", ["-T", "TESTUSER"])
+        self.assertEqual(0, rc)

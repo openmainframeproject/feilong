@@ -151,6 +151,27 @@ Preparation on BYOL
       * - ``FORCE <userid> LOGOFF [IMMED]``
         - A
         - Power off (deactivate) a guest
+      * - ``XAUTOLOG <userid>``
+        - A, B
+        - Power on (activate) a guest
+      * - ``ATTACH <raddr> TO <userid> AS <vaddr>``
+        - B
+        - Dedicate a real device to a guest
+      * - ``DETACH <vaddr> FROM <userid>``
+        - B
+        - Undedicate a device from a guest
+      * - ``QUERY VSWITCH DETAILS``
+        - B, G
+        - Retrieve virtual switch byte statistics and details
+      * - ``QUERY SSI``
+        - B, E
+        - Query Single System Image (SSI) cluster information
+      * - ``QUERY FRAMES``
+        - A, B, E
+        - Retrieve system frame and memory performance information
+      * - ``VMRELOCATE MOVE <userid> TO <target>``
+        - A, B, C, E
+        - Relocate a guest to another SSI member
       * - ``QUERY PROCESSORS EXPANDED``
         - A, B, C, E
         - Retrieve host CPU count and usage
@@ -184,7 +205,10 @@ Preparation on BYOL
 
    Class G is included in every z/VM user by default. The other classes
    must be added explicitly to the BYOL's directory entry. Add only the
-   classes needed for the operations you want to enable via vmcp.
+   classes needed for the operations you want to enable via vmcp (e.g.
+   replace ``G`` with ``GABCDE`` on the USER definition line to support
+   all VMCP operations). If you also need FCP volume management (step 6),
+   class B is required.
 
 .. note::
    Preparation step 2, step 3, step 6, and step 7 require to logoff then
