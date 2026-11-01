@@ -107,8 +107,8 @@ int displayHelpInfo(int smapiLevel) {
            "  Directory_Manager_Task_Cancel_DM\n");
     if (smapiLevel >= 611) {
         printf("  Event_Stream_Add\n"
-               /* "  Event_Subscribe\n" These two not implemented
-               "  Event_Unsubscribe\n"*/ );
+               "  Event_Subscribe\n"
+               /* "  Event_Unsubscribe\n" Not implemented */ );
     }
     printf("  Image_Activate\n"
            "  Image_Active_Configuration_Query\n");
@@ -1026,4 +1026,3 @@ static const char * APIS_640[APIS_640_COUNT] = {
     FREE_CONTEXT_MEMORY(&vmapiContext);
     return rc;
 }
-
