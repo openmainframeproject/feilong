@@ -17,6 +17,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
 import os
 import subprocess
 
@@ -26,7 +27,6 @@ from smtLayer.vmcpHandler import VMCPHandler
 from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
-from datetime import datetime
 
 modId = 'GHO'
 version = "1.0.0"
@@ -606,7 +606,10 @@ def getGeneralInfo(rh):
                     ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
                     ipl_timezone_line = line.split()[7]
                     ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
-                    ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
+                    ipl = "IPL at %s %s %s" % (
+                        ipl_data['IPL_DATE'],
+                        ipl_data['IPL_TIME'],
+                        ipl_data['IPL_TIME_ZONE'])
         else:
             # SMAPI API failed, so we put out messages
             # 300 and 405 for consistency
@@ -617,11 +620,16 @@ def getGeneralInfo(rh):
             rh.printLn("ES", msg)
 
     # Get LPAR memory in use
-    parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
-
     lparMemUsed = "no info"
-    results = invokeSMCLI(rh, "System_Performance_Information_Query",
-                          parm)
+    if not config.CONF.zvm.use_smapi:
+        handler = VMCPHandler(rh)
+        results = handler.query_image_performance(rh)
+
+    else:
+        # Get LPAR memory in use
+        parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
+        results = invokeSMCLI(rh, "System_Performance_Information_Query", parm)
+
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "MEMORY_IN_USE=" in line:

@@ -434,3 +434,91 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
 
         self._mock_handler.query_storage.assert_not_called()
         self._mock_handler.query_cplevel.assert_not_called()
+
+
+class GetHostVmcpTestCase(base.SMTTestCase):
+    """Test cases for VMCP memory queries (use_smapi=False) in getHost.getGeneralInfo."""
+
+    SYSINFO = (
+        "LPAR CPUs Total:        4\n"
+        "LPAR CPUs Configured:   4\n"
+        "Type:                   2964\n"
+        "Manufacturer:           IBM\n"
+        "VM00 Control Program:   z/VM 7.2\n"
+    )
+
+    SUBPROC_USERID_OUTPUT = b'LXUSR AT LXHOST'
+    UNAME_OUTPUT = ('', '', '', '', 's390x')
+    CPU_COUNT = (4, 4)
+
+    MEMORY_IN_USE_SUCCESS_RESP = {
+        'overallRC': 0,
+        'response': 'MEMORY_IN_USE=1048576'
+    }
+
+    MEMORY_IN_USE_FAILURE_RESP = {
+        'overallRC': 1,
+        'response': 'vmcp query frames failed'
+    }
+
+    def setUp(self):
+        super().setUp()
+        self._orig_use_smapi = config.CONF.zvm['use_smapi']
+        config.CONF.zvm['use_smapi'] = False
+        self.rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+
+        self._patches = []
+        p = mock.patch('smtLayer.getHost.subprocess.check_output',
+                       return_value=self.SUBPROC_USERID_OUTPUT)
+        self._patches.append(p)
+        p.start()
+
+        p = mock.patch('builtins.open', mock.mock_open(read_data=self.SYSINFO))
+        self._patches.append(p)
+        p.start()
+
+        p = mock.patch.object(getHost, 'getCPUCount', return_value=self.CPU_COUNT)
+        self._patches.append(p)
+        p.start()
+
+        p = mock.patch('smtLayer.getHost.os.uname',
+                       return_value=self.UNAME_OUTPUT)
+        self._patches.append(p)
+        p.start()
+
+    def tearDown(self):
+        for p in reversed(self._patches):
+            p.stop()
+        config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+        super().tearDown()
+
+    @mock.patch.object(getHost.generalUtils, 'getSizeFromPage', return_value='4G')
+    @mock.patch.object(getHost.VMCPHandler, 'query_image_performance')
+    @mock.patch.object(getHost.VMCPHandler, 'query_storage',
+                       return_value={'lparMemTotal': '1024M', 'lparMemStandby': '0M'})
+    @mock.patch.object(getHost.VMCPHandler, 'query_cplevel',
+                       return_value='IPL at 01/01/26 00:00:00 UTC')
+    def test_getGeneralInfo_vmcp_memory_in_use_success(self, mock_cp, mock_stor, mock_perf, mock_get_size):
+        """getGeneralInfo fetches memory in use via VMCPHandler."""
+        mock_perf.return_value = self.MEMORY_IN_USE_SUCCESS_RESP
+
+        getHost.getGeneralInfo(self.rh)
+
+        mock_perf.assert_called_once_with(self.rh)
+        mock_get_size.assert_called_once_with(self.rh, '1048576')
+        self.assertEqual(0, self.rh.results['overallRC'])
+
+    @mock.patch.object(getHost.VMCPHandler, 'query_image_performance')
+    @mock.patch.object(getHost.VMCPHandler, 'query_storage',
+                       return_value={'lparMemTotal': '1024M', 'lparMemStandby': '0M'})
+    @mock.patch.object(getHost.VMCPHandler, 'query_cplevel',
+                       return_value='IPL at 01/01/26 00:00:00 UTC')
+    def test_getGeneralInfo_vmcp_memory_in_use_failure(self, mock_cp, mock_stor, mock_perf):
+        """getGeneralInfo handles VMCP performance query failure."""
+        config.CONF.zvm['bypass_smapiout'] = False
+        mock_perf.return_value = self.MEMORY_IN_USE_FAILURE_RESP
+
+        getHost.getGeneralInfo(self.rh)
+
+        mock_perf.assert_called_once_with(self.rh)
+        self.assertEqual(1, self.rh.results['overallRC'])
