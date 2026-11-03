@@ -41,7 +41,7 @@ SDK_ERR_KEYS = (
 
 
 def generate_errcode():
-    _lines = []
+    _lines = ['overallRC;modID;rc;rs;errmsg\n']
 
     # add zvmsdk error codes and messages
     for k in SDK_ERR_KEYS:
