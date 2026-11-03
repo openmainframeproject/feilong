@@ -126,8 +126,68 @@ Preparation on BYOL
 
    replace G with BG at the end of the first definition line (starting with USER).
 
+7. Add privilege classes for the VMCP path (optional)
+
+   If you set ``use_smapi=False`` in ``zvmsdk.conf``, Feilong will issue CP
+   commands directly via ``vmcp`` instead of going through the SMAPI servers.
+   The CP commands used by this path and their required privilege classes are:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 40 15 45
+
+      * - CP command
+        - Class
+        - Purpose
+      * - ``QUERY USERID``
+        - G
+        - Identify the BYOL's own userid
+      * - ``QUERY STORAGE``
+        - A, B, E
+        - Retrieve LPAR total and standby memory
+      * - ``QUERY CPLEVEL``
+        - G
+        - Retrieve z/VM CP version and IPL date
+      * - ``FORCE <userid> LOGOFF [IMMED]``
+        - A
+        - Power off (deactivate) a guest
+      * - ``QUERY PROCESSORS EXPANDED``
+        - A, B, C, E
+        - Retrieve host CPU count and usage
+      * - ``QUERY OSA``
+        - B
+        - Query OSA device status
+      * - ``FOR userid CMD DEFINE NIC``
+        - C, G
+        - Create a NIC on an active guest
+      * - ``QUERY NIC USERID userid vdev``
+        - B
+        - Verify that the NIC was created on the guest
+      * - ``FOR userid CMD UNCOUPLE``
+        - C, G
+        - Disconnect a NIC from its vswitch on an active guest
+      * - ``FOR userid CMD DETACH NIC``
+        - C, G
+        - Delete a NIC from an active guest
+      * - ``PURGE <userid> RDR ALL``
+        - D, G
+        - Purge all reader files for a guest
+      * - ``QUERY FCP WWPN``
+        - B
+        - Query FCP WWPN information
+      * - ``FOR userid CMD LINK``
+        - C, G
+        - Attach a disk to an active guest
+      * - ``QUERY MDISK USERID userid vdev DETAILS``
+        - G
+        - Verify that the disk is linked to the guest
+
+   Class G is included in every z/VM user by default. The other classes
+   must be added explicitly to the BYOL's directory entry. Add only the
+   classes needed for the operations you want to enable via vmcp.
+
 .. note::
-   Preparation step 2, step 3, and step 6 require to logoff then
+   Preparation step 2, step 3, step 6, and step 7 require to logoff then
    re-logon the BYOL to make the updates become effective.
 
 Installation Requirements

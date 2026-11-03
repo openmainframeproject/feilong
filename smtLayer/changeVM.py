@@ -28,7 +28,8 @@ from smtLayer import msgs
 from smtLayer.vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
 from smtLayer.vmUtils import invokeSMCLI, isLoggedOn
 from smtLayer.vmUtils import punch2reader, purgeReader
-
+from smtLayer.vmcpHandler import VMCPHandler
+from zvmsdk import config
 
 modId = "CVM"
 version = "1.0.0"
@@ -223,12 +224,15 @@ def add3390(rh):
             rh.updateResults(results)
         elif results['rs'] == 0:
             # Add the disk to the active configuration.
-            parms = [
-                "-T", rh.userid,
-                "-v", rh.parms['vaddr'],
-                "-m", rh.parms['mode']]
-
-            results = invokeSMCLI(rh, "Image_Disk_Create", parms)
+            if not config.CONF.zvm.use_smapi:
+                results = VMCPHandler(rh).add_disk(
+                    rh.parms['vaddr'], rh.parms['mode'])
+            else:
+                parms = [
+                    "-T", rh.userid,
+                    "-v", rh.parms['vaddr'],
+                    "-m", rh.parms['mode']]
+                results = invokeSMCLI(rh, "Image_Disk_Create", parms)
             if results['overallRC'] == 0:
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")
@@ -324,12 +328,15 @@ def add9336(rh):
         results = isLoggedOn(rh, rh.userid)
         if (results['overallRC'] == 0 and results['rs'] == 0):
             # Add the disk to the active configuration.
-            parms = [
-                "-T", rh.userid,
-                "-v", rh.parms['vaddr'],
-                "-m", rh.parms['mode']]
-
-            results = invokeSMCLI(rh, "Image_Disk_Create", parms)
+            if not config.CONF.zvm.use_smapi:
+                results = VMCPHandler(rh).add_disk(
+                    rh.parms['vaddr'], rh.parms['mode'])
+            else:
+                parms = [
+                    "-T", rh.userid,
+                    "-v", rh.parms['vaddr'],
+                    "-m", rh.parms['mode']]
+                results = invokeSMCLI(rh, "Image_Disk_Create", parms)
             if results['overallRC'] == 0:
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")

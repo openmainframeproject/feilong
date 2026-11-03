@@ -292,7 +292,6 @@ class SMTClient(object):
             self._request(rd)
 
     def get_fcp_info_by_status(self, userid, status=None):
-
         """get fcp information by the status.
 
         :userid: (str) The name of the image to query fcp info
@@ -2053,40 +2052,70 @@ class SMTClient(object):
             if mac_addr is not None:
                 LOG.warning("Ignore the mac address %s when "
                             "adding nic on an active system" % mac_addr)
-            requestData = ' '.join((
-                'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
-                userid,
-                "--operands",
-                "-k image_device_number=%s" % vdev,
-                "-k adapter_type=QDIO"))
-
-            try:
-                self._request(requestData)
-            except (exception.SDKSMTRequestFailed,
-                    exception.SDKInternalError) as err1:
-                msg1 = err1.format_message()
-                persist_OK = True
+            if not config.CONF.zvm.use_smapi:
+                rh = ReqHandle(smt=self._smt)
+                result = VMCPHandler(rh).create_nic_for_guest(userid, vdev)
+                if result['overallRC'] != 0:
+                    create_err = result.get('strError', '') or result.get('response', '')
+                    rd = ' '.join((
+                        'SMAPI %s API Virtual_Network_Adapter_Delete_DM' %
+                        userid,
+                        "--operands", '-v %s' % vdev))
+                    persist_OK = True
+                    try:
+                        self._request(rd)
+                    except (exception.SDKSMTRequestFailed,
+                            exception.SDKInternalError) as rev_err:
+                        revoke_err = rev_err.format_message()
+                        LOG.error("Failed to roll back NIC %s _DM entry "
+                                  "for %s after vmcp create failed: %s",
+                                  vdev, userid, revoke_err)
+                        persist_OK = False
+                    if persist_OK:
+                        raise exception.SDKConflictError(
+                            modID='network', rs=6,
+                            vdev=vdev, userid=userid,
+                            msg=create_err)
+                    else:
+                        raise exception.SDKNetworkOperationError(
+                            rs=4, nic=vdev, userid=userid,
+                            create_err=create_err, revoke_err=revoke_err)
+            else:
                 requestData = ' '.join((
-                    'SMAPI %s API Virtual_Network_Adapter_Delete_DM' % userid,
+                    'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
+                    userid,
                     "--operands",
-                    '-v %s' % vdev))
+                    "-k image_device_number=%s" % vdev,
+                    "-k adapter_type=QDIO"))
+
                 try:
                     self._request(requestData)
                 except (exception.SDKSMTRequestFailed,
-                        exception.SDKInternalError) as err2:
-                    results = err2.results
-                    msg2 = err2.format_message()
-                    if ((results['rc'] == 404) and
-                        (results['rs'] == 8)):
-                        persist_OK = True
+                        exception.SDKInternalError) as err1:
+                    msg1 = err1.format_message()
+                    persist_OK = True
+                    requestData = ' '.join((
+                        'SMAPI %s API Virtual_Network_Adapter_Delete_DM' %
+                        userid,
+                        "--operands",
+                        '-v %s' % vdev))
+                    try:
+                        self._request(requestData)
+                    except (exception.SDKSMTRequestFailed,
+                            exception.SDKInternalError) as err2:
+                        results = err2.results
+                        msg2 = err2.format_message()
+                        if ((results['rc'] == 404) and
+                            (results['rs'] == 8)):
+                            persist_OK = True
+                        else:
+                            persist_OK = False
+                    if persist_OK:
+                        self._create_nic_active_exception(err1, userid, vdev)
                     else:
-                        persist_OK = False
-                if persist_OK:
-                    self._create_nic_active_exception(err1, userid, vdev)
-                else:
-                    raise exception.SDKNetworkOperationError(rs=4,
-                                    nic=vdev, userid=userid,
-                                    create_err=msg1, revoke_err=msg2)
+                        raise exception.SDKNetworkOperationError(rs=4,
+                                        nic=vdev, userid=userid,
+                                        create_err=msg1, revoke_err=msg2)
 
         self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
         msg = ('Create nic device %(vdev)s for guest %(vm)s successfully'
@@ -2590,6 +2619,18 @@ class SMTClient(object):
     def delete_vm(self, userid):
         self.delete_userid(userid)
 
+        # Release the FCPs as soon as the user is gone, so a later failed
+        # step can't leave them reserved; logged here for every backend
+        try:
+            count = self._FCPDbOperator.reset_fcps_of_assigner(userid)
+            if count:
+                LOG.info("Released %d FCP device(s) of deleted user %s"
+                         % (count, userid))
+        except Exception:
+            LOG.exception("Failed to release the FCP devices of deleted "
+                          "user %s; they stay reserved until released "
+                          "manually." % userid)
+
         # remove userid from smapi namelist
         self.namelist_remove(zvmutils.get_namelist(), userid)
 
@@ -2610,11 +2651,6 @@ class SMTClient(object):
         action = "delete network record for user %s" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._NetDbOperator.switch_delete_record_for_userid(userid)
-
-        # cleanup db records from FCP table
-        action = "delete FCP records for user %s" % userid
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._FCPDbOperator.reset_fcps_of_assigner(userid)
 
         # cleanup persistent folder for guest
         self._pathutils.remove_guest_path(userid)
@@ -3368,6 +3404,10 @@ class SMTClient(object):
                 return False
 
     def _query_OSA(self):
+        if not config.CONF.zvm.use_smapi:
+            rh = ReqHandle(smt=self._smt)
+            return VMCPHandler(rh).query_osa()
+
         smt_userid = zvmutils.get_smt_userid()
         rd = "SMAPI %s API Virtual_Network_OSA_Query" % smt_userid
         OSA_info = {}

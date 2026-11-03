@@ -52,3 +52,33 @@ class SMTvmUtilsTestCase(base.SMTTestCase):
                 ['sudo', '/opt/zthin/bin/smcli', 'Image_Query_DM',
                  '--addRCheader', '-T', 'fakeuid',
                  '--timeout', '240'], close_fds=True)
+
+    # --- VMCP path tests for purgeReader ---
+
+    @mock.patch('smtLayer.vmcpHandler.VMCPHandler')
+    @mock.patch('smtLayer.vmUtils.config.CONF')
+    def test_purgeReader_vmcp_success(self, mock_conf, mock_vmcp_cls):
+        mock_conf.zvm.use_smapi = False
+        mock_instance = mock.Mock()
+        mock_instance.purge_reader.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
+        mock_vmcp_cls.return_value = mock_instance
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        rh.userid = 'FAKEUSER'
+        result = vmUtils.purgeReader(rh)
+        self.assertEqual(0, result['overallRC'])
+        mock_instance.purge_reader.assert_called_once_with()
+
+    @mock.patch('smtLayer.vmcpHandler.VMCPHandler')
+    @mock.patch('smtLayer.vmUtils.config.CONF')
+    def test_purgeReader_vmcp_fails(self, mock_conf, mock_vmcp_cls):
+        mock_conf.zvm.use_smapi = False
+        mock_instance = mock.Mock()
+        mock_instance.purge_reader.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'strError': 'HCP error', 'response': 'HCP error'}
+        mock_vmcp_cls.return_value = mock_instance
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=mock.Mock())
+        rh.userid = 'FAKEUSER'
+        result = vmUtils.purgeReader(rh)
+        self.assertEqual(1, result['overallRC'])

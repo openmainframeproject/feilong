@@ -22,6 +22,7 @@ import subprocess
 
 from smtLayer import generalUtils
 from smtLayer import msgs
+from smtLayer.vmcpHandler import VMCPHandler
 from smtLayer.vmUtils import invokeSMCLI
 
 from zvmsdk import config
@@ -396,8 +397,12 @@ def getFcpDevices(rh):
 
     rh.printSysLog("Enter getHost.getFcpDevices")
 
-    parms = ["-T", "dummy"]
-    results = invokeSMCLI(rh, "System_WWPN_Query", parms)
+    if not config.CONF.zvm.use_smapi:
+        results = VMCPHandler(rh).query_fcp_formatted()
+    else:
+        parms = ["-T", "dummy"]
+        results = invokeSMCLI(rh, "System_WWPN_Query", parms)
+
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
@@ -429,30 +434,35 @@ def getCPUCount(rh):
     # LPAR CPUs total and used is not support mixed CP + IFL
     # So get cpu num from System_Processor_Query
     # to override LPAR CPUs total and used
-    parms = []
-    results = invokeSMCLI(rh, "System_Processor_Query", parms)
     cpu_total = 0
     cpu_use = 0
-    if results['overallRC'] == 0:
-        flag = 0
-        for line in results['response'].splitlines():
-            line_value = line.partition(' ')[2]
-            if not line_value.strip():
-                continue
-            else:
-                type_row = line_value.split(' ')
-                if len(type_row) > 1:
-                    type_row = line_value.split(' ')[1]
-                    if type_row == 'TYPE':
-                        flag = 1
-                    if flag == 1:
-                        status_row = line_value.split(' ')[0]
-                        if (status_row.find('MASTER') != -1 or
-                            status_row == 'ALTERNATE' or
-                            status_row == 'PARKED'):
-                            cpu_use = cpu_use + 1
-                        if (type_row == 'CP' or type_row == 'IFL'):
-                            cpu_total = cpu_total + 1
+
+    if not config.CONF.zvm.use_smapi:
+        cpu_total, cpu_use = VMCPHandler(rh).get_cpu_count()
+    else:
+        parms = []
+        results = invokeSMCLI(rh, "System_Processor_Query", parms)
+        if results['overallRC'] == 0:
+            flag = 0
+            for line in results['response'].splitlines():
+                line_value = line.partition(' ')[2]
+                if not line_value.strip():
+                    continue
+                else:
+                    type_row = line_value.split(' ')
+                    if len(type_row) > 1:
+                        type_row = line_value.split(' ')[1]
+                        if type_row == 'TYPE':
+                            flag = 1
+                        if flag == 1:
+                            status_row = line_value.split(' ')[0]
+                            if (status_row.find('MASTER') != -1 or
+                                status_row == 'ALTERNATE' or
+                                status_row == 'PARKED'):
+                                cpu_use = cpu_use + 1
+                            if (type_row == 'CP' or type_row == 'IFL'):
+                                cpu_total = cpu_total + 1
+
     return cpu_total, cpu_use
 
 
@@ -472,6 +482,7 @@ def getGeneralInfo(rh):
     """
 
     rh.printSysLog("Enter getHost.getGeneralInfo")
+    handler = VMCPHandler(rh)
 
     # Get host using VMCP
     rh.results['overallRC'] = 0
@@ -564,36 +575,46 @@ def getGeneralInfo(rh):
 
     lparMemTotal = "no info"
     lparMemStandby = "no info"
-    results = invokeSMCLI(rh, "System_Information_Query", parm)
     ipl = ""
-    ipl_data = {}
-    if results['overallRC'] == 0:
-        for line in results['response'].splitlines():
-            if "STORAGE=" in line:
-                lparMemOnline = line.split()[0]
-                lparMemStandby = line.split()[4]
-                lparMemTotal = lparMemOnline.split("=")[2]
-                lparMemStandby = lparMemStandby.split("=")[1]
 
-            # Checks the ipl data
-            if "IPL_TIME=" in line:
-                ipl_time_line = line.split()[5]
-                ipl_data['IPL_TIME'] = ipl_time_line.split("=")[1]
-                ipl_date_line = line.split()[6]
-                ipl_data['IPL_DATE'] = ipl_date_line.split("=")[1]
-                date_obj = datetime.strptime(ipl_data['IPL_DATE'], "%Y-%m-%d")
-                ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
-                ipl_timezone_line = line.split()[7]
-                ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
-                ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
+    if not config.CONF.zvm.use_smapi:
+        # Use VMCP to query CP level (IPL time) and storage totals.
+        ipl = handler.query_cplevel()
+        storage = handler.query_storage()
+        lparMemTotal = storage["lparMemTotal"]
+        lparMemStandby = storage["lparMemStandby"]
+
     else:
-        # SMAPI API failed, so we put out messages
-        # 300 and 405 for consistency
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)    # Use results from invokeSMCLI
-        msg = msgs.msg['0405'][1] % (modId, "LPAR memory",
-            "(see message 300)", results['response'])
-        rh.printLn("ES", msg)
+        ipl_data = {}
+        results = invokeSMCLI(rh, "System_Information_Query", parm)
+        if results['overallRC'] == 0:
+            for line in results['response'].splitlines():
+                if "STORAGE=" in line:
+                    lparMemOnline = line.split()[0]
+                    # Changed from 4 to 3. line.split()[3] -> STANDBY=0, line.split()[4] -> RESERVED=0
+                    lparMemStandby = line.split()[3]
+                    lparMemTotal = lparMemOnline.split("=")[2]
+                    lparMemStandby = lparMemStandby.split("=")[1]
+
+                # Checks the ipl data
+                if "IPL_TIME=" in line:
+                    ipl_time_line = line.split()[5]
+                    ipl_data['IPL_TIME'] = ipl_time_line.split("=")[1]
+                    ipl_date_line = line.split()[6]
+                    ipl_data['IPL_DATE'] = ipl_date_line.split("=")[1]
+                    date_obj = datetime.strptime(ipl_data['IPL_DATE'], "%Y-%m-%d")
+                    ipl_data['IPL_DATE'] = date_obj.strftime("%m/%d/%y")
+                    ipl_timezone_line = line.split()[7]
+                    ipl_data['IPL_TIME_ZONE'] = ipl_timezone_line.split("=")[1]
+                    ipl = f"IPL at {ipl_data['IPL_DATE']} {ipl_data['IPL_TIME']} {ipl_data['IPL_TIME_ZONE']}"
+        else:
+            # SMAPI API failed, so we put out messages
+            # 300 and 405 for consistency
+            rh.printLn("ES", results['response'])
+            rh.updateResults(results)    # Use results from invokeSMCLI
+            msg = msgs.msg['0405'][1] % (modId, "LPAR memory",
+                "(see message 300)", results['response'])
+            rh.printLn("ES", msg)
 
     # Get LPAR memory in use
     parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]

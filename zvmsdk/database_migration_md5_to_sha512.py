@@ -34,7 +34,6 @@ import argparse
 import configparser
 import hashlib
 import os
-import shutil
 import sqlite3
 import sys
 import time
@@ -99,13 +98,21 @@ def backup_database(db_path):
     timestamp = int(time.time())
     backup_path = "{}.backup_{}".format(db_path, timestamp)
     try:
-        shutil.copy2(db_path, backup_path)
-        if os.path.exists(backup_path) and \
-                os.path.getsize(backup_path) == os.path.getsize(db_path):
+        # sqlite's online backup copies committed rows still in the -wal
+        # file too, which a plain file copy of the main file would miss
+        src = sqlite3.connect(db_path)
+        dst = sqlite3.connect(backup_path)
+        try:
+            src.backup(dst)
+            check = dst.execute("PRAGMA quick_check").fetchone()[0]
+        finally:
+            dst.close()
+            src.close()
+        if check == 'ok':
             print("Database backed up to: {}".format(backup_path))
             return backup_path
         else:
-            print("Backup size mismatch, aborting")
+            print("Backup check failed ({}), aborting".format(check))
             return None
     except Exception as e:
         print("Failed to backup database: {}".format(e))

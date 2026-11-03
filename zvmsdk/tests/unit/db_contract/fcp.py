@@ -109,6 +109,9 @@ class FCPContract(ContractBase):
         # positional access follows the documented column order
         row = [r for r in rows if r['fcp_id'] == '1a00'][0]
         self.assertEqual(tuple(fcp_row('1a00').values()), tuple(row))
+        # get_all() has the same columns
+        self.assertEqual(list(fcp_row('1a00')),
+                         list(self.db.get_all()[0].keys()))
 
     def test_bulk_insert_duplicate(self):
         self._insert('1a00')
@@ -130,6 +133,13 @@ class FCPContract(ContractBase):
         self.assertEqual({'1a00': 'notfound', '1a01': 'free',
                           '1b00': 'notfound'},
                          {k: v['state'] for k, v in self._all().items()})
+        # owner is only set when given
+        self.db.bulk_update_state_in_fcp_table(['1a01'], 'active', USER)
+        self.assertEqual({'1a00': ('notfound', 'NONE'),
+                          '1a01': ('active', USER),
+                          '1b00': ('notfound', 'NONE')},
+                         {k: (v['state'], v['owner'])
+                          for k, v in self._all().items()})
 
     def test_bulk_delete(self):
         self._insert('1a00', '1a01', '1b00')
@@ -157,9 +167,22 @@ class FCPContract(ContractBase):
         self.db.update_usage_of_fcp('1b00', OTHER, 1, 1, T1)
         self.assertEqual((USER, 1, 2, T1), self._usage('1a00'))
         self.assertEqual(2, self.db.get_connections_from_fcp('1a00'))
-        self.db.reset_fcps_of_assigner(USER)
+        self.db.bulk_update_state_in_fcp_table(['1a00'], 'active', USER)
+        self._insert('1a01')
+        self.db.update_usage_of_fcp('1a01', USER, 1, 1, T1)
+        self.db.bulk_update_state_in_fcp_table(['1a01'], 'offline')
+        self.assertEqual(2, self.db.reset_fcps_of_assigner(USER))
         self.assertEqual(('', 0, 0, ''), self._usage('1a00'))
+        self.assertEqual(('', 0, 0, ''), self._usage('1a01'))
+        # the VM is gone, so is any dedication to it; an offline FCP
+        # stays offline so it can't be allocated
+        self.assertEqual({'1a00': ('free', 'none'),
+                          '1a01': ('offline', 'NONE')},
+                         {k: (v['state'], v['owner'])
+                          for k, v in self._all().items()
+                          if k in ('1a00', '1a01')})
         self.assertEqual((OTHER, 1, 1, T1), self._usage('1b00'))
+        self.assertEqual(0, self.db.reset_fcps_of_assigner(USER))
 
     def test_get_all_fcps_of_assigner(self):
         self._insert('1a00', '1b00')

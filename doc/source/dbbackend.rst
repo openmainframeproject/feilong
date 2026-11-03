@@ -100,6 +100,12 @@ Operators
     atomic by itself: Feilong opens no database transaction outside the
     backend.
 
+    ``FCPDbOperatorBase.bulk_update_state_in_fcp_table`` takes a
+    ``new_owner`` argument (default ``None``: owner unchanged). A backend
+    written before it was added must add it: until then every undedicate
+    logs a ``TypeError`` and the FCP state is corrected only by the next
+    sync with z/VM.
+
 Rows
     Rows must behave like ``sqlite3.Row``: access by index, by column name
     (case-insensitive), unpacking, ``keys()`` and ``dict(row)``. A backend

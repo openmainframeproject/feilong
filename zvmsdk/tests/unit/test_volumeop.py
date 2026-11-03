@@ -927,6 +927,27 @@ class TestFCPManager(base.SDKTestCase):
         fcp_dict_in_zvm.assert_called_once()
         sync_fcp_table_with_zvm.assert_called_once_with(zvm_fcp_dict)
 
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_sync_db_success(self, m_sync_db_with_zvm):
+        """Test sync_db() calls _sync_db_with_zvm() and does not swallow
+        a successful call's return value or side effects."""
+        self.fcpops.sync_db()
+        m_sync_db_with_zvm.assert_called_once()
+        self.assertTrue(self.fcpops.synced_with_zvm)
+
+    @mock.patch("zvmsdk.volumeop.LOG")
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_sync_db_logs_failure(
+            self, m_sync_db_with_zvm, m_log):
+        """sync_db() logs a sync failure but doesn't propagate it."""
+        m_sync_db_with_zvm.side_effect = Exception('fake sync failure')
+        # must not raise
+        self.fcpops.synced_with_zvm = True
+        self.fcpops.sync_db()
+        m_sync_db_with_zvm.assert_called_once()
+        m_log.exception.assert_called_once()
+        self.assertFalse(self.fcpops.synced_with_zvm)
+
     @mock.patch("zvmsdk.utils.get_pchid")
     def test_sync_fcp_table_with_zvm(self, get_pchid):
         """Test sync_fcp_table_with_zvm"""
@@ -1038,6 +1059,134 @@ class TestFCPManager(base.SDKTestCase):
                                  fcp_info_in_db_expected[fcp_id])
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_lschp")
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_once_per_chpid(self, m_chpidv, m_vmcp,
+                                                m_lschp):
+        """One CHPID virtualization check and one lookup per CHPID."""
+        m_chpidv.return_value = True
+        m_vmcp.side_effect = lambda chpid: {'10': '0240', '11': '0260'}[chpid]
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual(['0240', '0240', '0260', '0260'],
+                         [lookup(c) for c in ('10', '10', '11', '11')])
+        m_chpidv.assert_called_once_with()
+        self.assertEqual([mock.call('10'), mock.call('11')],
+                         m_vmcp.call_args_list)
+        m_lschp.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_lschp")
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_lschp(self, m_chpidv, m_vmcp, m_lschp):
+        m_chpidv.return_value = False
+        m_lschp.return_value = '02e4'
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual('02e4', lookup('27'))
+        self.assertEqual('02e4', lookup('27'))
+        m_lschp.assert_called_once_with('27')
+        m_vmcp.assert_not_called()
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_not_found(self, m_chpidv, m_vmcp):
+        """A CHPID without PCHID gets '' and doesn't stop other CHPIDs."""
+        m_chpidv.return_value = True
+
+        def fake_query(chpid):
+            if chpid == '12':
+                raise exception.SDKInternalError(msg='not associated')
+            return '0240'
+        m_vmcp.side_effect = fake_query
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertEqual('', lookup('12'))
+        self.assertEqual('0240', lookup('10'))
+        self.assertEqual('', lookup('12'))
+        self.assertEqual([mock.call('12'), mock.call('10')],
+                         m_vmcp.call_args_list)
+
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    def test_cached_pchid_lookup_chpidv_failure_raises(self, m_chpidv):
+        """A failed CHPID virtualization check still fails the query."""
+        m_chpidv.side_effect = exception.SDKInternalError(msg='vmcp failed')
+        lookup = volumeop._cached_pchid_lookup()
+        self.assertRaises(exception.SDKInternalError, lookup, '10')
+
+    @mock.patch("zvmsdk.utils.get_pchid_by_vmcp_query")
+    @mock.patch("zvmsdk.utils.is_chpid_virtualization_enabled")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
+    def test_get_all_fcp_pool_pchid_per_chpid(self, m_fcp_info, m_chpidv,
+                                              m_vmcp):
+        """get_all_fcp_pool looks up each CHPID once for all its FCPs."""
+        m_fcp_info.return_value = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: C05076DE33000A01',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'Owner: NONE',
+            'opnstk1: FCP device number: 1A02',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: C05076DE33000A02',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'Owner: NONE',
+            'opnstk1: FCP device number: 1B01',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: C05076DE33000B01',
+            'opnstk1:   Channel path ID: 30',
+            'opnstk1:   Physical world wide port number: 20076D8500005185',
+            'Owner: UNIT0001']
+        m_chpidv.return_value = True
+        m_vmcp.side_effect = lambda chpid: {'27': '02E4', '30': '021C'}[chpid]
+        pool = self.fcpops.get_all_fcp_pool('fakeuser')
+        self.assertEqual({'1a01': '02E4', '1a02': '02E4', '1b01': '021C'},
+                         {fcp: pool[fcp].get_pchid() for fcp in pool})
+        m_chpidv.assert_called_once_with()
+        self.assertEqual(2, m_vmcp.call_count)
+
+    def test_sync_fcp_table_with_zvm_pchid_not_found(self):
+        """An FCP whose PCHID isn't found keeps its PCHID in the DB; a new
+        one gets an empty PCHID. Other columns are still synced."""
+        _purge_fcp_db()
+        self._insert_data_into_fcp_table([
+            ('1a01', 'user1', 1, 1, 'c05076de33000001', 'c05076de3300264a',
+             '27', '02e4', 'free', 'none', 'tmpl1')])
+        fcp_info_in_zvm = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: c05076de33000001',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: c05076de3300264a',
+            'Owner: USER1',
+            'opnstk1: FCP device number: 1B02',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: c05076de33000b02',
+            'opnstk1:   Channel path ID: 27',
+            'opnstk1:   Physical world wide port number: c05076de3300264a',
+            'Owner: NONE']
+
+        def not_found(chpid):
+            return ''
+        fcp_dict_in_zvm = {
+            '1a01': volumeop.FCP(fcp_info_in_zvm[0:6], pchid_lookup=not_found),
+            '1b02': volumeop.FCP(fcp_info_in_zvm[6:12],
+                                 pchid_lookup=not_found)}
+        try:
+            self.fcpops.sync_fcp_table_with_zvm(fcp_dict_in_zvm)
+            fcp_info_in_db = self.fcpops.get_fcp_dict_in_db()
+            self.assertEqual(
+                ('1a01', 'user1', 1, 1, 'c05076de33000001',
+                 'c05076de3300264a', '27', '02e4', 'active', 'user1',
+                 'tmpl1'),
+                tuple(fcp_info_in_db['1a01']))
+            self.assertEqual(
+                ('1b02', '', 0, 0, 'c05076de33000b02', 'c05076de3300264a',
+                 '27', '', 'free', 'none', ''),
+                tuple(fcp_info_in_db['1b02']))
+        finally:
+            _purge_fcp_db()
 
     @mock.patch("zvmsdk.utils.get_zvm_name")
     @patch('zvmsdk.utils.get_zhypinfo')
@@ -1900,6 +2049,101 @@ class TestFCPVolumeManager(base.SDKTestCase):
             conn.executemany("DELETE FROM template "
                              "WHERE id=?", templates_id)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.dedicate_device")
+    def test_dedicate_fcp_leaves_state_to_sync(self, mock_dedicate):
+        """_dedicate_fcp() does not write state/owner: z/VM reports a
+        dedicated FCP of a logged-off guest as free/NONE, so only the sync
+        sets them."""
+        _purge_fcp_db()
+        with mock.patch("zvmsdk.database.FCPDbOperator."
+                        "bulk_update_state_in_fcp_table") as mock_update:
+            self.volumeops._dedicate_fcp('1a30', 'user1')
+        mock_dedicate.assert_called_once_with('user1', '1a30', '1a30', 0)
+        mock_update.assert_not_called()
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.undedicate_device")
+    def test_undedicate_fcp_db_error_ignored(
+            self, mock_undedicate):
+        """A state/owner refresh failure must not fail an already-
+        successful undedicate (best-effort)."""
+        _purge_fcp_db()
+        with mock.patch("zvmsdk.database.FCPDbOperator."
+                        "bulk_update_state_in_fcp_table") as mock_update:
+            mock_update.side_effect = Exception('fake db error')
+            # must not raise
+            self.volumeops._undedicate_fcp('1a31', 'user1')
+        mock_undedicate.assert_called_once_with('user1', '1a31')
+        mock_update.assert_called_once_with(['1a31'], 'free', 'none')
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.undedicate_device")
+    def test_undedicate_fcp_updates_state(
+            self, mock_undedicate):
+        """Test that _undedicate_fcp() eagerly updates the cached
+        state/owner columns right after a successful z/VM undedicate.
+        """
+        _purge_fcp_db()
+        fcp_info_list = [('1a32', 'user1', 0, 0, 'c05076de33000a32',
+                          'c05076de3300264a', '27', '02e4', 'active', 'user1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        try:
+            self.volumeops._undedicate_fcp('1a32', 'user1')
+            mock_undedicate.assert_called_once_with('user1', '1a32')
+            fcp_dict = self.volumeops.fcp_mgr.get_fcp_dict_in_db()
+            self.assertEqual('free', fcp_dict['1a32']['state'])
+            self.assertEqual('none', fcp_dict['1a32']['owner'])
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.undedicate_device")
+    def test_undedicate_fcp_already_gone_keeps_state(
+            self, mock_undedicate):
+        """The "already undedicated" (rs=8) case does not write
+        state/owner: the FCP is not dedicated to this user, but it may be
+        offline or dedicated to another user, so leave it to the sync."""
+        _purge_fcp_db()
+        fcp_info_list = [('1a33', 'user1', 0, 0, 'c05076de33000a33',
+                          'c05076de3300264a', '27', '02e4', 'active', 'user2',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        results = {'rc': 404, 'rs': 8, 'logEntries': ''}
+        mock_undedicate.side_effect = exception.SDKSMTRequestFailed(
+            results, "fake already-undedicated error")
+        try:
+            # must not raise
+            self.volumeops._undedicate_fcp('1a33', 'user1')
+            fcp_dict = self.volumeops.fcp_mgr.get_fcp_dict_in_db()
+            self.assertEqual('active', fcp_dict['1a33']['state'])
+            self.assertEqual('user2', fcp_dict['1a33']['owner'])
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.undedicate_device")
+    def test_undedicate_fcp_failure_keeps_state(
+            self, mock_undedicate):
+        """A genuine undedicate failure must NOT refresh state/owner --
+        we don't know the true state, so leave it for the next sync."""
+        _purge_fcp_db()
+        fcp_info_list = [('1a34', 'user1', 0, 0, 'c05076de33000a34',
+                          'c05076de3300264a', '27', '02e4', 'active', 'user1',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        results = {'rc': 500, 'rs': 1, 'logEntries': ''}
+        mock_undedicate.side_effect = exception.SDKSMTRequestFailed(
+            results, "fake genuine undedicate error")
+        try:
+            self.assertRaises(exception.SDKSMTRequestFailed,
+                              self.volumeops._undedicate_fcp,
+                              '1a34', 'user1')
+            fcp_dict = self.volumeops.fcp_mgr.get_fcp_dict_in_db()
+            self.assertEqual('active', fcp_dict['1a34']['state'])
+            self.assertEqual('user1', fcp_dict['1a34']['owner'])
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
     @mock.patch("zvmsdk.volumeop.FCPManager.release_fcp_devices")
     @patch('zvmsdk.utils.get_zhypinfo')
     @patch('zvmsdk.utils.get_cpc_sn')
@@ -2499,6 +2743,91 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                        call.mock_rollback_reserved(fcp_id_list)]
             self.assertEqual(expected_calls_in_order,
                              mock_manager.mock_calls)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_connections")
+    def test_do_attach_rollback_unreserves_fcp(
+            self, mock_increase_conn, mock_dedicate, mock_check):
+        """When increase_fcp_connections() fails right after a real
+        reserve_fcp_devices(), the FCP must end up fully unreserved,
+        via the transaction rollback plus the explicit rollback call.
+        Uses the real reserve/rollback, unlike the sibling test above."""
+        _purge_fcp_db()
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['c123', 'd123'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'fcp_template_id': 'BOEM5401-1111-1111-1111-111111111111'}
+        # FCPs start out free/unreserved, as they would be right before
+        # get_volume_connector()'s reserve_fcps() call
+        fcp_info_list = [('c123', '', 0, 0, 'c05076de3300011c',
+                          'c05076de33002641', '27', '02e4', 'free', 'none',
+                          ''),
+                         ('d123', '', 0, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', '02e4', 'free', 'none',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        mock_check.return_value = True
+        mock_increase_conn.side_effect = exception.SDKObjectNotExistError(
+            obj_desc='UT fake error', modID='volume')
+        try:
+            self.assertRaises(exception.SDKObjectNotExistError,
+                              self.volumeops.attach,
+                              connection_info)
+            self.assertFalse(mock_dedicate.called)
+            for fcp_id in fcp_id_list:
+                userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp(
+                    fcp_id)
+                # unreserve keeps the assigner; reserved=0 frees the FCP
+                self.assertEqual('USER1', userid)
+                self.assertEqual(0, reserved)
+                self.assertEqual(0, conn)
+                self.assertEqual('', tmpl_id)
+        finally:
+            self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_connections")
+    def test_do_attach_keeps_reserved_fcp_when_do_rollback_false(
+            self, mock_increase_conn, mock_dedicate, mock_check):
+        """With do_rollback=False, a real reserve_fcp_devices() must
+        survive an increase_fcp_connections() failure -- reserve and
+        increase-connections are separate transactions, and do_rollback
+        =False means no explicit rollback call either."""
+        _purge_fcp_db()
+        fcp_info_list = [('c123', '', 0, 0, 'c05076de3300011c',
+                          'c05076de33002641', '27', '02e4', 'free', 'none',
+                          ''),
+                         ('d123', '', 0, 0, 'c05076de3300011d',
+                          'c05076de33002641', '27', '02e4', 'free', 'none',
+                          '')]
+        fcp_id_list = [fcp_info[0] for fcp_info in fcp_info_list]
+        self._insert_data_into_fcp_table(fcp_info_list)
+        mock_check.return_value = True
+        mock_increase_conn.side_effect = exception.SDKObjectNotExistError(
+            obj_desc='UT fake error', modID='volume')
+        try:
+            self.volumeops._do_attach(
+                fcp_id_list, 'user1', ['20076D8500005182', '20076D8500005183'],
+                '2222', False, 'rhel7', '/dev/sdz', False,
+                'BOEM5401-1111-1111-1111-111111111111', do_rollback=False)
+            self.assertFalse(mock_dedicate.called)
+            for fcp_id in fcp_id_list:
+                userid, reserved, conn, tmpl_id = self.db_op.get_usage_of_fcp(
+                    fcp_id)
+                self.assertEqual('user1', userid)
+                self.assertEqual(1, reserved)
         finally:
             self.db_op.bulk_delete_from_fcp_table(fcp_id_list)
 

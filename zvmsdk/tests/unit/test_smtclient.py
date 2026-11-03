@@ -2434,6 +2434,67 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(5, request.call_count)
         self.assertEqual(4, ts.call_count)
 
+    # --- VMCP path tests for _create_nic active branch ---
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_success(self, mock_conf, mock_create,
+                                            power_state, request, add_record):
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {'overallRC': 0, 'response': '', 'strError': ''}
+        power_state.return_value = 'on'
+        # DM request must succeed too
+        request.return_value = {'overallRC': 0}
+        self._smtclient._create_nic('fakenode', '0600',
+                                    nic_id='fake_nic', active=True)
+        mock_create.assert_called_once_with('fakenode', '0600')
+        add_record.assert_called_once_with('fakenode', '0600', port='fake_nic')
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_fails_rollback_ok(
+            self, mock_conf, mock_create, power_state, request, add_record):
+        """VMCP create fails, rollback (_DM delete) succeeds -> SDKConflictError(rs=6)"""
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'strError': 'HCP045E', 'response': 'HCP045E'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}   # rollback succeeds
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient._create_nic,
+                          'fakenode', '0600', active=True)
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.create_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_create_nic_active_vmcp_fails_rollback_fails(
+            self, mock_conf, mock_create, power_state, request, add_record):
+        """VMCP create fails, rollback also fails -> SDKNetworkOperationError(rs=4)"""
+        mock_conf.zvm.use_smapi = False
+        mock_create.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'strError': 'HCP045E', 'response': 'HCP045E'
+        }
+        power_state.return_value = 'on'
+        # First _request (DM create) succeeds; second (rollback DM delete) fails
+        request.side_effect = [
+            {'overallRC': 0},
+            exception.SDKSMTRequestFailed({'rc': 500, 'rs': 1}, 'rollback failed'),
+        ]
+        self.assertRaises(exception.SDKNetworkOperationError,
+                          self._smtclient._create_nic,
+                          'fakenode', '0600', active=True)
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_user_direct(self, req):
         req.return_value = {'response': 'OK'}
@@ -2738,6 +2799,114 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                                "fake error")
         self._smtclient.delete_userid('fuser1')
         request.assert_called_once_with(rd)
+
+    @mock.patch.object(database.GuestDbOperator, 'delete_guest_by_userid')
+    @mock.patch.object(zvmutils.PathUtils, 'remove_guest_path')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_userid')
+    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch.object(zvmutils, 'get_namelist')
+    @mock.patch.object(smtclient.SMTClient, 'namelist_remove')
+    @mock.patch.object(database.FCPDbOperator, 'reset_fcps_of_assigner')
+    @mock.patch.object(smtclient.SMTClient, 'delete_userid')
+    def test_delete_vm(self, delete_userid, reset_fcps, namelist_remove,
+                       get_namelist, switch_select, revoke_vswitch,
+                       switch_delete, remove_guest_path, delete_guest):
+        """Test delete_vm() happy path: every step is called, and FCP
+        cleanup happens right after delete_userid(), before the
+        namelist/vswitch/network steps."""
+        get_namelist.return_value = 'NL000001'
+        switch_select.return_value = [{'switch': 'SWITCH1'}]
+        reset_fcps.return_value = 2
+        manager = mock.Mock()
+        manager.attach_mock(delete_userid, 'delete_userid')
+        manager.attach_mock(reset_fcps, 'reset_fcps')
+        manager.attach_mock(namelist_remove, 'namelist_remove')
+
+        with mock.patch.object(smtclient.LOG, 'info') as log_info:
+            self._smtclient.delete_vm('fuser1')
+        # logged by delete_vm, so it shows with any DB backend
+        log_info.assert_any_call("Released 2 FCP device(s) of deleted "
+                                 "user fuser1")
+
+        delete_userid.assert_called_once_with('fuser1')
+        reset_fcps.assert_called_once_with('fuser1')
+        namelist_remove.assert_called_once_with('NL000001', 'fuser1')
+        revoke_vswitch.assert_called_once_with('SWITCH1', 'fuser1')
+        switch_delete.assert_called_once_with('fuser1')
+        remove_guest_path.assert_called_once_with('fuser1')
+        delete_guest.assert_called_once_with('fuser1')
+        # FCP cleanup must happen before namelist/vswitch cleanup, so
+        # that it isn't skipped if one of those later steps raises
+        self.assertEqual(
+            ['delete_userid', 'reset_fcps', 'namelist_remove'],
+            [c[0] for c in manager.mock_calls])
+
+    @mock.patch.object(database.GuestDbOperator, 'delete_guest_by_userid')
+    @mock.patch.object(zvmutils.PathUtils, 'remove_guest_path')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_userid')
+    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch.object(zvmutils, 'get_namelist')
+    @mock.patch.object(smtclient.SMTClient, 'namelist_remove')
+    @mock.patch.object(database.FCPDbOperator, 'reset_fcps_of_assigner')
+    @mock.patch.object(smtclient.SMTClient, 'delete_userid')
+    def test_delete_vm_vswitch_failure_fcp_already_reset(
+            self, delete_userid, reset_fcps, namelist_remove, get_namelist,
+            switch_select, revoke_vswitch, switch_delete, remove_guest_path,
+            delete_guest):
+        """If vswitch revoke fails and delete_vm() raises, FCP cleanup
+        must have already run (cause #2: it used to run after vswitch/
+        network cleanup, so this failure meant it never happened)."""
+        get_namelist.return_value = 'NL000001'
+        switch_select.side_effect = exception.SDKBaseException(
+            message='fake network db error')
+
+        self.assertRaises(exception.SDKBaseException,
+                          self._smtclient.delete_vm, 'fuser1')
+
+        delete_userid.assert_called_once_with('fuser1')
+        reset_fcps.assert_called_once_with('fuser1')
+        namelist_remove.assert_called_once_with('NL000001', 'fuser1')
+        # steps after the failing one must not have been reached
+        remove_guest_path.assert_not_called()
+        delete_guest.assert_not_called()
+
+    @mock.patch.object(database.GuestDbOperator, 'delete_guest_by_userid')
+    @mock.patch.object(zvmutils.PathUtils, 'remove_guest_path')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_userid')
+    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch.object(zvmutils, 'get_namelist')
+    @mock.patch.object(smtclient.SMTClient, 'namelist_remove')
+    @mock.patch.object(database.FCPDbOperator, 'reset_fcps_of_assigner')
+    @mock.patch.object(smtclient.SMTClient, 'delete_userid')
+    def test_delete_vm_fcp_reset_failure_continues(
+            self, delete_userid, reset_fcps, namelist_remove, get_namelist,
+            switch_select, revoke_vswitch, switch_delete, remove_guest_path,
+            delete_guest):
+        """A failure in FCP cleanup itself must not block the rest of
+        delete_vm(): it's best-effort, sync is the backstop."""
+        get_namelist.return_value = 'NL000001'
+        switch_select.return_value = []
+        reset_fcps.side_effect = exception.SDKBaseException(
+            message='fake FCP db error')
+
+        # must not raise
+        self._smtclient.delete_vm('fuser1')
+
+        delete_userid.assert_called_once_with('fuser1')
+        reset_fcps.assert_called_once_with('fuser1')
+        namelist_remove.assert_called_once_with('NL000001', 'fuser1')
+        switch_delete.assert_called_once_with('fuser1')
+        remove_guest_path.assert_called_once_with('fuser1')
+        delete_guest.assert_called_once_with('fuser1')
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_delete_userid_with_service_machine_error(self, request):
@@ -4080,6 +4249,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(result.keys(), expected.keys())
         self.assertEqual(result['OSA'], expected['OSA'])
         self.assertEqual(result['HIPER'], expected['HIPER'])
+
+    # --- VMCP path tests for _query_OSA ---
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.query_osa')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_query_OSA_vmcp_success(self, mock_conf, mock_query_osa):
+        mock_conf.zvm.use_smapi = False
+        expected = {'OSA': {'FREE': ['0440'], 'BOXED': [], 'OFFLINE': [],
+                            'ATTACHED': []}}
+        mock_query_osa.return_value = expected
+        result = self._smtclient._query_OSA()
+        self.assertEqual(result, expected)
+        mock_query_osa.assert_called_once_with()
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.query_osa')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_query_OSA_vmcp_no_osa(self, mock_conf, mock_query_osa):
+        mock_conf.zvm.use_smapi = False
+        mock_query_osa.return_value = {}
+        result = self._smtclient._query_OSA()
+        self.assertEqual(result, {})
 
     @mock.patch.object(smtclient.SMTClient, '_query_OSA')
     def test_is_OSA_free_noOSA(self, query_osa):

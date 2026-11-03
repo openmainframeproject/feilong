@@ -15,6 +15,15 @@
 
 
 # 
+# Seconds a SQLite connection waits for a lock before raising "database is
+# locked". sdkserver and scripts such as zvmsdk-getpchid open the same files
+# at the same time. Only used by the 'sqlite' backend.
+# 
+# This param is optional
+#connection_timeout=30
+
+
+# 
 # Directory to store database.
 # 
 # SDK databases are used to store a set of tables which contain the
@@ -286,18 +295,14 @@
 [wsgi]
 
 # 
-# Whether auth will be used.
+# Whether auth will be used when sending HTTP requests to a running zvmsdk instance.
 # 
-# When sending http request from outside to running zvmsdk,
-# Client will be requested to input username/password in order
-# to authorize the call.
-# Set this to 'none' indicated no auth will be used and 'auth'
-# means username and password need to be specified.
+# This option determines the authentication mechanism required for external API calls.
 # 
 # Possible value:
-# 'none': no auth will be required
-# 'auth': need auth, currently pyjwt is used to return a token
-#         to caller if the username and password is correct.
+# 'none': No authentication will be required.
+# 'token': Token-based authentication is required. A JWT token will be issued to the caller
+#         if the request is valid and properly authenticated.
 # 
 # This param is optional
 #auth=none
@@ -507,6 +512,33 @@
 # 
 # This param is optional
 #swap_force_mdisk=False
+
+
+# 
+# Select whether SMAPI or vmcp is used.
+# 
+# When set to True (the default), SDK uses SMAPI for all operations.
+# When set to False, SDK uses the following CP commands through vmcp
+# instead of SMAPI:
+# - QUERY STORAGE               (LPAR total and standby memory)
+# - QUERY CPLEVEL               (z/VM CP version and IPL date)
+# - FORCE <userid> LOGOFF       (power off a guest)
+# - QUERY PROCESSORS EXPANDED   (host CPU counting)
+# - QUERY OSA                   (OSA device query)
+# - QUERY FCP WWPN              (FCP WWPN query)
+# - PURGE <userid> RDR ALL      (reader purge)
+# - FOR <userid> CMD DEFINE NIC (NIC creation on an active guest)
+# - QUERY NIC USERID <userid>   (NIC verification after creation)
+# - FOR <userid> CMD UNCOUPLE   (NIC uncouple on an active guest)
+# - FOR <userid> CMD DETACH NIC (NIC detach on an active guest)
+# - FOR <userid> CMD LINK       (disk link on an active guest)
+# 
+# Possible values:
+#     True   - Use SMAPI (default).
+#     False  - Use vmcp.
+#     
+# This param is optional
+#use_smapi=True
 
 
 # 

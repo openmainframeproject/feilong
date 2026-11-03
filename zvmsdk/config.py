@@ -168,6 +168,34 @@ Sample disk_pool values:
     ECKD:diskpo1
     FBA:testpool
     '''),
+    Opt('use_smapi',
+        section='zvm',
+        default=True,
+        required=False,
+        opt_type='bool',
+        help='''
+Select whether SMAPI or vmcp is used.
+
+When set to True (the default), SDK uses SMAPI for all operations.
+When set to False, SDK uses the following CP commands through vmcp
+instead of SMAPI:
+- QUERY STORAGE               (LPAR total and standby memory)
+- QUERY CPLEVEL               (z/VM CP version and IPL date)
+- FORCE <userid> LOGOFF       (power off a guest)
+- QUERY PROCESSORS EXPANDED   (host CPU counting)
+- QUERY OSA                   (OSA device query)
+- QUERY FCP WWPN              (FCP WWPN query)
+- PURGE <userid> RDR ALL      (reader purge)
+- FOR <userid> CMD DEFINE NIC (NIC creation on an active guest)
+- QUERY NIC USERID <userid>   (NIC verification after creation)
+- FOR <userid> CMD UNCOUPLE   (NIC uncouple on an active guest)
+- FOR <userid> CMD DETACH NIC (NIC detach on an active guest)
+- FOR <userid> CMD LINK       (disk link on an active guest)
+
+Possible values:
+    True   - Use SMAPI (default).
+    False  - Use vmcp.
+    '''),
     Opt('user_profile',
         section='zvm',
         required=True,
@@ -534,6 +562,16 @@ that an installed package registers in the 'zvmsdk.db_backends' entry point
 group: a callable that takes no arguments and returns a
 zvmsdk.db_interface.DbBackend instance. The backend runs inside the SDK
 processes with their privileges, see the database backends documentation.
+'''
+        ),
+    Opt('connection_timeout',
+        section='database',
+        default=30,
+        opt_type='int',
+        help='''
+Seconds a SQLite connection waits for a lock before raising "database is
+locked". sdkserver and scripts such as zvmsdk-getpchid open the same files
+at the same time. Only used by the 'sqlite' backend.
 '''
         ),
     Opt('refresh_bootmap_timeout',
