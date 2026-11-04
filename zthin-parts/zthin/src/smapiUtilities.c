@@ -1140,6 +1140,7 @@ const char* vmApiMessageText(vmApiInternalContext* contextP) {
 int vmbkendCacheEntryInvalidate(struct _vmApiInternalContext* vmapiContextP, char *pathP, char *useridP) {
     char cacheEntry[CACHEENTRYLEN];
     char resolvedPath[PATH_MAX];
+    int i;
     int rc;
     int exitrc;
     struct stat statBuf;
