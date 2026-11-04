@@ -15,12 +15,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import subprocess
 from unittest import mock
 
 from smtLayer import msgs
 from smtLayer.tests.unit import base
-from smtLayer.vmcpHandler import VMCPHandler
+from smtLayer.vmcpHandler import (
+    ALREADY_LOGGED_ON_PATTERN,
+    NOT_ATTACHED_PATTERN,
+    NOT_LOGGED_ON_PATTERN,
+    VMCPHandler)
 from zvmsdk import exception
 
 
@@ -69,6 +74,14 @@ class VMCPHandlerTest(base.SMTTestCase):
         result = self.handler._run(["query", "pcif"])
         self.assertEqual(8, result["overallRC"])
         self.assertEqual("", result["response"])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_output_true_survives_invalid_utf8(self, mock_check):
+        mock_check.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b"HCP045E \xff not logged on")
+        result = self.handler._run(["query", "userid"], output=True)
+        self.assertEqual(1, result["overallRC"])
+        self.assertIn("HCP045E", result["output"])
 
     @mock.patch('subprocess.check_output')
     def test_run_called_process_error_updates_results(self, mock_check):
@@ -308,6 +321,24 @@ class VMCPHandlerTest(base.SMTTestCase):
             self.assertEqual(8, result['overallRC'])
 
     @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    def test_deactivate_tolerates_not_logged_on(self, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        with self._patch_run("", rc=0) as mock_run:
+            self.handler.deactivate("TESTUSER")
+            mock_run.assert_called_once_with(
+                ["force", "TESTUSER", "logoff"],
+                tolerated=NOT_LOGGED_ON_PATTERN)
+
+    def test_not_logged_on_pattern_matches_expected_messages(self):
+        # HCP045E / HCP361E mean the guest is already logged off.
+        for msg in ("HCPCMD045E TESTUSER not logged on",
+                    "HCPUSR361E TESTUSER not logged on",
+                    "HCPFRC045E TESTUSER not logged on"):
+            self.assertTrue(re.search(NOT_LOGGED_ON_PATTERN, msg), msg)
+        self.assertIsNone(re.search(NOT_LOGGED_ON_PATTERN,
+                                    "HCPCMD054E TESTUSER already logged on"))
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
     def test_deactivate_failure_already_recorded_not_overwritten(
             self, mock_is_logged_on):
         mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
@@ -528,3 +559,392 @@ class VMCPHandlerQueryOSATestCase(base.SMTTestCase):
         self.assertIn('OSA', result)
         self.assertEqual(1, len(result['OSA']['ATTACHED']))
         self.assertEqual([], result['OSA']['FREE'])
+
+
+class VMCPHandlerQueryAttachTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.attach_device()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.rh.parms = {'vaddr': '1A00', 'raddr': '2B00', 'mode': '0'}
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_attach_device_read_write(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': 'Device 2B00 attached to TESTUSER as 1A00'}
+        result = self.handler.attach_device()
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(['ATTACH', '2B00', 'TO', 'TESTUSER', 'AS', '1A00'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_attach_device_read_only(self, mock_run):
+        self.rh.parms['mode'] = '1'
+        mock_run.return_value = {'overallRC': 0, 'response': 'Device 2B00 attached to TESTUSER as 1A00'}
+        result = self.handler.attach_device()
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(['ATTACH', '2B00', 'TO', 'TESTUSER', 'AS', '1A00', 'READONLY'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_attach_device_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP022E Device 2B00 does not exist'}
+        result = self.handler.attach_device()
+        self.assertEqual(1, result['overallRC'])
+
+
+class VMCPHandlerQueryDetachTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.detach_device()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.rh.parms = {'vaddr': '1A00'}
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_detach_device_success(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': 'Device 1A00 detached'}
+        result = self.handler.detach_device()
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(
+            ['FOR', 'TESTUSER', 'CMD', 'DETACH', '1A00'],
+            tolerated=NOT_ATTACHED_PATTERN
+        )
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_detach_device_tolerated_already_detached(self, mock_run):
+        # Tolerated failure returns overallRC=0
+        mock_run.return_value = {'overallRC': 0, 'response': 'HCP040E Device 1A00 does not exist'}
+        result = self.handler.detach_device()
+        self.assertEqual(0, result['overallRC'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_detach_device_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP003E Invalid option'}
+        result = self.handler.detach_device()
+        self.assertEqual(1, result['overallRC'])
+
+
+class VMCPHandlerQueryImagePerformanceTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.query_image_performance()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_image_performance_single_section(self, mock_run):
+        output = (
+            "Configured=1000000 Offline=0 Standby=0\n"
+            "GlobalClearedAvail=100000 GlobalUnclearedAvail=200000\n"
+            "LocalClearedAvail=50000 LocalUnclearedAvail=50000\n"
+        )
+        mock_run.return_value = {'overallRC': 0, 'response': output}
+        result = self.handler.query_image_performance()
+        self.assertEqual(0, result['overallRC'])
+        # memory_in_use = 1000000 - (100000 + 200000 + 50000 + 50000) = 600000
+        self.assertEqual("MEMORY_IN_USE=600000", result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_image_performance_multi_section(self, mock_run):
+        # Realistic multi-section QUERY FRAMES output (<2G and >2G)
+        output = (
+            "Storage below 2G:\n"
+            "Configured=524288 Offline=0 Standby=0\n"
+            "GlobalClearedAvail=50000 GlobalUnclearedAvail=100000\n"
+            "LocalClearedAvail=25000 LocalUnclearedAvail=25000\n"
+            "Storage above 2G:\n"
+            "Configured=1572864 Offline=0 Standby=0\n"
+            "GlobalClearedAvail=150000 GlobalUnclearedAvail=300000\n"
+            "LocalClearedAvail=75000 LocalUnclearedAvail=75000\n"
+        )
+        mock_run.return_value = {'overallRC': 0, 'response': output}
+        result = self.handler.query_image_performance()
+        self.assertEqual(0, result['overallRC'])
+        # Total configured = 524288 + 1572864 = 2097152
+        # Total free = (50000 + 150000) + (100000 + 300000) + (25000 + 75000) + (25000 + 75000) = 800000
+        # memory_in_use = 2097152 - 800000 = 1297152
+        self.assertEqual("MEMORY_IN_USE=1297152", result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_image_performance_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP error'}
+        result = self.handler.query_image_performance()
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual('HCP error', result['response'])
+
+
+class VMCPHandlerSSIInfoTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.ssi_info()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_ssi_info_not_in_cluster(self, mock_run):
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': 'This system is not a member of an SSI cluster.\n'
+        }
+        result = self.handler.ssi_info()
+        self.assertEqual(0, result['rc'])
+        self.assertEqual([], result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_ssi_info_joined_cluster(self, mock_run):
+        output = (
+            "SSI Name: ICIC2SSI\n"
+            "SSI Mode: Stable\n"
+            "Cross-System Timeouts: Enabled\n"
+            "SSI Persistent Data Record (PDR) device: IAS7CM on 139E\n"
+            "Slot  System    State      PDR Heartbeat        Received Heartbeat\n"
+            " 1    BOEIAAS7  Joined     12/28/21 05:10:21    12/28/21 05:10:21\n"
+            " 2    BOEIAAS8  Joined     12/28/21 05:10:36    12/28/21 05:10:36\n"
+            " 3    --------  Down\n"
+            " 4    --------  Down\n"
+        )
+        mock_run.return_value = {'overallRC': 0, 'response': output}
+        result = self.handler.ssi_info()
+        self.assertEqual(0, result['rc'])
+        expected = [
+            'ssi_name = ICIC2SSI',
+            'ssi_mode = Stable',
+            'ssi_pdr = IAS7CM_on_139E',
+            'cross_system_timeouts = Enabled',
+            'output.ssiInfoCount = 4',
+            '',
+            'member_slot = 1',
+            'member_system_id = BOEIAAS7',
+            'member_state = Joined',
+            'member_pdr_heartbeat = 12/28/21_05:10:21',
+            'member_received_heartbeat = 12/28/21_05:10:21',
+            '',
+            'member_slot = 2',
+            'member_system_id = BOEIAAS8',
+            'member_state = Joined',
+            'member_pdr_heartbeat = 12/28/21_05:10:36',
+            'member_received_heartbeat = 12/28/21_05:10:36',
+            '',
+            'member_slot = 3',
+            'member_system_id = N/A',
+            'member_state = Down',
+            'member_pdr_heartbeat = N/A',
+            'member_received_heartbeat = N/A',
+            '',
+            'member_slot = 4',
+            'member_system_id = N/A',
+            'member_state = Down',
+            'member_pdr_heartbeat = N/A',
+            'member_received_heartbeat = N/A',
+            ''
+        ]
+        self.assertEqual(expected, result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_ssi_info_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP error'}
+        result = self.handler.ssi_info()
+        self.assertEqual(1, result['rc'])
+
+
+class VMCPHandlerQueryRelocateTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.relocate_vm()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.rh.parms = {
+            'dest': 'TARGETSYS',
+            'forcearch': True,
+            'forcedomain': True,
+            'forcestorage': True,
+            'immediate': True,
+            'maxTotal': 100,
+            'maxQuiesce': 10
+        }
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_relocate_vm_success(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': 'Relocation complete', 'output': ''}
+        result = self.handler.relocate_vm()
+        self.assertEqual(0, result['overallRC'])
+        expected_args = [
+            'VMRELOCATE', 'MOVE', 'TESTUSER',
+            'TO', 'TARGETSYS',
+            'FORCE', 'ARCHITECTURE', 'DOMAIN', 'STORAGE',
+            'IMMEDIATE',
+            'MAXTotal', '100', 'SEC',
+            'MAXQuiesce', '10', 'SEC'
+        ]
+        mock_run.assert_called_once_with(expected_args, output=True)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_relocate_vm_nolimit(self, mock_run):
+        self.rh.parms = {
+            'dest': 'TARGETSYS',
+            'maxTotal': -1,
+            'maxQuiesce': -1
+        }
+        mock_run.return_value = {'overallRC': 0, 'response': 'Relocation complete', 'output': ''}
+        result = self.handler.relocate_vm()
+        self.assertEqual(0, result['overallRC'])
+        expected_args = [
+            'VMRELOCATE', 'MOVE', 'TESTUSER',
+            'TO', 'TARGETSYS',
+            'MAXTotal', 'NOLIMIT',
+            'MAXQuiesce', 'NOLIMIT'
+        ]
+        mock_run.assert_called_once_with(expected_args, output=True)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_relocate_vm_fails(self, mock_run):
+        mock_run.return_value = {
+            'overallRC': 1,
+            'response': 'HCP045E TESTUSER not logged on',
+            'output': 'HCP045E TESTUSER not logged on'
+        }
+        result = self.handler.relocate_vm()
+        self.assertEqual(1, result['overallRC'])
+
+
+class VMCPHandlerActivateTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.activate()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_activate_already_logged_on(self, mock_run, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        result = self.handler.activate("TESTUSER")
+        self.assertEqual(0, result['overallRC'])
+        self.assertEqual("", result['response'])
+        mock_run.assert_not_called()
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_activate_logged_off_xautolog_success(self, mock_run, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        mock_run.return_value = {'overallRC': 0, 'response': 'Command accepted'}
+        result = self.handler.activate("TESTUSER")
+        self.assertEqual(0, result['overallRC'])
+        mock_run.assert_called_once_with(
+            ['xautolog', 'TESTUSER'],
+            tolerated=ALREADY_LOGGED_ON_PATTERN
+        )
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_activate_tolerated_already_logged_on(self, mock_run, mock_is_logged_on):
+        # When XAUTOLOG returns HCP054E, tolerated failure returns overallRC=0
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        mock_run.return_value = {'overallRC': 0, 'response': 'HCP054E Already logged on'}
+        result = self.handler.activate("TESTUSER")
+        self.assertEqual(0, result['overallRC'])
+
+    @mock.patch('smtLayer.vmUtils.isLoggedOn')
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_activate_fails(self, mock_run, mock_is_logged_on):
+        mock_is_logged_on.return_value = {'overallRC': 0, 'rc': 0, 'rs': 1}
+        mock_run.return_value = {'overallRC': 1, 'response': 'HCP022E User does not exist'}
+        result = self.handler.activate("TESTUSER")
+        self.assertEqual(1, result['overallRC'])
+
+
+class VMCPHandlerQueryVSwitchDetailsTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler.query_vswitch_details()"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_vswitch_details_success(self, mock_run):
+        output = (
+            "VSWITCH SYSTEM VSICIC Type: QDIO Connected: 1 Maxconn: INFINITE\n"
+            "  PERSISTENT RESTRICTED NONROUTER MACPROTECT UNSPECIFIED\n"
+            "Adapter Connections:\n"
+            "  Adapter Owner: USER01 NIC: 0600 Name: UNASSIGNED\n"
+            "    RX Packets: 100 Discarded: 2 Errors: 0\n"
+            "    TX Packets: 200 Discarded: 4 Errors: 1\n"
+            "    RX Bytes: 1024 TX Bytes: 2048\n"
+        )
+        mock_run.return_value = {'overallRC': 0, 'response': output}
+        result = self.handler.query_vswitch_details()
+        self.assertEqual(0, result['rc'])
+        response = result['response']
+        self.assertEqual(1, response['vswitch_count'])
+        self.assertEqual(1, len(response['vswitches']))
+        vsw = response['vswitches'][0]
+        self.assertEqual('VSICIC', vsw['vswitch_name'])
+        self.assertEqual(1, len(vsw['nics']))
+        nic = vsw['nics'][0]
+        self.assertEqual('USER01', nic['userid'])
+        self.assertEqual('0600', nic['vdev'])
+        self.assertEqual('100', nic['nic_fr_rx'])
+        self.assertEqual('2', nic['nic_fr_rx_dsc'])
+        self.assertEqual('0', nic['nic_fr_rx_err'])
+        self.assertEqual('200', nic['nic_fr_tx'])
+        self.assertEqual('4', nic['nic_fr_tx_dsc'])
+        self.assertEqual('1', nic['nic_fr_tx_err'])
+        self.assertEqual('1024', nic['nic_rx'])
+        self.assertEqual('2048', nic['nic_tx'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_vswitch_details_multiple_vswitches(self, mock_run):
+        output = (
+            "VSWITCH SYSTEM VSW1 Type: QDIO Connected: 1\n"
+            "Adapter Connections:\n"
+            "  Adapter Owner: USER01 NIC: 0600\n"
+            "    RX Packets: 10 Discarded: 0 Errors: 0\n"
+            "    TX Packets: 20 Discarded: 0 Errors: 0\n"
+            "    RX Bytes: 100 TX Bytes: 200\n"
+            "VSWITCH SYSTEM VSW2 Type: QDIO Connected: 1\n"
+            "Adapter Connections:\n"
+            "  Adapter Owner: USER02 NIC: 0700\n"
+            "    RX Packets: 30 Discarded: 1 Errors: 0\n"
+            "    TX Packets: 40 Discarded: 2 Errors: 0\n"
+            "    RX Bytes: 300 TX Bytes: 400\n"
+        )
+        mock_run.return_value = {'overallRC': 0, 'response': output}
+        result = self.handler.query_vswitch_details()
+        self.assertEqual(0, result['rc'])
+        response = result['response']
+        self.assertEqual(2, response['vswitch_count'])
+        self.assertEqual('VSW1', response['vswitches'][0]['vswitch_name'])
+        self.assertEqual('VSW2', response['vswitches'][1]['vswitch_name'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_query_vswitch_details_command_has_buffer_option(
+            self, mock_check):
+        self.handler.query_vswitch_details()
+        mock_check.assert_called_once_with(
+            ["sudo", "/sbin/vmcp", "--buffer=1M",
+             "QUERY", "VSWITCH", "DETAILS"],
+            close_fds=True,
+            stderr=subprocess.STDOUT,
+        )
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_vswitch_details_no_vswitches(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': ''}
+        result = self.handler.query_vswitch_details()
+        self.assertEqual(0, result['rc'])
+        self.assertEqual({'vswitch_count': 0, 'vswitches': []},
+                         result['response'])
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_vswitch_details_fails(self, mock_run):
+        mock_run.return_value = {'overallRC': 1, 'response': ''}
+        result = self.handler.query_vswitch_details()
+        self.assertEqual(1, result['rc'])
+        self.assertEqual(0, result['response']['vswitch_count'])
+        self.assertEqual([], result['response']['vswitches'])
