@@ -4725,8 +4725,10 @@ class SMTClient(object):
         def _run_step(step, func, *args):
             try:
                 return func(*args)
-            except exception.SDKBaseException as err:
-                msg = err.format_message()
+            except Exception as err:
+                msg = (err.format_message()
+                       if isinstance(err, exception.SDKBaseException)
+                       else str(err))
                 LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
                           "directory, but updating the %s failed: %s. "
                           "Already updated: %s. Manual correction is "
@@ -4751,18 +4753,20 @@ class SMTClient(object):
         # The vswitch authorization and the user VLAN ids are set per userid
         # on the CP side, so move them to the new userid.
         for vswitch in switch_set:
-            step = 'authorization on vswitch %s' % vswitch
+            grant_step = 'authorization on vswitch %s' % vswitch
             vlan_ids = vlan_map.get(vswitch, [])
 
-            _run_step(step, self.grant_user_to_vswitch, vswitch, new_userid)
-            done.append(step)
+            _run_step(grant_step, self.grant_user_to_vswitch, vswitch, new_userid)
+            done.append(grant_step)
             if vlan_ids:
                 step = 'VLAN ids on vswitch %s' % vswitch
                 try:
                     self.set_vswitch_port_vlan_id(vswitch, new_userid,
                                                   ' '.join(vlan_ids))
-                except exception.SDKBaseException as err:
-                    msg = err.format_message()
+                except Exception as err:
+                    msg = (err.format_message()
+                           if isinstance(err, exception.SDKBaseException)
+                           else str(err))
                     # Clean up the newly granted authorization to prevent
                     # dual authorization. A failure here must not mask the
                     # original error, but it must not be silent either:
@@ -4779,6 +4783,9 @@ class SMTClient(object):
                                "authorized on this vswitch together with "
                                "'%s'" % (msg, new_userid, vswitch,
                                          revoke_err, new_userid, old_userid))
+                    else:
+                        # Grant was successfully rolled back.
+                        done.remove(grant_step)
                     LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
                               "directory, but updating the %s failed: %s. "
                               "Already updated: %s. Manual correction is "
@@ -4789,8 +4796,9 @@ class SMTClient(object):
                         step=step, msg=msg, done=', '.join(done) or 'none')
                 done.append(step)
 
-            step = 'revoke old user on vswitch %s' % vswitch
-            _run_step(step, self.revoke_user_from_vswitch, vswitch, old_userid)
+            revoke_step = 'revoke old user on vswitch %s' % vswitch
+            _run_step(revoke_step, self.revoke_user_from_vswitch, vswitch, old_userid)
+            done.append(revoke_step)
 
         return results['response']
 

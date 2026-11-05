@@ -248,7 +248,6 @@ class VMHandler(object):
     def rename(self, userid, body=None):
         new_userid = body['new_userid']
         rename_value = self.client.send_request('guest_rename', userid, new_userid)
-        LOG.info(rename_value)
         return rename_value
 
     @validation.schema(guest.nic_couple_uncouple)
