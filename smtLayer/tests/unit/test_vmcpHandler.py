@@ -28,6 +28,35 @@ from smtLayer.vmcpHandler import (
     VMCPHandler)
 from zvmsdk import exception
 
+# Output of "sudo vmcp QUERY FRAMES" (rc=0) captured on a real z/VM host.
+# Layout is exactly as CP printed it, including the trailing blank (\x20)
+# after some lines.
+QUERY_FRAMES_REAL = """\
+All Frames:
+   Configured=134217728  Real=134217728  Usable=134217728  Offline=0
+   Pageable=132798942  NotInitialized=0  GlobalClearedAvail=17
+   LocalClearedAvail=64  LocalUnclearedAvail=60
+   LockedPageable=0% LockedWarning=50% LockedFail=90%
+   IOATSize=262144 IOATUsed=0% IOATMaxused=0% IOATWarning=50%
+   Permanent=134217728 Reconfigurable=0 Vacating=0\x20
+
+Frames < 2G:
+   GlobalUnclearedAvail=308081  Pageable=509992  LogicalFreeStorage=1140
+   RealFreeStorage=4  LockedRS=29  LockedCmd=0
+   MinidiskCache=0  Nucleus/Prefix=3803  Trace=3100  Other=6220\x20
+
+Frames > 2G:
+   GlobalUnclearedAvail=97473280  Pageable=132288950  LogicalFreeStorage=1483
+   RealFreeStorage=7033  LockedRS=3202  LockedCmd=0
+   MinidiskCache=0  Other=1392772\x20
+"""
+
+# Output of "sudo vmcp QUERY SSI" (rc=0) captured on a real z/VM host that is
+# not a member of an SSI cluster.
+QUERY_SSI_NOT_IN_CLUSTER_REAL = """\
+This system is not a member of an SSI cluster.
+"""
+
 
 def _make_rh():
     """Return a lightweight mock ReqHandle."""
@@ -74,6 +103,24 @@ class VMCPHandlerTest(base.SMTTestCase):
         result = self.handler._run(["query", "pcif"])
         self.assertEqual(8, result["overallRC"])
         self.assertEqual("", result["response"])
+
+    @mock.patch('subprocess.check_output', return_value=b"OK \xff DONE\n")
+    def test_run_success_survives_invalid_utf8(self, _mock):
+        result = self.handler._run(["query", "userid"])
+        self.assertEqual(0, result["overallRC"])
+        self.assertIn("OK", result["response"])
+        self.assertIn("DONE", result["response"])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_tolerated_survives_invalid_utf8(self, mock_check):
+        mock_check.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b"HCP040E \xff not attached")
+        result = self.handler._run(
+            ["FOR", "TESTUSER", "CMD", "DETACH", "0100"],
+            tolerated=NOT_ATTACHED_PATTERN)
+        self.assertEqual(0, result["overallRC"])
+        self.assertIn("HCP040E", result["response"])
+        self.rh.updateResults.assert_not_called()
 
     @mock.patch('subprocess.check_output')
     def test_run_output_true_survives_invalid_utf8(self, mock_check):
@@ -379,6 +426,21 @@ class VMCPHandlerRunForTestCase(base.SMTTestCase):
         self.assertEqual('HCP045E', result['strError'])
 
     @mock.patch('subprocess.check_output')
+    def test_run_for_survives_invalid_utf8(self, mock_co):
+        mock_co.return_value = b'OK \xff DONE\n'
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(0, result['overallRC'])
+        self.assertIn('DONE', result['response'])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_error_survives_invalid_utf8(self, mock_co):
+        mock_co.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b'HCP045E \xff')
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(1, result['overallRC'])
+        self.assertIn('HCP045E', result['strError'])
+
+    @mock.patch('subprocess.check_output')
     def test_run_for_generic_exception(self, mock_co):
         mock_co.side_effect = OSError('vmcp not found')
         result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
@@ -634,38 +696,43 @@ class VMCPHandlerQueryImagePerformanceTestCase(base.SMTTestCase):
         self.handler = VMCPHandler(self.rh)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_image_performance_single_section(self, mock_run):
-        output = (
-            "Configured=1000000 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=100000 GlobalUnclearedAvail=200000\n"
-            "LocalClearedAvail=50000 LocalUnclearedAvail=50000\n"
-        )
-        mock_run.return_value = {'overallRC': 0, 'response': output}
+    def test_query_image_performance_real_output(self, mock_run):
+        # In real CP output Configured= and the Global/Local Cleared and
+        # LocalUncleared fields appear only in the "All Frames" section.
+        # GlobalUnclearedAvail appears only in the "Frames < 2G" and
+        # "Frames > 2G" sections, so summing every field counts each value
+        # once.  Using "All Frames" alone would report 134217587 in use.
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_FRAMES_REAL}
         result = self.handler.query_image_performance()
         self.assertEqual(0, result['overallRC'])
-        # memory_in_use = 1000000 - (100000 + 200000 + 50000 + 50000) = 600000
-        self.assertEqual("MEMORY_IN_USE=600000", result['response'])
+        # Computed by hand from QUERY_FRAMES_REAL:
+        #   Configured = 134217728
+        #   free = 17 + 64 + 60 (All Frames) + 308081 (< 2G)
+        #          + 97473280 (> 2G) = 97781502
+        #   in use = 134217728 - 97781502 = 36436226
+        self.assertEqual("MEMORY_IN_USE=36436226", result['response'])
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_image_performance_multi_section(self, mock_run):
-        # Realistic multi-section QUERY FRAMES output (<2G and >2G)
-        output = (
-            "Storage below 2G:\n"
-            "Configured=524288 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=50000 GlobalUnclearedAvail=100000\n"
-            "LocalClearedAvail=25000 LocalUnclearedAvail=25000\n"
-            "Storage above 2G:\n"
-            "Configured=1572864 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=150000 GlobalUnclearedAvail=300000\n"
-            "LocalClearedAvail=75000 LocalUnclearedAvail=75000\n"
-        )
-        mock_run.return_value = {'overallRC': 0, 'response': output}
+    def test_query_image_performance_not_double_counted(self, mock_run):
+        # "All Frames" already carries every value, and the per-range
+        # sections repeat some of them: each must be counted once.
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': (
+                "All Frames:\n"
+                "   Configured=1000  GlobalClearedAvail=10\n"
+                "   GlobalUnclearedAvail=100  LocalClearedAvail=5\n"
+                "   LocalUnclearedAvail=5\n"
+                "\n"
+                "Frames < 2G:\n"
+                "   Configured=400  GlobalUnclearedAvail=40\n"
+                "\n"
+                "Frames > 2G:\n"
+                "   Configured=600  GlobalUnclearedAvail=60\n")}
         result = self.handler.query_image_performance()
-        self.assertEqual(0, result['overallRC'])
-        # Total configured = 524288 + 1572864 = 2097152
-        # Total free = (50000 + 150000) + (100000 + 300000) + (25000 + 75000) + (25000 + 75000) = 800000
-        # memory_in_use = 2097152 - 800000 = 1297152
-        self.assertEqual("MEMORY_IN_USE=1297152", result['response'])
+        # in use = 1000 - (10 + 100 + 5 + 5)
+        self.assertEqual("MEMORY_IN_USE=880", result['response'])
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_query_image_performance_fails(self, mock_run):
@@ -684,14 +751,11 @@ class VMCPHandlerSSIInfoTestCase(base.SMTTestCase):
         self.handler = VMCPHandler(self.rh)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_ssi_info_not_in_cluster(self, mock_run):
-        mock_run.return_value = {
-            'overallRC': 0,
-            'response': 'This system is not a member of an SSI cluster.\n'
-        }
+    def test_ssi_info_not_in_cluster_real_output(self, mock_run):
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_SSI_NOT_IN_CLUSTER_REAL}
         result = self.handler.ssi_info()
-        self.assertEqual(0, result['rc'])
-        self.assertEqual([], result['response'])
+        self.assertEqual({'response': [], 'rc': 0}, result)
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_ssi_info_joined_cluster(self, mock_run):
