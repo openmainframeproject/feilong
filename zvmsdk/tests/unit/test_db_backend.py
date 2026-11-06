@@ -233,7 +233,7 @@ class DbInterfaceTestCase(base.SDKTestCase):
                       if not n.startswith('_') and callable(getattr(impl, n))}
             self.assertEqual(set(), public - set(dir(iface)), impl.__name__)
             total += len(public)
-        self.assertEqual(69, total)
+        self.assertEqual(72, total)
 
     def test_incomplete_backend_cannot_be_created(self):
         class Partial(db_interface.DbBackend):

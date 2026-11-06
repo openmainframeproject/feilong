@@ -640,6 +640,47 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.resize_memory(userid, size)
         do_resize.assert_called_once_with(userid, size)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_add")
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_remove")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_power_state")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_rename_dm")
+    def test_rename_guest(self, mock_rename, power_state, nl_remove, nl_add):
+        power_state.return_value = 'off'
+        mock_rename.return_value = ['Done']
+        res = self.vmops.rename_guest('testuid', 'newuid')
+        power_state.assert_called_once_with('TESTUID')
+        mock_rename.assert_called_once_with('TESTUID', 'NEWUID')
+        nl_remove.assert_called_once_with(self.vmops._namelist, 'TESTUID')
+        nl_add.assert_called_once_with(self.vmops._namelist, 'NEWUID')
+        self.assertEqual(res, {'old_userid': 'TESTUID', 'new_userid': 'NEWUID'})
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_add")
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_remove")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_power_state")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_rename_dm")
+    def test_rename_guest_failed(self, mock_rename, power_state, nl_remove,
+                                 nl_add):
+        power_state.return_value = 'off'
+        mock_rename.side_effect = exception.SDKSMTRequestFailed({'rs': 1}, 'failed')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self.vmops.rename_guest, 'testuid', 'newuid')
+        # the namelist must not be touched when the rename failed
+        nl_remove.assert_not_called()
+        nl_add.assert_not_called()
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_add")
+    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_remove")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_power_state")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_rename_dm")
+    def test_rename_guest_not_powered_off(self, mock_rename, power_state,
+                                          nl_remove, nl_add):
+        power_state.return_value = 'on'
+        self.assertRaises(exception.SDKConflictError,
+                          self.vmops.rename_guest, 'testuid', 'newuid')
+        mock_rename.assert_not_called()
+        nl_remove.assert_not_called()
+        nl_add.assert_not_called()
+
     @mock.patch("zvmsdk.smtclient.SMTClient.live_migrate_move")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_live_migrate_vm(self, power_state, live_migrate_vm):

@@ -156,3 +156,19 @@ class GuestContract(ContractBase):
         self.assertIsNone(self.db.get_guest_by_userid('USER1'))
         self.assertIsNotNone(self.db.get_guest_by_userid('USER2'))
         self.db.delete_guest_by_userid('USER1')
+
+    def test_guest_rename_userid(self):
+        self.db.add_guest('USER1', meta='a=1,b=2', comments='raw')
+        guest_id = self._guest('USER1')[0]
+        self.db.update_guest_by_id(guest_id, net_set=1)
+
+        self.db.guest_rename_userid('user1', 'newuser')
+
+        self.assertIsNone(self.db.get_guest_by_userid('USER1'))
+        expected = (guest_id, 'NEWUSER', 'a=1,b=2', 1, 'raw')
+        self.assertEqual(expected, self._guest('NEWUSER'))
+        self.assertEqual(expected, tuple(self.db.get_guest_by_id(guest_id)))
+
+    def test_guest_rename_userid_not_exist(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db.guest_rename_userid, 'NOTEXIST', 'NEWUSER')

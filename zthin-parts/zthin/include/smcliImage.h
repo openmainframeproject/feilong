@@ -61,6 +61,7 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
 int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
