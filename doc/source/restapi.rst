@@ -900,6 +900,49 @@ Delete a network interface on given guest.
 
 * Response contents:
 
+Configure network interface IP
+------------------------------
+
+**POST /guests/{userid}/interface/ip**
+
+Configure the IP address and network settings for a Network Express (NETH)
+interface on a running guest. The guest must be powered on and reachable
+through IUCV, and the NETH PCI function (``pcif``) must already be attached
+to the guest before this call is made.
+
+The operation writes the network configuration file into the guest via the
+SMT layer, then **reboots the guest** so that the new settings take effect.
+
+Supported distributions: ``rhel6.x``, ``rhel7.x``, ``rhel8.x``,
+``rhel9.x``, ``sles11.x``, ``sles12.x``, ``sles15.x``, ``ubuntu16.x``,
+``ubuntu20.x``, ``ubuntu22.x``, ``ubuntu24.x`` and ``ubuntu25.x``
+(all case-insensitive). ``rhcos4.x`` is not supported by this API.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - interface: network_interface_info
+  - os_version: guest_os_version
+  - guest_network: guest_network_info
+  - pcif: pcif_function
+  - active: active_flag
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_configure_network_interface_ip.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  The network configuration dict that was applied, identical to the
+  ``guest_network`` object from the request body.
+
 Start guest
 -----------
 

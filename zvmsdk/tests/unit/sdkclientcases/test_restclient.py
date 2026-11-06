@@ -692,6 +692,55 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_configure_network_interface_ip(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/interface/ip' % self.fake_userid
+        os_version = 'rhel7.2'
+        network_info = {'ip_addr': '192.168.1.10'}
+        pcif = '0000:00:00.0'
+        body = {'interface': {'os_version': os_version,
+                              'guest_network': network_info,
+                              'pcif': pcif}}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_configure_network_interface_ip",
+                         self.fake_userid, os_version, network_info, pcif)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_configure_network_interface_ip_active(self, get_token,
+                                                         request):
+        method = 'POST'
+        url = '/guests/%s/interface/ip' % self.fake_userid
+        os_version = 'rhel7.2'
+        network_info = {'ip_addr': '192.168.1.10'}
+        pcif = '00000110'
+        body = {'interface': {'os_version': os_version,
+                              'guest_network': network_info,
+                              'pcif': pcif,
+                              'active': False}}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_configure_network_interface_ip",
+                         self.fake_userid, os_version, network_info, pcif,
+                         active=False)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_get_power_state(self, get_token, request):
         method = 'GET'
         url = '/guests/%s/power_state' % self.fake_userid
