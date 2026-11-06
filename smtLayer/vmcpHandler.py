@@ -31,6 +31,8 @@ version = "1.0.0"
 # vmUtils.isLoggedOn uses).  For a logoff this is the desired end state.
 NOT_LOGGED_ON_PATTERN = r'^HCP\w\w\w(045E|361E)'
 ALREADY_LOGGED_ON_PATTERN = r'HCP\w*054E'
+# CP message meaning the device is not attached.  Detach tolerates it, so
+# detaching a device that does not exist succeeds silently.
 NOT_ATTACHED_PATTERN = r'HCP\w*040E'
 
 
@@ -72,21 +74,22 @@ class VMCPHandler:
         try:
             raw = subprocess.check_output(
                 cmd, close_fds=True, stderr=subprocess.STDOUT)
-            return {"response": bytes.decode(raw), "overallRC": 0}
+            return {"response": bytes.decode(raw, errors='replace'),
+                    "overallRC": 0}
         except subprocess.CalledProcessError as e:
-            if tolerated and e.output and re.search(
-                    tolerated, bytes.decode(e.output), re.MULTILINE):
+            err_text = (bytes.decode(e.output, errors='replace')
+                        if e.output else "")
+            if tolerated and err_text and re.search(
+                    tolerated, err_text, re.MULTILINE):
                 rh.printSysLog("Tolerated failure of: " + strCmd)
-                return {"response": bytes.decode(e.output), "overallRC": 0}
+                return {"response": err_text, "overallRC": 0}
             msg = msgs.msg['0405'][1] % (
-                modId, strCmd, strCmd, e.output.decode(errors='replace'))
+                modId, strCmd, strCmd, err_text)
             rh.printLn("ES", msg)
             rh.updateResults(msgs.msg['0405'][0])
             result = {"response": "", "overallRC": e.returncode}
             if output:
-                result["output"] = (
-                    bytes.decode(e.output, errors='replace')
-                    if e.output else "")
+                result["output"] = err_text
             return result
         except Exception as e:
             rh.printLn("ES", msgs.msg['0421'][1] % (
@@ -120,16 +123,16 @@ class VMCPHandler:
                 close_fds=True,
                 stderr=subprocess.STDOUT)
             return {
-                'response': bytes.decode(raw),
+                'response': bytes.decode(raw, errors='replace'),
                 'overallRC': 0,
                 'rc': 0, 'rs': 0, 'errno': 0,
                 'strError': ''
             }
         except subprocess.CalledProcessError as e:
-            err_out = (bytes.decode(e.output)
+            err_out = (bytes.decode(e.output, errors='replace')
                        if isinstance(e.output, bytes) else (e.output or ''))
             msg = msgs.msg['0405'][1] % (
-                modId, strCmd, strCmd, e.output.decode(errors='replace'))
+                modId, strCmd, strCmd, err_out)
             rh.printLn("ES", msg)
             rh.updateResults(msgs.msg['0405'][0])
             return {
@@ -726,18 +729,34 @@ class VMCPHandler:
 
         frames_out = frames_output["response"]
 
-        configured = sum(
-            int(x) for x in re.findall(r"Configured=(\d+)", frames_out)
-        )
+        # QUERY FRAMES prints an "All Frames" section followed by per-range
+        # sections ("Frames < 2G", "Frames > 2G") that are subsets of it.
+        # Take each value from "All Frames" when it is there; only fall back
+        # to summing the per-range sections when it is not, so no value is
+        # counted twice.
+        parts = re.split(r"^([^\n:]+):[ \t]*$", frames_out, flags=re.MULTILINE)
+        sections = {"all frames": parts[0]}
+        for name, body in zip(parts[1::2], parts[2::2]):
+            sections[name.strip().lower()] = body
+
+        def frames_value(field):
+            pattern = field + r"=(\d+)"
+            found = re.findall(pattern, sections.get("all frames", ""))
+            if not found:
+                found = [x for name, body in sections.items()
+                         if name != "all frames"
+                         for x in re.findall(pattern, body)]
+            return sum(int(x) for x in found)
+
+        configured = frames_value("Configured")
 
         free_frames = sum(
-            int(x) for pattern in (
-                r"GlobalClearedAvail=(\d+)",
-                r"GlobalUnclearedAvail=(\d+)",
-                r"LocalClearedAvail=(\d+)",
-                r"LocalUnclearedAvail=(\d+)",
+            frames_value(field) for field in (
+                "GlobalClearedAvail",
+                "GlobalUnclearedAvail",
+                "LocalClearedAvail",
+                "LocalUnclearedAvail",
             )
-            for x in re.findall(pattern, frames_out)
         )
 
         memory_in_use = configured - free_frames
@@ -891,7 +910,8 @@ class VMCPHandler:
                 userid          - guest userid used for logging
 
             Output:
-             overallRC - return code (0 for success, 1 for failure)
+             overallRC - 0 on success or if the device is not attached
+                         (HCP040E is tolerated), non-zero on any other failure
              response  - VMCP command output
         """
 

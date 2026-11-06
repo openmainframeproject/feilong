@@ -126,7 +126,7 @@ Preparation on BYOL
 
    replace G with BG at the end of the first definition line (starting with USER).
 
-7. Add privilege classes A, B, C, and E for the VMCP path (optional)
+7. Add privilege classes for the VMCP path (optional)
 
    If you set ``use_smapi=False`` in ``zvmsdk.conf``, Feilong will issue CP
    commands directly via ``vmcp`` instead of going through the SMAPI servers.
@@ -158,7 +158,7 @@ Preparation on BYOL
         - B
         - Dedicate a real device to a guest
       * - ``FOR <userid> CMD DETACH <vaddr>``
-        - B
+        - C, G
         - Undedicate a device from a guest
       * - ``QUERY VSWITCH DETAILS``
         - B, G
@@ -205,10 +205,7 @@ Preparation on BYOL
 
    Class G is included in every z/VM user by default. The other classes
    must be added explicitly to the BYOL's directory entry. Add only the
-   classes needed for the operations you want to enable via vmcp (e.g.
-   replace ``G`` with ``GABCDE`` on the USER definition line to support
-   all VMCP operations). If you also need FCP volume management (step 6),
-   class B is required.
+   classes needed for the operations you want to enable via vmcp.
 
 .. note::
    Preparation step 2, step 3, step 6, and step 7 require to logoff then

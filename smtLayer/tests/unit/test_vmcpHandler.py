@@ -28,6 +28,442 @@ from smtLayer.vmcpHandler import (
     VMCPHandler)
 from zvmsdk import exception
 
+# Output of "sudo vmcp QUERY FRAMES" (rc=0) captured on a real z/VM host.
+# Layout is exactly as CP printed it, including the trailing blank (\x20)
+# after some lines.
+QUERY_FRAMES_REAL = """\
+All Frames:
+   Configured=134217728  Real=134217728  Usable=134217728  Offline=0
+   Pageable=132798942  NotInitialized=0  GlobalClearedAvail=17
+   LocalClearedAvail=64  LocalUnclearedAvail=60
+   LockedPageable=0% LockedWarning=50% LockedFail=90%
+   IOATSize=262144 IOATUsed=0% IOATMaxused=0% IOATWarning=50%
+   Permanent=134217728 Reconfigurable=0 Vacating=0\x20
+
+Frames < 2G:
+   GlobalUnclearedAvail=308081  Pageable=509992  LogicalFreeStorage=1140
+   RealFreeStorage=4  LockedRS=29  LockedCmd=0
+   MinidiskCache=0  Nucleus/Prefix=3803  Trace=3100  Other=6220\x20
+
+Frames > 2G:
+   GlobalUnclearedAvail=97473280  Pageable=132288950  LogicalFreeStorage=1483
+   RealFreeStorage=7033  LockedRS=3202  LockedCmd=0
+   MinidiskCache=0  Other=1392772\x20
+"""
+
+# Output of "sudo vmcp QUERY SSI" (rc=0) captured on a real z/VM host that is
+# not a member of an SSI cluster.
+QUERY_SSI_NOT_IN_CLUSTER_REAL = """\
+This system is not a member of an SSI cluster.
+"""
+
+# Output of "sudo /sbin/vmcp --buffer=1M QUERY VSWITCH DETAILS" (rc=0)
+# captured on a real z/VM host with 4 vswitches: VSICIC has 21 guest NICs
+# (one without any RX/TX lines), VSICICA has none, and the uplink ports of
+# VMTCPIP/VSICIC/VSICICA print their own "RX Packets" lines before the
+# "Adapter Connections:" section. The single blank (\x20) line between the
+# vswitches is exactly as CP printed it.
+QUERY_VSWITCH_DETAILS_REAL = """\
+VSWITCH SYSTEM DTCSMAPI   Type: QDIO    Connected: 2    Maxconn: INFINITE
+  PERSISTENT  RESTRICTED    ETHERNET                  Accounting: OFF
+  USERBASED LOCAL
+  VLAN Unaware
+  MAC address: 02-01-78-00-00-06    MAC Protection: Unspecified
+  IPTimeout: 5   QueueStorage Range: 8-256M     Current: None
+  Isolation Status: OFF        VEPA Status: OFF
+  Unicast IP address count: 2
+ Uplink Port:
+  State: Defined                       PriQueuing: OFF
+  PMTUD setting: EXTERNAL   PMTUD value: 65535    Trace Pages: 8
+  LOG: Off
+ Adapter Connections:                            Connected: 2
+    Adapter Owner: DTCSMAPI NIC: 0100.P00 Name: UNASSIGNED  Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 5993       Discarded: 0          Errors: 0
+      TX Packets: 6904       Discarded: 0          Errors: 0
+      RX Bytes: 481691               TX Bytes: 1251132
+      Device: 0100  Unit: 000   Role: DATA       Port: 2176
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-00-00-0F IP: 10.60.100.100
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+    Adapter Owner: LOHCOST  NIC: F000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 10310      Discarded: 0          Errors: 0
+      TX Packets: 8820       Discarded: 979        Errors: 0
+      RX Bytes: 2126094              TX Bytes: 750529
+      Device: F002  Unit: 002   Role: DATA       Port: 2177
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-00-00-08 IP: 10.70.100.100
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-00-00-08
+\x20
+VSWITCH SYSTEM VMTCPIP    Type: QDIO    Connected: 1    Maxconn: INFINITE
+  PERSISTENT  RESTRICTED    ETHERNET                  Accounting: OFF
+  USERBASED LOCAL
+  VLAN Unaware
+  MAC address: 02-01-78-00-00-01    MAC Protection: Unspecified
+  IPTimeout: 5   QueueStorage Range: 8-256M     Current: 8M
+  Isolation Status: OFF        VEPA Status: OFF
+  Unicast IP address count: 1
+ Uplink Port:
+  State: Ready                         PriQueuing: OFF
+  PMTUD setting: EXTERNAL   PMTUD value: 9000     Trace Pages: 8
+  LOG: Off
+  RDEV: 3000.P00 VDEV: 3000 Controller: SYSTEM   ACTIVE
+        Adapter ID: 9175000C5BA8.0174
+    Uplink Port Connection:
+      RX Packets: 296203011  Discarded: 0          Errors: 0
+      TX Packets: 38151      Discarded: 0          Errors: 0
+      RX Bytes: 27058622185          TX Bytes: 14939428
+      Device: 3000  Unit: 000   Interface: Activated   Port: 2049
+      Options: Ethernet
+      Partner Switch Capabilities: No_Reflective_Relay
+  RDEV: 3100.P00 VDEV: 3100 Controller: SYSTEM   BACKUP
+        Adapter ID: 9175000C5BA8.0288
+    Uplink Port Connection:
+      RX Packets: 0          Discarded: 0          Errors: 0
+      TX Packets: 0          Discarded: 0          Errors: 0
+      RX Bytes: 0                    TX Bytes: 0
+      Device: 3100  Unit: 000   Interface: Inactive    Port: 2050
+      Options: Ethernet
+ Adapter Connections:                            Connected: 1
+    Adapter Owner: TCPIP    NIC: BD00.P00 Name: UNASSIGNED  Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 296203586  Discarded: 0          Errors: 0
+      TX Packets: 38150      Discarded: 0          Errors: 0
+      RX Bytes: 27058702105          TX Bytes: 14939368
+      Device: BD00  Unit: 000   Role: DATA       Port: 2176
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-00-00-04 IP: 172.26.1.120
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+\x20
+VSWITCH SYSTEM VSICIC     Type: QDIO    Connected: 21   Maxconn: INFINITE
+  PERSISTENT  RESTRICTED    ETHERNET                  Accounting: OFF
+  USERBASED LOCAL
+  VLAN Unaware
+  MAC address: 02-01-78-00-00-02    MAC Protection: Unspecified
+  IPTimeout: 5   QueueStorage Range: 8-256M     Current: 8M
+  Isolation Status: OFF        VEPA Status: OFF
+  Unicast IP address count: 20
+ Uplink Port:
+  State: Ready                         PriQueuing: OFF
+  PMTUD setting: EXTERNAL   PMTUD value: 9000     Trace Pages: 8
+  LOG: Off
+  RDEV: 3001.P00 VDEV: 3001 Controller: SYSTEM   ACTIVE
+        Adapter ID: 9175000C5BA8.0174
+    Uplink Port Connection:
+      RX Packets: 685601513  Discarded: 0          Errors: 0
+      TX Packets: 236207705  Discarded: 0          Errors: 0
+      RX Bytes: 358052229239         TX Bytes: 85249751597
+      Device: 3001  Unit: 000   Interface: Activated   Port: 2049
+      Options: Ethernet
+      Partner Switch Capabilities: No_Reflective_Relay
+  RDEV: 3101.P00 VDEV: 3101 Controller: SYSTEM   BACKUP
+        Adapter ID: 9175000C5BA8.0288
+    Uplink Port Connection:
+      RX Packets: 0          Discarded: 0          Errors: 0
+      TX Packets: 0          Discarded: 0          Errors: 0
+      RX Bytes: 0                    TX Bytes: 0
+      Device: 3101  Unit: 000   Interface: Inactive    Port: 2050
+      Options: Ethernet
+ Adapter Connections:                            Connected: 21
+    Adapter Owner: B4904CPT NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 314253570  Discarded: 0          Errors: 0
+      TX Packets: 13838885   Discarded: 0          Errors: 0
+      RX Bytes: 39837695192          TX Bytes: 6827275465
+      Device: 1002  Unit: 002   Role: DATA       Port: 2176
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-00-00-05 IP: 172.26.1.233
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          01-00-5E-00-00-FB
+          33-33-00-00-00-01
+          33-33-00-00-00-FB
+          33-33-FF-00-00-05
+    Adapter Owner: IIMD00BC NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 321346817  Discarded: 11         Errors: 0
+      TX Packets: 24386487   Discarded: 0          Errors: 0
+      RX Bytes: 52355419358          TX Bytes: 22867222781
+      Device: 1002  Unit: 002   Role: DATA       Port: 2219
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-B8-86-64 IP: 172.26.11.139
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-B8-86-64
+    Adapter Owner: IIMD00BD NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 296171003  Discarded: 0          Errors: 0
+      TX Packets: 13222      Discarded: 0          Errors: 0
+      RX Bytes: 27059637629          TX Bytes: 1290460
+      Device: 1002  Unit: 002   Role: DATA       Port: 2220
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-81-93-97 IP: 172.26.11.155
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-81-93-97
+    Adapter Owner: IIMD00B3 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 338005268  Discarded: 5          Errors: 0
+      TX Packets: 34415411   Discarded: 0          Errors: 0
+      RX Bytes: 47746983789          TX Bytes: 10806676192
+      Device: 1002  Unit: 002   Role: DATA       Port: 2203
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-AA-9D-E2 IP: 172.26.11.196
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-AA-9D-E2
+    Adapter Owner: IIMD00B5 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 309746245  Discarded: 9          Errors: 0
+      TX Packets: 11844574   Discarded: 0          Errors: 0
+      RX Bytes: 32936451153          TX Bytes: 4066469281
+      Device: 1002  Unit: 002   Role: DATA       Port: 2208
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-F0-65-F4 IP: 172.26.11.130
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-F0-65-F4
+    Adapter Owner: IIMD00FC NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 201423310  Discarded: 5          Errors: 0
+      TX Packets: 14789078   Discarded: 0          Errors: 0
+      RX Bytes: 25476027104          TX Bytes: 4839954153
+      Device: 1002  Unit: 002   Role: DATA       Port: 2225
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-F9-7F-FA IP: 172.26.11.152
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-F9-7F-FA
+    Adapter Owner: IIMD001D NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 308303407  Discarded: 5          Errors: 0
+      TX Packets: 9103208    Discarded: 0          Errors: 0
+      RX Bytes: 34857787254          TX Bytes: 3054925557
+      Device: 1002  Unit: 002   Role: DATA       Port: 2182
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-87-38-CD IP: 172.26.11.50
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-87-38-CD
+    Adapter Owner: IIMD0018 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 301339872  Discarded: 0          Errors: 0
+      TX Packets: 6832653    Discarded: 0          Errors: 0
+      RX Bytes: 27824032795          TX Bytes: 823270536
+      Device: 1002  Unit: 002   Role: DATA       Port: 2180
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-97-7E-03 IP: 172.26.11.118
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-97-7E-03
+    Adapter Owner: IIMD0019 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 386042486  Discarded: 185        Errors: 0
+      TX Packets: 29587725   Discarded: 0          Errors: 0
+      RX Bytes: 132064004557         TX Bytes: 10150833862
+      Device: 1002  Unit: 002   Role: DATA       Port: 2181
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-1E-EC-C9 IP: 172.26.11.61
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-1E-EC-C9
+    Adapter Owner: IIMD002B NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 296201385  Discarded: 0          Errors: 0
+      TX Packets: 47032      Discarded: 0          Errors: 0
+      RX Bytes: 27059345012          TX Bytes: 3056856
+      Device: 1002  Unit: 002   Role: DATA       Port: 2186
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-9C-C5-A4 IP: 172.26.11.216
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-9C-C5-A4
+    Adapter Owner: IIMD002C NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 297562908  Discarded: 0          Errors: 0
+      TX Packets: 1401434    Discarded: 0          Errors: 0
+      RX Bytes: 27342187495          TX Bytes: 247598850
+      Device: 1002  Unit: 002   Role: DATA       Port: 2187
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-EC-59-8A IP: 172.26.11.254
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-EC-59-8A
+    Adapter Owner: IIMD002D NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 297187074  Discarded: 4          Errors: 0
+      TX Packets: 1111077    Discarded: 0          Errors: 0
+      RX Bytes: 27525805652          TX Bytes: 135779852
+      Device: 1002  Unit: 002   Role: DATA       Port: 2188
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-8F-9D-86 IP: 172.26.11.93
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-8F-9D-86
+    Adapter Owner: IIMD002E NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 296435407  Discarded: 6          Errors: 0
+      TX Packets: 284691     Discarded: 0          Errors: 0
+      RX Bytes: 27086065783          TX Bytes: 16683304
+      Device: 1002  Unit: 002   Role: DATA       Port: 2189
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-47-CC-DB IP: 172.26.11.58
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-47-CC-DB
+    Adapter Owner: IIMD0024 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 297160896  Discarded: 1          Errors: 0
+      TX Packets: 1609997    Discarded: 0          Errors: 0
+      RX Bytes: 28145784570          TX Bytes: 2089093153
+      Device: 1002  Unit: 002   Role: DATA       Port: 2185
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-54-63-01 IP: 172.26.11.16
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-54-63-01
+    Adapter Owner: MALR000A NIC: 1000.P00 Name: UNASSIGNED  Type: QDIO
+      PQUplinkTX: Normal
+      Port: 2234
+    Adapter Owner: MALR002E NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 112642709  Discarded: 0          Errors: 0
+      TX Packets: 28232      Discarded: 0          Errors: 0
+      RX Bytes: 10654819525          TX Bytes: 1909155
+      Device: 1002  Unit: 002   Role: DATA       Port: 2256
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-6B-EA-01 IP: 172.26.40.119
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-6B-EA-01
+    Adapter Owner: MALR0031 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 112258530  Discarded: 0          Errors: 0
+      TX Packets: 18335      Discarded: 0          Errors: 0
+      RX Bytes: 10619568163          TX Bytes: 1217439
+      Device: 1002  Unit: 002   Role: DATA       Port: 2258
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-28-94-52 IP: 172.26.40.118
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-28-94-52
+    Adapter Owner: RACH0013 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 94789234   Discarded: 0          Errors: 0
+      TX Packets: 16714      Discarded: 0          Errors: 0
+      RX Bytes: 9001901313           TX Bytes: 1091995
+      Device: 1002  Unit: 002   Role: DATA       Port: 2272
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-FF-4D-B2 IP: 172.26.33.200
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-FF-4D-B2
+    Adapter Owner: RAJA0023 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 191255088  Discarded: 0          Errors: 0
+      TX Packets: 45872      Discarded: 0          Errors: 0
+      RX Bytes: 17846965024          TX Bytes: 3063700
+      Device: 1002  Unit: 002   Role: DATA       Port: 2237
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-AA-8B-1C IP: 172.26.59.230
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-AA-8B-1C
+    Adapter Owner: SSAN0061 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 296158905  Discarded: 0          Errors: 0
+      TX Packets: 13058      Discarded: 0          Errors: 0
+      RX Bytes: 27053730489          TX Bytes: 1064424
+      Device: 1002  Unit: 002   Role: DATA       Port: 2224
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-AE-84-75 IP: 172.26.55.136
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-AE-84-75
+    Adapter Owner: SSAN0077 NIC: 1000.P00 Name: HYD1G1      Type: QDIO
+      PQUplinkTX: Normal
+      RX Packets: 62393168   Discarded: 0          Errors: 0
+      TX Packets: 17268      Discarded: 0          Errors: 0
+      RX Bytes: 5984543616           TX Bytes: 1217983
+      Device: 1002  Unit: 002   Role: DATA       Port: 2273
+      Options: Ethernet Broadcast
+        Unicast MAC Addresses:
+          02-01-78-53-74-EB IP: 172.26.55.131
+        Multicast MAC Addresses:
+          01-00-5E-00-00-01
+          33-33-00-00-00-01
+          33-33-FF-53-74-EB
+\x20
+VSWITCH SYSTEM VSICICA    Type: QDIO    Connected: 0    Maxconn: INFINITE
+  PERSISTENT  RESTRICTED    ETHERNET                  Accounting: OFF
+  USERBASED LOCAL
+  VLAN Aware  Default VLAN: NONE    Default Porttype: Access  GVRP: Disabled
+              Native  VLAN: 0001    VLAN Counters: OFF
+  MAC address: 02-01-78-00-00-03    MAC Protection: Unspecified
+  IPTimeout: 5   QueueStorage Range: 8-256M     Current: 8M
+  Isolation Status: OFF        VEPA Status: OFF
+  Unicast IP address count: 0
+ Uplink Port:
+  State: Ready                         PriQueuing: OFF
+  PMTUD setting: EXTERNAL   PMTUD value: 9000     Trace Pages: 8
+  LOG: Off
+  RDEV: 7200.P00 VDEV: 7200 Controller: SYSTEM   ACTIVE
+        Adapter ID: 9175000C5BA8.0284
+    Uplink Port Connection:
+      RX Packets: 0          Discarded: 0          Errors: 0
+      TX Packets: 0          Discarded: 0          Errors: 0
+      RX Bytes: 0                    TX Bytes: 0
+      Device: 7200  Unit: 000   Interface: Activated   Port: 2049
+      Options: Ethernet
+      Partner Switch Capabilities: No_Reflective_Relay
+"""
+
 
 def _make_rh():
     """Return a lightweight mock ReqHandle."""
@@ -74,6 +510,24 @@ class VMCPHandlerTest(base.SMTTestCase):
         result = self.handler._run(["query", "pcif"])
         self.assertEqual(8, result["overallRC"])
         self.assertEqual("", result["response"])
+
+    @mock.patch('subprocess.check_output', return_value=b"OK \xff DONE\n")
+    def test_run_success_survives_invalid_utf8(self, _mock):
+        result = self.handler._run(["query", "userid"])
+        self.assertEqual(0, result["overallRC"])
+        self.assertIn("OK", result["response"])
+        self.assertIn("DONE", result["response"])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_tolerated_survives_invalid_utf8(self, mock_check):
+        mock_check.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b"HCP040E \xff not attached")
+        result = self.handler._run(
+            ["FOR", "TESTUSER", "CMD", "DETACH", "0100"],
+            tolerated=NOT_ATTACHED_PATTERN)
+        self.assertEqual(0, result["overallRC"])
+        self.assertIn("HCP040E", result["response"])
+        self.rh.updateResults.assert_not_called()
 
     @mock.patch('subprocess.check_output')
     def test_run_output_true_survives_invalid_utf8(self, mock_check):
@@ -379,6 +833,21 @@ class VMCPHandlerRunForTestCase(base.SMTTestCase):
         self.assertEqual('HCP045E', result['strError'])
 
     @mock.patch('subprocess.check_output')
+    def test_run_for_survives_invalid_utf8(self, mock_co):
+        mock_co.return_value = b'OK \xff DONE\n'
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(0, result['overallRC'])
+        self.assertIn('DONE', result['response'])
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_error_survives_invalid_utf8(self, mock_co):
+        mock_co.side_effect = subprocess.CalledProcessError(
+            returncode=1, cmd='vmcp', output=b'HCP045E \xff')
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(1, result['overallRC'])
+        self.assertIn('HCP045E', result['strError'])
+
+    @mock.patch('subprocess.check_output')
     def test_run_for_generic_exception(self, mock_co):
         mock_co.side_effect = OSError('vmcp not found')
         result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
@@ -634,38 +1103,43 @@ class VMCPHandlerQueryImagePerformanceTestCase(base.SMTTestCase):
         self.handler = VMCPHandler(self.rh)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_image_performance_single_section(self, mock_run):
-        output = (
-            "Configured=1000000 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=100000 GlobalUnclearedAvail=200000\n"
-            "LocalClearedAvail=50000 LocalUnclearedAvail=50000\n"
-        )
-        mock_run.return_value = {'overallRC': 0, 'response': output}
+    def test_query_image_performance_real_output(self, mock_run):
+        # In real CP output Configured= and the Global/Local Cleared and
+        # LocalUncleared fields appear only in the "All Frames" section.
+        # GlobalUnclearedAvail appears only in the "Frames < 2G" and
+        # "Frames > 2G" sections, so summing every field counts each value
+        # once.  Using "All Frames" alone would report 134217587 in use.
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_FRAMES_REAL}
         result = self.handler.query_image_performance()
         self.assertEqual(0, result['overallRC'])
-        # memory_in_use = 1000000 - (100000 + 200000 + 50000 + 50000) = 600000
-        self.assertEqual("MEMORY_IN_USE=600000", result['response'])
+        # Computed by hand from QUERY_FRAMES_REAL:
+        #   Configured = 134217728
+        #   free = 17 + 64 + 60 (All Frames) + 308081 (< 2G)
+        #          + 97473280 (> 2G) = 97781502
+        #   in use = 134217728 - 97781502 = 36436226
+        self.assertEqual("MEMORY_IN_USE=36436226", result['response'])
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_query_image_performance_multi_section(self, mock_run):
-        # Realistic multi-section QUERY FRAMES output (<2G and >2G)
-        output = (
-            "Storage below 2G:\n"
-            "Configured=524288 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=50000 GlobalUnclearedAvail=100000\n"
-            "LocalClearedAvail=25000 LocalUnclearedAvail=25000\n"
-            "Storage above 2G:\n"
-            "Configured=1572864 Offline=0 Standby=0\n"
-            "GlobalClearedAvail=150000 GlobalUnclearedAvail=300000\n"
-            "LocalClearedAvail=75000 LocalUnclearedAvail=75000\n"
-        )
-        mock_run.return_value = {'overallRC': 0, 'response': output}
+    def test_query_image_performance_not_double_counted(self, mock_run):
+        # "All Frames" already carries every value, and the per-range
+        # sections repeat some of them: each must be counted once.
+        mock_run.return_value = {
+            'overallRC': 0,
+            'response': (
+                "All Frames:\n"
+                "   Configured=1000  GlobalClearedAvail=10\n"
+                "   GlobalUnclearedAvail=100  LocalClearedAvail=5\n"
+                "   LocalUnclearedAvail=5\n"
+                "\n"
+                "Frames < 2G:\n"
+                "   Configured=400  GlobalUnclearedAvail=40\n"
+                "\n"
+                "Frames > 2G:\n"
+                "   Configured=600  GlobalUnclearedAvail=60\n")}
         result = self.handler.query_image_performance()
-        self.assertEqual(0, result['overallRC'])
-        # Total configured = 524288 + 1572864 = 2097152
-        # Total free = (50000 + 150000) + (100000 + 300000) + (25000 + 75000) + (25000 + 75000) = 800000
-        # memory_in_use = 2097152 - 800000 = 1297152
-        self.assertEqual("MEMORY_IN_USE=1297152", result['response'])
+        # in use = 1000 - (10 + 100 + 5 + 5)
+        self.assertEqual("MEMORY_IN_USE=880", result['response'])
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_query_image_performance_fails(self, mock_run):
@@ -684,14 +1158,11 @@ class VMCPHandlerSSIInfoTestCase(base.SMTTestCase):
         self.handler = VMCPHandler(self.rh)
 
     @mock.patch.object(VMCPHandler, '_run')
-    def test_ssi_info_not_in_cluster(self, mock_run):
-        mock_run.return_value = {
-            'overallRC': 0,
-            'response': 'This system is not a member of an SSI cluster.\n'
-        }
+    def test_ssi_info_not_in_cluster_real_output(self, mock_run):
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_SSI_NOT_IN_CLUSTER_REAL}
         result = self.handler.ssi_info()
-        self.assertEqual(0, result['rc'])
-        self.assertEqual([], result['response'])
+        self.assertEqual({'response': [], 'rc': 0}, result)
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_ssi_info_joined_cluster(self, mock_run):
@@ -868,35 +1339,66 @@ class VMCPHandlerQueryVSwitchDetailsTestCase(base.SMTTestCase):
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_query_vswitch_details_success(self, mock_run):
-        output = (
-            "VSWITCH SYSTEM VSICIC Type: QDIO Connected: 1 Maxconn: INFINITE\n"
-            "  PERSISTENT RESTRICTED NONROUTER MACPROTECT UNSPECIFIED\n"
-            "Adapter Connections:\n"
-            "  Adapter Owner: USER01 NIC: 0600 Name: UNASSIGNED\n"
-            "    RX Packets: 100 Discarded: 2 Errors: 0\n"
-            "    TX Packets: 200 Discarded: 4 Errors: 1\n"
-            "    RX Bytes: 1024 TX Bytes: 2048\n"
-        )
-        mock_run.return_value = {'overallRC': 0, 'response': output}
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_VSWITCH_DETAILS_REAL}
         result = self.handler.query_vswitch_details()
         self.assertEqual(0, result['rc'])
         response = result['response']
-        self.assertEqual(1, response['vswitch_count'])
-        self.assertEqual(1, len(response['vswitches']))
-        vsw = response['vswitches'][0]
-        self.assertEqual('VSICIC', vsw['vswitch_name'])
-        self.assertEqual(1, len(vsw['nics']))
-        nic = vsw['nics'][0]
-        self.assertEqual('USER01', nic['userid'])
-        self.assertEqual('0600', nic['vdev'])
-        self.assertEqual('100', nic['nic_fr_rx'])
-        self.assertEqual('2', nic['nic_fr_rx_dsc'])
-        self.assertEqual('0', nic['nic_fr_rx_err'])
-        self.assertEqual('200', nic['nic_fr_tx'])
-        self.assertEqual('4', nic['nic_fr_tx_dsc'])
-        self.assertEqual('1', nic['nic_fr_tx_err'])
-        self.assertEqual('1024', nic['nic_rx'])
-        self.assertEqual('2048', nic['nic_tx'])
+        self.assertEqual(4, response['vswitch_count'])
+        vswitches = response['vswitches']
+        self.assertEqual(['DTCSMAPI', 'VMTCPIP', 'VSICIC', 'VSICICA'],
+                         [v['vswitch_name'] for v in vswitches])
+        # Uplink port connections are not guest NICs and must not be
+        # counted; VSICICA has only an uplink port.
+        self.assertEqual([2, 1, 21, 0],
+                         [len(v['nics']) for v in vswitches])
+
+        # Two NICs on the same vswitch, the second with discarded TX frames.
+        dtcsmapi = vswitches[0]['nics']
+        self.assertEqual({
+            'userid': 'DTCSMAPI', 'vdev': '0100',
+            'nic_fr_rx': '5993', 'nic_fr_rx_dsc': '0',
+            'nic_fr_rx_err': '0',
+            'nic_fr_tx': '6904', 'nic_fr_tx_dsc': '0',
+            'nic_fr_tx_err': '0',
+            'nic_rx': '481691', 'nic_tx': '1251132'}, dtcsmapi[0])
+        self.assertEqual({
+            'userid': 'LOHCOST', 'vdev': 'F000',
+            'nic_fr_rx': '10310', 'nic_fr_rx_dsc': '0',
+            'nic_fr_rx_err': '0',
+            'nic_fr_tx': '8820', 'nic_fr_tx_dsc': '979',
+            'nic_fr_tx_err': '0',
+            'nic_rx': '2126094', 'nic_tx': '750529'}, dtcsmapi[1])
+
+        # The guest NIC counters, not the 296203011 / 27058622185 of the
+        # uplink port connection printed just before them.
+        tcpip = vswitches[1]['nics']
+        self.assertEqual({
+            'userid': 'TCPIP', 'vdev': 'BD00',
+            'nic_fr_rx': '296203586', 'nic_fr_rx_dsc': '0',
+            'nic_fr_rx_err': '0',
+            'nic_fr_tx': '38150', 'nic_fr_tx_dsc': '0',
+            'nic_fr_tx_err': '0',
+            'nic_rx': '27058702105', 'nic_tx': '14939368'}, tcpip[0])
+
+        # Many NICs on one vswitch, in the order CP printed them.
+        vsicic = vswitches[2]['nics']
+        self.assertEqual('B4904CPT', vsicic[0]['userid'])
+        self.assertEqual('6827275465', vsicic[0]['nic_tx'])
+        self.assertEqual('IIMD00BC', vsicic[1]['userid'])
+        self.assertEqual('11', vsicic[1]['nic_fr_rx_dsc'])
+        self.assertEqual('SSAN0077', vsicic[-1]['userid'])
+        self.assertEqual('5984543616', vsicic[-1]['nic_rx'])
+        self.assertEqual('1217983', vsicic[-1]['nic_tx'])
+        self.assertEqual(['1000'] * 21, [n['vdev'] for n in vsicic])
+
+        # A NIC without any RX/TX lines keeps the zero defaults.
+        malr000a = [n for n in vsicic if n['userid'] == 'MALR000A'][0]
+        self.assertEqual({
+            'userid': 'MALR000A', 'vdev': '1000',
+            'nic_fr_rx': '0', 'nic_fr_rx_dsc': '0', 'nic_fr_rx_err': '0',
+            'nic_fr_tx': '0', 'nic_fr_tx_dsc': '0', 'nic_fr_tx_err': '0',
+            'nic_rx': '0', 'nic_tx': '0'}, malr000a)
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_query_vswitch_details_multiple_vswitches(self, mock_run):
