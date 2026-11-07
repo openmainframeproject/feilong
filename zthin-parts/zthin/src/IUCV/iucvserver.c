@@ -103,7 +103,7 @@ int check_client_authorization(int newsockfd, char *req_userid)
 */
 int receive_file_from_client(int newsockfd, char *des_path)
 {
-    char buffer[BUFFER_SIZE], md5[256], filemode[8];
+    char buffer[BUFFER_SIZE], sha512[256], filemode[8];
     int n = 0;
     FILE * fp = NULL;
     syslog(LOG_INFO,"Will receive and save file to %s which is sent from IUCV client.\n", des_path);
@@ -141,11 +141,12 @@ int receive_file_from_client(int newsockfd, char *des_path)
         if (strncmp(buffer, FILE_SENT_OVER, strlen(FILE_SENT_OVER) )==0)
         {
             syslog(LOG_INFO, "FILE_SENT_OVER");
-            /* Get md5 code from client */
-            strncpy(md5, buffer + strlen(FILE_SENT_OVER) + 1, 32);
-            strncpy(filemode, buffer + strlen(FILE_SENT_OVER) + 1 + 33, 3);
+            /* Get sha512 code from client */
+            strncpy(sha512, buffer + strlen(FILE_SENT_OVER) + 1, 128);
+            sha512[128] = '\0';
+            strncpy(filemode, buffer + strlen(FILE_SENT_OVER) + 1 + 129, 3);
             filemode[3]='\0';
-            syslog(LOG_INFO,"file md5=%s filemode=%s",md5, filemode);
+            syslog(LOG_INFO,"file sha512=%s filemode=%s",sha512, filemode);
             break;
         }
         if (fwrite(buffer, n, 1, fp)!=1)
@@ -172,12 +173,12 @@ int receive_file_from_client(int newsockfd, char *des_path)
         syslog(LOG_ERR, "ERROR: Failed to read from socket to get the tranport file: %s\n",strerror(errno));
         return errno;
     }
-    syslog(LOG_INFO, "Finish file transporting, start to get and check md5.");
+    syslog(LOG_INFO, "Finish file transporting, start to get and check sha512.");
     /* After finish sending file, send message to client */
-    sprintf(buffer, "md5sum %s",des_path);
+    sprintf(buffer, "sha512sum %s",des_path);
     if ((fp = popen(buffer, "r"))==NULL)
     {
-        syslog(LOG_ERR,"ERROR: Failed to get md5 for file %s.",buffer);
+        syslog(LOG_ERR,"ERROR: Failed to get sha512 for file %s.",buffer);
         strcpy(buffer,"FILE_RECEIVED_FAILED");
         send(newsockfd,buffer,strlen(buffer)+1,0);
         syslog(LOG_INFO, "Send FILE_RECEIVED_FAILED to client",buffer);
@@ -188,7 +189,7 @@ int receive_file_from_client(int newsockfd, char *des_path)
         bzero(buffer, BUFFER_SIZE);
         if (fgets(buffer, sizeof(buffer), fp) != NULL)
         {
-            if (strncmp(md5, buffer, 32)==0) //md5 is 32 bytes
+            if (strncmp(sha512, buffer, 128)==0) //sha512 is 128 bytes
             {
                 strcpy(buffer,"FILE_RECEIVED_OK");
                 send(newsockfd,buffer,strlen(buffer)+1,0);
