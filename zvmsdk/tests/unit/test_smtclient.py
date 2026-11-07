@@ -5836,3 +5836,67 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed'))
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.get_pcif_list)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    def test_is_pcif_nic(self, select):
+        select.return_value = [
+            {'interface': '1000', 'switch': 'VS1', 'comments': None},
+            {'interface': '00000112', 'switch': 'PCIF', 'comments': 'PCIF'}]
+        self.assertTrue(self._smtclient._is_pcif_nic('USERID1', '00000112'))
+        # the neutron agent may send the interface in lower case
+        select.return_value = [
+            {'interface': '0000011A', 'switch': 'PCIF', 'comments': 'PCIF'}]
+        self.assertTrue(self._smtclient._is_pcif_nic('USERID1', '0000011a'))
+        self.assertFalse(self._smtclient._is_pcif_nic('USERID1', '1000'))
+
+    @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    def test_couple_uncouple_pcif_nic_skipped(self, select, get_direct,
+                                              lock, replace, couple,
+                                              uncouple):
+        # networking-zvm passes the interface recorded for the neutron port,
+        # which is the 8-digit pcif for a NETH nic, as nic_vdev
+        select.return_value = [
+            {'interface': '00000112', 'switch': 'PCIF', 'comments': 'PCIF'}]
+        self._smtclient.couple_nic_to_vswitch('USERID1', '00000112', 'VS1',
+                                              active=True)
+        self._smtclient.uncouple_nic_from_vswitch('USERID1', '00000112',
+                                                  active=True)
+        get_direct.assert_not_called()
+        lock.assert_not_called()
+        replace.assert_not_called()
+        couple.assert_not_called()
+        uncouple.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    def test_uncouple_osa_nic_not_skipped(self, select, uncouple):
+        select.return_value = [
+            {'interface': '00000112', 'switch': 'PCIF', 'comments': 'PCIF'},
+            {'interface': '1000', 'switch': 'VS1', 'comments': None}]
+        self._smtclient.uncouple_nic_from_vswitch('USERID1', '1000',
+                                                  active=True)
+        uncouple.assert_called_once_with('USERID1', '1000', active=True)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info(self, request):
+        request.return_value = {'overallRC': 0, 'response': ['enc112']}
+        self.assertEqual(['enc112'], self._smtclient.get_neth_interface_info(
+            'USERID1', '00000112'))
+        request.assert_called_once_with(
+            'getvm USERID1 NETHINTERFACEINFO 00000112')
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info_failed(self, request):
+        request.side_effect = exception.SDKSMTRequestFailed(
+            {'overallRC': 4, 'rc': 4, 'rs': 99}, 'fake')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.get_neth_interface_info,
+                          'USERID1', '00000112')

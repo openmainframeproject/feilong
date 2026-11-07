@@ -125,6 +125,66 @@ delete_network_interface = {
     'additionalProperties': False,
 }
 
+configure_network_interface_ip = {
+    'type': 'object',
+    'properties': {
+        'interface': {
+            'type': 'object',
+            'properties': {
+                'os_version': parameter_types.os_version,
+                'guest_networks': parameter_types.network_list,
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+                'restart': parameter_types.boolean,
+            },
+            'required': ['os_version', 'guest_networks', 'pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['interface'],
+    'additionalProperties': False,
+}
+
+
+attach_pcif = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+            },
+            'required': ['pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}
+
+
+detach_pcif = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'os_version': parameter_types.os_version,
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+            },
+            'required': ['os_version', 'pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}
+
 
 config_minidisks = {
     'type': 'object',
