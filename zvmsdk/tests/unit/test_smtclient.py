@@ -2520,6 +2520,104 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self._smtclient.delete_nic(userid, vdev, True)
         undedicate_nic.assert_called_with(userid, vdev, active=True)
 
+    # --- VMCP path tests for delete_nic active branch ---
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_nic')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.delete_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_delete_nic_active_vmcp_success(self, mock_conf, mock_delete,
+                                            select_rec, power_state,
+                                            request, delete_rec):
+        """VMCP path: delete_nic_for_guest succeeds."""
+        mock_conf.zvm.use_smapi = False
+        mock_delete.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0,
+            'response': '', 'strError': ''
+        }
+        select_rec.return_value = [{"interface": "1000", "comments": None}]
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient.delete_nic('FakeID', '1000', active=True)
+        mock_delete.assert_called_once_with('FakeID', '1000')
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_nic')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.delete_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_delete_nic_active_vmcp_nic_not_found_tolerated(
+            self, mock_conf, mock_delete, select_rec,
+            power_state, request, delete_rec):
+        """VMCP path: NIC not found on active guest logs warning and does not raise."""
+        mock_conf.zvm.use_smapi = False
+        mock_delete.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0,
+            'nic_not_found': True,
+            'response': '', 'strError': ''
+        }
+        select_rec.return_value = [{"interface": "1000", "comments": None}]
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient.delete_nic('FakeID', '1000', active=True)
+        mock_delete.assert_called_once_with('FakeID', '1000')
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_nic')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.delete_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_delete_nic_active_vmcp_hcpnic040e_tolerated(
+            self, mock_conf, mock_delete, select_rec,
+            power_state, request, delete_rec):
+        """VMCP path: HCPNIC040E in response is tolerated (LOG.warning, no raise)."""
+        mock_conf.zvm.use_smapi = False
+        mock_delete.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'response': 'HCPNIC040E No virtual NIC 1000',
+            'strError': 'HCPNIC040E No virtual NIC 1000'
+        }
+        select_rec.return_value = [{"interface": "1000", "comments": None}]
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient.delete_nic('FakeID', '1000', active=True)
+        mock_delete.assert_called_once_with('FakeID', '1000')
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_nic')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.delete_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_delete_nic_active_vmcp_failure(
+            self, mock_conf, mock_delete,
+            select_rec, power_state, request, delete_rec):
+        """VMCP path: any FOR rejection raises SDKConflictError."""
+        mock_conf.zvm.use_smapi = False
+        mock_delete.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'response': 'HCPaaa002E Privilege class required',
+            'strError': 'HCPaaa002E Privilege class required'
+        }
+        select_rec.return_value = [{"interface": "1000", "comments": None}]
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient.delete_nic,
+                          'FakeID', '1000', active=True)
+
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
     @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
@@ -2704,6 +2802,140 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         update_switch.assert_called_with(userid, vdev, None)
         request.assert_any_call(requestData1)
         request.assert_any_call(requestData2)
+
+    # --- VMCP path tests for _uncouple_nic active branch ---
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_success(self, mock_conf, mock_uncouple,
+                                              power_state, request,
+                                              update_switch):
+        """VMCP path: uncouple_nic_for_guest succeeds."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0,
+            'response': '', 'strError': ''
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient._uncouple_nic('FakeID', 'FakeVdev', active=True)
+        mock_uncouple.assert_called_once_with('FakeID', 'FakeVdev')
+        update_switch.assert_called_with('FakeID', 'FakeVdev', None)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_nic_not_found_raises(
+            self, mock_conf, mock_uncouple, power_state, request,
+            update_switch):
+        """VMCP path: nic_not_found=True raises SDKObjectNotExistError."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'nic_not_found': True,
+            'response': '',
+            'strError': 'NIC FakeVdev does not exist for FakeID'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._smtclient._uncouple_nic,
+                          'FakeID', 'FakeVdev', active=True)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_already_uncoupled_tolerated(
+            self, mock_conf, mock_uncouple, power_state, request,
+            update_switch):
+        """VMCP path: already_uncoupled=True logs warning and does not raise."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 0, 'rc': 0, 'rs': 0,
+            'already_uncoupled': True,
+            'response': '', 'strError': ''
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient._uncouple_nic('FakeID', 'FakeVdev', active=True)
+        mock_uncouple.assert_called_once_with('FakeID', 'FakeVdev')
+        update_switch.assert_called_with('FakeID', 'FakeVdev', None)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_hcpcpl2791e_tolerated(
+            self, mock_conf, mock_uncouple, power_state, request,
+            update_switch):
+        """VMCP path: HCPCPL2791E in response is tolerated (LOG.warning, no raise)."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'response': 'HCPCPL2791E NIC FakeVdev not connected',
+            'strError': 'HCPCPL2791E NIC FakeVdev not connected'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self._smtclient._uncouple_nic('FakeID', 'FakeVdev', active=True)
+        mock_uncouple.assert_called_once_with('FakeID', 'FakeVdev')
+        update_switch.assert_called_with('FakeID', 'FakeVdev', None)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_hcpcpl040e_raises(
+            self, mock_conf, mock_uncouple, power_state, request,
+            update_switch):
+        """VMCP path: HCPCPL040E in response raises SDKObjectNotExistError."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'response': 'HCPCPL040E Device FakeVdev does not exist',
+            'strError': 'HCPCPL040E Device FakeVdev does not exist'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._smtclient._uncouple_nic,
+                          'FakeID', 'FakeVdev', active=True)
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_update_record_with_switch')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch('zvmsdk.smtclient.VMCPHandler.uncouple_nic_for_guest')
+    @mock.patch('zvmsdk.smtclient.config.CONF')
+    def test_uncouple_nic_active_vmcp_failure(self, mock_conf, mock_uncouple,
+                                              power_state, request,
+                                              update_switch):
+        """VMCP path: any other FOR rejection raises SDKConflictError."""
+        mock_conf.zvm.use_smapi = False
+        mock_uncouple.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0,
+            'response': 'HCPaaa002E Privilege class required',
+            'strError': 'HCPaaa002E Privilege class required'
+        }
+        power_state.return_value = 'on'
+        request.return_value = {'overallRC': 0}
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient._uncouple_nic,
+                          'FakeID', 'FakeVdev', active=True)
 
     @mock.patch.object(database.GuestDbOperator,
                        'get_migrated_guest_info_list')
