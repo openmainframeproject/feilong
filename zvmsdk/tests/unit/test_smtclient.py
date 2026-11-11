@@ -5925,3 +5925,38 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.virtual_network_vswitch_query_byte_stats)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info_success(self, smt_req):
+        resp = ['ens1']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
+        res = self._smtclient.get_neth_interface_info('testuid', '00000110')
+        smt_req.assert_called_once_with('getvm testuid NETHINTERFACEINFO 00000110')
+        self.assertEqual(res, 'ens1')
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info_empty_response(self, smt_req):
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': []}
+        self.assertRaises(exception.SDKInternalError,
+                          self._smtclient.get_neth_interface_info,
+                          'testuid', '00000110')
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info_blank_response(self, smt_req):
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': ['   ']}
+        self.assertRaises(exception.SDKInternalError,
+                          self._smtclient.get_neth_interface_info,
+                          'testuid', '00000110')
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_neth_interface_info_request_failed(self, smt_req):
+        smt_req.side_effect = exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.get_neth_interface_info,
+                          'testuid', '00000110')

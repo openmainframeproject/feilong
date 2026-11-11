@@ -900,6 +900,135 @@ Delete a network interface on given guest.
 
 * Response contents:
 
+Configure network interface IP
+------------------------------
+
+**POST /guests/{userid}/interface/ip**
+
+Configure the IP address and network settings for a Network Express (NETH)
+interface on a running guest. The guest must be powered on and reachable
+through IUCV, and the NETH PCI function (``pcif``) must already be attached
+to the guest before this call is made.
+
+.. warning::
+
+   ``active`` has a different meaning here than in
+   ``POST /guests/{userid}/interface``. There, ``active=true`` applies the
+   configuration to the running guest without rebooting it. Here,
+   ``active=true`` **reboots the guest**, which interrupts every workload
+   running on it.
+
+The operation punches the network configuration to the guest. By default
+(``active`` is ``false``) it is applied the next time the guest boots. With
+``active`` set to ``true`` the configuration is applied immediately and the
+guest is rebooted.
+
+**Which PCI function ID to pass**
+
+``pcif`` is a single PCI function ID of 1 to 8 hexadecimal digits, for example
+``00000110``. It is the function ID as seen by the guest (the ``function_id``
+of the PCI device in the guest's sysfs), which is used to find the name of the
+network interface to configure. This is **not** the same format as ``pcif`` of
+``POST /guests``, which is ``<fid>:<vdev>`` and is written to the user
+directory as ``COMMAND ATTACH PCIF <fid> * AS <vdev>``. For this API, pass the
+virtual ``<vdev>`` part. It is also not necessarily the real function ID
+returned as ``pcif`` by ``GET /host/pcif``, unless both are the same.
+
+**Prerequisites**
+
+* z/VM support for PCI functions, which is the same prerequisite as for
+  ``GET /host/pcif``: z/VM 7.3 or later (or applicable APAR). This
+  documentation does not list individual APAR numbers; check the z/VM
+  documentation for the level that supports Network Express (NETH).
+* The NETH PCI function is attached to the guest and the guest has already
+  brought up the corresponding PCI device, so that it appears in the guest's
+  sysfs with a network interface.
+* The guest is powered on and reachable through IUCV.
+
+**Behavior on failure**
+
+* If the request is rejected before the guest is touched (invalid ``pcif`` or
+  ``guest_network``, unsupported distribution, or no network interface found
+  for ``pcif`` on the guest), nothing is punched and the guest is not
+  modified.
+* If the configuration cannot be punched to the guest, the API raises an error.
+  The temporary files on the Feilong host are always removed.
+* If applying the configuration fails when ``active=true`` (for example due to
+  an IUCV communication error while running the command in the guest), the API
+  raises an error and the guest is **not** rebooted. The punched doscript
+  remains in the guest reader and may still be applied at the next boot.
+
+Supported distributions: ``rhel7.x``, ``rhel8.x``,
+``rhel9.x``, ``rhel10.x``, ``sles15.x``, ``ubuntu20.x``, ``ubuntu22.x``,
+``ubuntu24.x`` and ``ubuntu25.x``
+(all case-insensitive). ``rhcos4.x`` is not supported by
+this API and is rejected before the guest is modified.
+
+.. note::
+
+   ``rhel10.x`` is implemented but has **not been tested** on a real guest.
+   ``rhel6.x``, ``sles11.x``, ``sles12.x`` and ``ubuntu16.x`` are not
+   supported by this API and are not tested. They are not rejected either, so
+   the API does not stop a request for them, and the resulting configuration
+   is not guaranteed to work.
+
+.. note::
+
+   On ``rhel7.x`` and ``rhel8.x`` the configuration is written as an ``ifcfg``
+   file in ``/etc/sysconfig/network-scripts/``. ``ifcfg`` files are deprecated
+   on RHEL 9 and no longer read on RHEL 10, so on ``rhel9.x`` and
+   ``rhel10.x`` it is written as a NetworkManager keyfile,
+   ``/etc/NetworkManager/system-connections/<interface>.nmconnection``, with
+   mode ``0600``.
+
+.. note::
+
+   On SLES, configuring DNS sets ``NETCONFIG_DNS_STATIC_SERVERS`` in
+   ``/etc/sysconfig/network/config``, replacing any value set there. It
+   therefore changes the DNS servers of the **entire guest**, not only of the
+   NETH interface. DNS servers configured for other interfaces through
+   ``NETCONFIG_DNS_STATIC_SERVERS`` are lost.
+
+**Relationship with Create network interface**
+
+This API is independent of ``POST /guests/{userid}/interface``
+(``guest_create_network_interface``). It does not create a NIC or a user
+directory entry, does not record the interface in the Feilong network
+database, and does not run ``znetconfig``. It only writes the configuration
+file of the NETH interface found for ``pcif``. Use ``POST
+/guests/{userid}/interface`` for virtual NICs coupled to a vswitch and this API
+for NETH PCI functions. Do not use this API for a NIC created by
+``POST /guests/{userid}/interface``. On ``ubuntu20.x`` and later, configure the
+NETH interface after the virtual NICs, or call this API again afterwards,
+because the first ``POST /guests/{userid}/interface`` on such a guest removes
+the existing ``/etc/netplan/*.yaml`` files, including the NETH configuration
+file ``60-neth-<interface>.yaml``.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - interface: network_interface_info
+  - os_version: guest_os_version
+  - guest_network: guest_network_info
+  - pcif: pcif_function
+  - active: active_flag_reboot
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_configure_network_interface_ip.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  The network configuration dict that was applied, identical to the
+  ``guest_network`` object from the request body.
+
 Start guest
 -----------
 
