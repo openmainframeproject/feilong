@@ -1095,6 +1095,16 @@ active_flag:
   in: body
   required: false
   type: boolean
+active_flag_reboot:
+  description: |
+    Whether to apply the change to the active guest immediately. Default is
+    ``false``: the configuration is only punched to the guest reader and is
+    applied the next time the guest boots. If ``true``, the configuration is
+    applied right away and the guest is **rebooted**, which interrupts every
+    workload running on it.
+  in: body
+  required: false
+  type: boolean
 couple_info:
   description: |
     The information used to describe the couple/uncouple action.
@@ -1168,6 +1178,30 @@ guest_networks:
   in: body
   required: false
   type: list
+guest_network_info:
+  description: |
+    Network information dict for a single interface. All keys are optional
+    unless noted:
+
+    - ``method``: interface initialization method. Valid values are ``static``
+      (default) and ``dhcp``.
+    - ``ip_addr``: IP address of the interface. ``cidr`` is required when
+      ``ip_addr`` is set.
+    - ``dns_addr``: list of DNS server addresses.
+    - ``gateway_addr``: gateway address.
+    - ``cidr``: network prefix in CIDR notation, e.g. ``192.168.1.0/24``.
+    - ``mtu``: MTU of the interface, an integer between 576 and 65535.
+  in: body
+  required: true
+  type: dict
+pcif_function:
+  description: |
+    PCI function ID of the Network Express (NETH) adapter attached to the
+    guest, as up to 8 hexadecimal digits, e.g. ``00000110``. The
+    adapter must already be attached to the guest before this call is made.
+  in: body
+  required: true
+  type: string
 vswitch_info:
   description: |
     The vswitch update info.

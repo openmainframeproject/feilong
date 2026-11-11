@@ -19,6 +19,7 @@
 import abc
 import netaddr
 import os
+import shlex
 import six
 from jinja2 import Environment, FileSystemLoader
 
@@ -265,6 +266,46 @@ class LinuxDist(object):
         """construct the name of dns file."""
         pass
 
+    def _parse_neth_params(self, network):
+        """Parse network dictionary for NETH interface configuration."""
+        method = 'static'
+        if network.get('method') is not None:
+            method = network['method'].lower()
+
+        ip = ''
+        gateway = ''
+        netmask = ''
+        prefixlen = ''
+        broadcast = ''
+        if method == 'static':
+            ip = network.get('ip_addr') or ''
+            gateway = network.get('gateway_addr') or ''
+            ip_cidr = network.get('cidr') or ''
+            if ip_cidr:
+                ip_net = netaddr.IPNetwork(ip_cidr)
+                netmask = str(ip_net.netmask)
+                prefixlen = str(ip_net.prefixlen)
+                # no broadcast address for /31 and /32 networks
+                if ip_net.broadcast is not None:
+                    broadcast = str(ip_net.broadcast)
+
+        mtu = ''
+        if network.get('mtu') is not None:
+            mtu = str(network['mtu'])
+
+        dns = network.get('dns_addr') or []
+
+        return {
+            'method': method,
+            'ip': ip,
+            'gateway': gateway,
+            'netmask': netmask,
+            'prefixlen': prefixlen,
+            'broadcast': broadcast,
+            'mtu': mtu,
+            'dns': dns,
+        }
+
     @abc.abstractmethod
     def get_znetconfig_contents(self):
         """construct znetconfig file will be called during first boot."""
@@ -315,6 +356,15 @@ class LinuxDist(object):
     def _delete_vdev_info(self, vdev):
         """delete udev rules file."""
         pass
+
+    def get_neth_dns_cmd(self, dns):
+        """Return shell commands to configure DNS for a NETH interface.
+
+        Base implementation: no extra DNS configuration needed — DNS addresses
+        are carried directly inside the ifcfg file (e.g. DNS1= on RHEL).
+        Subclasses that use a different mechanism (e.g. SLES/wicked) override.
+        """
+        return ''
 
     def generate_set_hostname_script(self, hostname):
         lines = ['#!/bin/bash\n',
@@ -396,6 +446,30 @@ class rhel(LinuxDist):
 
     def _delete_vdev_info(self, vdev):
         return ''
+
+    def get_neth_cfg(self, network, intf_name):
+        """Return (filename, cfg_str) for a NETH ifcfg file (RHEL format)."""
+        file_path = self._get_network_file_path()
+        filename = "%sifcfg-%s" % (file_path, intf_name)
+        params = self._parse_neth_params(network)
+
+        cfg_str = 'DEVICE=\"' + intf_name + '\"\n'
+        cfg_str += 'BOOTPROTO=\"' + params['method'] + '\"\n'
+        if params['method'] == 'static':
+            cfg_str += 'IPADDR=\"' + params['ip'] + '\"\n'
+            cfg_str += 'NETMASK=\"' + params['netmask'] + '\"\n'
+            if params['broadcast']:
+                cfg_str += 'BROADCAST=\"' + params['broadcast'] + '\"\n'
+            if params['gateway']:
+                cfg_str += 'GATEWAY=\"' + params['gateway'] + '\"\n'
+        cfg_str += 'NETTYPE=\"NETH\"\n'
+        cfg_str += 'ONBOOT=\"yes\"\n'
+        if params['mtu']:
+            cfg_str += 'MTU=\"' + params['mtu'] + '\"\n'
+        if params['dns']:
+            for i, dns in enumerate(params['dns'], start=1):
+                cfg_str += 'DNS%d=\"%s\"\n' % (i, dns)
+        return filename, cfg_str
 
 
 class rhel6(rhel):
@@ -801,6 +875,51 @@ class sles(LinuxDist):
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
 
+    def get_neth_cfg(self, network, intf_name):
+        """Return (filename, cfg_str) for a NETH ifcfg file (SLES format)."""
+        file_path = self._get_network_file_path()
+        filename = "%sifcfg-%s" % (file_path, intf_name)
+        params = self._parse_neth_params(network)
+
+        cfg_str = "BOOTPROTO=\'%s\'\n" % params['method']
+        if params['method'] == 'static':
+            cfg_str += "IPADDR=\'%s\'\n" % params['ip']
+            cfg_str += "NETMASK=\'%s\'\n" % params['netmask']
+            if params['broadcast']:
+                cfg_str += "BROADCAST=\'%s\'\n" % params['broadcast']
+            if params['gateway']:
+                cfg_str += "GATEWAY=\'%s\'\n" % params['gateway']
+        cfg_str += "STARTMODE=\'onboot\'\n"
+        cfg_str += "NETTYPE=\'NETH\'\n"
+        if params['mtu']:
+            cfg_str += "MTU=\'%s\'\n" % params['mtu']
+        # DNS1=/DNS2= keys are ignored by wicked; DNS is configured
+        # via NETCONFIG_DNS_STATIC_SERVERS — see get_neth_dns_cmd().
+        return filename, cfg_str
+
+    def get_neth_dns_cmd(self, dns):
+        """Return shell commands to configure DNS for a NETH interface on SLES.
+
+        Wicked ignores DNS1=/DNS2= in ifcfg files; the authoritative mechanism
+        is NETCONFIG_DNS_STATIC_SERVERS in /etc/sysconfig/network/config.
+        We strip any existing value first, then append the new one so that
+        repeated calls are idempotent.
+        """
+        if not dns:
+            return ''
+        replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
+        replace_file = '/etc/sysconfig/network/config'
+        for addr in dns:
+            # the value is written into a root shell command on the guest
+            if not netaddr.valid_ipv4(str(addr)):
+                raise exception.SDKInvalidInputFormat(
+                    msg='Invalid DNS IP address: %r' % (addr,))
+        dns_addrs = ' '.join(dns)
+        netconfig_dns = '%s="%s"' % (replace_var, dns_addrs)
+        cmd = "sed -i '/^\\s*%s=\"/d' %s\n" % (replace_var, replace_file)
+        cmd += "echo %s >> %s\n" % (shlex.quote(netconfig_dns), replace_file)
+        return cmd
+
     def _get_device_filename(self, vdev):
         return 'ifcfg-eth' + str(vdev).zfill(4)
 
@@ -1167,6 +1286,26 @@ class ubuntu(LinuxDist):
                         "fi"))
         return cmd
 
+    def get_neth_cfg(self, network, intf_name):
+        """Return (filename, cfg_str) for a NETH config file (Ubuntu16 /etc/network/interfaces format)."""
+        filename = '/etc/network/interfaces.d/' + intf_name
+        params = self._parse_neth_params(network)
+
+        cfg_str = 'auto ' + intf_name + '\n'
+        cfg_str += 'iface ' + intf_name + ' inet ' + params['method'] + '\n'
+        if params['method'] == 'static':
+            cfg_str += 'address ' + params['ip'] + '\n'
+            cfg_str += 'netmask ' + params['netmask'] + '\n'
+            if params['broadcast']:
+                cfg_str += 'broadcast ' + params['broadcast'] + '\n'
+            if params['gateway']:
+                cfg_str += 'gateway ' + params['gateway'] + '\n'
+        if params['mtu']:
+            cfg_str += 'mtu ' + params['mtu'] + '\n'
+        if params['dns']:
+            cfg_str += 'dns-nameservers ' + ' '.join(params['dns']) + '\n'
+        return filename, cfg_str
+
     def _get_network_file(self):
         return '/etc/network/interfaces'
 
@@ -1179,7 +1318,8 @@ class ubuntu(LinuxDist):
             cfg_str += 'netmask ' + netmask_v4 + '\n'
             cfg_str += 'broadcast ' + broadcast_v4 + '\n'
             cfg_str += 'gateway ' + gateway_v4 + '\n'
-        cfg_str += 'mtu ' + mtu + '\n'
+        if mtu:
+            cfg_str += 'mtu ' + mtu + '\n'
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
@@ -1512,6 +1652,35 @@ class ubuntu20(ubuntu):
                         'mtu': mtu
                        }
         return cfg_str
+
+    def get_neth_cfg(self, network, intf_name):
+        """Return (filename, cfg_dict) for a NETH config file (Ubuntu20+ Netplan YAML format)."""
+        filename = '/etc/netplan/60-neth-%s.yaml' % intf_name
+        params = self._parse_neth_params(network)
+        if params['method'] == 'dhcp':
+            device_cfg = {'dhcp4': True}
+        else:
+            if params['ip']:
+                if params['prefixlen']:
+                    addr_str = '%s/%s' % (params['ip'], params['prefixlen'])
+                else:
+                    addr_str = params['ip']
+                addresses = [addr_str]
+            else:
+                addresses = []
+            device_cfg = {
+                'addresses': addresses,
+            }
+            if params['gateway']:
+                # 'gateway4' is deprecated in newer netplan releases
+                device_cfg['routes'] = [{'to': '0.0.0.0/0',
+                                         'via': params['gateway']}]
+        if params['mtu']:
+            device_cfg['mtu'] = int(params['mtu'])
+        if params['dns']:
+            device_cfg['nameservers'] = {'addresses': params['dns']}
+        cfg_dict = {'network': {'version': 2, 'ethernets': {intf_name: device_cfg}}}
+        return filename, cfg_dict
 
 
 class ubuntu22(ubuntu20):
