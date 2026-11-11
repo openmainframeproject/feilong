@@ -1007,3 +1007,17 @@ class SDKAPITestCase(base.SDKTestCase):
         results = self.api.host_diskpool_get_info(details=True)
         self.assertEqual(results, disk_pool_details)
         dp_info.assert_has_calls([mock.call('fakepool1', True), mock.call('fakepool2', True)])
+
+    @mock.patch("zvmsdk.networkops.NetworkOPS.zdirect_delete_network_configuration")
+    def test_guest_detach_pcif(self, delete_conf):
+        self.api.guest_detach_pcif(self.userid, 'sles15', '00000112',
+                                   active=True)
+        delete_conf.assert_called_once_with(self.userid, 'sles15',
+                                            '00000112', active=True)
+
+    @mock.patch("zvmsdk.networkops.NetworkOPS.zdirect_delete_network_configuration")
+    def test_guest_detach_pcif_error(self, delete_conf):
+        delete_conf.side_effect = exception.SDKInternalError(msg="fake")
+        self.assertRaises(exception.SDKInternalError,
+                          self.api.guest_detach_pcif, self.userid, 'rhel9',
+                          '00000112')

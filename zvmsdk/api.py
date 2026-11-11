@@ -2322,6 +2322,123 @@ class SDKAPI(object):
             raise
         return guest_networks
 
+    @check_guest_exist()
+    def guest_attach_pcif(self, userid, pcif, active=True):
+        """ Attach a PCI function (NETH nic) to the guest: add it to the
+        user directory and, if active, to the running guest. The network
+        configuration is done with guest_configure_network_interface_ip.
+
+        :param str userid: the user id of the guest
+        :param str pcif: the PCI function to attach, e.g. '00000112'
+        :param bool active: whether attach the pcif to the active guest
+        """
+        with zvmutils.log_and_reraise_sdkbase_error(
+                "attach pcif %s to guest %s" % (pcif, userid)):
+            self._networkops.attach_pcif(userid, pcif, active=active)
+
+    @check_guest_exist()
+    def guest_detach_pcif(self, userid, os_version, pcif, active=True):
+        """ Remove the network configuration of the NETH nic from the guest
+        and detach its PCI function from the active guest and the user
+        directory.
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest, used
+               to find the network configuration file to remove
+        :param str pcif: the PCI function to detach, e.g. '00000112'
+        :param bool active: whether detach the pcif from the active guest
+        """
+        with zvmutils.log_and_reraise_sdkbase_error(
+                "detach pcif %s from guest %s" % (pcif, userid)):
+            self._networkops.zdirect_delete_network_configuration(
+                userid, os_version, pcif, active=active)
+
+    @check_guest_exist()
+    def guest_configure_network_interface_ip(self, userid, os_version,
+                                             guest_networks, pcif, active=True,
+                                             restart=True):
+        if len(guest_networks) == 0:
+            errmsg = ("API guest_create_network_interface: "
+                      "Network information is required but not provided")
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        for network in guest_networks:
+            if (('mac_addr' in network.keys()) and
+                    (network['mac_addr'] is not None)):
+                mac_addr = network['mac_addr']
+                if not zvmutils.valid_mac_addr(mac_addr):
+                    errmsg = ("API guest_create_network_interface: "
+                              "Invalid MAC address, format should be "
+                              "xx:xx:xx:xx:xx:xx, where x is a hexadecimal "
+                              "digit")
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+            method = 'static'
+            if (('method' in network.keys()) and
+                    (network['method'] is not None)):
+                method = network['method'].lower()
+            if method == 'static':
+                if (('ip_addr' in network.keys()) and
+                        (network['ip_addr'] is not None)):
+                    ip_addr = network['ip_addr']
+                    if not netaddr.valid_ipv4(ip_addr):
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid IP address, it should be a "
+                                  "value between 0.0.0.0 and 255.255.255.255")
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                if (('dns_addr' in network.keys()) and
+                        (network['dns_addr'] is not None)):
+                    if not isinstance(network['dns_addr'], list):
+                        raise exception.SDKInvalidInputTypes(
+                            'guest_config_network',
+                            str(list), str(type(network['dns_addr'])))
+                    for dns in network['dns_addr']:
+                        if not netaddr.valid_ipv4(dns):
+                            errmsg = ("API guest_create_network_interface: "
+                                      "Invalid DNS IP address, it should be a "
+                                      "value between 0.0.0.0 and 255.255.255.255")
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                if (('gateway_addr' in network.keys()) and
+                        (network['gateway_addr'] is not None)):
+                    if not netaddr.valid_ipv4(
+                            network['gateway_addr']):
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid gateway IP address, it should be a "
+                                  "value between 0.0.0.0 and 255.255.255.255")
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                if (('cidr' in network.keys()) and
+                        (network['cidr'] is not None)):
+                    if not zvmutils.valid_cidr(network['cidr']):
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid CIDR, format should be a.b.c.d/n, where "
+                                  "a.b.c.d is a IP address, and n is a value "
+                                  "between 0 and 32")
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+            elif method != 'dhcp':
+                errmsg = ("API guest_create_network_interface: "
+                          "Invalid initialization method, it should be either "
+                          "static or dhcp")
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
+        try:
+            self._networkops.zdirect_network_configuration(userid, pcif,
+                                                           guest_networks,
+                                                           active=active,
+                                                           restart=restart)
+        except exception.SDKBaseException:
+            LOG.error(('Failed to set network configuration file on VM %s') %
+                      userid)
+            raise
+        # remember which neutron port uses the pcif, to detach it later
+        for network in guest_networks:
+            if network.get('nic_id'):
+                self._networkops.add_pcif_nic_record(userid, pcif,
+                                                     network['nic_id'])
+        return guest_networks
+
     def guests_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
         """ Retrieve NIC information in the network database according to
             the requirements, the NIC information will include the guest

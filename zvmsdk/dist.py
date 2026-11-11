@@ -206,6 +206,14 @@ class LinuxDist(object):
         target_net_conf_file_name = os.path.join(file_path, device)
         return target_net_conf_file_name
 
+    def get_neth_configuration_file(self, intf_name):
+        """Get the configuration file of a NETH (PCIF) network interface.
+
+        Return an empty string if the distro has no such per-interface file.
+        """
+        return os.path.join(self._get_network_file_path(),
+                            'ifcfg-%s' % intf_name)
+
     def delete_vdev_info(self, vdev):
         cmd = self._delete_vdev_info(vdev)
         return cmd
@@ -622,6 +630,10 @@ class rhel10(rhel8):
 
 
 class rhcos(LinuxDist):
+    def get_neth_configuration_file(self, intf_name):
+        # CoreOS network is configured by kernel parameters, no file to remove
+        return ''
+
     def create_coreos_parameter(self, network_info, userid=''):
         try:
             # TODO: fix the limitation that assuming the first NIC configured
@@ -1144,6 +1156,9 @@ class ubuntu(LinuxDist):
         network_hw_config_fname = self._get_device_filename(vdev)
         return network_hw_config_fname
 
+    def get_neth_configuration_file(self, intf_name):
+        return '/etc/network/interfaces.d/%s' % intf_name
+
     def delete_vdev_info(self, vdev):
         cmd = self._delete_vdev_info(vdev)
         return cmd
@@ -1371,6 +1386,9 @@ class ubuntu16(ubuntu):
 
 
 class ubuntu20(ubuntu):
+    def get_neth_configuration_file(self, intf_name):
+        return '/etc/netplan/%s.yaml' % intf_name
+
     def _get_device_filename(self, device_num):
         return '/etc/netplan/' + str(device_num) + '.yaml'
 

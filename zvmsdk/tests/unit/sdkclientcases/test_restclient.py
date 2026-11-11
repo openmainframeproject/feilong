@@ -661,6 +661,26 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_configure_network_interface_ip(self, get_token, request):
+        url = '/guests/%s/interface/ip' % self.fake_userid
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        nets = [{'ip_addr': '1.1.1.2', 'nic_id': 'port1'}]
+        body = json.dumps({'interface': {'os_version': 'rhel9',
+                                         'guest_networks': nets,
+                                         'pcif': '00000112',
+                                         'active': True,
+                                         'restart': False}})
+        self.client.call("guest_configure_network_interface_ip",
+                         self.fake_userid, 'rhel9', nets, '00000112',
+                         active=True, restart=False)
+        request.assert_called_with('POST', full_uri, data=body,
+                                   headers=self.headers, verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_delete_network_interface(self, get_token, request):
         method = 'DELETE'
         url = '/guests/%s/interface' % self.fake_userid
@@ -689,6 +709,27 @@ class RESTClientTestCase(unittest.TestCase):
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_attach_detach_pcif(self, get_token, request):
+        url = '/guests/%s/pcif' % self.fake_userid
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        body = json.dumps({'info': {'pcif': '00000112', 'active': True}})
+        self.client.call("guest_attach_pcif", self.fake_userid, '00000112',
+                         active=True)
+        request.assert_called_with('POST', full_uri, data=body,
+                                   headers=self.headers, verify=False)
+
+        body = json.dumps({'info': {'os_version': 'rhel9',
+                                    'pcif': '00000112', 'active': True}})
+        self.client.call("guest_detach_pcif", self.fake_userid, 'rhel9',
+                         '00000112', active=True)
+        request.assert_called_with('DELETE', full_uri, data=body,
+                                   headers=self.headers, verify=False)
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
