@@ -96,3 +96,129 @@ class SMTGetVMTestCase(base.SMTTestCase):
         self.assertEqual('System_WWPN_Query', smcli.call_args[0][1])
         self.assertEqual(['-T', 'FAKEUSER', '-k OWNER=YES'],
                          smcli.call_args[0][2])
+
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_success(self, mock_exec):
+        rh = mock.Mock()
+        rh.userid = 'TESTUSER'
+        rh.parms = {'pcif': '00000110'}
+        rh.results = {'overallRC': 0}
+
+        mock_exec.return_value = {'overallRC': 0, 'response': 'enc110\n'}
+
+        rc = getVM.getNethIntInfo(rh)
+        self.assertEqual(0, rc)
+        rh.updateResults.assert_called_with({
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'response': 'enc110'
+        })
+        expected_cmd = (
+            'for dev in /sys/bus/pci/devices/*; do '
+            'f="$dev/function_id"; '
+            '[ -f "$f" ] || continue; '
+            'v=$(cat "$f" 2>/dev/null) || continue; '
+            '[ "$(( v ))" -eq 272 ] 2>/dev/null || continue; '
+            'ls "$dev/net" 2>/dev/null; break; done; true'
+        )
+        mock_exec.assert_called_once_with(rh, 'TESTUSER', expected_cmd)
+
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_invalid_pcif(self, mock_exec):
+        rh = mock.Mock()
+        rh.userid = 'TESTUSER'
+        rh.parms = {'pcif': 'invalid_pcif'}
+        rh.results = {'overallRC': 4}
+
+        rc = getVM.getNethIntInfo(rh)
+        self.assertEqual(4, rc)
+        rh.updateResults.assert_called_with({'overallRC': 4, 'rc': 4, 'rs': 99})
+        mock_exec.assert_not_called()
+
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_unsafe_pcif(self, mock_exec):
+        for bad in ('-1', '0x110', '110; reboot', ' 110', '123456789', ''):
+            rh = mock.Mock()
+            rh.userid = 'TESTUSER'
+            rh.parms = {'pcif': bad}
+            rh.results = {'overallRC': 4}
+
+            rc = getVM.getNethIntInfo(rh)
+            self.assertEqual(4, rc, bad)
+        mock_exec.assert_not_called()
+
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_pcif_not_found(self, mock_exec):
+        rh = mock.Mock()
+        rh.userid = 'TESTUSER'
+        rh.parms = {'pcif': '00000110'}
+        rh.results = {'overallRC': 4}
+
+        mock_exec.return_value = {'overallRC': 0, 'response': ''}
+
+        rc = getVM.getNethIntInfo(rh)
+        self.assertEqual(4, rc)
+        rh.updateResults.assert_called_with({'overallRC': 4, 'rc': 4, 'rs': 99})
+
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_exec_failed(self, mock_exec):
+        rh = mock.Mock()
+        rh.userid = 'TESTUSER'
+        rh.parms = {'pcif': '00000110'}
+        mock_exec.return_value = {'overallRC': 1, 'response': 'IUCV error'}
+
+        rc = getVM.getNethIntInfo(rh)
+        self.assertEqual(1, rc)
+        rh.updateResults.assert_called_with({'overallRC': 1, 'response': 'IUCV error'})
+
+    # ------------------------------------------------------------------
+    # parseCmdline — positional operand wiring
+    # ------------------------------------------------------------------
+    def test_parseCmdline_nethinterfaceinfo_populates_pcif(self):
+        """parseCmdline stores the 4th token in parms['pcif'] for NETHINTERFACEINFO."""
+        rh = mock.Mock()
+        rh.totalParms = 4
+        rh.request = ['getvm', 'TESTVM', 'NETHINTERFACEINFO', '00000110']
+        rh.results = {'overallRC': 0}
+        rh.subfunction = 'NETHINTERFACEINFO'
+        rh.argPos = 3
+        rh.parms = {}
+
+        getVM.parseCmdline(rh)
+
+        self.assertEqual(rh.parms['pcif'], '00000110')
+
+    def test_parseCmdline_fcpinfo_populates_status(self):
+        """parseCmdline stores the 4th token in parms['status'] for FCPINFO."""
+        rh = mock.Mock()
+        rh.totalParms = 4
+        rh.request = ['getvm', 'TESTVM', 'FCPINFO', 'free']
+        rh.results = {'overallRC': 0}
+        rh.subfunction = 'FCPINFO'
+        rh.argPos = 3
+        rh.parms = {}
+
+        getVM.parseCmdline(rh)
+
+        self.assertEqual(rh.parms['status'], 'free')
+
+    # ------------------------------------------------------------------
+    # getNethIntInfo — sysfs directory empty (no interface file)
+    # ------------------------------------------------------------------
+    @mock.patch('smtLayer.getVM.execCmdThruIUCV')
+    def test_get_neth_int_info_sysfs_empty(self, mock_exec):
+        """ls /sys/.../net succeeds but returns only whitespace → rc 4."""
+        rh = mock.Mock()
+        rh.userid = 'TESTUSER'
+        rh.parms = {'pcif': '00000110'}
+        rh.results = {'overallRC': 0}
+
+        # updateResults must actually update rh.results so the return path
+        # sees the correct overallRC.
+        def _update_results(d):
+            rh.results.update(d)
+        rh.updateResults.side_effect = _update_results
+
+        mock_exec.return_value = {'overallRC': 0, 'response': '   \n'}
+
+        rc = getVM.getNethIntInfo(rh)
+        self.assertEqual(4, rc)
+        rh.updateResults.assert_called_with({'overallRC': 4, 'rc': 4, 'rs': 99})

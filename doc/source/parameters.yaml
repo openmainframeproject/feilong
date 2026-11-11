@@ -1168,6 +1168,33 @@ guest_networks:
   in: body
   required: false
   type: list
+guest_network_info:
+  description: |
+    Network information dict for a single interface. All keys are optional
+    unless noted:
+
+    - ``method``: interface initialization method. Valid values are ``static``
+      (default) and ``dhcp``.
+    - ``ip_addr``: IP address of the interface. ``cidr`` is required when
+      ``ip_addr`` is set.
+    - ``dns_addr``: list of DNS server addresses.
+    - ``gateway_addr``: gateway address.
+    - ``cidr``: network prefix in CIDR notation, e.g. ``192.168.1.0/24``.
+    - ``mac_addr``: MAC address in ``xx:xx:xx:xx:xx:xx`` format.
+    - ``nic_id``: NIC identifier string.
+    - ``osa_device``: OSA device number, 1 to 4 hexadecimal digits.
+    - ``hostname``: hostname of the guest.
+  in: body
+  required: true
+  type: dict
+pcif_function:
+  description: |
+    PCI function ID of the Network Express (NETH) adapter attached to the
+    guest, as an 8-character hexadecimal string, e.g. ``00000110``. The
+    adapter must already be attached to the guest before this call is made.
+  in: body
+  required: true
+  type: string
 vswitch_info:
   description: |
     The vswitch update info.
