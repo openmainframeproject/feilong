@@ -411,6 +411,15 @@ def req_guest_delete_network_interface(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_configure_network_interface_ip(start_index, *args, **kwargs):
+    url = '/guests/%s/interface/ip'
+    body = {'interface': {'os_version': args[start_index],
+                          'guest_network': args[start_index + 1],
+                          'pcif': args[start_index + 2]}}
+    fill_kwargs_in_body(body['interface'], **kwargs)
+    return url, body
+
+
 def req_guest_get_power_state(start_index, *args, **kwargs):
     url = '/guests/%s/power_state'
     body = None
@@ -948,6 +957,12 @@ DATABASE = {
         'args_optional': 1,
         'params_path': 1,
         'request': req_guest_delete_network_interface},
+    'guest_configure_network_interface_ip': {
+        'method': 'POST',
+        'args_required': 4,
+        'args_optional': 1,
+        'params_path': 1,
+        'request': req_guest_configure_network_interface_ip},
     'guest_get_power_state': {
         'method': 'GET',
         'args_required': 1,

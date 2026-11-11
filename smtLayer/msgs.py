@@ -834,6 +834,29 @@ msg = {
         #   taken.
         # UserResp: Look up the reason the vmcp transfer command failed,
         #   correct the problem and reinvoke the function.
+    '0425': [{'overallRC': 4, 'rc': 4, 'rs': 425},
+            "ULT%s0425E Invalid PCI function ID '%s'. It must be 1 to 8 " +
+            "hexadecimal digits, e.g. 00000110.",
+            ('GVM', 'PCIF')],
+        # Explain: The PCI function ID specified for the NETHINTERFACEINFO
+        #   subfunction contains characters other than hexadecimal digits
+        #   or is longer than 8 characters.
+        # SysAct: Processing of the subfunction terminates with no action
+        #   taken.
+        # UserResp: Specify the PCI function ID of the Network Express
+        #   adapter as 1 to 8 hexadecimal digits and reissue the command.
+    '0426': [{'overallRC': 4, 'rc': 4, 'rs': 426},
+            "ULT%s0426E No network interface was found for PCI function " +
+            "ID %s on userid %s.",
+            ('GVM', 'PCIF', 'USERID')],
+        # Explain: No PCI device with the specified function ID, or no
+        #   network interface on that device, was found in the guest's
+        #   /sys/bus/pci/devices.
+        # SysAct: Processing of the subfunction terminates with no action
+        #   taken.
+        # UserResp: Verify that the Network Express adapter with this PCI
+        #   function ID is attached to the guest and that the guest's
+        #   operating system has configured it, then reissue the command.
     '0501': [{'overallRC': 5, 'rc': 1, 'rs': 501},
             "ULT%s0501E Timeout Exception recevied on an attempt to " +
             "execute a cmd: %s, exception: %s, " +

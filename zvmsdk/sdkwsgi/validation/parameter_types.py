@@ -22,6 +22,8 @@ import unicodedata
 
 import six
 
+from zvmsdk import constants
+
 
 def single_param(schema):
     ret = multi_params(schema)
@@ -300,6 +302,14 @@ pcif = {
 }
 
 
+# PCI function ID of a NETH (zDirect) device; must match the check in
+# smtLayer/getVM.py, which accepts 1-8 hexadecimal digits.
+neth_pcif = {
+    'type': ['string'],
+    'pattern': constants.NETH_PCIF_PATTERN
+}
+
+
 userid_or_None = {
     'oneOf': [
         {'type': 'null'},
@@ -544,6 +554,26 @@ network_list = {
         }
     },
     'additionalProperties': False
+}
+
+# mac_addr, nic_id and hostname are accepted but ignored when configuring a
+# NETH interface.
+network_info = {
+    'type': 'object',
+    'properties': {
+        'method': method,
+        'ip_addr': ipv4,
+        'dns_addr': {'type': 'array',
+                    'items': ipv4},
+        'gateway_addr': ipv4,
+        'cidr': cidr,
+        'mtu': {'type': 'integer', 'minimum': 576, 'maximum': 65535},
+        'mac_addr': mac_address,
+        'nic_id': {'type': 'string'},
+        'hostname': hostname},
+    'dependencies': {
+        'ip_addr': ['cidr']
+    }
 }
 
 capture_type = {

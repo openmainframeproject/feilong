@@ -26,6 +26,7 @@ from smtLayer.vmUtils import execCmdThruIUCV, getPerfInfo, invokeSMCLI
 from smtLayer.vmUtils import isLoggedOn
 from smtLayer.vmcpHandler import VMCPHandler
 from zvmsdk import config
+from zvmsdk import constants
 
 modId = 'GVM'
 version = "1.0.0"
@@ -45,6 +46,7 @@ subfuncHandler = {
     'STATUS': ['getStatus', lambda rh: getStatus(rh)],
     'VERSION': ['getVersion', lambda rh: getVersion(rh)],
     'FCPINFO': ['fcpinfo', lambda rh: fcpinfo(rh)],
+    'NETHINTERFACEINFO': ['getNethIntInfo', lambda rh: getNethIntInfo(rh)],
     }
 
 """
@@ -59,6 +61,9 @@ information for the positional operands:
 posOpsList = {
     'FCPINFO': [
         ['Status filter', 'status', True, 2],
+        ],
+    'NETHINTERFACEINFO': [
+        ['Pcif filter', 'pcif', True, 2],
         ]}
 
 """
@@ -706,4 +711,86 @@ def fcpinfo(rh):
             # Use results from invokeSMCLI
             rh.updateResults(results)
 
+    return rh.results['overallRC']
+
+
+def getNethIntInfo(rh):
+    """
+    Find the network interface name configured on the PCI device (Network
+    Express adapter) assigned to the instance userid.
+
+    Scans sysfs inside the guest (via IUCV):
+      Every s390 PCI device exposes its 32-bit hardware function ID in
+      /sys/bus/pci/devices/<dev>/function_id. Finds the device matching
+      the given pcif and reads the interface name from its net/ directory.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'GETVM'
+          subfunction - 'NETHINTERFACEINFO'
+          userid      - userid of the virtual machine
+          parms['pcif'] - PCI function ID of the Network Express adapter
+                          attached to the guest (e.g. "00000110")
+
+    Output:
+       Request Handle updated with the results.
+       On success, results['response'] contains the interface name
+       (e.g. "ens1", "eno1", or "enp0s0").
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter getVM.getNethIntInfo, userid: " + rh.userid)
+    pcif = rh.parms["pcif"]
+
+    # pcif is interpolated into a shell command, accept only 1-8 hex digits
+    if not re.fullmatch(constants.NETH_PCIF_PATTERN, str(pcif)):
+        rh.printSysLog("getVM.getNethIntInfo: invalid pcif %s" % pcif)
+        rh.printLn("ES", msgs.msg['0425'][1] % (modId, pcif))
+        rh.updateResults(msgs.msg['0425'][0])
+        rh.printSysLog("Exit getVM.getNethIntInfo, rc: 4")
+        return 4
+
+    # On s390x hardware, the Linux PCI domain does not always match pcif[-4:].
+    # Every s390 PCI device exposes its exact 32-bit hardware FID in
+    # /sys/bus/pci/devices/<dev>/function_id.
+    # The trailing "true" keeps the exit status 0 when nothing matches, so
+    # that "no interface found" is reported below (rc 4) and not as an
+    # IUCV command failure.
+    fid_val = int(pcif, 16)
+    strCmd = (
+        'for dev in /sys/bus/pci/devices/*; do '
+        'f="$dev/function_id"; '
+        '[ -f "$f" ] || continue; '
+        'v=$(cat "$f" 2>/dev/null) || continue; '
+        '[ "$(( v ))" -eq %d ] 2>/dev/null || continue; '
+        'ls "$dev/net" 2>/dev/null; break; done; true' % fid_val
+    )
+    results = execCmdThruIUCV(rh, rh.userid, strCmd)
+    if results['overallRC'] != 0:
+        rh.printSysLog(
+            "getVM.getNethIntInfo: sysfs lookup failed for userid %s, rc: %d"
+            % (rh.userid, results['overallRC']))
+        # execCmdThruIUCV does not print, the error text is in its response
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)
+        rh.printSysLog("Exit getVM.getNethIntInfo, rc: " +
+                       str(results['overallRC']))
+        return results['overallRC']
+
+    interface_name = ''
+    for line in results['response'].splitlines():
+        line = line.strip()
+        if line:
+            interface_name = line
+            break
+    if interface_name:
+        rh.printLn("N", interface_name)
+        rh.updateResults({"overallRC": 0, "rc": 0, "rs": 0,
+                          "response": interface_name})
+    else:
+        rh.printSysLog(
+            "getVM.getNethIntInfo: no interface found for pcif %s" % pcif)
+        rh.printLn("ES", msgs.msg['0426'][1] % (modId, pcif, rh.userid))
+        rh.updateResults(msgs.msg['0426'][0])
+    rh.printSysLog("Exit getVM.getNethIntInfo, rc: " +
+                   str(rh.results['overallRC']))
     return rh.results['overallRC']
