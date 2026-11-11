@@ -16,7 +16,10 @@
 #    under the License.
 
 import mock
+import os
+import shutil
 import subprocess
+import tempfile
 import time
 import threading
 from mock import Mock, call
@@ -731,3 +734,38 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(expect, result)
         result = zvmutils.get_lpar_name(zhypinfo={'aaa': {}})
         self.assertEqual(expect, result)
+
+
+class PathUtilsTestCases(base.SDKTestCase):
+
+    def setUp(self):
+        super(PathUtilsTestCases, self).setUp()
+        self._root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self._root, True)
+        patcher = mock.patch.object(zvmutils.PathUtils, '_get_guest_path',
+                                    return_value=self._root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self._pathutils = zvmutils.PathUtils()
+
+    def _path(self, *parts):
+        return os.path.join(self._root, *parts)
+
+    def test_rename_guest_path(self):
+        os.makedirs(self._path('OLDVM'))
+        open(self._path('OLDVM', 'console.log'), 'w').close()
+        self._pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertFalse(os.path.exists(self._path('OLDVM')))
+        self.assertTrue(os.path.exists(self._path('NEWVM', 'console.log')))
+
+    def test_rename_guest_path_replaces_stale_folder(self):
+        os.makedirs(self._path('OLDVM'))
+        os.makedirs(self._path('NEWVM'))
+        open(self._path('NEWVM', 'stale'), 'w').close()
+        self._pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertTrue(os.path.isdir(self._path('NEWVM')))
+        self.assertFalse(os.path.exists(self._path('NEWVM', 'stale')))
+
+    def test_rename_guest_path_no_folder(self):
+        self._pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertFalse(os.path.exists(self._path('NEWVM')))

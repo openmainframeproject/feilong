@@ -1197,8 +1197,9 @@ class SDKAPI(object):
         - The SDK database (guests, switch and fcp tables) is updated to
           reflect the new userid, and the guest id, metadata and comments
           are preserved
-        - The SMAPI namelist and the vswitch authorization (including the
-          user VLAN ids) are updated
+        - The SMAPI namelist, the guest folder and the vswitch authorization
+          (including the user VLAN ids and promiscuous mode, on every
+          vswitch the old userid is authorized on) are updated
 
         :param str old_userid: Current userid of the VM (will be converted to
                uppercase)
@@ -1213,7 +1214,8 @@ class SDKAPI(object):
 
         :raises: SDKObjectNotExistError if old_userid doesn't exist
         :raises: SDKObjectAlreadyExistError if new_userid already exists
-        :raises: SDKConflictError if the VM is not powered off
+        :raises: SDKConflictError if the VM is not powered off, or if a
+                 vswitch authorization of the VM cannot be moved
         :raises: SDKSMTRequestFailed if the DIRMAINT rename operation fails
 
         Example:
@@ -1237,7 +1239,7 @@ class SDKAPI(object):
         # rule as the REST API 'userid' parameter type) before touching DB
         # or backend
         if (not isinstance(new_userid, six.string_types) or
-                not re.match(r'^[a-zA-Z0-9]{1,8}$', new_userid)):
+                not re.match(r'^[a-zA-Z0-9]{1,8}\Z', new_userid)):
             raise exception.SDKInvalidInputFormat(
                 msg=("new_userid '%s' must be 1-8 characters long and contain "
                      "only alphanumeric characters" % new_userid))

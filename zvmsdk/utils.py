@@ -166,6 +166,16 @@ class PathUtils(object):
             # Ignore any exception for delete temp folder
             pass
 
+    def rename_guest_path(self, old_userid, new_userid):
+        """Move the guest folder of old_userid to new_userid, if it exists."""
+        old_folder = os.path.join(self._get_guest_path(), old_userid)
+        new_folder = os.path.join(self._get_guest_path(), new_userid)
+        if os.path.exists(old_folder):
+            if os.path.exists(new_folder):
+                # left behind by an earlier guest of the same name
+                shutil.rmtree(new_folder)
+            os.rename(old_folder, new_folder)
+
     def get_guest_temp_path(self, userid):
         tmp_inst_dir = tempfile.mkdtemp(prefix=userid,
                                         dir='/tmp')

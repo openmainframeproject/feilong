@@ -551,7 +551,7 @@ class SDKAPITestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     def test_guest_rename_invalid_new_userid_formats(self, cge, rename_guest):
         for bad in ('NEWVM0123', 'NEW VM', 'NEW-VM', 'NEW_VM', 'NEW.VM',
-                    ' ', None, 123):
+                    ' ', None, 123, 'NEWVM\n', 'NEWVM01\n'):
             self.assertRaises(exception.SDKInvalidInputFormat,
                               self.api.guest_rename, 'OLDVM01', bad)
         # invalid input must be rejected before the new_userid checks/rename

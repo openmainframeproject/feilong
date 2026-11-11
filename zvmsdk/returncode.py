@@ -352,7 +352,9 @@ errors = {
                   24: ("Failed to edit FCP Multipath Template, "
                        "error: %(msg)s"),
                   25: ("Failed to rename guest '%(userid)s', error: the "
-                       "guest must be powered off.")
+                       "guest must be powered off."),
+                  26: ("Failed to rename guest '%(userid)s', error: "
+                       "%(msg)s. Nothing has been changed.")
                   },
                  "The operated object status conflict"
                  ],

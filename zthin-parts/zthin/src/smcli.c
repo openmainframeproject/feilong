@@ -758,7 +758,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = imageRecycle(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Image_Replace_DM")) {
         rc = imageReplaceDM(argC, argV, &vmapiContext);
-    } else if (!strcmp(argV[1], "Image_Rename_DM")) {    
+    } else if (!strcmp(argV[1], "Image_Rename_DM")) {
         rc = imageRenameDM(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Image_SCSI_Characteristics_Define_DM")) {
         rc = imageSCSICharacteristicsDefineDM(argC, argV, &vmapiContext);

@@ -4501,7 +4501,7 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             case 'k':
                 if (!strncmp(optarg, newImageNamePrefix, strlen(newImageNamePrefix))) {
                     newImageName = optarg + strlen(newImageNamePrefix);
-				} else {
+                } else {
                     DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                     printf("ERROR: -k must be in the form new_image_name=<new_image_name>\n");
                     return 1;
@@ -4513,7 +4513,7 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                 printf("NAME\n"
                     "  Image_Rename_DM\n\n"
                     "SYNOPSIS\n"
-                    "  smcli Image_Rename_DM [-T] target_identifier [-k] new_image_name=<new_image_name>\n\n"
+                    "  smcli Image_Rename_DM -T target_identifier -k new_image_name=<new_image_name>\n\n"
                     "DESCRIPTION\n"
                     "  Use Image_Rename_DM to rename a virtual image.\n"
                     "  This executes: DIRM FOR <target_identifier> CHNGID TO <new_image_name>\n\n"
@@ -4573,7 +4573,6 @@ int imageRenameDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
 
     return rc;
 }
-
 
 int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "Image_SCSI_Characteristics_Define_DM";

@@ -4666,7 +4666,7 @@ class SMTClient(object):
                       % (userid, msg))
         return ''
 
-    def image_rename_dm(self, old_userid, new_userid):
+    def image_rename_dm(self, old_userid, new_userid, namelist=None):
         """Rename a virtual machine using DIRMAINT and update local state.
 
         Executes the SMAPI Image_Rename_DM call:
@@ -4674,36 +4674,43 @@ class SMTClient(object):
 
         After a successful SMAPI rename, the following are updated so that
         they stay consistent with the new userid:
+          - the SMAPI namelist (if one is given)
           - guests.userid    (guest registry, updated in place so that the
                               id, metadata, net_set and comments are kept)
           - switch.userid    (NIC-to-vswitch associations)
           - fcp.assigner_id and fcp.owner (FCP device assignments)
-          - the vswitch authorization (new userid granted on the vswitches
-                              the guest is coupled to, with the same user
-                              VLAN ids, old userid revoked)
+          - the vswitch authorization: on every vswitch the old userid is
+                              authorized on, the new userid is granted with
+                              the same user VLAN ids and promiscuous mode,
+                              then the old userid is revoked
+          - the guest folder (console log and other persistent files)
 
-        The three databases are separate, so the updates cannot be done in a
-        single transaction. A failure is never swallowed: the remaining
-        updates are skipped and SDKGuestOperationError is raised, naming the
-        step that failed and the steps already done, so that the caller knows
-        the state is inconsistent and must be corrected manually.
+        The vswitch authorizations are read from z/VM before the rename, and
+        any authorization that cannot be moved faithfully makes the rename
+        fail before anything is changed.
+
+        The updates cannot be done in a single transaction. A failure is
+        never swallowed: the remaining updates are skipped and
+        SDKGuestOperationError is raised, naming the step that failed and the
+        steps already done, so that the caller knows the state is
+        inconsistent and must be corrected manually.
 
         :param str old_userid: Current userid (e.g., "TSTSYS2")
         :param str new_userid: New userid (e.g., "TSTSYST")
+        :param str namelist: SMAPI namelist to move the userid in, or None
         :returns: SMAPI response list
+        :raises: SDKConflictError if a vswitch authorization cannot be moved,
+                 nothing is changed in this case
         :raises: SDKSMTRequestFailed if the SMAPI call fails, nothing is
                  changed in this case
         :raises: SDKGuestOperationError if a local update fails after the
                  SMAPI rename succeeded
         """
-        # Pre-fetch the vswitches and VLAN ids before SMAPI to fail fast if query fails
-        switch_info = self._NetDbOperator.switch_select_record_for_userid(old_userid)
-        switch_set = set(item['switch'] for item in switch_info
-                         if item['switch'] is not None)
-        vlan_map = {}
-        for vswitch in switch_set:
-            vsw_info = self.query_vswitch(vswitch)
-            vlan_map[vswitch] = self._get_user_vlan_ids(vsw_info, old_userid)
+        # Read the vswitch authorizations before SMAPI, so that a query
+        # failure or an authorization that cannot be moved stops the rename
+        # while nothing has been changed yet.
+        vsw_auths = self._get_vswitch_auths_for_rename(old_userid,
+                                                       new_userid)
 
         LOG.info("Calling SMAPI Image_Rename_DM: %s -> %s",
                  old_userid, new_userid)
@@ -4717,98 +4724,121 @@ class SMTClient(object):
         LOG.info("SMAPI Image_Rename_DM completed successfully: %s -> %s",
                  old_userid, new_userid)
 
-        # The directory entry is already renamed. From here on, a failure
-        # leaves the local state out of sync, so report it to the caller
-        # together with what has been done.
-        done = []
+        # The directory entry is already renamed. The namelist goes first:
+        # SMAPI calls for the new userid rely on it, and its operations
+        # never raise, so it is updated even if a later step fails.
+        if namelist:
+            self.namelist_remove(namelist, old_userid)
+            self.namelist_add(namelist, new_userid)
+
+        # From here on, a failure leaves the local state out of sync, so
+        # report it to the caller together with what has been done.
+        done = ['SMAPI namelist'] if namelist else []
 
         def _run_step(step, func, *args):
             try:
-                return func(*args)
+                func(*args)
             except Exception as err:
                 msg = (err.format_message()
                        if isinstance(err, exception.SDKBaseException)
                        else str(err))
+                done_str = ', '.join(done) or 'none'
                 LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
                           "directory, but updating the %s failed: %s. "
                           "Already updated: %s. Manual correction is "
                           "required." % (old_userid, new_userid, step, msg,
-                                         ', '.join(done) or 'none'))
+                                         done_str))
                 raise exception.SDKGuestOperationError(
                     rs=18, userid=old_userid, new_userid=new_userid,
-                    step=step, msg=msg, done=', '.join(done) or 'none')
+                    step=step, msg=msg, done=done_str)
+            done.append(step)
 
         _run_step('guests table', self._GuestDbOperator.guest_rename_userid,
                   old_userid, new_userid)
-        done.append('guests table')
-
         _run_step('switch table', self._NetDbOperator.switch_rename_userid,
                   old_userid, new_userid)
-        done.append('switch table')
-
         _run_step('fcp table', self._FCPDbOperator.fcp_rename_assigner_id,
                   old_userid, new_userid)
-        done.append('fcp table')
 
-        # The vswitch authorization and the user VLAN ids are set per userid
-        # on the CP side, so move them to the new userid.
-        for vswitch in switch_set:
-            grant_step = 'authorization on vswitch %s' % vswitch
-            vlan_ids = vlan_map.get(vswitch, [])
+        # The vswitch authorization, user VLAN ids and promiscuous mode are
+        # set per userid on the CP side, so move them to the new userid. The
+        # grant and its settings are made by a single request, so a failure
+        # never leaves a partial grant behind.
+        for vswitch in sorted(vsw_auths):
+            _run_step('authorization on vswitch %s' % vswitch,
+                      self._grant_user_like, vswitch, new_userid,
+                      vsw_auths[vswitch])
+            _run_step('revoke old user on vswitch %s' % vswitch,
+                      self.revoke_user_from_vswitch, vswitch, old_userid)
 
-            _run_step(grant_step, self.grant_user_to_vswitch, vswitch, new_userid)
-            done.append(grant_step)
-            if vlan_ids:
-                step = 'VLAN ids on vswitch %s' % vswitch
-                try:
-                    self.set_vswitch_port_vlan_id(vswitch, new_userid,
-                                                  ' '.join(vlan_ids))
-                except Exception as err:
-                    msg = (err.format_message()
-                           if isinstance(err, exception.SDKBaseException)
-                           else str(err))
-                    # Clean up the newly granted authorization to prevent
-                    # dual authorization. A failure here must not mask the
-                    # original error, but it must not be silent either:
-                    # log it and tell the caller.
-                    try:
-                        self.revoke_user_from_vswitch(vswitch, new_userid)
-                    except Exception as revoke_err:
-                        LOG.error("Failed to revoke '%s' from vswitch '%s' "
-                                  "while cleaning up after the failure to "
-                                  "set its VLAN ids (%s): %s",
-                                  new_userid, vswitch, msg, revoke_err)
-                        msg = ("%s; additionally, revoking '%s' from vswitch "
-                               "'%s' failed (%s), so '%s' may still be "
-                               "authorized on this vswitch together with "
-                               "'%s'" % (msg, new_userid, vswitch,
-                                         revoke_err, new_userid, old_userid))
-                    else:
-                        # Grant was successfully rolled back.
-                        done.remove(grant_step)
-                    LOG.error("Guest '%s' was renamed to '%s' in the z/VM "
-                              "directory, but updating the %s failed: %s. "
-                              "Already updated: %s. Manual correction is "
-                              "required." % (old_userid, new_userid, step, msg,
-                                             ', '.join(done) or 'none'))
-                    raise exception.SDKGuestOperationError(
-                        rs=18, userid=old_userid, new_userid=new_userid,
-                        step=step, msg=msg, done=', '.join(done) or 'none')
-                done.append(step)
-
-            revoke_step = 'revoke old user on vswitch %s' % vswitch
-            _run_step(revoke_step, self.revoke_user_from_vswitch, vswitch, old_userid)
-            done.append(revoke_step)
+        _run_step('guest folder', self._pathutils.rename_guest_path,
+                  old_userid, new_userid)
 
         return results['response']
 
-    @staticmethod
-    def _get_user_vlan_ids(vsw_info, userid):
-        """Get the VLAN ids set for the userid in the vswitch query info."""
-        for name, info in vsw_info.get('authorized_users', {}).items():
-            if name.upper() == userid.upper():
-                return list(info.get('vlan_ids', []))
-        return []
+    def _get_vswitch_auths_for_rename(self, old_userid, new_userid):
+        """Get the vswitch authorizations of old_userid that a rename must
+        move to new_userid.
+
+        Every vswitch on the host is checked, not only the ones in the switch
+        table, so that authorizations made outside the SDK are moved too.
+
+        :returns: dict of vswitch name to the old userid's authorization
+                  info, as returned by query_vswitch()
+        :raises: SDKConflictError if an authorization cannot be moved
+        """
+        auths = {}
+        for vswitch in self.get_vswitch_list():
+            try:
+                vsw_info = self.query_vswitch(vswitch)
+            except exception.SDKObjectNotExistError:
+                # deleted since it was listed
+                continue
+            users = dict((name.upper(), info) for name, info in
+                         vsw_info.get('authorized_users', {}).items())
+            old_auth = users.get(old_userid.upper())
+            if old_auth is None:
+                continue
+            if new_userid.upper() in users:
+                # Granting would be a no-op and the rename would inherit
+                # this unrelated authorization, so refuse instead.
+                raise exception.SDKConflictError(
+                    modID='guest', rs=26, userid=old_userid,
+                    msg=("'%s' is already authorized on vswitch %s; revoke "
+                         "it first" % (new_userid, vswitch)))
+            if old_auth.get('osd_sim', '').upper() == 'OSDSIM':
+                # Virtual_Network_Vswitch_Set_Extended can set osd_sim only
+                # on a port-based grant, so it cannot be carried over.
+                raise exception.SDKConflictError(
+                    modID='guest', rs=26, userid=old_userid,
+                    msg=("its authorization on vswitch %s uses OSDSIM, "
+                         "which cannot be moved to the new userid" %
+                         vswitch))
+            auths[vswitch] = old_auth
+        return auths
+
+    def _grant_user_like(self, vswitch_name, userid, auth_info):
+        """Grant userid on the vswitch with the user VLAN ids and
+        promiscuous mode of auth_info, in a single request."""
+        smt_userid = zvmutils.get_smt_userid()
+        rd = ' '.join((
+            'SMAPI %s API Virtual_Network_Vswitch_Set_Extended' % smt_userid,
+            "--operands",
+            "-k switch_name=%s" % vswitch_name,
+            "-k grant_userid=%s" % userid))
+        vlan_ids = auth_info.get('vlan_ids') or []
+        if vlan_ids:
+            rd += " -k user_vlan_id='%s'" % ' '.join(vlan_ids)
+        if auth_info.get('prom_mode', '').upper() == 'PROM':
+            rd += " -k promiscuous=YES"
+        rd += " -k persist=YES"
+
+        try:
+            self._request(rd)
+        except exception.SDKSMTRequestFailed as err:
+            LOG.error("Failed to grant user %s to vswitch %s, error: %s"
+                      % (userid, vswitch_name, err.format_message()))
+            self._set_vswitch_exception(err, vswitch_name)
 
     def get_pcif_list(self):
         LOG.info("Querying PCIF list via vmcp")

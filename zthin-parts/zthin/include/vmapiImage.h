@@ -960,11 +960,11 @@ static tableLayout Image_Rename_DM_Layout = {
     { APITYPE_END_OF_TABLE, 0, 0, 0, 0 }
 };
 
-int smImage_Rename_DM(struct _vmApiInternalContext* vmapiContextP, 
+int smImage_Rename_DM(struct _vmApiInternalContext* vmapiContextP,
         char * userid, int passwordLength, char * password,
         char * targetIdentifier, char * newImageName,
         vmApiImageRenameDmOutput ** outData);
-        
+
 /* Image_SCSI_Characteristics_Query_DM */
 typedef struct _vmApiImageScsiCharacteristicsQueryDm {
     commonOutputFields common;

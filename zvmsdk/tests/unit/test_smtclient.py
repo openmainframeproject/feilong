@@ -5792,421 +5792,232 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         output = self._smtclient.is_rhcos(os_version)
         self.assertTrue(output)
 
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm(self, mock_fcp_rename, mock_switch_rename,
-                             mock_switch_select, mock_guest_rename, mock_req,
-                             mock_grant, mock_revoke, mock_query):
-        mock_req.return_value = {'response': ['Done']}
-        mock_query.return_value = {'authorized_users': {}}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'},
-            {'userid': 'OLDVM', 'interface': '1003', 'switch': 'VSW1'},
-            {'userid': 'OLDVM', 'interface': '2000', 'switch': None}]
+    def _patch_rename(self, vswitches=None):
+        """Patch everything image_rename_dm() touches.
 
-        res = self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        :param vswitches: dict of vswitch name to its authorized_users
+        """
+        vswitches = vswitches or {}
+        m = mock.Mock()
+        targets = {
+            'req': (smtclient.SMTClient, '_request'),
+            'vsw_list': (smtclient.SMTClient, 'get_vswitch_list'),
+            'query': (smtclient.SMTClient, 'query_vswitch'),
+            'grant_like': (smtclient.SMTClient, '_grant_user_like'),
+            'revoke': (smtclient.SMTClient, 'revoke_user_from_vswitch'),
+            'nl_add': (smtclient.SMTClient, 'namelist_add'),
+            'nl_remove': (smtclient.SMTClient, 'namelist_remove'),
+            'guest_db': (database.GuestDbOperator, 'guest_rename_userid'),
+            'switch_db': (database.NetworkDbOperator,
+                          'switch_rename_userid'),
+            'fcp_db': (database.FCPDbOperator, 'fcp_rename_assigner_id'),
+            'folder': (zvmutils.PathUtils, 'rename_guest_path'),
+        }
+        for name, (obj, attr) in targets.items():
+            patcher = mock.patch.object(obj, attr)
+            m.attach_mock(patcher.start(), name)
+            self.addCleanup(patcher.stop)
+        m.req.return_value = {'response': ['Done']}
+        m.vsw_list.return_value = sorted(vswitches)
+        m.query.side_effect = lambda vsw: {
+            'authorized_users': vswitches[vsw]}
+        return m
 
-        mock_req.assert_called_once_with(
-            "SMAPI OLDVM API Image_Rename_DM --operands -k new_image_name=NEWVM")
-        mock_guest_rename.assert_called_once_with('OLDVM', 'NEWVM')
-        mock_switch_rename.assert_called_once_with('OLDVM', 'NEWVM')
-        mock_fcp_rename.assert_called_once_with('OLDVM', 'NEWVM')
-        mock_grant.assert_called_once_with('VSW1', 'NEWVM')
-        mock_revoke.assert_called_once_with('VSW1', 'OLDVM')
-        self.assertEqual(res, ['Done'])
+    def test_image_rename_dm(self):
+        auth1 = {'vlan_ids': ['10', '20'], 'prom_mode': 'NOPROM',
+                 'osd_sim': 'NOOSDSIM'}
+        auth2 = {'vlan_ids': [], 'prom_mode': 'NOPROM',
+                 'osd_sim': 'NOOSDSIM'}
+        m = self._patch_rename({'VSW1': {'OLDVM': auth1, 'OTHER': {}},
+                                'VSW2': {'oldvm': auth2},
+                                'VSW3': {'OTHER': {}}})
 
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_guest_db_failed(self, mock_fcp_rename,
-                                             mock_switch_rename,
-                                             mock_switch_select,
-                                             mock_guest_rename, mock_req):
-        # a database failure must reach the caller, not be swallowed
-        mock_switch_select.return_value = []
-        mock_req.return_value = {'response': ['Done']}
-        mock_guest_rename.side_effect = exception.SDKGuestOperationError(
+        res = self._smtclient.image_rename_dm('OLDVM', 'NEWVM',
+                                              namelist='NL')
+
+        self.assertEqual(['Done'], res)
+        # every vswitch is queried once, and only the ones the old userid
+        # is authorized on are moved
+        self.assertEqual([mock.call('VSW1'), mock.call('VSW2'),
+                          mock.call('VSW3')], m.query.call_args_list)
+        self.assertEqual(
+            [mock.call.vsw_list(),
+             mock.call.query('VSW1'), mock.call.query('VSW2'),
+             mock.call.query('VSW3'),
+             mock.call.req("SMAPI OLDVM API Image_Rename_DM --operands "
+                           "-k new_image_name=NEWVM"),
+             mock.call.nl_remove('NL', 'OLDVM'),
+             mock.call.nl_add('NL', 'NEWVM'),
+             mock.call.guest_db('OLDVM', 'NEWVM'),
+             mock.call.switch_db('OLDVM', 'NEWVM'),
+             mock.call.fcp_db('OLDVM', 'NEWVM'),
+             mock.call.grant_like('VSW1', 'NEWVM', auth1),
+             mock.call.revoke('VSW1', 'OLDVM'),
+             mock.call.grant_like('VSW2', 'NEWVM', auth2),
+             mock.call.revoke('VSW2', 'OLDVM'),
+             mock.call.folder('OLDVM', 'NEWVM')],
+            m.mock_calls)
+
+    def test_image_rename_dm_no_namelist(self):
+        m = self._patch_rename()
+        self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        m.nl_add.assert_not_called()
+        m.nl_remove.assert_not_called()
+
+    def test_image_rename_dm_vswitch_vanished(self):
+        # a vswitch deleted between the list and the query is skipped
+        m = self._patch_rename({'VSW1': {}})
+        m.query.side_effect = exception.SDKObjectNotExistError(
+            obj_desc='Vswitch VSW1', modID='network')
+        self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        m.grant_like.assert_not_called()
+        m.revoke.assert_not_called()
+
+    def test_image_rename_dm_new_userid_already_authorized(self):
+        m = self._patch_rename({'VSW1': {'OLDVM': {}, 'NEWVM': {}}})
+        with self.assertRaises(exception.SDKConflictError) as cm:
+            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        self.assertIn('NEWVM', cm.exception.format_message())
+        self.assertIn('VSW1', cm.exception.format_message())
+        # nothing is changed
+        m.req.assert_not_called()
+        m.guest_db.assert_not_called()
+
+    def test_image_rename_dm_osd_sim(self):
+        m = self._patch_rename({'VSW1': {'OLDVM': {'osd_sim': 'OSDSIM'}}})
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient.image_rename_dm, 'OLDVM', 'NEWVM')
+        m.req.assert_not_called()
+
+    def test_image_rename_dm_query_failed(self):
+        m = self._patch_rename({'VSW1': {}})
+        m.query.side_effect = exception.SDKSMTRequestFailed(
+            {'rc': 1, 'rs': 1}, 'query failed')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.image_rename_dm, 'OLDVM', 'NEWVM')
+        m.req.assert_not_called()
+
+    def test_image_rename_dm_smapi_failed(self):
+        m = self._patch_rename()
+        m.req.side_effect = exception.SDKSMTRequestFailed(
+            {'rc': 1, 'rs': 1}, 'failed')
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.image_rename_dm, 'OLDVM', 'NEWVM',
+                          namelist='NL')
+        # the local state must not be touched when SMAPI failed
+        m.nl_add.assert_not_called()
+        m.nl_remove.assert_not_called()
+        m.guest_db.assert_not_called()
+
+    def test_image_rename_dm_guest_db_failed(self):
+        m = self._patch_rename()
+        m.guest_db.side_effect = exception.SDKGuestOperationError(
             rs=1, msg='db error')
 
         with self.assertRaises(exception.SDKGuestOperationError) as cm:
-            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-        # the error tells what failed and what was already done
+            self._smtclient.image_rename_dm('OLDVM', 'NEWVM', namelist='NL')
         msg = cm.exception.format_message()
         self.assertIn('OLDVM', msg)
         self.assertIn('NEWVM', msg)
         self.assertIn('guests table', msg)
         self.assertIn('db error', msg)
-        self.assertIn('Already updated: none', msg)
-        # the remaining updates are skipped
-        mock_switch_rename.assert_not_called()
-        mock_fcp_rename.assert_not_called()
+        # the namelist is updated before any step that can fail
+        self.assertIn('Already updated: SMAPI namelist.', msg)
+        m.nl_add.assert_called_once_with('NL', 'NEWVM')
+        m.switch_db.assert_not_called()
+        m.fcp_db.assert_not_called()
+        m.folder.assert_not_called()
 
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_switch_db_failed(self, mock_fcp_rename,
-                                              mock_switch_rename,
-                                              mock_switch_select,
-                                              mock_guest_rename, mock_req):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = []
-        mock_switch_rename.side_effect = exception.SDKNetworkOperationError(
+    def test_image_rename_dm_non_sdk_exception(self):
+        m = self._patch_rename()
+        m.guest_db.side_effect = RuntimeError('backend connection failed')
+
+        with self.assertRaises(exception.SDKGuestOperationError) as cm:
+            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
+        msg = cm.exception.format_message()
+        self.assertIn('backend connection failed', msg)
+        self.assertIn('Already updated: none', msg)
+        m.switch_db.assert_not_called()
+
+    def test_image_rename_dm_switch_db_failed(self):
+        m = self._patch_rename()
+        m.switch_db.side_effect = exception.SDKNetworkOperationError(
             rs=1, msg='db error')
 
         with self.assertRaises(exception.SDKGuestOperationError) as cm:
             self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
         msg = cm.exception.format_message()
         self.assertIn('switch table', msg)
-        self.assertIn('Already updated: guests table', msg)
-        mock_guest_rename.assert_called_once_with('OLDVM', 'NEWVM')
-        mock_fcp_rename.assert_not_called()
+        self.assertIn('Already updated: guests table.', msg)
+        m.fcp_db.assert_not_called()
 
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_non_sdk_exception(self, mock_fcp_rename,
-                                                mock_switch_rename,
-                                                mock_switch_select,
-                                                mock_guest_rename, mock_req):
-        # non-SDK exceptions (e.g. database driver or system errors)
-        # must also be caught and wrapped in SDKGuestOperationError
-        mock_switch_select.return_value = []
-        mock_req.return_value = {'response': ['Done']}
-        mock_guest_rename.side_effect = RuntimeError('backend connection failed')
-
-        with self.assertRaises(exception.SDKGuestOperationError) as cm:
-            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-        msg = cm.exception.format_message()
-        self.assertIn('OLDVM', msg)
-        self.assertIn('NEWVM', msg)
-        self.assertIn('guests table', msg)
-        self.assertIn('backend connection failed', msg)
-        self.assertIn('Already updated: none', msg)
-        mock_switch_rename.assert_not_called()
-        mock_fcp_rename.assert_not_called()
-
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_fcp_db_failed(self, mock_fcp_rename,
-                                           mock_switch_rename,
-                                           mock_switch_select,
-                                           mock_guest_rename, mock_req,
-                                           mock_grant, mock_revoke,
-                                           mock_query):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}]
-        mock_query.return_value = {'authorized_users': {}}
-        mock_fcp_rename.side_effect = exception.SDKGuestOperationError(
+    def test_image_rename_dm_fcp_db_failed(self):
+        m = self._patch_rename({'VSW1': {'OLDVM': {}}})
+        m.fcp_db.side_effect = exception.SDKGuestOperationError(
             rs=1, msg='db error')
 
         with self.assertRaises(exception.SDKGuestOperationError) as cm:
             self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
         msg = cm.exception.format_message()
         self.assertIn('fcp table', msg)
-        self.assertIn('Already updated: guests table, switch table', msg)
-        # the vswitch authorization is not changed after a failure
-        mock_grant.assert_not_called()
-        mock_revoke.assert_not_called()
+        self.assertIn('Already updated: guests table, switch table.', msg)
+        m.grant_like.assert_not_called()
+        m.revoke.assert_not_called()
 
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_grant_failed(self, mock_fcp_rename,
-                                          mock_switch_rename,
-                                          mock_switch_select,
-                                          mock_guest_rename, mock_req,
-                                          mock_grant, mock_revoke,
-                                          mock_query):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}]
-        mock_query.return_value = {'authorized_users': {}}
-        mock_grant.side_effect = exception.SDKSMTRequestFailed(
-            {'rc': 1, 'rs': 1}, 'grant failed')
+    def test_image_rename_dm_grant_failed(self):
+        m = self._patch_rename({'VSW1': {'OLDVM': {}}, 'VSW2': {'OLDVM': {}}})
+        m.grant_like.side_effect = [None, exception.SDKSMTRequestFailed(
+            {'rc': 1, 'rs': 1}, 'grant failed')]
 
         with self.assertRaises(exception.SDKGuestOperationError) as cm:
             self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
         msg = cm.exception.format_message()
-        self.assertIn('authorization on vswitch VSW1', msg)
+        self.assertIn('authorization on vswitch VSW2', msg)
         self.assertIn('Already updated: guests table, switch table, '
-                      'fcp table', msg)
+                      'fcp table, authorization on vswitch VSW1, revoke old '
+                      'user on vswitch VSW1.', msg)
         # the old userid keeps its authorization if the new one failed
-        mock_revoke.assert_not_called()
+        m.revoke.assert_called_once_with('VSW1', 'OLDVM')
+        m.folder.assert_not_called()
 
-    @mock.patch.object(smtclient.SMTClient, 'set_vswitch_port_vlan_id')
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_copy_vlan_ids(self, mock_fcp_rename,
-                                           mock_switch_rename,
-                                           mock_switch_select,
-                                           mock_guest_rename, mock_req,
-                                           mock_grant, mock_revoke,
-                                           mock_query, mock_set_vlan):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}]
-        mock_query.return_value = {'authorized_users': {
-            'OTHER': {'vlan_ids': ['30']},
-            'OLDVM': {'vlan_ids': ['10', '20']}}}
-        calls = mock.Mock()
-        calls.attach_mock(mock_grant, 'grant')
-        calls.attach_mock(mock_set_vlan, 'set_vlan')
-        calls.attach_mock(mock_revoke, 'revoke')
-
-        self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-
-        mock_query.assert_called_once_with('VSW1')
-        # the VLAN ids move with the guest, before the old userid is revoked
-        self.assertEqual(
-            [mock.call.grant('VSW1', 'NEWVM'),
-             mock.call.set_vlan('VSW1', 'NEWVM', '10 20'),
-             mock.call.revoke('VSW1', 'OLDVM')],
-            calls.mock_calls)
-
-    @mock.patch.object(smtclient.SMTClient, 'set_vswitch_port_vlan_id')
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_no_vlan_ids(self, mock_fcp_rename,
-                                         mock_switch_rename,
-                                         mock_switch_select,
-                                         mock_guest_rename, mock_req,
-                                         mock_grant, mock_revoke,
-                                         mock_query, mock_set_vlan):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}]
-        mock_query.return_value = {'authorized_users': {
-            'OLDVM': {'vlan_ids': []}}}
-
-        self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-
-        mock_grant.assert_called_once_with('VSW1', 'NEWVM')
-        mock_set_vlan.assert_not_called()
-        mock_revoke.assert_called_once_with('VSW1', 'OLDVM')
-
-    @mock.patch.object(smtclient.SMTClient, 'set_vswitch_port_vlan_id')
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_vlan_ids_failed(self, mock_fcp_rename,
-                                             mock_switch_rename,
-                                             mock_switch_select,
-                                             mock_guest_rename, mock_req,
-                                             mock_grant, mock_revoke,
-                                             mock_query, mock_set_vlan):
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}]
-        mock_query.return_value = {'authorized_users': {
-            'OLDVM': {'vlan_ids': ['10']}}}
-        mock_set_vlan.side_effect = exception.SDKSMTRequestFailed(
-            {'rc': 1, 'rs': 1}, 'vlan failed')
-
+    def test_image_rename_dm_folder_failed(self):
+        m = self._patch_rename()
+        m.folder.side_effect = OSError('busy')
         with self.assertRaises(exception.SDKGuestOperationError) as cm:
             self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-        msg = cm.exception.format_message()
-        self.assertIn('VLAN ids on vswitch VSW1', msg)
-        # the grant was rolled back, so it is not listed as done
-        self.assertIn('Already updated: guests table, switch table, '
-                      'fcp table. ', msg)
-        # new userid is revoked on failure to prevent dual authorization
-        mock_revoke.assert_called_once_with('VSW1', 'NEWVM')
+        self.assertIn('guest folder', cm.exception.format_message())
 
-    @mock.patch.object(smtclient.SMTClient, 'set_vswitch_port_vlan_id')
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
+    @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_vlan_ids_failed_revoke_failed(
-            self, mock_fcp_rename, mock_switch_rename,
-            mock_switch_select, mock_guest_rename, mock_req,
-            mock_grant, mock_revoke, mock_query, mock_set_vlan):
+    def test_grant_user_like(self, req, get_smt_userid):
+        get_smt_userid.return_value = 'SMTUSER'
+        self._smtclient._grant_user_like(
+            'VSW1', 'NEWVM', {'vlan_ids': ['10', '20'], 'prom_mode': 'PROM'})
+        req.assert_called_once_with(
+            "SMAPI SMTUSER API Virtual_Network_Vswitch_Set_Extended "
+            "--operands -k switch_name=VSW1 -k grant_userid=NEWVM "
+            "-k user_vlan_id='10 20' -k promiscuous=YES -k persist=YES")
 
-        mock_req.return_value = {'response': ['Done']}
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'}
-        ]
-        mock_query.return_value = {
-            'authorized_users': {
-                'OLDVM': {'vlan_ids': ['10']}
-            }
-        }
-
-        mock_set_vlan.side_effect = exception.SDKSMTRequestFailed(
-            {'rc': 1, 'rs': 1}, 'vlan failed')
-
-        mock_revoke.side_effect = exception.SDKSMTRequestFailed(
-            {'rc': 2, 'rs': 2}, 'revoke failed')
-
-        with mock.patch.object(smtclient.LOG, 'error') as log_error:
-            with self.assertRaises(
-                    exception.SDKGuestOperationError) as cm:
-                self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-
-        msg = cm.exception.format_message()
-
-        # Original VLAN error is preserved.
-        self.assertIn('VLAN ids on vswitch VSW1', msg)
-        self.assertIn('vlan failed', msg)
-
-        # Cleanup failure is also reported.
-        self.assertIn(
-            "additionally, revoking 'NEWVM' from vswitch 'VSW1' failed",
-            msg)
-        self.assertIn('revoke failed', msg)
-
-        # New authorization may still exist alongside old authorization.
-        self.assertIn(
-            "'NEWVM' may still be authorized on this vswitch "
-            "together with 'OLDVM'", msg)
-
-        # Grant remains in done because rollback failed.
-        self.assertIn(
-            'Already updated: guests table, switch table, fcp table, '
-            'authorization on vswitch VSW1.', msg)
-
-        mock_grant.assert_called_once_with('VSW1', 'NEWVM')
-        mock_revoke.assert_called_once_with('VSW1', 'NEWVM')
-        mock_set_vlan.assert_called_once_with('VSW1', 'NEWVM', '10')
-
-        logged = ' '.join(str(call) for call in log_error.call_args_list)
-        self.assertIn('Failed to revoke', logged)
-
-    @mock.patch.object(smtclient.SMTClient, 'query_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'revoke_user_from_vswitch')
-    @mock.patch.object(smtclient.SMTClient, 'grant_user_to_vswitch')
+    @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.switch_rename_userid')
-    @mock.patch('zvmsdk.database.FCPDbOperator.fcp_rename_assigner_id')
-    def test_image_rename_dm_second_vswitch_failed(
-            self, mock_fcp_rename, mock_switch_rename,
-            mock_switch_select, mock_guest_rename, mock_req,
-            mock_grant, mock_revoke, mock_query):
+    def test_grant_user_like_defaults(self, req, get_smt_userid):
+        get_smt_userid.return_value = 'SMTUSER'
+        self._smtclient._grant_user_like(
+            'VSW1', 'NEWVM', {'vlan_ids': [], 'prom_mode': 'NOPROM'})
+        req.assert_called_once_with(
+            "SMAPI SMTUSER API Virtual_Network_Vswitch_Set_Extended "
+            "--operands -k switch_name=VSW1 -k grant_userid=NEWVM "
+            "-k persist=YES")
 
-        mock_req.return_value = {'response': ['Done']}
-
-        mock_switch_select.return_value = [
-            {'userid': 'OLDVM', 'interface': '1000', 'switch': 'VSW1'},
-            {'userid': 'OLDVM', 'interface': '2000', 'switch': 'VSW2'}
-        ]
-
-        mock_query.return_value = {'authorized_users': {}}
-
-        mock_grant.side_effect = [
-            None,
-            exception.SDKSMTRequestFailed(
-                {'rc': 1, 'rs': 1}, 'grant failed')
-        ]
-
-        with self.assertRaises(
-                exception.SDKGuestOperationError) as cm:
-            self._smtclient.image_rename_dm('OLDVM', 'NEWVM')
-
-        msg = cm.exception.format_message()
-
-        # Determine actual processing order from mock calls.
-        first_vswitch = mock_grant.call_args_list[0][0][0]
-        second_vswitch = mock_grant.call_args_list[1][0][0]
-
-        # Second vSwitch authorization failed.
-        self.assertIn(
-            'authorization on vswitch %s failed' % second_vswitch, msg)
-
-        # First vSwitch authorization and old-user revocation succeeded.
-        self.assertIn(
-            'Already updated: guests table, switch table, fcp table, '
-            'authorization on vswitch %s, '
-            'revoke old user on vswitch %s.' %
-            (first_vswitch, first_vswitch), msg)
-
-        mock_grant.assert_has_calls([
-            mock.call(first_vswitch, 'NEWVM'),
-            mock.call(second_vswitch, 'NEWVM')
-        ])
-
-        mock_revoke.assert_called_once_with(first_vswitch, 'OLDVM')
-
-    def test_get_user_vlan_ids(self):
-        info = {'authorized_users': {'OLDVM': {'vlan_ids': ['10', '20']}}}
-        self.assertEqual(['10', '20'],
-                         smtclient.SMTClient._get_user_vlan_ids(info, 'oldvm'))
-        self.assertEqual([],
-                         smtclient.SMTClient._get_user_vlan_ids(info, 'NONE'))
-        self.assertEqual([],
-                         smtclient.SMTClient._get_user_vlan_ids({}, 'OLDVM'))
-
+    @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch('zvmsdk.database.GuestDbOperator.guest_rename_userid')
-    @mock.patch('zvmsdk.database.NetworkDbOperator.'
-                'switch_select_record_for_userid')
-    def test_image_rename_dm_smapi_failed(self, mock_switch_select,
-                                          mock_guest_rename, mock_req):
-        mock_switch_select.return_value = []
-        mock_req.side_effect = exception.SDKSMTRequestFailed(
-            {'rc': 1, 'rs': 1}, 'failed')
-
-        self.assertRaises(exception.SDKSMTRequestFailed,
-                          self._smtclient.image_rename_dm, 'OLDVM', 'NEWVM')
-        # the local state must not be touched when SMAPI failed
-        mock_guest_rename.assert_not_called()
+    def test_grant_user_like_failed(self, req, get_smt_userid):
+        get_smt_userid.return_value = 'SMTUSER'
+        req.side_effect = exception.SDKSMTRequestFailed(
+            {'rc': 212, 'rs': 40}, 'no vswitch')
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._smtclient._grant_user_like,
+                          'VSW1', 'NEWVM', {})
 
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_host_get_ssi_info(self, req):

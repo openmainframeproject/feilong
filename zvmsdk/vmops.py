@@ -603,8 +603,8 @@ class VMOps(object):
         """Rename a virtual machine.
 
         Calls image_rename_dm() which performs the SMAPI rename, then updates
-        the local guests, switch and fcp tables and the vswitch
-        authorization. Finally the SMAPI namelist is updated. The updates are
+        the SMAPI namelist, the local guests, switch and fcp tables, the
+        vswitch authorization and the guest folder. The updates are
         not atomic (the tables are in separate databases): if one of them
         fails after the SMAPI rename, the remaining updates are skipped and
         the error is raised to the caller, with the steps that failed and
@@ -631,16 +631,12 @@ class VMOps(object):
 
         LOG.info("Renaming VM from '%s' to '%s'", old_userid, new_userid)
         try:
-            self._smtclient.image_rename_dm(old_userid, new_userid)
+            self._smtclient.image_rename_dm(old_userid, new_userid,
+                                            namelist=self._namelist)
         except exception.SDKBaseException as e:
             LOG.error("Rename failed for VM '%s' to '%s': %s",
                       old_userid, new_userid, str(e))
             raise
-
-        # update the smapi namelist: remove the old userid, add the new one,
-        # as delete_vm() and create_vm() do
-        self._smtclient.namelist_remove(self._namelist, old_userid)
-        self._smtclient.namelist_add(self._namelist, new_userid)
 
         LOG.info("Successfully renamed VM from '%s' to '%s'",
                  old_userid, new_userid)
