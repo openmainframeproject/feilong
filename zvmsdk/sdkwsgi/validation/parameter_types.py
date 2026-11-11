@@ -295,8 +295,8 @@ rdomain = {
 pcif = {
     'type': ['string'],
     'minLength': 1,
-    'maxLength': 9,
-    'pattern': '^(\w{,9})$'
+    'maxLength': 17,
+    'pattern': '^(\w{1,8}:\w{1,8})$'
 }
 
 
