@@ -2183,12 +2183,20 @@ class SDKAPI(object):
 
     @staticmethod
     def _validate_guest_network(network,
-                                api_name='guest_create_network_interface'):
+                                api_name='guest_create_network_interface',
+                                require_ip=False):
         """Validate the format of one guest network info dictionary.
 
         :param network: dict of network fields to validate
         :param api_name: caller API name used in error messages
+        :param require_ip: when True, ip_addr and cidr are mandatory for the
+               static method (an IP is being configured, not only a NIC
+               being created)
         """
+        if not isinstance(network, dict):
+            raise exception.SDKInvalidInputTypes(
+                api_name, str(dict), str(type(network)))
+
         if network.get('mac_addr') is not None:
             if not zvmutils.valid_mac_addr(network['mac_addr']):
                 errmsg = ("API %s: Invalid MAC address, format should be "
@@ -2199,28 +2207,45 @@ class SDKAPI(object):
         method = 'static'
         if network.get('method') is not None:
             method = network['method'].lower()
-        if method == 'static':
-            if network.get('ip_addr') is None:
-                errmsg = ("API %s: ip_addr is required when method is static"
-                          % api_name)
-                raise exception.SDKInvalidInputFormat(msg=errmsg)
-            if not netaddr.valid_ipv4(network['ip_addr']):
-                errmsg = ("API %s: Invalid IP address, it should be a "
-                          "value between 0.0.0.0 and 255.255.255.255"
-                          % api_name)
+        if method not in ('static', 'dhcp'):
+            errmsg = ("API %s: Invalid initialization method, it should be "
+                      "either static or dhcp" % api_name)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        # DNS addresses end up in guest config files and shell commands
+        # whatever the method is, so always validate them.
+        if network.get('dns_addr') is not None:
+            if not isinstance(network['dns_addr'], list):
+                raise exception.SDKInvalidInputTypes(
+                    api_name,
+                    str(list), str(type(network['dns_addr'])))
+            for dns in network['dns_addr']:
+                if not (isinstance(dns, str) and netaddr.valid_ipv4(dns)):
+                    errmsg = ("API %s: Invalid DNS IP address, it should "
+                              "be a value between 0.0.0.0 and "
+                              "255.255.255.255" % api_name)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if network.get('mtu') is not None:
+            mtu = str(network['mtu'])
+            if not (mtu.isdigit() and 576 <= int(mtu) <= 65535):
+                errmsg = ("API %s: Invalid MTU, it should be an integer "
+                          "between 576 and 65535" % api_name)
                 raise exception.SDKInvalidInputFormat(msg=errmsg)
 
-            if network.get('dns_addr') is not None:
-                if not isinstance(network['dns_addr'], list):
-                    raise exception.SDKInvalidInputTypes(
-                        api_name,
-                        str(list), str(type(network['dns_addr'])))
-                for dns in network['dns_addr']:
-                    if not netaddr.valid_ipv4(dns):
-                        errmsg = ("API %s: Invalid DNS IP address, it should "
-                                  "be a value between 0.0.0.0 and "
-                                  "255.255.255.255" % api_name)
+        if method == 'static':
+            if require_ip:
+                for key in ('ip_addr', 'cidr'):
+                    if network.get(key) is None:
+                        errmsg = ("API %s: %s is required when method is "
+                                  "static" % (api_name, key))
                         raise exception.SDKInvalidInputFormat(msg=errmsg)
+            if network.get('ip_addr') is not None:
+                if not netaddr.valid_ipv4(network['ip_addr']):
+                    errmsg = ("API %s: Invalid IP address, it should be a "
+                              "value between 0.0.0.0 and 255.255.255.255"
+                              % api_name)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             if network.get('gateway_addr') is not None:
                 if not netaddr.valid_ipv4(network['gateway_addr']):
@@ -2235,11 +2260,6 @@ class SDKAPI(object):
                               "a.b.c.d/n, where a.b.c.d is a IP address, "
                               "and n is a value between 0 and 32" % api_name)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
-
-        elif method != 'dhcp':
-            errmsg = ("API %s: Invalid initialization method, it should be "
-                      "either static or dhcp" % api_name)
-            raise exception.SDKInvalidInputFormat(msg=errmsg)
 
     @check_guest_exist()
     def guest_create_network_interface(self, userid, os_version,
@@ -2332,13 +2352,15 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_configure_network_interface_ip(self, userid, os_version,
                                        guest_network, pcif, active=True):
-        if os_version.lower().startswith('rhcos'):
-            raise exception.SDKFunctionNotImplementError(
-                func='guest_configure_network_interface_ip for rhcos',
-                modID='guest')
+        # rhcos is rejected in networkops.zdirect_network_configuration
+        if not re.match(r'^[0-9a-fA-F]{1,8}$', str(pcif)):
+            errmsg = ("API guest_configure_network_interface_ip: Invalid "
+                      "pcif, it should be 1-8 hexadecimal digits")
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
         self._validate_guest_network(
             guest_network,
-            api_name='guest_configure_network_interface_ip')
+            api_name='guest_configure_network_interface_ip',
+            require_ip=True)
         try:
             self._networkops.zdirect_network_configuration(userid, os_version,
                                                            pcif,

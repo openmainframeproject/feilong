@@ -134,7 +134,7 @@ configure_network_interface_ip = {
             'properties': {
                 'os_version': parameter_types.os_version,
                 'guest_network': parameter_types.network_info,
-                'pcif': parameter_types.pcif,
+                'pcif': parameter_types.neth_pcif,
                 'active': parameter_types.boolean,
             },
             'required': ['os_version', 'guest_network', 'pcif'],

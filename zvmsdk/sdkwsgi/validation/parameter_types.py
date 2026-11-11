@@ -300,6 +300,14 @@ pcif = {
 }
 
 
+# PCI function ID of a NETH (zDirect) device; must match the check in
+# smtLayer/getVM.py, which accepts 1-8 hexadecimal digits.
+neth_pcif = {
+    'type': ['string'],
+    'pattern': '^[0-9a-fA-F]{1,8}$'
+}
+
+
 userid_or_None = {
     'oneOf': [
         {'type': 'null'},
@@ -554,11 +562,8 @@ network_info = {
         'dns_addr': {'type': 'array',
                     'items': ipv4},
         'gateway_addr': ipv4,
-        'mac_addr': mac_address,
         'cidr': cidr,
-        'nic_id': {'type': 'string'},
-        'osa_device': vdev,
-        'hostname': hostname},
+        'mtu': {'type': 'integer', 'minimum': 576, 'maximum': 65535}},
     'dependencies': {
         'ip_addr': ['cidr']
     },

@@ -147,8 +147,6 @@ class NetworkOPS(object):
     def _generate_network_doscript(self, userid, os_version, network_info,
                                    network_file_path, first, active=False):
         path_contents = []
-        content_dir = {}
-        files_map = []
 
         # Create network configuration files
         LOG.debug('Creating network configuration files '
@@ -177,18 +175,31 @@ class NetworkOPS(object):
         if len(net_cmd_file) > 0:
             path_contents.extend(net_cmd_file)
 
-        for (path, contents) in path_contents:
-            key = "%04i" % len(content_dir)
+        return self._build_network_doscript(network_file_path,
+                                            path_contents, clean_cmd,
+                                            linuxdist, active=active)
+
+    def _build_network_doscript(self, network_file_path, path_contents,
+                                clean_cmd, linuxdist, active=False,
+                                znetconfig=True):
+        """Write path_contents into network_file_path, wrap them in an
+        invokeScript and tar them into the network doscript.
+
+        :returns: (network_doscript, active_cmds)
+        """
+        files_map = []
+        for index, (path, contents) in enumerate(path_contents):
+            key = "%04i" % index
             files_map.append({'target_path': path,
-                        'source_file': "%s" % key})
-            content_dir[key] = contents
+                              'source_file': key})
             file_name = os.path.join(network_file_path, key)
             if 'yaml' in path:
                 self._add_yaml_file(file_name, contents)
             else:
                 self._add_file(file_name, contents)
 
-        self._create_invokeScript(network_file_path, clean_cmd, files_map)
+        self._create_invokeScript(network_file_path, clean_cmd, files_map,
+                                  znetconfig=znetconfig)
         network_doscript = self._create_network_doscript(network_file_path)
 
         # get command about zvmguestconfigure
@@ -339,9 +350,9 @@ class NetworkOPS(object):
             LOG.debug('Removing the folder %s ', network_file_path)
             shutil.rmtree(network_file_path)
 
-        # update guest db to mark the network is already set
-        if first:
-            self._smtclient.update_guestdb_with_net_set(userid)
+        # Do not mark net_set in the guest db here: the NETH clean command
+        # only removes this interface's own file, so the image-wide cleanup
+        # done by the first OSA/vNIC network_configuration must still run.
 
         # using zvmguestconfigure tool to parse network_doscript
         # and restart the instance to apply the changes
@@ -351,37 +362,19 @@ class NetworkOPS(object):
 
     def _generate_zdirect_network_doscript(self, userid, intf_name, os_version, network,
                                    network_file_path, first, active=True):
-        path_contents = []
-        content_dir = {}
-        files_map = []
-        (net_conf_files, clean_cmd) = self._create_neth_configuration_files(
-                                        network, os_version, first, intf_name)
-        if len(net_conf_files) > 0:
-            path_contents.extend(net_conf_files)
-
-        for (path, contents) in path_contents:
-            key = "%04i" % len(content_dir)
-            files_map.append({'target_path': path,
-                        'source_file': "%s" % key})
-            content_dir[key] = contents
-            file_name = os.path.join(network_file_path, key)
-            if 'yaml' in path:
-                self._add_yaml_file(file_name, contents)
-            else:
-                self._add_file(file_name, contents)
-
-        self._create_invokeScript(network_file_path, clean_cmd, files_map, znetconfig=False)
-        network_doscript = self._create_network_doscript(network_file_path)
-
-        # get command about zvmguestconfigure
-        active_cmds = ''
-        if active:
-            linuxdist = self._dist_manager.get_linux_dist(os_version)()
-            active_cmds = linuxdist.create_active_net_interf_cmd()
-        return network_doscript, active_cmds
-
-    def _create_neth_configuration_files(self, network, os_version, first, intf_name):
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        (net_conf_files, clean_cmd) = self._create_neth_configuration_files(
+                                        network, os_version, first, intf_name,
+                                        linuxdist=linuxdist)
+        return self._build_network_doscript(network_file_path,
+                                            net_conf_files, clean_cmd,
+                                            linuxdist, active=active,
+                                            znetconfig=False)
+
+    def _create_neth_configuration_files(self, network, os_version, first,
+                                         intf_name, linuxdist=None):
+        if linuxdist is None:
+            linuxdist = self._dist_manager.get_linux_dist(os_version)()
         network_file, cfg = linuxdist.get_neth_cfg(network, intf_name)
         # Use the targeted per-interface clean command so that only the file
         # being written is removed, leaving all other network configs (OSA

@@ -1031,13 +1031,56 @@ class SDKAPITestCase(base.SDKTestCase):
     @mock.patch('zvmsdk.networkops.NetworkOPS.zdirect_network_configuration')
     def test_guest_configure_network_interface_ip_rhcos(self, mock_zdirect,
                                                         mock_chk):
-        """rhcos is rejected before any network operation is attempted."""
+        """rhcos rejection from networkops is propagated."""
         mock_chk.return_value = True
+        mock_zdirect.side_effect = exception.SDKFunctionNotImplementError(
+            func='zdirect_network_configuration for rhcos', modID='guest')
         self.assertRaises(exception.SDKFunctionNotImplementError,
                           self.api.guest_configure_network_interface_ip,
                           self.userid, 'rhcos4', {'method': 'dhcp'},
                           '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.zdirect_network_configuration')
+    def test_guest_configure_network_interface_ip_bad_input(self,
+                                                            mock_zdirect,
+                                                            mock_chk):
+        """Bad guest_network/pcif values raise before any network work."""
+        mock_chk.return_value = True
+        api = self.api.guest_configure_network_interface_ip
+        self.assertRaises(exception.SDKInvalidInputTypes, api,
+                          self.userid, 'rhel8', None, '00000110')
+        self.assertRaises(exception.SDKInvalidInputFormat, api,
+                          self.userid, 'rhel8', {'ip_addr': '10.0.0.5'},
+                          '00000110')
+        self.assertRaises(exception.SDKInvalidInputFormat, api,
+                          self.userid, 'rhel8',
+                          {'method': 'dhcp', 'dns_addr': ["1.1.1.1'; id"]},
+                          '00000110')
+        self.assertRaises(exception.SDKInvalidInputFormat, api,
+                          self.userid, 'rhel8',
+                          {'method': 'dhcp', 'mtu': 'abc'}, '00000110')
+        for pcif in ('0000_0110', '123456789', ''):
+            self.assertRaises(exception.SDKInvalidInputFormat, api,
+                              self.userid, 'rhel8', {'method': 'dhcp'}, pcif)
         mock_zdirect.assert_not_called()
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.network_configuration')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.create_nic')
+    def test_guest_create_network_interface_no_ip(self, mock_create_nic,
+                                                  mock_net_conf, mock_chk):
+        """Creating a NIC without ip_addr still works (static default)."""
+        mock_chk.return_value = True
+        mock_create_nic.return_value = '1000'
+        networks = [{'nic_vdev': '1000'}]
+        self.api.guest_create_network_interface(self.userid, 'rhel8',
+                                                networks)
+        mock_create_nic.assert_called_once_with(self.userid, vdev='1000',
+                                                nic_id=None, mac_addr=None,
+                                                active=False)
+        mock_net_conf.assert_called_once_with(self.userid, 'rhel8',
+                                              networks, active=False)
 
     @mock.patch('zvmsdk.utils.check_userid_exist')
     def test_guest_configure_network_interface_ip_invalid_ip(self, mock_chk):

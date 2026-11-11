@@ -19,6 +19,7 @@
 import abc
 import netaddr
 import os
+import shlex
 import six
 from jinja2 import Environment, FileSystemLoader
 
@@ -278,13 +279,18 @@ class LinuxDist(object):
         if method == 'static':
             ip = network.get('ip_addr') or ''
             gateway = network.get('gateway_addr') or ''
-            ip_cidr = network.get('cidr', '')
-            if ip_cidr:
-                ip_net = netaddr.IPNetwork(ip_cidr)
-                netmask = str(ip_net.netmask)
-                # no broadcast address for /31 and /32 networks
-                if ip_net.broadcast is not None:
-                    broadcast = str(ip_net.broadcast)
+            ip_cidr = network.get('cidr') or ''
+            if not ip or not ip_cidr:
+                # Without both an address and a prefix the generated file
+                # would bring the interface up misconfigured after reboot.
+                raise exception.SDKInvalidInputFormat(
+                    msg='ip_addr and cidr are required to configure a '
+                        'static NETH interface')
+            ip_net = netaddr.IPNetwork(ip_cidr)
+            netmask = str(ip_net.netmask)
+            # no broadcast address for /31 and /32 networks
+            if ip_net.broadcast is not None:
+                broadcast = str(ip_net.broadcast)
 
         mtu = ''
         if network.get('mtu') is not None:
@@ -918,10 +924,15 @@ class sles(LinuxDist):
             return ''
         replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
         replace_file = '/etc/sysconfig/network/config'
+        for addr in dns:
+            # the value is written into a root shell command on the guest
+            if not netaddr.valid_ipv4(str(addr)):
+                raise exception.SDKInvalidInputFormat(
+                    msg='Invalid DNS IP address: %r' % (addr,))
         dns_addrs = ' '.join(dns)
         netconfig_dns = '%s="%s"' % (replace_var, dns_addrs)
         cmd = "sed -i '/^\\s*%s=\"/d' %s\n" % (replace_var, replace_file)
-        cmd += "echo '%s' >> %s\n" % (netconfig_dns, replace_file)
+        cmd += "echo %s >> %s\n" % (shlex.quote(netconfig_dns), replace_file)
         return cmd
 
     def _get_device_filename(self, vdev):
@@ -1309,6 +1320,11 @@ class ubuntu(LinuxDist):
         if params['dns']:
             cfg_str += 'dns-nameservers ' + ' '.join(params['dns']) + '\n'
         return filename, cfg_str
+
+    def _get_neth_clean_command(self, intf_name):
+        """Remove only the single NETH file under interfaces.d."""
+        filename = '/etc/network/interfaces.d/' + intf_name
+        return '\nrm -f %s\n' % filename
 
     def _get_network_file(self):
         return '/etc/network/interfaces'

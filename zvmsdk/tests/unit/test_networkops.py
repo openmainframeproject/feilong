@@ -186,7 +186,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         config.assert_called_with(network_file_path, network_info,
                                   first, active=False)
         invokeScript.assert_called_with(network_file_path, clean_cmd,
-                                        files_map)
+                                        files_map, znetconfig=True)
         doscript.assert_called_with(network_file_path)
 
         self.assertEqual(r1, 'result1')
@@ -234,7 +234,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         config.assert_called_with(network_file_path, network_info,
                                   first, active=True)
         invokeScript.assert_called_with(network_file_path, clean_cmd,
-                                        files_map)
+                                        files_map, znetconfig=True)
         doscript.assert_called_with(network_file_path)
 
         self.assertEqual(r1, 'result1')
@@ -312,7 +312,8 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
             self, mock_is_rhcos, mock_intf, mock_temp_path, mock_is_first,
             mock_doscript, mock_punch, mock_update_guestdb,
             mock_execute_cmd, mock_reboot, mock_rmtree):
-        """Non-RHCOS path punches the doscript, updates guestdb, reboots."""
+        """Non-RHCOS path punches the doscript and reboots. net_set is not
+        marked, so a later OSA/vNIC configuration still cleans the image."""
         mock_is_rhcos.return_value = False
         mock_intf.return_value = 'enc110'
         mock_temp_path.return_value = '/tmp/fakepath'
@@ -332,7 +333,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
             True, active=True)
         mock_punch.assert_called_once_with(
             'fakeid', '/tmp/fakepath/doscript', 'X')
-        mock_update_guestdb.assert_called_once_with('fakeid')
+        mock_update_guestdb.assert_not_called()
         mock_execute_cmd.assert_called_once_with('fakeid', 'svc_cmd')
         mock_reboot.assert_called_once_with('fakeid')
         mock_rmtree.assert_called_once_with('/tmp/fakepath')
@@ -423,8 +424,12 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.assertEqual(script, '/tmp/fakepath/doscript')
         self.assertEqual(cmds, 'systemctl start zvmguestconfigure.service')
         mock_conf_files.assert_called_once_with(
-            network, 'rhel7', False, 'enc110')
-        mock_invoke.assert_called_once()
+            network, 'rhel7', False, 'enc110', linuxdist=mock.ANY)
+        mock_invoke.assert_called_once_with(
+            '/tmp/fakepath', '',
+            [{'target_path': '/etc/sysconfig/network-scripts/ifcfg-enc110',
+              'source_file': '0000'}],
+            znetconfig=False)
 
     @mock.patch('zvmsdk.networkops.NetworkOPS._create_network_doscript')
     @mock.patch('zvmsdk.networkops.NetworkOPS._create_invokeScript')
@@ -474,15 +479,43 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.assertEqual(clean_cmd, '')
 
     def test_create_neth_configuration_files_rhel_static_minimal(self):
-        """RHEL: static without optional gateway/ip leaves those fields empty."""
-        network = {'cidr': '10.0.0.0/8'}
+        """RHEL: static without optional gateway omits GATEWAY."""
+        network = {'ip_addr': '10.0.0.5', 'cidr': '10.0.0.0/8'}
         files, clean_cmd = self.networkops._create_neth_configuration_files(
             network, 'rhel7', first=False, intf_name='enc110')
 
         path, cfg_str = files[0]
         self.assertNotIn('GATEWAY', cfg_str)
-        self.assertIn('IPADDR=""', cfg_str)
+        self.assertIn('IPADDR="10.0.0.5"', cfg_str)
         self.assertIn('NETMASK="255.0.0.0"', cfg_str)
+
+    def test_create_neth_configuration_files_static_requires_ip_and_cidr(self):
+        """Static NETH config without ip_addr or cidr is rejected."""
+        for network in ({'cidr': '10.0.0.0/8'}, {'ip_addr': '10.0.0.5'}):
+            for os_version in ('rhel7', 'sles15', 'ubuntu16', 'ubuntu20'):
+                self.assertRaises(
+                    exception.SDKInvalidInputFormat,
+                    self.networkops._create_neth_configuration_files,
+                    network, os_version, first=False, intf_name='enc110')
+
+    def test_create_neth_configuration_files_ubuntu16_first_sets_clean_cmd(
+            self):
+        """Ubuntu16: first config removes the interfaces.d NETH file."""
+        network = {'ip_addr': '192.168.3.5', 'cidr': '192.168.3.0/24'}
+        files, clean_cmd = self.networkops._create_neth_configuration_files(
+            network, 'ubuntu16', first=True, intf_name='enc110')
+        self.assertEqual(clean_cmd,
+                         '\nrm -f /etc/network/interfaces.d/enc110\n')
+        self.assertNotIn('None', clean_cmd)
+
+    def test_create_neth_configuration_files_sles_rejects_bad_dns(self):
+        """SLES: non-IP DNS values never reach the generated shell."""
+        network = {'method': 'dhcp',
+                   'dns_addr': ["1.1.1.1'; rm -rf /etc; echo '"]}
+        self.assertRaises(
+            exception.SDKInvalidInputFormat,
+            self.networkops._create_neth_configuration_files,
+            network, 'sles15', first=False, intf_name='enc110')
 
     def test_create_neth_configuration_files_rhel_slash32_no_broadcast(self):
         """RHEL: /32 has no broadcast address, so BROADCAST is omitted."""
@@ -674,15 +707,15 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.assertNotIn('gateway4', eth)
         self.assertEqual(eth['mtu'], 1500)
 
-    def test_create_neth_configuration_files_ubuntu20_no_gateway_no_cidr(self):
-        """Ubuntu20: no gateway_addr omits gateway4; no cidr omits slash."""
-        network = {'ip_addr': '192.168.3.5'}
+    def test_create_neth_configuration_files_ubuntu20_no_gateway(self):
+        """Ubuntu20: no gateway_addr omits gateway4 and routes."""
+        network = {'ip_addr': '192.168.3.5', 'cidr': '192.168.3.0/24'}
         files, clean_cmd = self.networkops._create_neth_configuration_files(
             network, 'ubuntu20', first=False, intf_name='enc110')
 
         path, cfg = files[0]
         eth = cfg['network']['ethernets']['enc110']
-        self.assertEqual(eth['addresses'], ['192.168.3.5'])
+        self.assertEqual(eth['addresses'], ['192.168.3.5/24'])
         self.assertNotIn('gateway4', eth)
         self.assertNotIn('routes', eth)
 
