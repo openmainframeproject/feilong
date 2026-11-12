@@ -39,14 +39,12 @@ int smImage_Rename_DM(struct _vmApiInternalContext* vmapiContextP,
     strcat(newVarFull, newImageName);
 
     // Calculate input buffer size
-    // Format: function_name + userid + password + target_identifier, each
-    // length-prefixed, then the keyed operand as a NUL-terminated
-    // key=value string, as for the other keyword-based SMAPI APIs
+    // Format: function_name + userid + password + target_identifier + new_image_name
     inputSize = 4 + 4 + strlen(functionName) +
                 4 + strlen(userid) +
                 4 + passwordLength +
                 4 + strlen(targetIdentifier) +
-                strlen(newVarFull) + 1;
+                4 + strlen(newVarFull);
 
     // Build SMAPI input parameter buffer
     if (0 == (inputP = malloc(inputSize))) {
@@ -85,9 +83,10 @@ int smImage_Rename_DM(struct _vmApiInternalContext* vmapiContextP,
     memcpy(cursor, targetIdentifier, tempSize);
     cursor += tempSize;
 
-    // Add new image name (keyword=value terminated string)
-    tempSize = strlen(newVarFull) + 1;
-    strcpy(cursor, newVarFull);
+    // Add new image name
+    tempSize = strlen(newVarFull);
+    PUT_INT(tempSize, cursor);
+    memcpy(cursor, newVarFull, tempSize);
     cursor += tempSize;
 
     free(newVarFull);
