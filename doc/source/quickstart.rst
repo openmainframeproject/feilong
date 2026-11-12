@@ -151,6 +151,27 @@ Preparation on BYOL
       * - ``FORCE <userid> LOGOFF [IMMED]``
         - A
         - Power off (deactivate) a guest
+      * - ``XAUTOLOG <userid>``
+        - A, B
+        - Power on (activate) a guest
+      * - ``ATTACH <raddr> TO <userid> AS <vaddr>``
+        - B
+        - Dedicate a real device to a guest
+      * - ``FOR <userid> CMD DETACH <vaddr>``
+        - C, G
+        - Undedicate a device from a guest
+      * - ``QUERY VSWITCH DETAILS``
+        - B, G
+        - Retrieve virtual switch byte statistics and details
+      * - ``QUERY SSI``
+        - B, E
+        - Query Single System Image (SSI) cluster information
+      * - ``QUERY FRAMES``
+        - A, B, E
+        - Retrieve system frame and memory performance information
+      * - ``VMRELOCATE MOVE <userid> TO <target>``
+        - A, B, C, E
+        - Relocate a guest to another SSI member
       * - ``QUERY PROCESSORS EXPANDED``
         - A, B, C, E
         - Retrieve host CPU count and usage
