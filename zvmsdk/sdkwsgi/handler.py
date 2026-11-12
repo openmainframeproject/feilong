@@ -125,6 +125,9 @@ ROUTE_LIST = (
         'PUT': guest.guest_config_disks,
         'GET': guest.guest_get_disks_info,
     }),
+    ('/guests/{userid}/rename', {
+        'PUT': guest.guest_rename,
+    }),
     ('/smapi_health', {
         'GET': smapi.health,
     }),
