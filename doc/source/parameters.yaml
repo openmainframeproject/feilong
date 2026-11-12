@@ -127,6 +127,13 @@ guest_userid:
   in: path
   required: true
   type: string
+guest_new_userid:
+  description: |
+    The new userid of the guest. It must be 1-8 alphanumeric characters
+    and must not exist yet.
+  in: body
+  required: true
+  type: string
 guest_vcpus:
   description: |
     vCPUs count.

@@ -16,7 +16,10 @@
 #    under the License.
 
 import mock
+import os
+import shutil
 import subprocess
+import tempfile
 import time
 import threading
 from mock import Mock, call
@@ -731,3 +734,44 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(expect, result)
         result = zvmutils.get_lpar_name(zhypinfo={'aaa': {}})
         self.assertEqual(expect, result)
+
+
+class PathUtilsRenameGuestPathTestCases(base.SDKTestCase):
+
+    def setUp(self):
+        super(PathUtilsRenameGuestPathTestCases, self).setUp()
+        self.root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.root, True)
+        self.pathutils = zvmutils.PathUtils()
+        patcher = mock.patch.object(self.pathutils, '_get_guest_path',
+                                    return_value=self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _make(self, userid, content):
+        folder = os.path.join(self.root, userid)
+        os.makedirs(folder)
+        with open(os.path.join(folder, 'console.log'), 'w') as f:
+            f.write(content)
+
+    def _read(self, userid):
+        with open(os.path.join(self.root, userid, 'console.log')) as f:
+            return f.read()
+
+    def test_rename_guest_path(self):
+        self._make('OLDVM', 'old log')
+        self.pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertFalse(os.path.exists(os.path.join(self.root, 'OLDVM')))
+        self.assertEqual('old log', self._read('NEWVM'))
+
+    def test_rename_guest_path_no_old_folder(self):
+        # nothing to move, nothing is created
+        self.pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertEqual([], os.listdir(self.root))
+
+    def test_rename_guest_path_replaces_stale_new_folder(self):
+        self._make('OLDVM', 'old log')
+        self._make('NEWVM', 'stale log')
+        self.pathutils.rename_guest_path('OLDVM', 'NEWVM')
+        self.assertEqual(['NEWVM'], os.listdir(self.root))
+        self.assertEqual('old log', self._read('NEWVM'))

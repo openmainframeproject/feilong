@@ -184,6 +184,29 @@ class FCPContract(ContractBase):
         self.assertEqual((OTHER, 1, 1, T1), self._usage('1b00'))
         self.assertEqual(0, self.db.reset_fcps_of_assigner(USER))
 
+    def test_fcp_rename_assigner_id(self):
+        # 1a00: assigner and owner both match
+        # 1a01: assigner matches, owner is another user
+        # 1b00: assigner is another user, owner matches
+        self.db.bulk_insert_zvm_fcp_info_into_fcp_table([
+            zvm_fcp('1a00', owner='OLDUSER'),
+            zvm_fcp('1a01', owner='OTHER1'),
+            zvm_fcp('1b00', owner='oldUser'),
+        ])
+        self.db.update_usage_of_fcp('1a00', 'olduser', 0, 0, '')
+        self.db.update_usage_of_fcp('1a01', 'OLDUSER', 0, 0, '')
+        self.db.update_usage_of_fcp('1b00', 'OTHER2', 0, 0, '')
+
+        self.db.fcp_rename_assigner_id('OLDUSER', 'newuser')
+
+        all_fcps = self._all()
+        self.assertEqual(('NEWUSER', 'NEWUSER'),
+                         (all_fcps['1a00']['assigner_id'], all_fcps['1a00']['owner']))
+        self.assertEqual(('NEWUSER', 'OTHER1'),
+                         (all_fcps['1a01']['assigner_id'], all_fcps['1a01']['owner']))
+        self.assertEqual(('OTHER2', 'NEWUSER'),
+                         (all_fcps['1b00']['assigner_id'], all_fcps['1b00']['owner']))
+
     def test_get_all_fcps_of_assigner(self):
         self._insert('1a00', '1b00')
         self.db.reserve_fcps(['1a00'], USER, T1)

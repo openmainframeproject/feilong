@@ -232,6 +232,21 @@ class GuestHandlerTest(unittest.TestCase):
             get_user_direct.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_rename(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1/rename'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        self.env['wsgi.input'] = mock.MagicMock()
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.rename') \
+            as rename:
+            with mock.patch('zvmsdk.sdkwsgi.util.extract_json') as extract_json:
+                extract_json.return_value = {'new_userid': 'NEWVM'}
+                rename.return_value = {'overallRC': 0, 'output': {'old_userid': '1', 'new_userid': 'NEWVM'}}
+                h(self.env, dummy)
+
+                rename.assert_called_once_with('1', body={'new_userid': 'NEWVM'})
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get(self, mock_validate):
         self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'GET'

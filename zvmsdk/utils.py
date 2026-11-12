@@ -166,6 +166,19 @@ class PathUtils(object):
             # Ignore any exception for delete temp folder
             pass
 
+    def rename_guest_path(self, old_userid, new_userid):
+        """Move the persistent guest folder to the new userid.
+
+        A folder left for new_userid is stale (the guest does not exist) and
+        is removed first. Nothing is done if old_userid has no folder.
+        """
+        old_folder = os.path.join(self._get_guest_path(), old_userid)
+        if not os.path.isdir(old_folder):
+            return
+        self.remove_guest_path(new_userid)
+        os.rename(old_folder,
+                  os.path.join(self._get_guest_path(), new_userid))
+
     def get_guest_temp_path(self, userid):
         tmp_inst_dir = tempfile.mkdtemp(prefix=userid,
                                         dir='/tmp')
