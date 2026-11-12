@@ -1164,6 +1164,112 @@ class HandlersGuestTest(SDKWSGITest):
                        guest.guest_create_network_interface,
                        self.req)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_configure_network_interface_ip(self, mock_interface,
+                                                  mock_userid):
+        os_version = 'rhel7'
+        guest_network = {'ip_addr': '192.168.12.34',
+                         'gateway_addr': '192.168.12.1',
+                         'cidr': '192.168.12.0/24'}
+        pcif = '00000110'
+        bstr = """{"interface": {"os_version": "rhel7",
+                                 "guest_network": {"ip_addr": "192.168.12.34",
+                                                   "gateway_addr": "192.168.12.1",
+                                                   "cidr": "192.168.12.0/24"},
+                                 "pcif": "00000110"}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_configure_network_interface_ip(self.req)
+        # active defaults to False: no reboot unless explicitly requested
+        mock_interface.assert_called_once_with(
+            'guest_configure_network_interface_ip',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_network=guest_network,
+            pcif=pcif,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_configure_network_interface_ip_active(self, mock_interface,
+                                                         mock_userid):
+        self.req.body = """{"interface": {"os_version": "rhel7",
+                 "guest_network": {"ip_addr": "192.168.12.34",
+                                   "cidr": "192.168.12.0/24"},
+                 "pcif": "00000110",
+                 "active": true}}"""
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_configure_network_interface_ip(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_configure_network_interface_ip',
+            FAKE_USERID,
+            os_version='rhel7',
+            guest_network={'ip_addr': '192.168.12.34',
+                           'cidr': '192.168.12.0/24'},
+            pcif='00000110',
+            active=True)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_configure_network_interface_ip_extra_keys(
+            self, mock_interface, mock_userid):
+        """OSA-only keys and mtu are accepted by the schema."""
+        guest_network = {'ip_addr': '192.168.12.34',
+                         'cidr': '192.168.12.0/24',
+                         'mtu': 1500,
+                         'nic_id': '111-222-333'}
+        self.req.body = """{"interface": {"os_version": "rhel7",
+                 "guest_network": {"ip_addr": "192.168.12.34",
+                                   "cidr": "192.168.12.0/24",
+                                   "mtu": 1500,
+                                   "nic_id": "111-222-333"},
+                 "pcif": "00000110"}}"""
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_configure_network_interface_ip(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_configure_network_interface_ip',
+            FAKE_USERID,
+            os_version='rhel7',
+            guest_network=guest_network,
+            pcif='00000110',
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_configure_network_interface_ip_missing_pcif(self,
+                                                              mock_userid):
+        bstr = """{"interface": {"os_version": "rhel7",
+                                 "guest_network": {"ip_addr": "192.168.12.34",
+                                                   "gateway_addr": "192.168.12.1",
+                                                   "cidr": "192.168.12.0/24"}}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_configure_network_interface_ip,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_configure_network_interface_ip_pcif_trailing_newline(
+            self, mock_userid):
+        bstr = """{"interface": {"os_version": "rhel7",
+                                 "guest_network": {"ip_addr": "192.168.12.34",
+                                                   "gateway_addr": "192.168.12.1",
+                                                   "cidr": "192.168.12.0/24"},
+                                 "pcif": "110\\n"}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_configure_network_interface_ip,
+                          self.req)
+
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info(self, mock_interface):
         self.req.GET = {}

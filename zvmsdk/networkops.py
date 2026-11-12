@@ -23,6 +23,7 @@ import yaml
 
 from zvmsdk import config
 from zvmsdk import dist
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smtclient
 
@@ -146,8 +147,6 @@ class NetworkOPS(object):
     def _generate_network_doscript(self, userid, os_version, network_info,
                                    network_file_path, first, active=False):
         path_contents = []
-        content_dir = {}
-        files_map = []
 
         # Create network configuration files
         LOG.debug('Creating network configuration files '
@@ -176,19 +175,8 @@ class NetworkOPS(object):
         if len(net_cmd_file) > 0:
             path_contents.extend(net_cmd_file)
 
-        for (path, contents) in path_contents:
-            key = "%04i" % len(content_dir)
-            files_map.append({'target_path': path,
-                        'source_file': "%s" % key})
-            content_dir[key] = contents
-            file_name = os.path.join(network_file_path, key)
-            if 'yaml' in path:
-                self._add_yaml_file(file_name, contents)
-            else:
-                self._add_file(file_name, contents)
-
-        self._create_invokeScript(network_file_path, clean_cmd, files_map)
-        network_doscript = self._create_network_doscript(network_file_path)
+        network_doscript = self._bundle_network_doscript(
+            network_file_path, path_contents, clean_cmd)
 
         # get command about zvmguestconfigure
         active_cmds = ''
@@ -229,7 +217,7 @@ class NetworkOPS(object):
         return net_cmd_file
 
     def _create_invokeScript(self, network_file_path, commands,
-                             files_map):
+                             files_map, znetconfig=True):
         """invokeScript: Configure zLinux os network
 
         invokeScript is included in the network.doscript, it is used to put
@@ -250,7 +238,8 @@ class NetworkOPS(object):
             command += 'cat ' + source_file + ' > ' + target_path + '\n'
 
         command += 'sleep 2\n'
-        command += '/bin/bash /tmp/znetconfig.sh\n'
+        if znetconfig:
+            command += '/bin/bash /tmp/znetconfig.sh\n'
         command += 'rm -rf invokeScript.sh\n'
 
         scriptfile = os.path.join(network_file_path, invokeScript)
@@ -275,6 +264,28 @@ class NetworkOPS(object):
             tar.add(file_name, arcname=file)
         tar.close()
         return network_doscript
+
+    def _bundle_network_doscript(self, network_file_path, path_contents,
+                                 clean_cmd, znetconfig=True):
+        files_map = []
+        content_dir = {}
+        for (path, contents) in path_contents:
+            key = "%04i" % len(content_dir)
+            files_map.append({'target_path': path,
+                        'source_file': "%s" % key})
+            content_dir[key] = contents
+            file_name = os.path.join(network_file_path, key)
+            if 'yaml' in path:
+                self._add_yaml_file(file_name, contents)
+            else:
+                self._add_file(file_name, contents)
+
+        if znetconfig:
+            self._create_invokeScript(network_file_path, clean_cmd, files_map)
+        else:
+            self._create_invokeScript(network_file_path, clean_cmd, files_map,
+                                      znetconfig=False)
+        return self._create_network_doscript(network_file_path)
 
     def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
         return self._smtclient.get_nic_info(userid=userid, nic_id=nic_id,
@@ -312,3 +323,79 @@ class NetworkOPS(object):
     def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
         return self._smtclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
                                              active=active)
+
+    def zdirect_network_configuration(self, userid, os_version, pcif, network_info,
+                              active=False):
+        if self._smtclient.is_rhcos(os_version):
+            func = 'zdirect_network_configuration for rhcos'
+            raise exception.SDKFunctionNotImplementError(func=func,
+                                                         modID='guest')
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        # rhel10 no longer reads ifcfg files, which are all this API writes
+        if isinstance(linuxdist, dist.rhel10):
+            func = 'zdirect_network_configuration for rhel10'
+            raise exception.SDKFunctionNotImplementError(func=func,
+                                                         modID='guest')
+
+        intf_name = self._smtclient.get_neth_interface_info(userid, pcif)
+        network_file_path = self._smtclient.get_guest_temp_path(userid)
+        fileClass = "X"
+        try:
+            first = self._smtclient.is_first_network_config(userid)
+            (network_doscript,
+             active_cmds) = self._generate_zdirect_network_doscript(
+                                                    userid, intf_name,
+                                                    linuxdist,
+                                                    network_info,
+                                                    network_file_path,
+                                                    active=active)
+            self._smtclient.punch_file(userid, network_doscript, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', network_file_path)
+            shutil.rmtree(network_file_path)
+
+        # update guest db to mark the network is already set
+        if first:
+            self._smtclient.update_guestdb_with_net_set(userid)
+
+        # Using zvmguestconfigure tool to parse network_doscript, then
+        # restart the instance to apply the changes. execute_cmd is
+        # synchronous (cmdVM waits for the command to exit) and
+        # zvmguestconfigure is a Type=oneshot service (or sysv script), so
+        # the start returns only after the punched doscript has been consumed
+        # and invokeScript.sh has written the config files. The reboot
+        # therefore cannot race with it, and a failure here is raised before
+        # the guest is rebooted instead of being hidden by the reboot.
+        if active:
+            self._smtclient.execute_cmd(userid, active_cmds)
+            self._smtclient.guest_reboot(userid)
+
+    def _generate_zdirect_network_doscript(self, userid, intf_name, linuxdist, network,
+                                   network_file_path, active=True):
+        if isinstance(linuxdist, str):
+            linuxdist = self._dist_manager.get_linux_dist(linuxdist)()
+        path_contents = []
+        (net_conf_files, dns_cmd) = self._create_neth_configuration_files(
+                                        network, linuxdist, intf_name)
+        if len(net_conf_files) > 0:
+            path_contents.extend(net_conf_files)
+
+        network_doscript = self._bundle_network_doscript(
+            network_file_path, path_contents, dns_cmd, znetconfig=False)
+
+        # get command about zvmguestconfigure
+        active_cmds = ''
+        if active:
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+        return network_doscript, active_cmds
+
+    def _create_neth_configuration_files(self, network, linuxdist, intf_name):
+        if isinstance(linuxdist, str):
+            linuxdist = self._dist_manager.get_linux_dist(linuxdist)()
+        network_file, cfg = linuxdist.get_neth_cfg(network, intf_name)
+        # Append any dist-specific DNS configuration commands.
+        # (e.g. SLES/wicked needs NETCONFIG_DNS_STATIC_SERVERS set in
+        # /etc/sysconfig/network/config rather than DNS1= in the ifcfg file.)
+        dns = network.get('dns_addr') or []
+        dns_cmd = linuxdist.get_neth_dns_cmd(dns)
+        return ([(network_file, cfg)], dns_cmd)
