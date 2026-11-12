@@ -434,3 +434,25 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
 
         self._mock_handler.query_storage.assert_not_called()
         self._mock_handler.query_cplevel.assert_not_called()
+
+    def test_vmcp_branch_calls_query_image_performance(self):
+        self._set_use_smapi(False)
+        self._mock_handler.query_cplevel.return_value = ""
+        self._mock_handler.query_storage.return_value = {
+            "lparMemTotal": "65536M",
+            "lparMemStandby": "0",
+        }
+        self._mock_handler.query_image_performance.return_value = {
+            "overallRC": 0,
+            "response": "MEMORY_IN_USE=600000"
+        }
+
+        rh = _make_rh()
+        getHost.getGeneralInfo(rh)
+
+        self._mock_handler.query_image_performance.assert_called_once_with()
+        called_apis = [
+            call.args[1]
+            for call in self._mock_smcli.call_args_list
+        ]
+        self.assertNotIn("System_Performance_Information_Query", called_apis)

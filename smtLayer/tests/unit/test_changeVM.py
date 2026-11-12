@@ -312,3 +312,85 @@ class SMTChangeVMTestCase(base.SMTTestCase):
         self.assertEqual(2, smcli.call_count)
         self.assertEqual(["-T", "FAKEUSER", "-v", "0100", "-m", "MR"],
                          smcli.call_args[0][2])
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(changeVM, 'VMCPHandler')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    @patch.object(changeVM, 'config')
+    def test_dedicate_active_vmcp_path(self, mock_conf, mock_logon,
+                                       mock_smcli, mock_vmcp_cls, mock_print):
+        mock_conf.CONF.zvm.use_smapi = False
+        mock_logon.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
+        mock_vmcp_cls.return_value.attach_device.return_value = {'overallRC': 0, 'response': ''}
+
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        rh.userid = 'TESTUSER'
+        rh.parms = {'vaddr': '1A00', 'raddr': '2B00', 'mode': '0'}
+
+        self.assertEqual(0, changeVM.dedicate(rh))
+        mock_vmcp_cls.return_value.attach_device.assert_called_once_with()
+        self.assertEqual(1, mock_smcli.call_count)
+        self.assertEqual('Image_Device_Dedicate_DM', mock_smcli.call_args[0][1])
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(changeVM, 'VMCPHandler')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    @patch.object(changeVM, 'config')
+    def test_dedicate_active_vmcp_path_fails(self, mock_conf, mock_logon,
+                                             mock_smcli, mock_vmcp_cls, mock_print):
+        mock_conf.CONF.zvm.use_smapi = False
+        mock_logon.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
+        mock_vmcp_cls.return_value.attach_device.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'response': 'HCP error'}
+
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        rh.userid = 'TESTUSER'
+        rh.parms = {'vaddr': '1A00', 'raddr': '2B00', 'mode': '0'}
+
+        self.assertEqual(1, changeVM.dedicate(rh))
+        self.assertEqual(1, rh.results['overallRC'])
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(changeVM, 'VMCPHandler')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    @patch.object(changeVM, 'config')
+    def test_undedicate_active_vmcp_path(self, mock_conf, mock_logon,
+                                         mock_smcli, mock_vmcp_cls, mock_print):
+        mock_conf.CONF.zvm.use_smapi = False
+        mock_logon.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
+        mock_vmcp_cls.return_value.detach_device.return_value = {'overallRC': 0, 'response': ''}
+
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        rh.userid = 'TESTUSER'
+        rh.parms = {'vaddr': '1A00'}
+
+        self.assertEqual(0, changeVM.undedicate(rh))
+        mock_vmcp_cls.return_value.detach_device.assert_called_once_with()
+        self.assertEqual(1, mock_smcli.call_count)
+        self.assertEqual('Image_Device_Undedicate_DM', mock_smcli.call_args[0][1])
+
+    @patch.object(ReqHandle.ReqHandle, 'printLn')
+    @patch.object(changeVM, 'VMCPHandler')
+    @patch.object(changeVM, 'invokeSMCLI')
+    @patch.object(changeVM, 'isLoggedOn')
+    @patch.object(changeVM, 'config')
+    def test_undedicate_active_vmcp_path_fails(self, mock_conf, mock_logon,
+                                               mock_smcli, mock_vmcp_cls, mock_print):
+        mock_conf.CONF.zvm.use_smapi = False
+        mock_logon.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0}
+        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': []}
+        mock_vmcp_cls.return_value.detach_device.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'response': 'HCP error'}
+
+        rh = ReqHandle.ReqHandle(captureLogs=False, smt=Mock())
+        rh.userid = 'TESTUSER'
+        rh.parms = {'vaddr': '1A00'}
+
+        self.assertEqual(1, changeVM.undedicate(rh))
+        self.assertEqual(1, rh.results['overallRC'])

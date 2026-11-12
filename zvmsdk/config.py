@@ -181,7 +181,14 @@ When set to False, SDK uses the following CP commands through vmcp
 instead of SMAPI:
 - QUERY STORAGE               (LPAR total and standby memory)
 - QUERY CPLEVEL               (z/VM CP version and IPL date)
-- FORCE <userid> LOGOFF       (power off a guest)
+- FORCE <userid> LOGOFF       (power off / deactivate a guest)
+- XAUTOLOG <userid>           (power on / activate a guest)
+- ATTACH                      (device dedicate to a guest)
+- DETACH                      (device undedicate from a guest)
+- QUERY VSWITCH DETAILS       (vswitch network byte statistics)
+- QUERY SSI                   (SSI cluster query)
+- QUERY FRAMES                (LPAR memory in use)
+- VMRELOCATE MOVE             (live guest relocation)
 - QUERY PROCESSORS EXPANDED   (host CPU counting)
 - QUERY OSA                   (OSA device query)
 - QUERY FCP WWPN              (FCP WWPN query)
@@ -669,6 +676,31 @@ The default value is 900 seconds.
 SMAPIs are socket-based systems management application programming interfaces.
 If the SMAPI socket connection of a long-duration operation exceeds this timeout,
 the SMAPI long-duration operation will fail.
+'''
+        ),
+    Opt('vmcp_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=240,
+        opt_type='int',
+        help='''
+The timeout value for a general VMCP command is specified in seconds.
+
+The default value is 240 seconds.
+If the VMCP command execution exceeds this timeout, the VMCP operation will fail.
+'''
+        ),
+    Opt('vmcp_long_call_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=900,
+        opt_type='int',
+        help='''
+The timeout value for a long-duration VMCP command is specified in seconds.
+
+The default value is 900 seconds.
+If the VMCP command of a long-duration operation (e.g. VMRELOCATE) exceeds this timeout,
+the VMCP long-duration operation will fail.
 '''
         ),
     # tests options

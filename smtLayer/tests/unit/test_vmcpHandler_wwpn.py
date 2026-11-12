@@ -104,7 +104,7 @@ class VMCPHandlerRunTestCase(base.SMTTestCase):
         self.assertEqual('FCP  E800\n', result['response'])
         mock_co.assert_called_once_with(
             ['sudo', '/sbin/vmcp', 'QUERY', 'FCP', 'WWPN'],
-            close_fds=True, stderr=subprocess.STDOUT)
+            close_fds=True, stderr=subprocess.STDOUT, timeout=mock.ANY)
 
     @mock.patch('subprocess.check_output')
     def test_run_calledprocesserror(self, mock_co):
@@ -132,7 +132,7 @@ class VMCPHandlerRunTestCase(base.SMTTestCase):
         self.assertEqual('ok\n', result['response'])
         mock_co.assert_called_once_with(
             ['sudo', '/sbin/vmcp', 'FOR FAKEUSER CMD LINK * 0100 0100 W'],
-            close_fds=True, stderr=subprocess.STDOUT)
+            close_fds=True, stderr=subprocess.STDOUT, timeout=mock.ANY)
 
     @mock.patch('subprocess.check_output')
     def test_run_for_calledprocesserror(self, mock_co):
