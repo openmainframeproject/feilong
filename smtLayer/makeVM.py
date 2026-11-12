@@ -91,7 +91,7 @@ keyOpsList = {
         '--commandSchedule': ['commandSchedule', 1, 2],
         '--commandSetShare': ['commandSetShare', 1, 2],
         '--commandRelocationDomain': ['commandRDomain', 1, 2],
-        '--commandPcif': ['commandSchedule', 1, 2]},
+        '--commandPcif': ['commandPcif', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
