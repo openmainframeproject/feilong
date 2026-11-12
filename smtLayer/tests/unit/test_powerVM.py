@@ -228,12 +228,14 @@ class ResetVmcpBranchTest(base.SMTTestCase):
         mock_handler_cls.return_value = mock_handler_instance
         mock_handler_instance.deactivate.return_value = {
             'overallRC': 0, 'response': ''}
+        mock_handler_instance.activate.return_value = {
+            'overallRC': 0, 'response': ''}
 
         rh = _make_rh()
         rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
 
-        # waitForVMState and Image_Activate succeed so the function exits
-        # cleanly without entering any other error path.
+        # waitForVMState succeeds so the function exits cleanly without
+        # entering any other error path.
         mock_wait.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0,
                                   'response': ''}
         mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0,
@@ -241,9 +243,13 @@ class ResetVmcpBranchTest(base.SMTTestCase):
 
         powerVM.reset(rh)
 
-        # VMCPHandler constructed with rh; deactivate called WITHOUT force.
-        mock_handler_cls.assert_called_once_with(rh)
+        # VMCPHandler is constructed once for the logoff and once for the
+        # logon; deactivate is called WITHOUT force, activate with userid.
+        self.assertEqual(2, mock_handler_cls.call_count)
+        mock_handler_cls.assert_called_with(rh)
         mock_handler_instance.deactivate.assert_called_once_with(rh.userid)
+        mock_handler_instance.activate.assert_called_once_with(rh.userid)
+        mock_smcli.assert_not_called()
 
         # No error printing or result propagation on success.
         rh.printLn.assert_not_called()
@@ -266,6 +272,8 @@ class ResetVmcpBranchTest(base.SMTTestCase):
         mock_handler_instance = mock.MagicMock()
         mock_handler_cls.return_value = mock_handler_instance
         mock_handler_instance.deactivate.return_value = {
+            'overallRC': 0, 'response': ''}
+        mock_handler_instance.activate.return_value = {
             'overallRC': 0, 'response': ''}
 
         rh = _make_rh()
@@ -335,6 +343,8 @@ class ResetVmcpBranchTest(base.SMTTestCase):
         mock_handler_instance = mock.MagicMock()
         mock_handler_cls.return_value = mock_handler_instance
         mock_handler_instance.deactivate.return_value = {
+            'overallRC': 0, 'response': ''}
+        mock_handler_instance.activate.return_value = {
             'overallRC': 0, 'response': ''}
 
         rh = _make_rh()
@@ -555,3 +565,89 @@ class SoftDeactivateVmcpBranchTest(base.SMTTestCase):
         mock_handler_cls.assert_not_called()
         called_apis = [call.args[1] for call in mock_smcli.call_args_list]
         self.assertIn("Image_Deactivate", called_apis)
+
+
+class ActivateTestCase(base.SMTTestCase):
+    """Tests for powerVM.activate() VMCP and SMAPI paths."""
+
+    def setUp(self):
+        super(ActivateTestCase, self).setUp()
+        self._orig_use_smapi = config.CONF.zvm['use_smapi']
+
+    def tearDown(self):
+        super(ActivateTestCase, self).tearDown()
+        config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+
+    def _set_use_smapi(self, value):
+        config.CONF.zvm['use_smapi'] = value
+
+    @mock.patch(_INVOKE_SMCLI)
+    @mock.patch(_VMCP_HANDLER)
+    def test_vmcp_activate_success(self, mock_handler_cls, mock_smcli):
+        self._set_use_smapi(False)
+        mock_instance = mock.MagicMock()
+        mock_handler_cls.return_value = mock_instance
+        mock_instance.activate.return_value = {'overallRC': 0, 'response': ''}
+
+        rh = _make_rh()
+        powerVM.activate(rh)
+
+        self.assertEqual(0, rh.results['overallRC'])
+        mock_instance.activate.assert_called_once_with('TESTUSER')
+        mock_smcli.assert_not_called()
+
+    @mock.patch(_INVOKE_SMCLI)
+    @mock.patch(_VMCP_HANDLER)
+    def test_vmcp_activate_fails(self, mock_handler_cls, mock_smcli):
+        self._set_use_smapi(False)
+        mock_instance = mock.MagicMock()
+        mock_handler_cls.return_value = mock_instance
+        mock_instance.activate.return_value = {
+            'overallRC': 1, 'rc': 1, 'rs': 0, 'response': 'HCP error'}
+
+        rh = _make_rh()
+        powerVM.activate(rh)
+
+        rh.printLn.assert_called_once_with("ES", 'HCP error')
+        rh.updateResults.assert_called_once_with(
+            mock_instance.activate.return_value)
+        mock_smcli.assert_not_called()
+
+    @mock.patch(_INVOKE_SMCLI)
+    @mock.patch(_VMCP_HANDLER)
+    def test_smapi_activate_success(self, mock_handler_cls, mock_smcli):
+        self._set_use_smapi(True)
+        mock_smcli.return_value = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
+
+        rh = _make_rh()
+        powerVM.activate(rh)
+
+        self.assertEqual(0, rh.results['overallRC'])
+        mock_handler_cls.assert_not_called()
+        mock_smcli.assert_called_once_with(rh, 'Image_Activate', ['-T', 'TESTUSER'])
+
+    @mock.patch(_INVOKE_SMCLI)
+    @mock.patch(_VMCP_HANDLER)
+    def test_smapi_activate_tolerates_already_active(self, mock_handler_cls, mock_smcli):
+        self._set_use_smapi(True)
+        # rc 200, rs 8 is tolerated in SMAPI
+        mock_smcli.return_value = {
+            'overallRC': 8, 'rc': 200, 'rs': 8, 'response': 'Already active'}
+
+        rh = _make_rh()
+        powerVM.activate(rh)
+
+        self.assertEqual(0, rh.results['overallRC'])
+
+    @mock.patch(_INVOKE_SMCLI)
+    @mock.patch(_VMCP_HANDLER)
+    def test_smapi_activate_fails(self, mock_handler_cls, mock_smcli):
+        self._set_use_smapi(True)
+        mock_smcli.return_value = {
+            'overallRC': 8, 'rc': 100, 'rs': 1, 'response': 'SMAPI failure'}
+
+        rh = _make_rh()
+        powerVM.activate(rh)
+
+        rh.printLn.assert_called_once_with("ES", 'SMAPI failure')
+        rh.updateResults.assert_called_once_with(mock_smcli.return_value)
