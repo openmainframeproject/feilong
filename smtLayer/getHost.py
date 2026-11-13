@@ -617,11 +617,17 @@ def getGeneralInfo(rh):
             rh.printLn("ES", msg)
 
     # Get LPAR memory in use
-    parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
 
     lparMemUsed = "no info"
-    results = invokeSMCLI(rh, "System_Performance_Information_Query",
-                          parm)
+    if not config.CONF.zvm.use_smapi:
+        handler = VMCPHandler(rh)
+        results = handler.query_image_performance()
+
+    else:
+        # Get LPAR memory in use
+        parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
+        results = invokeSMCLI(rh, "System_Performance_Information_Query", parm)
+
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "MEMORY_IN_USE=" in line:

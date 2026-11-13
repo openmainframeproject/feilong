@@ -6256,3 +6256,92 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             exception.SDKSMTRequestFailed({'overallRC': 4}, 'failed'))
         self.assertRaises(exception.SDKSMTRequestFailed,
                           self._smtclient.get_pcif_list)
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_host_get_ssi_info_vmcp_path_success(self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        res = ['ssi_name = ICIC2SSI', 'ssi_mode = Stable']
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.ssi_info.return_value = {'rc': 0, 'response': res}
+
+        self.assertEqual(res, self._smtclient.host_get_ssi_info())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_host_get_ssi_info_vmcp_path_not_in_cluster(self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.ssi_info.return_value = {
+            'rc': 0,
+            'response': []
+        }
+
+        self.assertEqual([], self._smtclient.host_get_ssi_info())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_host_get_ssi_info_vmcp_path_fails(self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.ssi_info.return_value = {'rc': 1, 'response': []}
+        rh_cls.return_value.results = {'overallRC': 1, 'rc': 1, 'rs': 0}
+
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.host_get_ssi_info)
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_vswitch_query_byte_stats_vmcp_path_success(self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        stats = {
+            'vswitch_count': 1,
+            'vswitches': [{'vswitch_name': 'VSW1', 'nics': []}]
+        }
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.query_vswitch_details.return_value = {
+            'rc': 0,
+            'response': stats
+        }
+
+        self.assertEqual(stats, self._smtclient.virtual_network_vswitch_query_byte_stats())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_vswitch_query_byte_stats_vmcp_path_no_vswitches(
+            self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        empty = {'vswitch_count': 0, 'vswitches': []}
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.query_vswitch_details.return_value = {
+            'rc': 0,
+            'response': empty
+        }
+
+        self.assertEqual(
+            empty, self._smtclient.virtual_network_vswitch_query_byte_stats())
+
+    @mock.patch('zvmsdk.smtclient.VMCPHandler')
+    @mock.patch('zvmsdk.smtclient.ReqHandle')
+    @mock.patch('zvmsdk.smtclient.CONF')
+    def test_vswitch_query_byte_stats_vmcp_path_fails(self, mock_conf, rh_cls, handler_cls):
+        mock_conf.zvm.use_smapi = False
+        handler_instance = mock.MagicMock()
+        handler_cls.return_value = handler_instance
+        handler_instance.query_vswitch_details.return_value = {
+            'rc': 1,
+            'response': {}
+        }
+
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.virtual_network_vswitch_query_byte_stats)
