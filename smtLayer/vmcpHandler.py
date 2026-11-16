@@ -35,6 +35,11 @@ ALREADY_LOGGED_ON_PATTERN = r'HCP\w*054E'
 # detaching a device that does not exist succeeds silently.
 NOT_ATTACHED_PATTERN = r'HCP\w*040E'
 
+# CP messages indicating that a virtual NIC does not exist on the target guest.
+NIC_NOT_FOUND_PATTERN = r'HCPNIC2836E'
+
+NO_VSWITCH_ADAPTER_PATTERN = r'HCPSWQ2836E'
+
 
 class VMCPHandler:
 
@@ -1158,3 +1163,232 @@ class VMCPHandler:
             "Exit VMCPHandler.query_vswitch_details, rc: " + str(rc))
 
         return {"response": response, "rc": rc}
+
+    def is_nic_coupled(self, userid, vdev):
+        """
+        Check whether a virtual NIC is coupled to a VSWITCH for a target guest.
+
+        Equivalent command:
+            vmcp "QUERY VSWITCH ALL DETAILS USERID <userid>"
+
+        Input:
+           userid - target virtual machine userid (str)
+           vdev   - virtual device address, e.g. "1000" or "0600" (str)
+
+        Output:
+           dict with keys:
+             coupled   - True if NIC is connected to a VSWITCH, False otherwise
+             response  - decoded stdout string
+             overallRC - 0 on success, non-zero on failure
+             rc        - 0 on success, non-zero on failure
+             rs        - 0
+             errno     - 0
+             strError  - error string if any
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.is_nic_coupled, userid: %s vdev: %s"
+                       % (userid, vdev))
+        vdev_norm = '%04X' % int(vdev, 16)
+        result = self._run(
+            ["QUERY", "VSWITCH", "ALL", "DETAILS", "USERID", userid],
+            tolerated=NO_VSWITCH_ADAPTER_PATTERN)
+        if result['overallRC'] != 0:
+            return {
+                'coupled': False,
+                'response': result.get('response', ''),
+                'overallRC': result['overallRC'],
+                'rc': result['overallRC'],
+                'rs': 0,
+                'errno': 0,
+                'strError': "QUERY VSWITCH failed for %s, rc: %s"
+                            % (userid, result['overallRC'])
+            }
+        response = result.get('response', '')
+        # In 'QUERY VSWITCH ALL DETAILS USERID <userid>', coupled NICs appear as:
+        # "Adapter Owner: <userid> NIC: <vdev>.P00 Name: ... Type: QDIO"
+        pattern = r'Adapter\s+Owner:\s+%s\s+NIC:\s+%s(?:\.P\d\d|\s|$)' % (
+            re.escape(userid.upper()),
+            re.escape(vdev_norm))
+        coupled = bool(re.search(pattern, response, re.IGNORECASE))
+        rh.printSysLog("Exit VMCPHandler.is_nic_coupled, coupled: %s"
+                       % coupled)
+        return {
+            'coupled': coupled,
+            'response': response,
+            'overallRC': 0,
+            'rc': 0,
+            'rs': 0,
+            'errno': 0,
+            'strError': ''
+        }
+
+    def delete_nic_for_guest(self, userid, vdev):
+        """
+        Detach a NIC from the active configuration of a target guest.
+        First verifies whether the NIC exists using
+        'QUERY NIC USERID <userid> <vdev>'.
+
+        Equivalent command:
+            vmcp "FOR <userid> CMD DETACH NIC <vdev>"
+
+        Input:
+           userid - target virtual machine userid (str)
+           vdev   - virtual device address, e.g. "1000" or "0600" (str)
+
+        Output:
+           dict with keys:
+             overallRC     - 0 on success, non-zero on failure
+             rc            - 0 on success, non-zero on failure
+             rs            - 0
+             errno         - 0
+             nic_not_found - True if NIC was absent before DETACH (overallRC=0)
+             response      - command output string
+             strError      - error output string
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.delete_nic_for_guest, "
+                       "userid: %s vdev: %s" % (userid, vdev))
+
+        vdev_norm = '%04X' % int(vdev, 16)
+        # Check if NIC exists on the guest
+        verify = self._run(
+            ['QUERY', 'NIC', 'USERID', userid, vdev_norm],
+            tolerated=NIC_NOT_FOUND_PATTERN)
+        if verify['overallRC'] != 0:
+            # Query failed for an unexpected reason (e.g. privilege error)
+            return {
+                'overallRC': verify['overallRC'],
+                'rc': verify['overallRC'],
+                'rs': 0,
+                'errno': 0,
+                'strError': "QUERY NIC failed for %s %s, rc: %s"
+                            % (userid, vdev_norm, verify['overallRC']),
+                'response': verify.get('response', '')
+            }
+
+        if re.search(NIC_NOT_FOUND_PATTERN, verify['response']):
+            rh.printSysLog(
+                "VMCPHandler.delete_nic_for_guest verify: "
+                "NIC %s absent for %s before DETACH"
+                % (vdev_norm, userid))
+            return {
+                'overallRC': 0,
+                'rc': 0,
+                'rs': 0,
+                'errno': 0,
+                'strError': verify['response'],
+                'response': verify['response'],
+                'nic_not_found': True
+            }
+
+        result = self._run_for(userid, "DETACH NIC %s" % vdev_norm)
+        if result['overallRC'] != 0:
+            rh.printLn("ES",
+                       "VMCPHandler.delete_nic_for_guest failed for "
+                       "userid: %s vdev: %s rc: %s response: %s"
+                       % (userid, vdev_norm, result['overallRC'],
+                          result['response']))
+            rh.updateResults(result)
+
+        rh.printSysLog("Exit VMCPHandler.delete_nic_for_guest, rc: %s"
+                       % result['overallRC'])
+        return result
+
+    def uncouple_nic_for_guest(self, userid, vdev):
+        """
+        Uncouple a NIC from its vswitch on the active configuration of a
+        target guest.
+        First verifies:
+          1. Whether the NIC exists ('QUERY NIC USERID <userid> <vdev>').
+          2. Whether the NIC is coupled ('QUERY VSWITCH ALL DETAILS USERID ...').
+
+        Equivalent command:
+            vmcp "FOR <userid> CMD UNCOUPLE <vdev>"
+
+        Input:
+           userid - target virtual machine userid (str)
+           vdev   - virtual device address, e.g. "1000" or "0600" (str)
+
+        Output:
+           dict with keys:
+             overallRC          - 0 on success, non-zero on failure
+             rc                 - 0 on success, non-zero on failure
+             rs                 - 0
+             errno              - 0
+             nic_not_found      - True if NIC absent before UNCOUPLE (overallRC=1)
+             already_uncoupled  - True if NIC already uncoupled (overallRC=0)
+             response           - command output string
+             strError           - error output string
+        """
+        rh = self._rh
+        rh.printSysLog("Enter VMCPHandler.uncouple_nic_for_guest, "
+                       "userid: %s vdev: %s" % (userid, vdev))
+
+        vdev_norm = '%04X' % int(vdev, 16)
+        # Step 1: Check if NIC exists on the guest
+        verify = self._run(
+            ['QUERY', 'NIC', 'USERID', userid, vdev_norm],
+            tolerated=NIC_NOT_FOUND_PATTERN)
+        if verify['overallRC'] != 0:
+            # Query failed for an unexpected reason (e.g. privilege error)
+            return {
+                'overallRC': verify['overallRC'],
+                'rc': verify['overallRC'],
+                'rs': 0,
+                'errno': 0,
+                'strError': "QUERY NIC failed for %s %s, rc: %s"
+                            % (userid, vdev_norm, verify['overallRC']),
+                'response': verify.get('response', '')
+            }
+
+        if re.search(NIC_NOT_FOUND_PATTERN, verify['response']):
+            rh.printSysLog(
+                "VMCPHandler.uncouple_nic_for_guest verify: "
+                "NIC %s absent for %s before UNCOUPLE"
+                % (vdev_norm, userid))
+            result = {
+                'overallRC': 1,
+                'rc': 1,
+                'rs': 0,
+                'errno': 0,
+                'strError': verify['response'],
+                'response': verify['response'],
+                'nic_not_found': True
+            }
+            rh.updateResults(result)
+            return result
+
+        # Step 2: Check if NIC is coupled to any VSWITCH
+        couple_info = self.is_nic_coupled(userid, vdev_norm)
+        if couple_info['overallRC'] != 0:
+            rh.printSysLog(
+                "VMCPHandler.uncouple_nic_for_guest: QUERY VSWITCH failed")
+            return couple_info
+
+        if not couple_info['coupled']:
+            rh.printSysLog("VMCPHandler.uncouple_nic_for_guest: "
+                           "NIC %s for %s is already uncoupled"
+                           % (vdev_norm, userid))
+            return {
+                'overallRC': 0,
+                'rc': 0,
+                'rs': 0,
+                'errno': 0,
+                'strError': '',
+                'response': couple_info['response'],
+                'already_uncoupled': True
+            }
+
+        # Step 3: Execute UNCOUPLE
+        result = self._run_for(userid, "UNCOUPLE %s" % vdev_norm)
+        if result['overallRC'] != 0:
+            rh.printLn("ES",
+                       "VMCPHandler.uncouple_nic_for_guest failed for "
+                       "userid: %s vdev: %s rc: %s response: %s"
+                       % (userid, vdev_norm, result['overallRC'],
+                          result['response']))
+            rh.updateResults(result)
+
+        rh.printSysLog("Exit VMCPHandler.uncouple_nic_for_guest, rc: %s"
+                       % result['overallRC'])
+        return result
