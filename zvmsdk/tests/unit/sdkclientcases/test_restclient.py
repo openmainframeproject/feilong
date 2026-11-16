@@ -692,6 +692,27 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_attach_detach_pcif(self, get_token, request):
+        url = '/guests/%s/pcif' % self.fake_userid
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        body = json.dumps({'info': {'pcif': '00000112', 'active': True}})
+        self.client.call("guest_attach_pcif", self.fake_userid, '00000112',
+                         active=True)
+        request.assert_called_with('POST', full_uri, data=body,
+                                   headers=self.headers, verify=False)
+
+        body = json.dumps({'info': {'os_version': 'rhel9',
+                                    'pcif': '00000112', 'active': True}})
+        self.client.call("guest_detach_pcif", self.fake_userid, 'rhel9',
+                         '00000112', active=True)
+        request.assert_called_with('DELETE', full_uri, data=body,
+                                   headers=self.headers, verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_get_power_state(self, get_token, request):
         method = 'GET'
         url = '/guests/%s/power_state' % self.fake_userid

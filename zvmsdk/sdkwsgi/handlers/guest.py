@@ -218,6 +218,21 @@ class VMHandler(object):
                                         active=active)
         return info
 
+    @validation.schema(guest.attach_pcif)
+    def attach_pcif(self, userid, body=None):
+        info = body['info']
+        active = util.bool_from_string(info.get('active', True), strict=True)
+        return self.client.send_request('guest_attach_pcif', userid,
+                                        pcif=info['pcif'], active=active)
+
+    @validation.schema(guest.detach_pcif)
+    def detach_pcif(self, userid, body=None):
+        info = body['info']
+        active = util.bool_from_string(info.get('active', True), strict=True)
+        return self.client.send_request('guest_detach_pcif', userid,
+                                        os_version=info['os_version'],
+                                        pcif=info['pcif'], active=active)
+
     @validation.schema(guest.create_disks)
     def create_disks(self, userid, body=None):
         disk_info = body['disk_info']
@@ -870,6 +885,46 @@ def guest_delete_network_interface(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_delete_network_interface(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_attach_pcif(req):
+
+    def _guest_attach_pcif(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        return action.attach_pcif(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_attach_pcif(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_detach_pcif(req):
+
+    def _guest_detach_pcif(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        return action.detach_pcif(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_detach_pcif(userid, req)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
