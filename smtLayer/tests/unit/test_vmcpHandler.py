@@ -23,9 +23,13 @@ from smtLayer import msgs
 from smtLayer.tests.unit import base
 from smtLayer.vmcpHandler import (
     ALREADY_LOGGED_ON_PATTERN,
+    DEFAULT_VMCP_LONG_CALL_TIMEOUT_SECONDS,
+    DEFAULT_VMCP_TIMEOUT_SECONDS,
     NOT_ATTACHED_PATTERN,
     NOT_LOGGED_ON_PATTERN,
+    VMCP_LONG_CALL_COMMANDS,
     VMCPHandler)
+from zvmsdk import config
 from zvmsdk import exception
 
 # Output of "sudo vmcp QUERY FRAMES" (rc=0) captured on a real z/VM host.
@@ -501,7 +505,28 @@ class VMCPHandlerTest(base.SMTTestCase):
             ["sudo", "/sbin/vmcp", "query", "pcif"],
             close_fds=True,
             stderr=subprocess.STDOUT,
+            timeout=240,
         )
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_uses_long_call_timeout_for_vmrelocate(self, mock_check):
+        self.handler._run(["VMRELOCATE", "MOVE", "TESTUSER"])
+        mock_check.assert_called_once_with(
+            ["sudo", "/sbin/vmcp", "VMRELOCATE", "MOVE", "TESTUSER"],
+            close_fds=True,
+            stderr=subprocess.STDOUT,
+            timeout=900,
+        )
+
+    @mock.patch('subprocess.check_output')
+    def test_run_timeout_expired_returns_nonzero_rc(self, mock_check):
+        mock_check.side_effect = subprocess.TimeoutExpired(
+            cmd="vmcp", timeout=240, output=b"timeout occurred")
+        result = self.handler._run(["query", "pcif"], output=True)
+        self.assertEqual(1, result["overallRC"])
+        self.assertEqual("", result["response"])
+        self.assertIn("timeout occurred", result["output"])
+        self.rh.updateResults.assert_called_once_with(msgs.msg['0421'][0])
 
     @mock.patch('subprocess.check_output')
     def test_run_called_process_error_returns_nonzero_rc(self, mock_check):
@@ -821,7 +846,18 @@ class VMCPHandlerRunForTestCase(base.SMTTestCase):
         mock_co.assert_called_once_with(
             ['sudo', '/sbin/vmcp',
              'FOR TESTUSER CMD DEFINE NIC 0600 TYPE QDIO'],
-            close_fds=True, stderr=subprocess.STDOUT)
+            close_fds=True, stderr=subprocess.STDOUT,
+            timeout=240)
+
+    @mock.patch('subprocess.check_output')
+    def test_run_for_timeout_expired(self, mock_co):
+        mock_co.side_effect = subprocess.TimeoutExpired(
+            cmd="vmcp", timeout=240, output=b"timed out")
+        result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(1, result['overallRC'])
+        self.assertEqual(1, result['rc'])
+        self.assertEqual('', result['response'])
+        self.rh.updateResults.assert_called_once_with(msgs.msg['0421'][0])
 
     @mock.patch('subprocess.check_output')
     def test_run_for_calledprocesserror(self, mock_co):
@@ -853,6 +889,120 @@ class VMCPHandlerRunForTestCase(base.SMTTestCase):
         result = self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
         self.assertEqual(1, result['overallRC'])
         self.assertEqual('vmcp not found', result['strError'])
+
+
+class VMCPHandlerTimeoutTestCase(base.SMTTestCase):
+    """Tests for VMCPHandler._get_timeout() and its use by _run/_run_for"""
+
+    def setUp(self):
+        super().setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    def test_long_call_commands_is_tuple_with_vmrelocate(self):
+        # A tuple (not a plain string) so "in" is an exact-match check.
+        self.assertIsInstance(VMCP_LONG_CALL_COMMANDS, tuple)
+        self.assertIn('VMRELOCATE', VMCP_LONG_CALL_COMMANDS)
+        self.assertNotIn('VM', VMCP_LONG_CALL_COMMANDS)
+
+    def test_default_constants(self):
+        self.assertEqual(240, DEFAULT_VMCP_TIMEOUT_SECONDS)
+        self.assertEqual(900, DEFAULT_VMCP_LONG_CALL_TIMEOUT_SECONDS)
+
+    def test_get_timeout_general_default(self):
+        self.assertEqual(240, self.handler._get_timeout())
+        self.assertEqual(240, self.handler._get_timeout("QUERY"))
+
+    def test_get_timeout_long_call_default(self):
+        self.assertEqual(900, self.handler._get_timeout("VMRELOCATE"))
+
+    def test_get_timeout_long_call_is_case_insensitive(self):
+        self.assertEqual(900, self.handler._get_timeout("vmrelocate"))
+
+    def test_get_timeout_empty_command_uses_general(self):
+        self.assertEqual(240, self.handler._get_timeout(None))
+        self.assertEqual(240, self.handler._get_timeout(""))
+
+    def test_get_timeout_partial_name_is_not_long_call(self):
+        self.assertEqual(240, self.handler._get_timeout("VM"))
+        self.assertEqual(240, self.handler._get_timeout("RELOCATE"))
+
+    def test_get_timeout_reads_general_value_from_conf(self):
+        with mock.patch.dict(config.CONF.zvm, {'vmcp_timeout_seconds': 500}):
+            self.assertEqual(500, self.handler._get_timeout("QUERY"))
+            self.assertEqual(500, self.handler._get_timeout())
+            # long-call value is unaffected
+            self.assertEqual(900, self.handler._get_timeout("VMRELOCATE"))
+
+    def test_get_timeout_reads_long_call_value_from_conf(self):
+        with mock.patch.dict(config.CONF.zvm,
+                             {'vmcp_long_call_timeout_seconds': 1800}):
+            self.assertEqual(1800, self.handler._get_timeout("VMRELOCATE"))
+            # general value is unaffected
+            self.assertEqual(240, self.handler._get_timeout("QUERY"))
+
+    def test_get_timeout_falls_back_to_constants_if_option_not_registered(self):
+        with mock.patch.dict(config.CONF.zvm):
+            del config.CONF.zvm['vmcp_timeout_seconds']
+            del config.CONF.zvm['vmcp_long_call_timeout_seconds']
+            self.assertEqual(DEFAULT_VMCP_TIMEOUT_SECONDS,
+                             self.handler._get_timeout("QUERY"))
+            self.assertEqual(DEFAULT_VMCP_LONG_CALL_TIMEOUT_SECONDS,
+                             self.handler._get_timeout("VMRELOCATE"))
+
+    def test_get_timeout_new_long_call_command(self):
+        with mock.patch('smtLayer.vmcpHandler.VMCP_LONG_CALL_COMMANDS',
+                        ('VMRELOCATE', 'NEWCMD')):
+            self.assertEqual(900, self.handler._get_timeout("newcmd"))
+        self.assertEqual(240, self.handler._get_timeout("NEWCMD"))
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_uses_get_timeout_with_first_token(self, mock_check):
+        with mock.patch.object(VMCPHandler, '_get_timeout',
+                               return_value=77) as mock_timeout:
+            self.handler._run(["QUERY", "USERID"])
+        mock_timeout.assert_called_once_with("QUERY")
+        self.assertEqual(77, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_uses_conf_timeout(self, mock_check):
+        with mock.patch.dict(config.CONF.zvm, {'vmcp_timeout_seconds': 500}):
+            self.handler._run(["query", "userid"])
+        self.assertEqual(500, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_explicit_timeout_overrides_conf(self, mock_check):
+        with mock.patch.object(VMCPHandler, '_get_timeout') as mock_timeout:
+            self.handler._run(["VMRELOCATE", "MOVE", "TESTUSER"], timeout=5)
+        mock_timeout.assert_not_called()
+        self.assertEqual(5, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_empty_args_uses_general_timeout(self, mock_check):
+        self.handler._run([])
+        self.assertEqual(240, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_for_uses_get_timeout_without_command(self, mock_check):
+        with mock.patch.object(VMCPHandler, '_get_timeout',
+                               return_value=88) as mock_timeout:
+            self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        mock_timeout.assert_called_once_with()
+        self.assertEqual(88, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_for_uses_conf_timeout(self, mock_check):
+        with mock.patch.dict(config.CONF.zvm, {'vmcp_timeout_seconds': 500}):
+            self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO')
+        self.assertEqual(500, mock_check.call_args[1]['timeout'])
+
+    @mock.patch('subprocess.check_output', return_value=b"")
+    def test_run_for_explicit_timeout_overrides_conf(self, mock_check):
+        with mock.patch.object(VMCPHandler, '_get_timeout') as mock_timeout:
+            self.handler._run_for('TESTUSER', 'DEFINE NIC 0600 TYPE QDIO',
+                                  timeout=5)
+        mock_timeout.assert_not_called()
+        self.assertEqual(5, mock_check.call_args[1]['timeout'])
 
 
 class VMCPHandlerGetCPUCountTestCase(base.SMTTestCase):
@@ -1433,6 +1583,7 @@ class VMCPHandlerQueryVSwitchDetailsTestCase(base.SMTTestCase):
              "QUERY", "VSWITCH", "DETAILS"],
             close_fds=True,
             stderr=subprocess.STDOUT,
+            timeout=mock.ANY,
         )
 
     @mock.patch.object(VMCPHandler, '_run')
