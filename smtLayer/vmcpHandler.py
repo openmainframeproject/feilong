@@ -152,6 +152,62 @@ class VMCPHandler:
                 'strError': str(e)
             }
 
+    def query_attach(self, rh):
+        """
+        Attach a virtual device to a z/VM guest using the VMCP ATTACH command.
+
+        Input:
+           rh - request handle containing:
+                parms['vaddr'] - virtual device address
+                parms['raddr'] - real device address
+                parms['mode']  - device access mode
+                               (0 = read-write, 1 = read-only)
+                userid          - target guest userid
+
+        Output:
+         overallRC - return code (0 for success, 1 for failure)
+         response  - VMCP command output
+        """
+
+        rh.printSysLog("Enter VMCPHandler.query_attach, userid: " + rh.userid)
+
+        args = ["ATTACH", rh.parms['vaddr'], "TO", rh.userid,
+                "AS", rh.parms['raddr']]
+        # Add read-only option if requested.
+        # rh.parms['mode'] is 0 (read-write) or 1 (read-only).
+        # z/VM CP ATTACH uses the keyword READONLY — not "RO" or "1".
+        if str(rh.parms.get('mode', 0)) == '1':
+            args.append("READONLY")
+
+        response = self._run(args)
+        rc = response["overallRC"]
+
+        rh.printSysLog("Exit VMCPHandler.query_attach, rc: " + str(rc))
+        return response
+
+    def query_detach(self, rh):
+        """
+        Detach a virtual device from a z/VM guest using the VMCP DETACH command.
+
+        Input:
+           rh - request handle containing:
+                parms['vaddr'] - virtual device address to be detached
+                userid          - guest userid used for logging
+
+            Output:
+             overallRC - return code (0 for success or already detached, non-zero for failure)
+             response  - VMCP command output
+        """
+
+        rh.printSysLog("Enter VMCPHandler.query_detach, userid: " + rh.userid)
+        args = ["DETACH", rh.parms['vaddr'], "FROM", rh.userid]
+
+        response = self._run(args, tolerated=NOT_ATTACHED_PATTERN)
+        rc = response["overallRC"]
+
+        rh.printSysLog("Exit VMCPHandler.query_detach, rc: " + str(rc))
+        return response
+
     def query_pcif(self):
         """
         Query PCI function (PCIF) information via 'vmcp q pcif'.

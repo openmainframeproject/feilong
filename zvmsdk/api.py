@@ -2430,6 +2430,36 @@ class SDKAPI(object):
             raise
         return guest_networks
 
+    def guest_attach_pcif(self, userid, pcif, active=True):
+        """ Attach a PCI function (NETH nic) to the guest: add it to the
+        user directory and, if active, to the running guest. The network
+        configuration is done with guest_configure_network_interface_ip.
+
+        :param str userid: the user id of the guest
+        :param str pcif: the PCI function to attach, e.g. '00000112'
+        :param bool active: whether attach the pcif to the active guest
+        """
+        with zvmutils.log_and_reraise_sdkbase_error(
+                "attach pcif %s to guest %s" % (pcif, userid)):
+            self._networkops.attach_pcif(userid, pcif, active=active)
+
+    @check_guest_exist()
+    def guest_detach_pcif(self, userid, os_version, pcif, active=True):
+        """ Remove the network configuration of the NETH nic from the guest
+        and detach its PCI function from the active guest and the user
+        directory.
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest, used
+               to find the network configuration file to remove
+        :param str pcif: the PCI function to detach, e.g. '00000112'
+        :param bool active: whether detach the pcif from the active guest
+        """
+        with zvmutils.log_and_reraise_sdkbase_error(
+                "detach pcif %s from guest %s" % (pcif, userid)):
+            self._networkops.zdirect_delete_network_configuration(
+                userid, os_version, pcif, active=active)
+
     def guests_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
         """ Retrieve NIC information in the network database according to
             the requirements, the NIC information will include the guest
