@@ -126,6 +126,45 @@ delete_network_interface = {
 }
 
 
+attach_pcif = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+            },
+            'required': ['pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}
+
+
+detach_pcif = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'os_version': parameter_types.os_version,
+                'pcif': parameter_types.pcif,
+                'active': parameter_types.boolean,
+            },
+            'required': ['os_version', 'pcif'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}
+
+
 config_minidisks = {
     'type': 'object',
     'properties': {

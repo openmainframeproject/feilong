@@ -20,11 +20,13 @@ import os
 import shutil
 import tarfile
 import yaml
+import time
 
 from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import log
 from zvmsdk import smtclient
+from zvmsdk import exception
 
 
 _NetworkOPS = None
@@ -312,3 +314,126 @@ class NetworkOPS(object):
     def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
         return self._smtclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
                                              active=active)
+
+    def attach_pcif(self, userid, pcif, active=False):
+        self._smtclient.attach_pcif(userid, pcif, active=active)
+
+    def add_pcif_nic_record(self, userid, pcif, nic_id):
+        self._smtclient.add_pcif_nic_record(userid, pcif, nic_id)
+
+    def zdirect_delete_network_configuration(self, userid, os_version, pcif,
+                                             active=True):
+        """Remove the network configuration of a NETH interface from the
+        guest and detach its PCI function from the guest."""
+        if active:
+            # the interface only exists in the guest while pcif is attached.
+            # Failing to clean the guest must not stop the pcif detach.
+            try:
+                linuxdist = self._dist_manager.get_linux_dist(os_version)()
+                intf_name = self._smtclient.get_neth_interface_info(
+                    userid, pcif)
+                conf_file = linuxdist.get_neth_configuration_file(intf_name)
+                if conf_file:
+                    self._smtclient.execute_cmd(userid,
+                                                'rm -f %s' % conf_file)
+            except exception.SDKBaseException as err:
+                LOG.warning("Failed to remove the network configuration of "
+                            "pcif %s from guest %s, detach it anyway: %s"
+                            % (pcif, userid, err.format_message()))
+        self._smtclient.detach_pcif(userid, pcif, active=active)
+
+    def _wait_for_neth_interface(self, userid, pcif, retries=10, interval=2):
+        """Get the interface name of a freshly attached pcif. The guest needs
+        a few seconds to enumerate the new PCI function, so the interface may
+        not exist yet right after the pcif is attached."""
+        for attempt in range(retries):
+            try:
+                return self._smtclient.get_neth_interface_info(userid, pcif)
+            except exception.SDKSMTRequestFailed as err:
+                if attempt == retries - 1:
+                    raise
+                LOG.info("Interface of pcif %s not ready in guest %s yet "
+                         "(%s/%s): %s" % (pcif, userid, attempt + 1, retries,
+                                          err.format_message()))
+                time.sleep(interval)
+
+    def zdirect_network_configuration(self, userid, os_version, pcif, network_info,
+                              active=True):
+        if self._smtclient.is_rhcos(os_version):
+            func = 'zdirect_network_configuration for rhcos'
+            raise exception.SDKFunctionNotImplementError(func=func,
+                                                         modID='guest')
+
+        intf_name = self._wait_for_neth_interface(userid, pcif)
+        network_file_path = self._smtclient.get_guest_temp_path(userid)
+        fileClass = "X"
+        try:
+            first = self._smtclient.is_first_network_config(userid)
+            (network_doscript,
+             active_cmds) = self._generate_zdirect_network_doscript(
+                                                    userid, intf_name,
+                                                    os_version,
+                                                    network_info,
+                                                    network_file_path,
+                                                    first, active=active)
+            self._smtclient.punch_file(userid, network_doscript, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', network_file_path)
+            shutil.rmtree(network_file_path)
+
+        # update guest db to mark the network is already set
+        if first:
+            self._smtclient.update_guestdb_with_net_set(userid)
+
+        # using zvmguestconfigure tool to parse network_doscript
+        # and restart the instance to apply the changes
+        if active:
+            self._smtclient.execute_cmd(userid, active_cmds)
+            self._smtclient.guest_reboot(userid)
+
+    def _generate_zdirect_network_doscript(self, userid, intf_name, os_version, network,
+                                   network_file_path, first, active=True):
+        path_contents = []
+        content_dir = {}
+        files_map = []
+        (net_conf_files, clean_cmd) = self._create_neth_configuration_files(
+                                        network, os_version, first, intf_name)
+        if len(net_conf_files) > 0:
+            path_contents.extend(net_conf_files)
+
+        for (path, contents) in path_contents:
+            key = "%04i" % len(content_dir)
+            files_map.append({'target_path': path,
+                        'source_file': "%s" % key})
+            content_dir[key] = contents
+            file_name = os.path.join(network_file_path, key)
+            if 'yaml' in path:
+                self._add_yaml_file(file_name, contents)
+            else:
+                self._add_file(file_name, contents)
+
+        self._create_invokeScript(network_file_path, clean_cmd, files_map, znetconfig=False)
+        network_doscript = self._create_network_doscript(network_file_path)
+
+        # get command about zvmguestconfigure
+        active_cmds = ''
+        if active:
+            linuxdist = self._dist_manager.get_linux_dist(os_version)()
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+        return network_doscript, active_cmds
+
+    def _create_neth_configuration_files(self, network, os_version, first, intf_name):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        network_file, cfg = linuxdist.get_neth_cfg(network, intf_name)
+        # Use the targeted per-interface clean command so that only the file
+        # being written is removed, leaving all other network configs (OSA
+        # ifcfg files, cloud-init netplan files, etc.) untouched.
+        clean_cmd = ''
+        if first:
+            clean_cmd = linuxdist._get_neth_clean_command(intf_name)
+        # Append any dist-specific DNS configuration commands.
+        # (e.g. SLES/wicked needs NETCONFIG_DNS_STATIC_SERVERS set in
+        # /etc/sysconfig/network/config rather than DNS1= in the ifcfg file.)
+        dns = network.get('dns_addr') or []
+        clean_cmd += linuxdist.get_neth_dns_cmd(dns)
+        return ([(network_file, cfg)], clean_cmd)

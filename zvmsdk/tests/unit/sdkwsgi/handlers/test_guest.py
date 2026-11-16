@@ -921,6 +921,52 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_attach_pcif(self, mock_interface, mock_userid):
+        self.req.body = """{"info": {"pcif": "00000112", "active": "True"}}"""
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_attach_pcif(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_attach_pcif', FAKE_USERID, pcif='00000112', active=True)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_detach_pcif(self, mock_interface, mock_userid):
+        self.req.body = ("""{"info": {"os_version": "sles15", """
+                         """"pcif": "00000112"}}""")
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_detach_pcif(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_detach_pcif', FAKE_USERID, os_version='sles15',
+            pcif='00000112', active=True)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_detach_pcif_no_os_version(self, mock_userid):
+        # os_version is needed to find the configuration file to remove
+        self.req.body = """{"info": {"pcif": "00000112"}}"""
+        mock_userid.return_value = FAKE_USERID
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_detach_pcif, self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_pcif_accepts_plain_and_pair_ids(self, mock_interface,
+                                                   mock_userid):
+        # the driver sends a plain id; the 'a:b' pair of guest_create is
+        # accepted by the same type
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+        for pcif in ('00000168', '0000016B', '00000110:00000110'):
+            self.req.body = '{"info": {"pcif": "%s"}}' % pcif
+            guest.guest_attach_pcif(self.req)
+            mock_interface.assert_called_with(
+                'guest_attach_pcif', FAKE_USERID, pcif=pcif, active=True)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_network_interface_with_correct_rhcos_version(self,
                                                        mock_interface,
                                                        mock_userid):
