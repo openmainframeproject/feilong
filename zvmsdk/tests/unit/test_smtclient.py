@@ -2049,6 +2049,46 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertDictEqual(host_info, expect)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_host_info_paging_and_spool(self, smt_req):
+        resp = ['ZCC USERID: OPNCLOUD',
+                'z/VM Host: OPNSTK2',
+                'Architecture: s390x',
+                'CEC Vendor: IBM',
+                'CEC Model: 2817',
+                'Hypervisor OS: z/VM 7.3.0',
+                'Hypervisor Name: OPNSTK2',
+                'LPAR CPU Total: 6',
+                'LPAR CPU Used: 6',
+                'LPAR Memory Total: 50G',
+                'LPAR Memory Offline: 0',
+                'LPAR Memory Used: 36.5G',
+                'IPL Time: IPL at 07/12/17 22:37:47 EDT',
+                'Paging Total: 600840',
+                'Paging Used: 29214',
+                'Paging Available: 571626',
+                'Paging Percent Used: 4',
+                'Paging Volumes: [{"volid":"PAG001"}]',
+                'Spool Total: 90000',
+                'Spool Used: 4500',
+                'Spool Available: 85500',
+                'Spool Percent Used: 5',
+                'Spool Volumes: []']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
+        host_info = self._smtclient.get_host_info()
+        self.assertEqual('600840', host_info['paging_total'])
+        self.assertEqual('29214', host_info['paging_used'])
+        self.assertEqual('571626', host_info['paging_available'])
+        self.assertEqual('4', host_info['paging_percent_used'])
+        self.assertEqual('[{"volid":"PAG001"}]', host_info['paging_volumes'])
+        self.assertEqual('90000', host_info['spool_total'])
+        self.assertEqual('4500', host_info['spool_used'])
+        self.assertEqual('85500', host_info['spool_available'])
+        self.assertEqual('5', host_info['spool_percent_used'])
+        self.assertEqual('[]', host_info['spool_volumes'])
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_diskpool_info(self, smt_req):
         resp = ['XCATECKD Total: 3623.0G',
                 'XCATECKD Used: 397.4G',

@@ -17,8 +17,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
 import subprocess
+import threading
+import time
 
 from smtLayer import generalUtils
 from smtLayer import msgs
@@ -32,6 +35,11 @@ modId = 'GHO'
 version = "1.0.0"
 # maximum I knew is 60019, so make it double
 maximumCyl = 130000
+# Reuse QUERY ALLOC results, including failures, for this many seconds
+# when zvm.alloc_cache_seconds is not set.  No background refresh.
+_DEFAULT_ALLOC_CACHE_SECONDS = 60
+_alloc_cache_lock = threading.Lock()
+_alloc_cache = {"expires": 0.0, "page": None, "spool": None}
 
 """
 List of subfunction handlers.
@@ -647,6 +655,16 @@ def getGeneralInfo(rh):
                 "(see message 300)", results['response'])
             rh.printLn("ES", msg)
 
+    # Paging and spool allocation are collected only on the vmcp path,
+    # and only as part of this host-info request.  A missing class D
+    # privilege leaves the fields out; it does not fail the request.
+    # Results are reused for alloc_cache_seconds so repeated calls do
+    # not issue a CP command every time.
+    page_alloc = None
+    spool_alloc = None
+    if not config.CONF.zvm.use_smapi:
+        page_alloc, spool_alloc = _cached_alloc(handler)
+
     # Create output string
     outstr = "ZCC USERID: " + userid
     outstr += "\nz/VM Host: " + host
@@ -661,11 +679,85 @@ def getGeneralInfo(rh):
     outstr += "\nLPAR Memory Offline: " + lparMemStandby
     outstr += "\nLPAR Memory Used: " + lparMemUsed
     outstr += "\nIPL Time: " + ipl
+    outstr += _alloc_output(page_alloc, "Paging")
+    outstr += _alloc_output(spool_alloc, "Spool")
 
     rh.printLn("N", outstr)
     rh.printSysLog("Exit getHost.getGeneralInfo, rc: " +
                    str(rh.results['overallRC']))
     return rh.results['overallRC']
+
+
+def _alloc_cache_ttl():
+    """Seconds to reuse QUERY ALLOC results.  0 disables the cache."""
+    try:
+        ttl = int(config.CONF.zvm['alloc_cache_seconds'])
+    except (KeyError, TypeError, ValueError):
+        ttl = _DEFAULT_ALLOC_CACHE_SECONDS
+    if ttl < 0:
+        return 0
+    return ttl
+
+
+def _clear_alloc_cache():
+    """Drop the in-process QUERY ALLOC cache.  Used by unit tests."""
+    with _alloc_cache_lock:
+        _alloc_cache["expires"] = 0.0
+        _alloc_cache["page"] = None
+        _alloc_cache["spool"] = None
+
+
+def _cached_alloc(handler):
+    """Return paging and spool allocation, reusing the last sample.
+
+    The lock covers the CP commands as well as the cache update, so
+    overlapping host-info calls share one pair of vmcp invocations.
+    A failure (None) is cached for the same TTL.  There is no
+    background thread.
+    """
+    ttl = _alloc_cache_ttl()
+    with _alloc_cache_lock:
+        now = time.time()
+        if ttl > 0 and now < _alloc_cache["expires"]:
+            return _alloc_cache["page"], _alloc_cache["spool"]
+        page = handler.query_alloc_page()
+        spool = handler.query_alloc_spool()
+        if ttl > 0:
+            _alloc_cache["page"] = page
+            _alloc_cache["spool"] = spool
+            _alloc_cache["expires"] = time.time() + ttl
+        return page, spool
+
+
+def _alloc_output(alloc, label):
+    """Format one QUERY ALLOC result as getHost keyword lines.
+
+    Returns "" when alloc is missing or not a dict.  Does not raise.
+    """
+    if not isinstance(alloc, dict):
+        return ""
+    try:
+        lines = []
+        for key, suffix in (
+                ("total", " Total: "),
+                ("used", " Used: "),
+                ("available", " Available: "),
+                ("percent_used", " Percent Used: ")):
+            value = alloc.get(key)
+            if isinstance(value, int) and not isinstance(value, bool):
+                lines.append(label + suffix + str(value))
+        volumes = alloc.get("volumes")
+        if isinstance(volumes, list):
+            try:
+                encoded = json.dumps(volumes, separators=(',', ':'))
+            except (TypeError, ValueError):
+                encoded = "[]"
+            lines.append(label + " Volumes: " + encoded)
+        if not lines:
+            return ""
+        return "\n" + "\n".join(lines)
+    except Exception:
+        return ""
 
 
 def getVersion(rh):
