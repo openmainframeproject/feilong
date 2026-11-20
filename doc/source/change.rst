@@ -19,7 +19,8 @@ New features to be released with Feilong 1.6.7 (not yet released):
 
 * Multiple disk pools.
 
-* New APIs: list of minidisks, list of PCIF devices.
+* New APIs: list of minidisks, list of PCIF devices, rename of a guest
+  (``PUT /guests/{userid}/rename``, requires z/VM 7.4 with APAR VM66893).
 
 * Guest creation: ``logon_by``, comments in the user directory, custom CPU
   share; DHCP for network interfaces.
