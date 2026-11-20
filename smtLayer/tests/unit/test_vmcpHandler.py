@@ -1583,6 +1583,27 @@ class VMCPHandlerQueryAllocTestCase(base.SMTTestCase):
         self.assertEqual(750, parsed['available'])
         self.assertEqual(25, parsed['percent_used'])
 
+    def test_incomplete_extent_does_not_partial_sum(self):
+        text = (
+            "PAG001 1100 1 100 1000 250 10 25%\n"
+            "PAG002 1101 - - - - - -\n"
+        )
+        parsed = parse_alloc_response(text)
+        self.assertIsNone(parsed['total'])
+        self.assertIsNone(parsed['used'])
+        self.assertIsNone(parsed['available'])
+        self.assertEqual(2, len(parsed['volumes']))
+
+    def test_shared_extent_is_left_out_of_the_sum(self):
+        text = (
+            "PAG001 1100 1 100 1000 250 10 25%\n"
+            "SPLSHR 1300 - - - - - - SHARED\n"
+        )
+        parsed = parse_alloc_response(text)
+        self.assertEqual(1000, parsed['total'])
+        self.assertEqual(250, parsed['used'])
+        self.assertTrue(parsed['volumes'][1]['shared'])
+
     def test_not_found_only_is_zero_not_a_failure(self):
         text = ("VOL001 1400          -          -"
                 "      0      0      0    0% NOT FOUND\n")

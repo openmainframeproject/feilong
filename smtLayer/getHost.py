@@ -717,7 +717,7 @@ def _cached_alloc(handler):
     """
     ttl = _alloc_cache_ttl()
     with _alloc_cache_lock:
-        now = time.time()
+        now = time.monotonic()
         if ttl > 0 and now < _alloc_cache["expires"]:
             return _alloc_cache["page"], _alloc_cache["spool"]
         page = handler.query_alloc_page()
@@ -725,7 +725,7 @@ def _cached_alloc(handler):
         if ttl > 0:
             _alloc_cache["page"] = page
             _alloc_cache["spool"] = spool
-            _alloc_cache["expires"] = time.time() + ttl
+            _alloc_cache["expires"] = time.monotonic() + ttl
         return page, spool
 
 

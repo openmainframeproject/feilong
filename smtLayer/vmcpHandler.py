@@ -1435,15 +1435,22 @@ def _parse_alloc_response(text):
         total = 0
         used = 0
         summed = False
+        incomplete = False
         for extent in volumes:
             if extent["shared"] or extent["not_found"]:
                 continue
             if extent["total"] is None or extent["used"] is None:
+                # An extent CP did not mark shared or not-found, but whose
+                # counts did not parse, must not be dropped from a sum that
+                # is then reported as the host total.
+                incomplete = True
                 continue
             total += extent["total"]
             used += extent["used"]
             summed = True
-        if summed:
+        if incomplete:
+            totals = _alloc_totals(None, None, None)
+        elif summed:
             totals = _alloc_totals(total, used, None)
         elif volumes and all(item["not_found"] for item in volumes):
             totals = _alloc_totals(0, 0, 0)

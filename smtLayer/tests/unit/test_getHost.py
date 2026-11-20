@@ -556,7 +556,7 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
         }
         # Miss stores expires at 1000+60.  1030 is still inside the TTL.
         times = [1000.0, 1000.0, 1030.0]
-        with mock.patch('smtLayer.getHost.time.time', side_effect=times):
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
             getHost.getGeneralInfo(_make_rh())
             rh = _make_rh()
             getHost.getGeneralInfo(rh)
@@ -584,7 +584,7 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
         ]
         # 1061 is past expires 1060, so the second call queries again.
         times = [1000.0, 1000.0, 1061.0, 1061.0]
-        with mock.patch('smtLayer.getHost.time.time', side_effect=times):
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
             getHost.getGeneralInfo(_make_rh())
             rh = _make_rh()
             getHost.getGeneralInfo(rh)
@@ -601,7 +601,7 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
         self._mock_handler.query_alloc_page.return_value = None
         self._mock_handler.query_alloc_spool.return_value = None
         times = [2000.0, 2000.0, 2010.0]
-        with mock.patch('smtLayer.getHost.time.time', side_effect=times):
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
             getHost.getGeneralInfo(_make_rh())
             rh = _make_rh()
             getHost.getGeneralInfo(rh)
