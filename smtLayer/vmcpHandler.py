@@ -47,7 +47,7 @@ class VMCPHandler:
         """
         self._rh = rh
 
-    def _run(self, vmcp_args, tolerated=None, output=False):
+    def _run(self, vmcp_args, tolerated=None, output=False, timeout=None):
         """
         Execute one vmcp sub-command.
 
@@ -60,6 +60,10 @@ class VMCPHandler:
            tolerated - optional regex (str).  If the command fails and its
                        output matches, the failure is tolerated: nothing is
                        recorded in the request results and overallRC is 0.
+           timeout   - optional seconds.  Passed to check_output only when
+                       set, so existing callers keep the previous behavior.
+                       TimeoutExpired is returned as a failure and is not
+                       recorded on the request.
 
         Output:
            dict with keys:
@@ -72,10 +76,21 @@ class VMCPHandler:
         strCmd = ' '.join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
-            raw = subprocess.check_output(
-                cmd, close_fds=True, stderr=subprocess.STDOUT)
+            run_kwargs = {"close_fds": True, "stderr": subprocess.STDOUT}
+            if timeout is not None:
+                run_kwargs["timeout"] = timeout
+            raw = subprocess.check_output(cmd, **run_kwargs)
             return {"response": bytes.decode(raw, errors='replace'),
                     "overallRC": 0}
+        except subprocess.TimeoutExpired:
+            # check_output kills the child before raising.  Do not record
+            # a hard error; the optional caller logs a warning and leaves
+            # the request results alone.
+            err_text = "Command timed out after %s seconds" % timeout
+            result = {"response": "", "overallRC": 1}
+            if output:
+                result["output"] = err_text
+            return result
         except subprocess.CalledProcessError as e:
             err_text = (bytes.decode(e.output, errors='replace')
                         if e.output else "")
@@ -771,8 +786,8 @@ class VMCPHandler:
         spool allocation are optional host-info fields, so a missing
         class D privilege or a missing vmcp is taken back out of the
         request results and reported as a warning.  The command goes
-        through _run and does not set its own timeout, so it keeps
-        whatever timeout handling _run has.
+        through _run with a short timeout so a hung vmcp cannot hold
+        the host-info cache lock.
         """
         rh = self._rh
         saved = {}
@@ -780,7 +795,8 @@ class VMCPHandler:
             if key in rh.results:
                 saved[key] = rh.results[key]
         try:
-            result = self._run(vmcp_args, output=True)
+            result = self._run(vmcp_args, output=True,
+                               timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
         except Exception as exc:
             result = {"response": "", "overallRC": 1, "output": str(exc)}
         if not isinstance(result, dict):
@@ -1254,6 +1270,9 @@ _HCP_MESSAGE = re.compile(r'HCP[A-Z0-9]*\d{3,4}[EIW]', re.IGNORECASE)
 # stderr, and exits with rc 2).  --buffer=256K avoids that for large
 # QUERY ALLOC reports (vmcp accepts 4K-1M).
 _ALLOC_BUFFER = "--buffer=256K"
+# Stop a hung QUERY ALLOC so it cannot hold the host-info cache lock.
+# Five seconds matches the exporter CP command timeout.
+_ALLOC_VMCP_TIMEOUT_SECONDS = 5
 _MAX_ALLOC_CHARS = 256 * 1024
 _MAX_ALLOC_LINES = 4096
 

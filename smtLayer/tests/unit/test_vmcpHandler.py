@@ -26,6 +26,7 @@ from smtLayer.vmcpHandler import (
     NOT_ATTACHED_PATTERN,
     NOT_LOGGED_ON_PATTERN,
     VMCPHandler,
+    _ALLOC_VMCP_TIMEOUT_SECONDS,
     _MAX_ALLOC_CHARS,
     parse_alloc_response)
 from zvmsdk import exception
@@ -1651,7 +1652,8 @@ class VMCPHandlerQueryAllocTestCase(base.SMTTestCase):
         parsed = self.handler.query_alloc_page()
         self.assertEqual(600840, parsed['total'])
         mock_run.assert_called_once_with(
-            ["--buffer=256K", "QUERY", "ALLOC", "PAGE"], output=True)
+            ["--buffer=256K", "QUERY", "ALLOC", "PAGE"], output=True,
+            timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
 
     @mock.patch.object(VMCPHandler, '_run')
     def test_query_alloc_spool_parses(self, mock_run):
@@ -1660,7 +1662,8 @@ class VMCPHandlerQueryAllocTestCase(base.SMTTestCase):
         parsed = self.handler.query_alloc_spool()
         self.assertEqual(108000, parsed['total'])
         mock_run.assert_called_once_with(
-            ["--buffer=256K", "QUERY", "ALLOC", "SPOOL"], output=True)
+            ["--buffer=256K", "QUERY", "ALLOC", "SPOOL"], output=True,
+            timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
 
     @mock.patch('subprocess.check_output',
                 return_value=QUERY_ALLOC_PAGE_SINGLE.encode('utf-8'))
@@ -1731,3 +1734,20 @@ class VMCPHandlerQueryAllocTestCase(base.SMTTestCase):
         self.assertIsNone(self.handler.query_alloc_page())
         self.assertEqual(0, self.rh.results['overallRC'])
         self.assertIn('W', self.rh.printLn.call_args[0][0])
+
+    @mock.patch('subprocess.check_output')
+    def test_alloc_timeout_returns_none_and_keeps_rc(self, mock_check):
+        mock_check.side_effect = subprocess.TimeoutExpired(
+            cmd="vmcp", timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
+        self.rh.results['overallRC'] = 0
+        self.rh.results['response'] = ['kept']
+        self.assertIsNone(self.handler.query_alloc_page())
+        self.assertIsNone(self.handler.query_alloc_spool())
+        self.assertEqual(0, self.rh.results['overallRC'])
+        self.assertEqual(['kept'], self.rh.results['response'])
+        self.assertEqual(
+            _ALLOC_VMCP_TIMEOUT_SECONDS,
+            mock_check.call_args[1]['timeout'])
+        kind, text = self.rh.printLn.call_args[0]
+        self.assertIn('W', kind)
+        self.assertIn('timed out', text)

@@ -16,9 +16,12 @@
 #    under the License.
 
 from unittest import mock
+import subprocess
+
 from smtLayer import ReqHandle
 from smtLayer import getHost
 from smtLayer.tests.unit import base
+from smtLayer.vmcpHandler import VMCPHandler
 from zvmsdk import config
 
 
@@ -611,3 +614,32 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
             str(call) for call in rh.printLn.call_args_list)
         self.assertNotIn("Paging Total:", combined)
         self.assertNotIn("Spool Total:", combined)
+
+    def test_alloc_timeout_releases_lock_for_the_next_call(self):
+        getHost._clear_alloc_cache()
+        rh = _make_rh()
+        rh.results = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': ['kept'],
+        }
+        handler = VMCPHandler(rh)
+
+        def _timeout(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get('timeout', 5))
+
+        with mock.patch('smtLayer.vmcpHandler.subprocess.check_output',
+                        side_effect=_timeout):
+            page, spool = getHost._cached_alloc(handler)
+        self.assertIsNone(page)
+        self.assertIsNone(spool)
+        self.assertEqual(0, rh.results['overallRC'])
+        self.assertEqual(['kept'], rh.results['response'])
+        self.assertTrue(getHost._alloc_cache_lock.acquire(False))
+        getHost._alloc_cache_lock.release()
+
+        with mock.patch('smtLayer.vmcpHandler.subprocess.check_output',
+                        side_effect=AssertionError('vmcp should not run')):
+            page2, spool2 = getHost._cached_alloc(handler)
+        self.assertIsNone(page2)
+        self.assertIsNone(spool2)
+        self.assertEqual(0, rh.results['overallRC'])
