@@ -637,9 +637,10 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
         self.assertTrue(getHost._alloc_cache_lock.acquire(False))
         getHost._alloc_cache_lock.release()
 
-        with mock.patch('smtLayer.vmcpHandler.subprocess.check_output',
-                        side_effect=AssertionError('vmcp should not run')):
+        with mock.patch(
+                'smtLayer.vmcpHandler.subprocess.check_output') as mock_check:
             page2, spool2 = getHost._cached_alloc(handler)
+        mock_check.assert_not_called()
         self.assertIsNone(page2)
         self.assertIsNone(spool2)
         self.assertEqual(0, rh.results['overallRC'])
