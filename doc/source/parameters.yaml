@@ -610,7 +610,25 @@ vdev_guest:
   type: string
 host_info:
   description: |
-    The dict of host information.
+    The dict of host information. When ``use_smapi`` is False the dict
+    also carries paging and spool allocation from ``QUERY ALLOC PAGE``
+    and ``QUERY ALLOC SPOOL`` (CP privilege class D). Counts are pages,
+    except extent_start/extent_end which are cylinder numbers on CKD
+    (ECKD) volumes and page numbers on FBA/EDEV volumes.
+    Each of ``paging_total``, ``paging_used``, ``paging_available``,
+    ``paging_percent_used``, ``spool_total``, ``spool_used``,
+    ``spool_available`` and ``spool_percent_used`` is an integer, or
+    null when the command could not be run or parsed. ``percent_used``
+    is the CP SUMMARY percentage. ``paging_volumes`` and
+    ``spool_volumes`` are lists of per-extent dicts (``volid``,
+    ``rdev``, ``extent_start``, ``extent_end``, ``total``, ``used``,
+    ``high``, ``percent_used``, ``draining``, ``active``, ``dump``,
+    ``shared``, ``not_found``), an empty list when the system has no
+    extents of that type, or null when the data was not collected.
+    A missing privilege class does not fail this request.
+    Each command is ``vmcp --buffer=256K``. The result, including a
+    failure, is cached for ``alloc_cache_seconds`` (default 60).
+    Callers should not poll host info faster than that interval.
   in: body
   required: true
   type: dict

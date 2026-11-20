@@ -25,7 +25,10 @@ from smtLayer.vmcpHandler import (
     ALREADY_LOGGED_ON_PATTERN,
     NOT_ATTACHED_PATTERN,
     NOT_LOGGED_ON_PATTERN,
-    VMCPHandler)
+    VMCPHandler,
+    _ALLOC_VMCP_TIMEOUT_SECONDS,
+    _MAX_ALLOC_CHARS,
+    parse_alloc_response)
 from zvmsdk import exception
 
 # Output of "sudo vmcp QUERY FRAMES" (rc=0) captured on a real z/VM host.
@@ -1450,3 +1453,301 @@ class VMCPHandlerQueryVSwitchDetailsTestCase(base.SMTTestCase):
         self.assertEqual(1, result['rc'])
         self.assertEqual(0, result['response']['vswitch_count'])
         self.assertEqual([], result['response']['vswitches'])
+
+
+# z/VM 7.3 / 7.4 QUERY ALLOC response 2 (CP Commands and Utilities
+# Reference).  Column layout matches the documented PAGE/SPOOL response,
+# including the lower-case "usable" summary and a continuation extent
+# that omits volid and rdev.
+QUERY_ALLOC_PAGE_MULTIVOL = """\
+                EXTENT     EXTENT  TOTAL  PAGES   HIGH    %
+VOLID  RDEV      START        END  PAGES IN USE   PAGE USED
+------ ---- ---------- ---------- ------ ------ ------ ----
+PAG001 1100          1       1000 180000   9000     50    5%
+                   1001       2000 180000   1000     10    1% DR ACT
+PAG002 1101          1       3338 600840      0      0    0%
+                                  ------ ------        ----
+SUMMARY                          960840  10000           1%
+usable                           780840   9000           1%
+DRAINING                         180000   1000           1%
+"""
+
+# Same response with volid and rdev repeated on every extent, which is
+# what vmcp returns when CP writes the response into a DIAGNOSE buffer.
+QUERY_ALLOC_PAGE_SINGLE = """\
+                EXTENT     EXTENT  TOTAL  PAGES   HIGH    %
+VOLID  RDEV      START        END  PAGES IN USE   PAGE USED
+------ ---- ---------- ---------- ------ ------ ------ ----
+PAG001 1100          1       3338 600840  29214    292    4%
+                                  ------ ------        ----
+SUMMARY                           600840  29214           4%
+usable                            600840  29214           4%
+"""
+
+QUERY_ALLOC_SPOOL = """\
+                EXTENT     EXTENT  TOTAL  PAGES   HIGH    %
+VOLID  RDEV      START        END  PAGES IN USE   PAGE USED
+------ ---- ---------- ---------- ------ ------ ------ ----
+SPL001 1200          1        500  90000   4500     25    5%
+SPL001 1200        501        600  18000    100      5    1% DUMP
+SPLSHR 1300          -          -      -      -      -    -  SHARED
+VOL404 1400          -          -      0      0      0    0% NOT FOUND
+                                  ------ ------        ----
+SUMMARY                          108000   4600           4%
+usable                            90000   4500           5%
+"""
+
+QUERY_ALLOC_SUFFIX = """\
+PAG001 1100          1       3338    600K    10K    200    1%
+SUMMARY                              600K    10K           1%
+usable                               600K    10K           1%
+"""
+
+
+class VMCPHandlerQueryAllocTestCase(base.SMTTestCase):
+    """QUERY ALLOC PAGE / SPOOL parsing and the optional vmcp call."""
+
+    def setUp(self):
+        super(VMCPHandlerQueryAllocTestCase, self).setUp()
+        self.rh = _make_rh()
+        self.handler = VMCPHandler(self.rh)
+
+    def test_page_single_volume_summary(self):
+        parsed = parse_alloc_response(QUERY_ALLOC_PAGE_SINGLE)
+        self.assertEqual(600840, parsed['total'])
+        self.assertEqual(29214, parsed['used'])
+        self.assertEqual(571626, parsed['available'])
+        self.assertEqual(4, parsed['percent_used'])
+        self.assertEqual(1, len(parsed['volumes']))
+        extent = parsed['volumes'][0]
+        self.assertEqual('PAG001', extent['volid'])
+        self.assertEqual('1100', extent['rdev'])
+        self.assertEqual(1, extent['extent_start'])
+        self.assertEqual(3338, extent['extent_end'])
+        self.assertEqual(600840, extent['total'])
+        self.assertEqual(29214, extent['used'])
+        self.assertEqual(292, extent['high'])
+        self.assertEqual(4, extent['percent_used'])
+        self.assertFalse(extent['draining'])
+        self.assertFalse(extent['dump'])
+        self.assertFalse(extent['shared'])
+
+    def test_page_multivolume_continuation_and_summary(self):
+        # SUMMARY is the headline.  usable/DRAINING must not replace it.
+        # The second extent inherits PAG001 / 1100 and is draining.
+        parsed = parse_alloc_response(QUERY_ALLOC_PAGE_MULTIVOL)
+        self.assertEqual(960840, parsed['total'])
+        self.assertEqual(10000, parsed['used'])
+        self.assertEqual(950840, parsed['available'])
+        self.assertEqual(1, parsed['percent_used'])
+        self.assertEqual(3, len(parsed['volumes']))
+        self.assertEqual('PAG001', parsed['volumes'][0]['volid'])
+        self.assertFalse(parsed['volumes'][0]['draining'])
+        continued = parsed['volumes'][1]
+        self.assertEqual('PAG001', continued['volid'])
+        self.assertEqual('1100', continued['rdev'])
+        self.assertEqual(1001, continued['extent_start'])
+        self.assertEqual(2000, continued['extent_end'])
+        self.assertTrue(continued['draining'])
+        self.assertTrue(continued['active'])
+        self.assertEqual('PAG002', parsed['volumes'][2]['volid'])
+        self.assertEqual(0, parsed['volumes'][2]['used'])
+
+    def test_spool_dump_shared_and_not_found(self):
+        parsed = parse_alloc_response(QUERY_ALLOC_SPOOL)
+        self.assertEqual(108000, parsed['total'])
+        self.assertEqual(4600, parsed['used'])
+        self.assertEqual(103400, parsed['available'])
+        self.assertEqual(4, parsed['percent_used'])
+        self.assertEqual(4, len(parsed['volumes']))
+        self.assertTrue(parsed['volumes'][1]['dump'])
+        self.assertEqual(18000, parsed['volumes'][1]['total'])
+        shared = parsed['volumes'][2]
+        self.assertTrue(shared['shared'])
+        self.assertIsNone(shared['total'])
+        self.assertIsNone(shared['percent_used'])
+        self.assertTrue(parsed['volumes'][3]['not_found'])
+
+    def test_suffix_counts_use_powers_of_1024(self):
+        parsed = parse_alloc_response(QUERY_ALLOC_SUFFIX)
+        self.assertEqual(600 * 1024, parsed['total'])
+        self.assertEqual(10 * 1024, parsed['used'])
+        self.assertEqual((600 - 10) * 1024, parsed['available'])
+        self.assertEqual(1, parsed['percent_used'])
+        self.assertEqual(600 * 1024, parsed['volumes'][0]['total'])
+
+    def test_sums_extents_when_summary_is_missing(self):
+        text = "PAG001 1100 1 3338 1000 250 10 25%\n"
+        parsed = parse_alloc_response(text)
+        self.assertEqual(1000, parsed['total'])
+        self.assertEqual(250, parsed['used'])
+        self.assertEqual(750, parsed['available'])
+        self.assertEqual(25, parsed['percent_used'])
+
+    def test_incomplete_extent_does_not_partial_sum(self):
+        text = (
+            "PAG001 1100 1 100 1000 250 10 25%\n"
+            "PAG002 1101 - - - - - -\n"
+        )
+        parsed = parse_alloc_response(text)
+        self.assertIsNone(parsed['total'])
+        self.assertIsNone(parsed['used'])
+        self.assertIsNone(parsed['available'])
+        self.assertEqual(2, len(parsed['volumes']))
+
+    def test_shared_extent_is_left_out_of_the_sum(self):
+        text = (
+            "PAG001 1100 1 100 1000 250 10 25%\n"
+            "SPLSHR 1300 - - - - - - SHARED\n"
+        )
+        parsed = parse_alloc_response(text)
+        self.assertEqual(1000, parsed['total'])
+        self.assertEqual(250, parsed['used'])
+        self.assertTrue(parsed['volumes'][1]['shared'])
+
+    def test_not_found_only_is_zero_not_a_failure(self):
+        text = ("VOL001 1400          -          -"
+                "      0      0      0    0% NOT FOUND\n")
+        parsed = parse_alloc_response(text)
+        self.assertEqual(0, parsed['total'])
+        self.assertEqual(0, parsed['used'])
+        self.assertEqual(0, parsed['available'])
+        self.assertEqual(0, parsed['percent_used'])
+        self.assertTrue(parsed['volumes'][0]['not_found'])
+
+    def test_shared_only_has_no_totals(self):
+        text = ("SPLSHR 1300          -          -"
+                "      -      -      -    -  SHARED\n")
+        parsed = parse_alloc_response(text)
+        self.assertIsNone(parsed['total'])
+        self.assertIsNone(parsed['used'])
+        self.assertIsNone(parsed['available'])
+        self.assertTrue(parsed['volumes'][0]['shared'])
+
+    def test_privilege_and_hcp_messages_return_none(self):
+        samples = (
+            "HCP003E Invalid option - ALLOC\n",
+            "HCP003E Invalid option - PAGE\n",
+            "HCP013E Conflicting option - PAGE\n",
+            "HCP1002E Volume identifier PAG9 does not exist.\n",
+        )
+        for sample in samples:
+            self.assertIsNone(parse_alloc_response(sample))
+
+    def test_empty_and_garbled_return_none(self):
+        self.assertIsNone(parse_alloc_response(""))
+        self.assertIsNone(parse_alloc_response("\n  \n"))
+        self.assertIsNone(parse_alloc_response(
+            "this is not allocation output\nfoo bar baz\n"))
+        self.assertIsNone(parse_alloc_response(
+            "VOLID  RDEV START END\n------ ----\n"))
+        self.assertIsNone(parse_alloc_response("x" * (_MAX_ALLOC_CHARS + 1)))
+        self.assertIsNone(parse_alloc_response(
+            "PAG001 1100 1 10 100 1 1 1%\n" * 4097))
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_alloc_page_parses_and_calls_vmcp_once(self, mock_run):
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_ALLOC_PAGE_SINGLE}
+        parsed = self.handler.query_alloc_page()
+        self.assertEqual(600840, parsed['total'])
+        mock_run.assert_called_once_with(
+            ["--buffer=256K", "QUERY", "ALLOC", "PAGE"], output=True,
+            timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_query_alloc_spool_parses(self, mock_run):
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': QUERY_ALLOC_SPOOL}
+        parsed = self.handler.query_alloc_spool()
+        self.assertEqual(108000, parsed['total'])
+        mock_run.assert_called_once_with(
+            ["--buffer=256K", "QUERY", "ALLOC", "SPOOL"], output=True,
+            timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
+
+    @mock.patch('subprocess.check_output',
+                return_value=QUERY_ALLOC_PAGE_SINGLE.encode('utf-8'))
+    def test_query_alloc_page_invokes_vmcp_once(self, mock_check):
+        parsed = self.handler.query_alloc_page()
+        self.assertEqual(571626, parsed['available'])
+        self.assertEqual(1, mock_check.call_count)
+        self.assertEqual(
+            ["sudo", "/sbin/vmcp", "--buffer=256K",
+             "QUERY", "ALLOC", "PAGE"],
+            mock_check.call_args[0][0])
+
+    @mock.patch('subprocess.check_output')
+    def test_privilege_error_warns_and_keeps_request_ok(self, mock_check):
+        mock_check.side_effect = subprocess.CalledProcessError(
+            1, 'vmcp', output=b'HCP003E Invalid option - ALLOC\n')
+
+        def _update(new_results, **kwargs):
+            for key, value in new_results.items():
+                if key not in ('response', 'logEntries'):
+                    self.rh.results[key] = value
+
+        def _print(kind, text):
+            self.rh.results['response'] = (
+                self.rh.results['response'] + text.splitlines())
+
+        self.rh.updateResults.side_effect = _update
+        self.rh.printLn.side_effect = _print
+        self.rh.results['overallRC'] = 0
+        self.rh.results['response'] = ['kept']
+
+        self.assertIsNone(self.handler.query_alloc_page())
+        self.assertEqual(0, self.rh.results['overallRC'])
+        self.assertEqual('kept', self.rh.results['response'][0])
+        self.assertEqual(2, len(self.rh.results['response']))
+        self.assertIn('HCP003E Invalid option - ALLOC',
+                      self.rh.results['response'][1])
+        self.assertNotIn('(Error)', self.rh.results['response'][1])
+
+    @mock.patch('subprocess.check_output')
+    def test_vmcp_unavailable_returns_none(self, mock_check):
+        mock_check.side_effect = OSError('vmcp not found')
+        self.rh.results['overallRC'] = 0
+        self.assertIsNone(self.handler.query_alloc_spool())
+        self.assertEqual(0, self.rh.results['overallRC'])
+        kind, text = self.rh.printLn.call_args[0]
+        self.assertIn('W', kind)
+        self.assertIn('QUERY ALLOC SPOOL', text)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_garbled_output_warns_and_returns_none(self, mock_run):
+        mock_run.return_value = {'overallRC': 0,
+                                 'response': 'not allocation data\n'}
+        self.assertIsNone(self.handler.query_alloc_page())
+        kind, text = self.rh.printLn.call_args[0]
+        self.assertIn('W', kind)
+        self.assertIn('no usable allocation data', text)
+
+    @mock.patch.object(VMCPHandler, '_run')
+    def test_empty_output_warns_and_returns_none(self, mock_run):
+        mock_run.return_value = {'overallRC': 0, 'response': '\n'}
+        self.assertIsNone(self.handler.query_alloc_spool())
+        self.assertIn('W', self.rh.printLn.call_args[0][0])
+
+    @mock.patch.object(VMCPHandler, '_run', side_effect=RuntimeError('boom'))
+    def test_unexpected_error_returns_none(self, mock_run):
+        self.rh.results['overallRC'] = 0
+        self.assertIsNone(self.handler.query_alloc_page())
+        self.assertEqual(0, self.rh.results['overallRC'])
+        self.assertIn('W', self.rh.printLn.call_args[0][0])
+
+    @mock.patch('subprocess.check_output')
+    def test_alloc_timeout_returns_none_and_keeps_rc(self, mock_check):
+        mock_check.side_effect = subprocess.TimeoutExpired(
+            cmd="vmcp", timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
+        self.rh.results['overallRC'] = 0
+        self.rh.results['response'] = ['kept']
+        self.assertIsNone(self.handler.query_alloc_page())
+        self.assertIsNone(self.handler.query_alloc_spool())
+        self.assertEqual(0, self.rh.results['overallRC'])
+        self.assertEqual(['kept'], self.rh.results['response'])
+        self.assertEqual(
+            _ALLOC_VMCP_TIMEOUT_SECONDS,
+            mock_check.call_args[1]['timeout'])
+        kind, text = self.rh.printLn.call_args[0]
+        self.assertIn('W', kind)
+        self.assertIn('timed out', text)

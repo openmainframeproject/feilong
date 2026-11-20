@@ -47,7 +47,7 @@ class VMCPHandler:
         """
         self._rh = rh
 
-    def _run(self, vmcp_args, tolerated=None, output=False):
+    def _run(self, vmcp_args, tolerated=None, output=False, timeout=None):
         """
         Execute one vmcp sub-command.
 
@@ -60,6 +60,10 @@ class VMCPHandler:
            tolerated - optional regex (str).  If the command fails and its
                        output matches, the failure is tolerated: nothing is
                        recorded in the request results and overallRC is 0.
+           timeout   - optional seconds.  Passed to check_output only when
+                       set, so existing callers keep the previous behavior.
+                       TimeoutExpired is returned as a failure and is not
+                       recorded on the request.
 
         Output:
            dict with keys:
@@ -72,10 +76,21 @@ class VMCPHandler:
         strCmd = ' '.join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
-            raw = subprocess.check_output(
-                cmd, close_fds=True, stderr=subprocess.STDOUT)
+            run_kwargs = {"close_fds": True, "stderr": subprocess.STDOUT}
+            if timeout is not None:
+                run_kwargs["timeout"] = timeout
+            raw = subprocess.check_output(cmd, **run_kwargs)
             return {"response": bytes.decode(raw, errors='replace'),
                     "overallRC": 0}
+        except subprocess.TimeoutExpired:
+            # check_output kills the child before raising.  Do not record
+            # a hard error; the optional caller logs a warning and leaves
+            # the request results alone.
+            err_text = "Command timed out after %s seconds" % timeout
+            result = {"response": "", "overallRC": 1}
+            if output:
+                result["output"] = err_text
+            return result
         except subprocess.CalledProcessError as e:
             err_text = (bytes.decode(e.output, errors='replace')
                         if e.output else "")
@@ -764,6 +779,84 @@ class VMCPHandler:
 
         return {"overallRC": rc, "response": "MEMORY_IN_USE=%d" % memory_in_use}
 
+    def _run_optional(self, vmcp_args):
+        """Run one vmcp command without failing the surrounding request.
+
+        _run records a hard error when the command fails.  Paging and
+        spool allocation are optional host-info fields, so a missing
+        class D privilege or a missing vmcp is taken back out of the
+        request results and reported as a warning.  The command goes
+        through _run with a short timeout so a hung vmcp cannot hold
+        the host-info cache lock.
+        """
+        rh = self._rh
+        saved = {}
+        for key in ('overallRC', 'rc', 'rs', 'errno', 'strError', 'response'):
+            if key in rh.results:
+                saved[key] = rh.results[key]
+        try:
+            result = self._run(vmcp_args, output=True,
+                               timeout=_ALLOC_VMCP_TIMEOUT_SECONDS)
+        except Exception as exc:
+            result = {"response": "", "overallRC": 1, "output": str(exc)}
+        if not isinstance(result, dict):
+            result = {"response": "", "overallRC": 1, "output": ""}
+        if result.get("overallRC", 1) != 0:
+            for key, value in saved.items():
+                rh.results[key] = value
+            detail = result.get("output") or result.get("response") or ""
+            if not isinstance(detail, str):
+                detail = str(detail)
+            detail = " ".join(detail.split())
+            if len(detail) > 200:
+                detail = detail[:200]
+            rh.printLn("WS", "VMCP %s failed: %s" % (
+                " ".join(vmcp_args), detail or "no output"))
+        return result
+
+    def query_alloc_page(self):
+        """QUERY ALLOC PAGE.  None when the data cannot be collected."""
+        return self._query_alloc("PAGE")
+
+    def query_alloc_spool(self):
+        """QUERY ALLOC SPOOL.  None when the data cannot be collected."""
+        return self._query_alloc("SPOOL")
+
+    def _query_alloc(self, alloc_type):
+        """Collect one QUERY ALLOC report.
+
+        One vmcp invocation.  Returns the dict from parse_alloc_response,
+        or None when vmcp is unavailable, the guest lacks privilege
+        class D, or the output cannot be parsed.  Does not raise.
+        """
+        rh = self._rh
+        label = alloc_type.lower()
+        rh.printSysLog("Enter VMCPHandler.query_alloc_%s" % label)
+        try:
+            result = self._run_optional(
+                [_ALLOC_BUFFER, "QUERY", "ALLOC", alloc_type])
+            if (not isinstance(result, dict) or
+                    result.get("overallRC", 1) != 0):
+                rh.printSysLog(
+                    "Exit VMCPHandler.query_alloc_%s, no data" % label)
+                return None
+            parsed = parse_alloc_response(result.get("response") or "")
+            if parsed is None:
+                text = result.get("response") or ""
+                if not isinstance(text, str):
+                    text = str(text)
+                first = " ".join(text.split())[:200]
+                suffix = (": " + first) if first else ""
+                rh.printLn(
+                    "WS",
+                    "QUERY ALLOC %s returned no usable allocation data%s" %
+                    (alloc_type, suffix))
+            rh.printSysLog("Exit VMCPHandler.query_alloc_%s" % label)
+            return parsed
+        except Exception as exc:
+            rh.printLn("WS", "QUERY ALLOC %s failed: %s" % (alloc_type, exc))
+            return None
+
     def ssi_info(self):
         """
         Query and collect z/VM SSI cluster information using VMCP.
@@ -1023,8 +1116,10 @@ class VMCPHandler:
         rh = self._rh
         rh.printSysLog("Enter VMCPHandler.query_vswitch_details")
 
-        # vmcp's default response buffer is 8 KB and larger output is
-        # truncated with an error, so request 1 MB for the per-NIC details.
+        # vmcp's default 8 KB buffer truncates any response larger than
+        # the buffer: vmcp prints the first part, writes a truncation
+        # message to stderr, and exits with rc 2.  Request 1 MB for the
+        # per-NIC details.  vmcp accepts buffer sizes from 4K to 1M.
         results = self._run(
             ["--buffer=1M", "QUERY", "VSWITCH", "DETAILS"])
         rc = results["overallRC"]
@@ -1158,3 +1253,230 @@ class VMCPHandler:
             "Exit VMCPHandler.query_vswitch_details, rc: " + str(rc))
 
         return {"response": response, "rc": rc}
+
+
+# QUERY ALLOC is IBM-defined privilege class D (Spooling Operator).
+# A user who lacks that class does not get a dedicated authorization
+# message: CP treats the unauthorized option as invalid and replies
+# HCP003E Invalid option.  HCP013E (conflicting option) and HCP1002E
+# (volume identifier does not exist) are other QUERY ALLOC errors.
+# Any HCPnnnE message is treated as a rejected command.  General users
+# typically have only class G.  Sites can reassign classes with
+# MODIFY COMMAND.
+_HCP_MESSAGE = re.compile(r'HCP[A-Z0-9]*\d{3,4}[EIW]', re.IGNORECASE)
+
+# vmcp's default 8 KB buffer truncates any response larger than the
+# buffer (vmcp prints the first part, writes a truncation message to
+# stderr, and exits with rc 2).  --buffer=256K avoids that for large
+# QUERY ALLOC reports (vmcp accepts 4K-1M).
+_ALLOC_BUFFER = "--buffer=256K"
+# Stop a hung QUERY ALLOC so it cannot hold the host-info cache lock.
+# Five seconds matches the exporter CP command timeout.
+_ALLOC_VMCP_TIMEOUT_SECONDS = 5
+_MAX_ALLOC_CHARS = 256 * 1024
+_MAX_ALLOC_LINES = 4096
+
+# z/VM 7.3/7.4 abbreviate large QUERY ALLOC counts (nnnnK, nnnnM, ...).
+# IBM docs do not state the base.  Observed output matches 1024:
+# 10,016 cylinders (1,802,880 pages) is shown as 1761K.  Abbreviated
+# values are rounded.
+_ALLOC_SUFFIX = {
+    '': 1,
+    'K': 1024,
+    'M': 1024 ** 2,
+    'G': 1024 ** 3,
+    'T': 1024 ** 4,
+    'P': 1024 ** 5,
+}
+_ALLOC_COUNT = re.compile(r'^(\d+(?:\.\d+)?)([KMGTP])?$', re.IGNORECASE)
+_ALLOC_PERCENT = re.compile(r'^(\d+(?:\.\d+)?)%$')
+_ALLOC_VOLID = re.compile(r'^[A-Z0-9@#$]{1,6}$', re.IGNORECASE)
+_ALLOC_RDEV = re.compile(r'^[0-9A-F]{1,4}$', re.IGNORECASE)
+_ALLOC_FLAGS = {'DR', 'D', 'ACT', 'DUMP', 'SHARED'}
+_ALLOC_SUMMARY = {'SUMMARY', 'USABLE', 'DRAINING'}
+
+
+def _alloc_count(token):
+    """Return an int page count, or None when the token is not one."""
+    if token == '-':
+        return None
+    match = _ALLOC_COUNT.match(token)
+    if not match:
+        return None
+    number = match.group(1)
+    value = float(number) if '.' in number else int(number)
+    suffix = (match.group(2) or '').upper()
+    return int(value * _ALLOC_SUFFIX[suffix])
+
+
+def _alloc_percent(token):
+    """Return an int percent, or None."""
+    if not token or token == '-':
+        return None
+    match = _ALLOC_PERCENT.match(token)
+    if not match:
+        return None
+    value = float(match.group(1))
+    return int(value)
+
+
+def _split_alloc_flags(parts):
+    """Split a QUERY ALLOC data line into value tokens and flag words."""
+    data = list(parts)
+    flags = []
+    if (len(data) >= 2 and data[-2].upper() == 'NOT' and
+            data[-1].upper() == 'FOUND'):
+        flags.append('NOT_FOUND')
+        data = data[:-2]
+    while data and data[-1].upper() in _ALLOC_FLAGS:
+        flags.append(data[-1].upper())
+        data.pop()
+    return data, flags
+
+
+def _alloc_extent(volid, rdev, fields, flags):
+    """Build one extent dict from the six value columns."""
+    return {
+        "volid": volid or "",
+        "rdev": rdev or "",
+        "extent_start": _alloc_count(fields[0]),
+        "extent_end": _alloc_count(fields[1]),
+        "total": _alloc_count(fields[2]),
+        "used": _alloc_count(fields[3]),
+        "high": _alloc_count(fields[4]),
+        "percent_used": _alloc_percent(fields[5]),
+        "draining": ('DR' in flags or 'D' in flags),
+        "active": 'ACT' in flags,
+        "dump": 'DUMP' in flags,
+        "shared": 'SHARED' in flags,
+        "not_found": 'NOT_FOUND' in flags,
+    }
+
+
+def _alloc_totals(total, used, percent):
+    """Fill available, and percent when CP did not print one."""
+    available = None
+    if total is not None and used is not None:
+        available = total - used
+        if available < 0:
+            available = 0
+        if percent is None and total > 0:
+            percent = (used * 100) // total
+        elif percent is None:
+            percent = 0
+    return {
+        "total": total,
+        "used": used,
+        "available": available,
+        "percent_used": percent,
+    }
+
+
+def parse_alloc_response(text):
+    """Parse z/VM 7.3/7.4 QUERY ALLOC PAGE or QUERY ALLOC SPOOL output.
+
+    Response 2 in the CP Commands reference is a header, one line per
+    extent, then SUMMARY / usable / DRAINING totals.  volid and rdev are
+    repeated on every extent when the command is issued through vmcp
+    (DIAGNOSE X'08' into a buffer) and omitted on continuation lines
+    otherwise.  Counts may carry a K/M/G/T/P suffix.
+
+    Returns a dict with total, used, available, percent_used and volumes,
+    or None when the text is empty, an HCPxxx error, or not recognizable.
+    Never raises.
+    """
+    try:
+        return _parse_alloc_response(text)
+    except Exception:
+        return None
+
+
+def _parse_alloc_response(text):
+    if isinstance(text, bytes):
+        text = text.decode('utf-8', 'replace')
+    elif text is not None and not isinstance(text, str):
+        text = str(text)
+    if not text or not text.strip():
+        return None
+    if len(text) > _MAX_ALLOC_CHARS:
+        return None
+    if _HCP_MESSAGE.search(text):
+        return None
+
+    lines = text.splitlines()
+    if len(lines) > _MAX_ALLOC_LINES:
+        return None
+
+    summary = None
+    volumes = []
+    current_volid = ""
+    current_rdev = ""
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        parts = stripped.split()
+        first = parts[0].upper()
+        if first in ('EXTENT', 'VOLID') or first.startswith('-'):
+            continue
+        if first in _ALLOC_SUMMARY:
+            counts = []
+            percent = None
+            for token in parts[1:]:
+                if token.endswith('%'):
+                    percent = _alloc_percent(token)
+                else:
+                    count = _alloc_count(token)
+                    if count is not None:
+                        counts.append(count)
+            if len(counts) >= 2 and summary is None and first == 'SUMMARY':
+                summary = (counts[0], counts[1], percent)
+            continue
+
+        data, flags = _split_alloc_flags(parts)
+        if (len(data) >= 8 and _ALLOC_VOLID.match(data[0]) and
+                _ALLOC_RDEV.match(data[1])):
+            current_volid = data[0]
+            current_rdev = data[1]
+            fields = data[2:8]
+        elif len(data) >= 6 and (data[0] == '-' or
+                                 _alloc_count(data[0]) is not None):
+            fields = data[0:6]
+        else:
+            continue
+        volumes.append(_alloc_extent(
+            current_volid, current_rdev, fields, flags))
+
+    if summary is not None:
+        totals = _alloc_totals(summary[0], summary[1], summary[2])
+    else:
+        total = 0
+        used = 0
+        summed = False
+        incomplete = False
+        for extent in volumes:
+            if extent["shared"] or extent["not_found"]:
+                continue
+            if extent["total"] is None or extent["used"] is None:
+                # An extent CP did not mark shared or not-found, but whose
+                # counts did not parse, must not be dropped from a sum that
+                # is then reported as the host total.
+                incomplete = True
+                continue
+            total += extent["total"]
+            used += extent["used"]
+            summed = True
+        if incomplete:
+            totals = _alloc_totals(None, None, None)
+        elif summed:
+            totals = _alloc_totals(total, used, None)
+        elif volumes and all(item["not_found"] for item in volumes):
+            totals = _alloc_totals(0, 0, 0)
+        elif volumes:
+            totals = _alloc_totals(None, None, None)
+        else:
+            return None
+
+    totals["volumes"] = volumes
+    return totals

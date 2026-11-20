@@ -22,6 +22,16 @@
          "hypervisor_hostname": "OPNSTK2",
          "hypervisor_version": 640,
          "disk_used": 566,
-         "memory_mb_used": 0.0
+         "memory_mb_used": 0.0,
+         "paging_total": 1201680,
+         "paging_used": 17104,
+         "paging_available": 1184576,
+         "paging_percent_used": 1,
+         "paging_volumes": [],
+         "spool_total": 90000,
+         "spool_used": 4500,
+         "spool_available": 85500,
+         "spool_percent_used": 5,
+         "spool_volumes": []
     }
 }

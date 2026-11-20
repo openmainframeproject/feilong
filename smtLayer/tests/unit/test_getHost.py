@@ -16,9 +16,12 @@
 #    under the License.
 
 from unittest import mock
+import subprocess
+
 from smtLayer import ReqHandle
 from smtLayer import getHost
 from smtLayer.tests.unit import base
+from smtLayer.vmcpHandler import VMCPHandler
 from zvmsdk import config
 
 
@@ -268,6 +271,9 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
     def setUp(self):
         super().setUp()
         self._orig_use_smapi = config.CONF.zvm['use_smapi']
+        self._orig_alloc_cache = config.CONF.zvm['alloc_cache_seconds']
+        config.CONF.zvm['alloc_cache_seconds'] = 60
+        getHost._clear_alloc_cache()
         # Patch the heavy infrastructure that surrounds the target branch.
         self._patches = []
 
@@ -311,6 +317,8 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
         for p in reversed(self._patches):
             p.stop()
         config.CONF.zvm['use_smapi'] = self._orig_use_smapi
+        config.CONF.zvm['alloc_cache_seconds'] = self._orig_alloc_cache
+        getHost._clear_alloc_cache()
         super().tearDown()
 
     def _set_use_smapi(self, value):
@@ -434,6 +442,8 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
 
         self._mock_handler.query_storage.assert_not_called()
         self._mock_handler.query_cplevel.assert_not_called()
+        self._mock_handler.query_alloc_page.assert_not_called()
+        self._mock_handler.query_alloc_spool.assert_not_called()
 
     def test_vmcp_branch_calls_query_image_performance(self):
         self._set_use_smapi(False)
@@ -456,3 +466,181 @@ class GetGeneralInfoVmcpBranchTest(base.SMTTestCase):
             for call in self._mock_smcli.call_args_list
         ]
         self.assertNotIn("System_Performance_Information_Query", called_apis)
+
+    def test_vmcp_branch_includes_paging_and_spool(self):
+        self._set_use_smapi(False)
+        self._mock_handler.query_cplevel.return_value = ""
+        self._mock_handler.query_storage.return_value = {
+            "lparMemTotal": "65536M",
+            "lparMemStandby": "0",
+        }
+        self._mock_handler.query_image_performance.return_value = {
+            "overallRC": 0,
+            "response": "MEMORY_IN_USE=600000",
+        }
+        self._mock_handler.query_alloc_page.return_value = {
+            "total": 600840,
+            "used": 29214,
+            "available": 571626,
+            "percent_used": 4,
+            "volumes": [{"volid": "PAG001", "total": 600840}],
+        }
+        self._mock_handler.query_alloc_spool.return_value = {
+            "total": 90000,
+            "used": 4500,
+            "available": 85500,
+            "percent_used": 5,
+            "volumes": [],
+        }
+
+        rh = _make_rh()
+        rc = getHost.getGeneralInfo(rh)
+
+        self._mock_handler.query_alloc_page.assert_called_once_with()
+        self._mock_handler.query_alloc_spool.assert_called_once_with()
+        combined = "\n".join(
+            str(call) for call in rh.printLn.call_args_list)
+        self.assertIn("Paging Total: 600840", combined)
+        self.assertIn("Paging Used: 29214", combined)
+        self.assertIn("Paging Available: 571626", combined)
+        self.assertIn("Paging Percent Used: 4", combined)
+        self.assertIn("PAG001", combined)
+        self.assertIn("Spool Total: 90000", combined)
+        self.assertIn("Spool Used: 4500", combined)
+        self.assertIn("Spool Available: 85500", combined)
+        self.assertIn("Spool Percent Used: 5", combined)
+        self.assertIn("Spool Volumes: []", combined)
+        self.assertEqual(0, rc)
+
+    def test_vmcp_branch_omits_alloc_when_query_returns_none(self):
+        self._set_use_smapi(False)
+        self._mock_handler.query_cplevel.return_value = ""
+        self._mock_handler.query_storage.return_value = {
+            "lparMemTotal": "65536M",
+            "lparMemStandby": "0",
+        }
+        self._mock_handler.query_image_performance.return_value = {
+            "overallRC": 0,
+            "response": "MEMORY_IN_USE=600000",
+        }
+        self._mock_handler.query_alloc_page.return_value = None
+        self._mock_handler.query_alloc_spool.return_value = None
+
+        rh = _make_rh()
+        getHost.getGeneralInfo(rh)
+
+        combined = "\n".join(
+            str(call) for call in rh.printLn.call_args_list)
+        self.assertNotIn("Paging Total:", combined)
+        self.assertNotIn("Spool Total:", combined)
+
+    def _ready_vmcp_host(self):
+        self._set_use_smapi(False)
+        self._mock_handler.query_cplevel.return_value = ""
+        self._mock_handler.query_storage.return_value = {
+            "lparMemTotal": "65536M",
+            "lparMemStandby": "0",
+        }
+        self._mock_handler.query_image_performance.return_value = {
+            "overallRC": 0,
+            "response": "MEMORY_IN_USE=1",
+        }
+
+    def test_alloc_cache_hit_within_ttl(self):
+        self._ready_vmcp_host()
+        getHost._clear_alloc_cache()
+        self._mock_handler.query_alloc_page.return_value = {
+            "total": 100, "used": 40, "available": 60,
+            "percent_used": 40, "volumes": [],
+        }
+        self._mock_handler.query_alloc_spool.return_value = {
+            "total": 50, "used": 5, "available": 45,
+            "percent_used": 10, "volumes": [],
+        }
+        # Miss stores expires at 1000+60.  1030 is still inside the TTL.
+        times = [1000.0, 1000.0, 1030.0]
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
+            getHost.getGeneralInfo(_make_rh())
+            rh = _make_rh()
+            getHost.getGeneralInfo(rh)
+        self.assertEqual(1, self._mock_handler.query_alloc_page.call_count)
+        self.assertEqual(1, self._mock_handler.query_alloc_spool.call_count)
+        combined = "\n".join(
+            str(call) for call in rh.printLn.call_args_list)
+        self.assertIn("Paging Total: 100", combined)
+        self.assertIn("Spool Total: 50", combined)
+
+    def test_alloc_cache_refreshes_after_ttl(self):
+        self._ready_vmcp_host()
+        getHost._clear_alloc_cache()
+        self._mock_handler.query_alloc_page.side_effect = [
+            {"total": 100, "used": 40, "available": 60,
+             "percent_used": 40, "volumes": []},
+            {"total": 200, "used": 80, "available": 120,
+             "percent_used": 40, "volumes": []},
+        ]
+        self._mock_handler.query_alloc_spool.side_effect = [
+            {"total": 50, "used": 5, "available": 45,
+             "percent_used": 10, "volumes": []},
+            {"total": 80, "used": 8, "available": 72,
+             "percent_used": 10, "volumes": []},
+        ]
+        # 1061 is past expires 1060, so the second call queries again.
+        times = [1000.0, 1000.0, 1061.0, 1061.0]
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
+            getHost.getGeneralInfo(_make_rh())
+            rh = _make_rh()
+            getHost.getGeneralInfo(rh)
+        self.assertEqual(2, self._mock_handler.query_alloc_page.call_count)
+        self.assertEqual(2, self._mock_handler.query_alloc_spool.call_count)
+        combined = "\n".join(
+            str(call) for call in rh.printLn.call_args_list)
+        self.assertIn("Paging Total: 200", combined)
+        self.assertIn("Spool Total: 80", combined)
+
+    def test_alloc_cache_keeps_failure_within_ttl(self):
+        self._ready_vmcp_host()
+        getHost._clear_alloc_cache()
+        self._mock_handler.query_alloc_page.return_value = None
+        self._mock_handler.query_alloc_spool.return_value = None
+        times = [2000.0, 2000.0, 2010.0]
+        with mock.patch('smtLayer.getHost.time.monotonic', side_effect=times):
+            getHost.getGeneralInfo(_make_rh())
+            rh = _make_rh()
+            getHost.getGeneralInfo(rh)
+        self.assertEqual(1, self._mock_handler.query_alloc_page.call_count)
+        self.assertEqual(1, self._mock_handler.query_alloc_spool.call_count)
+        combined = "\n".join(
+            str(call) for call in rh.printLn.call_args_list)
+        self.assertNotIn("Paging Total:", combined)
+        self.assertNotIn("Spool Total:", combined)
+
+    def test_alloc_timeout_releases_lock_for_the_next_call(self):
+        getHost._clear_alloc_cache()
+        rh = _make_rh()
+        rh.results = {
+            'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+            'strError': '', 'response': ['kept'],
+        }
+        handler = VMCPHandler(rh)
+
+        def _timeout(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get('timeout', 5))
+
+        with mock.patch('smtLayer.vmcpHandler.subprocess.check_output',
+                        side_effect=_timeout):
+            page, spool = getHost._cached_alloc(handler)
+        self.assertIsNone(page)
+        self.assertIsNone(spool)
+        self.assertEqual(0, rh.results['overallRC'])
+        self.assertEqual(['kept'], rh.results['response'])
+        self.assertTrue(getHost._alloc_cache_lock.acquire(False))
+        getHost._alloc_cache_lock.release()
+
+        with mock.patch(
+                'smtLayer.vmcpHandler.subprocess.check_output') as mock_check:
+            page2, spool2 = getHost._cached_alloc(handler)
+        mock_check.assert_not_called()
+        self.assertIsNone(page2)
+        self.assertIsNone(spool2)
+        self.assertEqual(0, rh.results['overallRC'])
