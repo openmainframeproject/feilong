@@ -598,3 +598,90 @@ class VMOps(object):
         # Do resize
         self._smtclient.resize_memory(userid, memory)
         LOG.info("Complete resize memory on vm %s", userid)
+
+    def rename_guest(self, old_userid, new_userid):
+        """Rename a virtual machine.
+        Calls image_rename_dm() which performs the SMAPI rename, then updates
+        the local guests, switch and fcp tables and the vswitch
+        authorization. Then the guest folder is moved (a failure is only
+        logged) and finally the SMAPI namelist is updated. The updates are
+        not atomic (the tables are in separate databases): if one of them
+        fails after the SMAPI rename, the remaining table updates are skipped
+        and the error is raised to the caller, with the steps that failed and
+        that were done, so that the state can be corrected manually. The
+        guest folder and the namelist are still updated in this case, on a
+        best effort basis, as they follow the directory entry.
+        :param str old_userid: Current userid of the VM
+        :param str new_userid: New userid for the VM
+        :returns: Dictionary with rename result
+        :raises: SDKConflictError if the guest is not powered off
+        :raises: SDKSMTRequestFailed if the SMAPI rename fails, nothing is
+                 changed in this case
+        :raises: SDKGuestOperationError if a local update fails after the
+                 SMAPI rename succeeded
+        """
+        old_userid = old_userid.upper()
+        new_userid = new_userid.upper()
+
+        # the guest must be powered off to be renamed
+        if self._smtclient.get_power_state(old_userid) != 'off':
+            LOG.error("Failed to rename guest %s, error: guest is not "
+                      "powered off." % old_userid)
+            raise exception.SDKConflictError(modID='guest', rs=25,
+                                             userid=old_userid)
+
+        LOG.info("Renaming VM from '%s' to '%s'", old_userid, new_userid)
+        try:
+            self._smtclient.image_rename_dm(old_userid, new_userid)
+        except exception.SDKGuestOperationError as e:
+            # rs=18: the directory entry is already renamed, only a local
+            # update failed. Keep the guest folder and the namelist in sync
+            # with the directory, then report the original error.
+            renamed_in_directory = (e.results or {}).get('rs') == 18
+            LOG.error("Rename failed for VM '%s' to '%s': %s",
+                      old_userid, new_userid, str(e))
+            if renamed_in_directory:
+                self._update_folder_and_namelist(old_userid, new_userid,
+                                                 best_effort=True)
+            raise
+        except exception.SDKBaseException as e:
+            LOG.error("Rename failed for VM '%s' to '%s': %s",
+                      old_userid, new_userid, str(e))
+            raise
+
+        self._update_folder_and_namelist(old_userid, new_userid)
+
+        LOG.info("Successfully renamed VM from '%s' to '%s'",
+                 old_userid, new_userid)
+        return {'old_userid': old_userid, 'new_userid': new_userid}
+
+    def _update_folder_and_namelist(self, old_userid, new_userid,
+                                    best_effort=False):
+        """Follow the rename of the directory entry in the guest folder and
+        in the SMAPI namelist.
+
+        The guest folder is always moved on a best effort basis, the
+        directory is already renamed. The namelist is updated like
+        delete_vm() and create_vm() do; with best_effort a failure is only
+        logged, so that it does not hide the error being reported.
+        """
+        # move the persistent guest folder (console.log), so that the old
+        # one is not orphaned
+        try:
+            self._pathutils.rename_guest_path(old_userid, new_userid)
+        except Exception as err:
+            LOG.warning("Failed to move the guest folder of '%s' to '%s': %s",
+                        old_userid, new_userid, err)
+
+        # update the smapi namelist: remove the old userid, add the new one
+        steps = (('remove', self._smtclient.namelist_remove, old_userid),
+                 ('add', self._smtclient.namelist_add, new_userid))
+        for action, func, userid in steps:
+            if not best_effort:
+                func(self._namelist, userid)
+                continue
+            try:
+                func(self._namelist, userid)
+            except Exception as err:
+                LOG.warning("Failed to %s '%s' in the namelist %s: %s",
+                            action, userid, self._namelist, err)

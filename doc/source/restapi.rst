@@ -1654,6 +1654,84 @@ Delete a NIC on the guest.
 
   No response.
 
+Rename guest
+------------
+
+**PUT /guests/{userid}/rename**
+
+Rename a guest: the userid of the guest is changed in the z/VM user directory
+(using DirMaint) and in the Feilong database (guests, switch and FCP tables).
+The id, metadata and comments of the guest are kept, and the SMAPI namelist and
+the vswitch authorization are updated with the new userid.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - new_userid: guest_new_userid
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_rename_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  A dictionary with the keys ``old_userid`` and ``new_userid``, in the
+  ``output`` of the response.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_rename_response.tpl
+   :language: javascript
+
+.. note::
+
+   - This API requires APAR VM66893 (z/VM 7.4 CMS Feature Pack 6, PTF
+     UM90596) to be applied on the z/VM system. The APAR applies to z/VM 7.4
+     only. It adds the SMAPI API that renames a userid in the user directory.
+   - On systems that use RACF, also see APAR VM66895 (z/VM 7.4 DirMaint
+     Feature Pack 2): it fixes RACF profile properties not being retained when
+     DirMaint renames a user with CHNGID.
+   - The guest must be powered off, otherwise a 409 (conflict) error is returned.
+   - The new userid must be 1-8 alphanumeric characters, otherwise the request
+     is rejected with a 400 (bad request) error.
+   - The new userid must not exist in the Feilong database nor on the z/VM
+     system, and no switch or FCP record of the Feilong database may be left
+     for it, otherwise a 409 (already exist) error is returned.
+   - The vswitch authorization of the guest is moved to the new userid together
+     with its user VLAN ids, promiscuous mode and OSD simulation setting. The
+     port number of a port-based vswitch is not copied: the new userid gets a
+     port assigned by CP, and a warning is written to the Feilong log. Check
+     the port assignment of the guest after the rename.
+   - The operation can not be undone, rename the guest again to revert it.
+   - The SMAPI API behind this request, ``Image_Rename_DM``, renames only user
+     and identity entries of the user directory (not PROFILE or SUBCONFIG
+     entries), one name per call. SMAPI itself rejects a guest that is logged
+     on (RC 400, RS 28) and a new name that is already defined (RC 400,
+     RS 8). If the SMAPI call fails, nothing was changed.
+
+**Partial failure**
+
+The rename changes the z/VM user directory first, then the local databases
+(guests, switch and FCP tables) and the vswitch authorization. These can not
+be done in one transaction. If one of the local updates fails after the
+directory was renamed, the guest is already renamed on the z/VM system and
+the API returns HTTP status code 500 with ``rs`` 18. The ``errmsg`` names the
+step that failed and lists the steps that were updated before it. The
+remaining updates are skipped and **must be corrected manually**; the guest
+folder and the SMAPI namelist are still updated. Do not retry the request
+with the same userids: the guest does not exist any more under the old userid.
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_rename_partial_failure_response.tpl
+   :language: javascript
+
+
 Host
 ====
 
