@@ -296,7 +296,7 @@ pcif = {
     'type': ['string'],
     'minLength': 1,
     'maxLength': 17,
-    'pattern': '^(\w{1,8}:\w{1,8})$'
+    'pattern': '^([0-9a-zA-Z]{1,8}:[0-9a-zA-Z]{1,8}|[0-9a-zA-Z]{1,8}|[0-9a-fA-F:.]+)$'
 }
 
 

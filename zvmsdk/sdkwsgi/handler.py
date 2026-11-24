@@ -119,6 +119,10 @@ ROUTE_LIST = (
     ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
     }),
+    ('/guests/{userid}/pcif', {
+        'POST': guest.guest_attach_pcif,
+        'DELETE': guest.guest_detach_pcif,
+    }),
     ('/guests/{userid}/disks', {
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,

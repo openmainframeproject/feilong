@@ -20,6 +20,7 @@ import shutil
 
 from zvmsdk.tests.unit import base
 from zvmsdk import dist
+from zvmsdk import exception
 from zvmsdk import networkops
 
 
@@ -293,3 +294,101 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                      active=True)
         dedicate_OSA.assert_called_with("fakeid", 'F000', vdev='1000',
                                         active=True)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.attach_pcif')
+    def test_attach_pcif(self, attach_pcif):
+        self.networkops.attach_pcif("fakeid", '00000112', active=True)
+        attach_pcif.assert_called_with("fakeid", '00000112', active=True)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.detach_pcif')
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info',
+                create=True)
+    def _zdirect_delete(self, os_version, intf_name, intf_info, execute_cmd,
+                        detach_pcif):
+        intf_info.return_value = intf_name
+        self.networkops.zdirect_delete_network_configuration(
+            "fakeid", os_version, '00000112', active=True)
+        intf_info.assert_called_once_with("fakeid", '00000112')
+        detach_pcif.assert_called_once_with("fakeid", '00000112', active=True)
+        return execute_cmd
+
+    def test_zdirect_delete_network_configuration_rhel(self):
+        execute_cmd = self._zdirect_delete('rhel9.2', 'enc112')
+        execute_cmd.assert_called_once_with(
+            "fakeid", 'rm -f /etc/sysconfig/network-scripts/ifcfg-enc112')
+
+    def test_zdirect_delete_network_configuration_sles(self):
+        execute_cmd = self._zdirect_delete('sles15sp4', 'enc112')
+        execute_cmd.assert_called_once_with(
+            "fakeid", 'rm -f /etc/sysconfig/network/ifcfg-enc112')
+
+    def test_zdirect_delete_network_configuration_ubuntu20(self):
+        execute_cmd = self._zdirect_delete('ubuntu22.04', 'enc112')
+        execute_cmd.assert_called_once_with(
+            "fakeid", 'rm -f /etc/netplan/enc112.yaml')
+
+    def test_zdirect_delete_network_configuration_ubuntu16(self):
+        execute_cmd = self._zdirect_delete('ubuntu16.04', 'enc112')
+        execute_cmd.assert_called_once_with(
+            "fakeid", 'rm -f /etc/network/interfaces.d/enc112')
+
+    def test_zdirect_delete_network_configuration_rhcos(self):
+        # nothing to remove in the guest, the pcif is still detached
+        execute_cmd = self._zdirect_delete('rhcos4', 'enc112')
+        execute_cmd.assert_not_called()
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.detach_pcif')
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info',
+                create=True)
+    def test_zdirect_delete_network_configuration_guest_cmd_failed(
+            self, intf_info, execute_cmd, detach_pcif):
+        # the pcif must still be detached if the guest can not be cleaned
+        intf_info.side_effect = exception.SDKInternalError(msg="fake")
+        self.networkops.zdirect_delete_network_configuration(
+            "fakeid", 'rhel9', '00000112', active=True)
+        execute_cmd.assert_not_called()
+        detach_pcif.assert_called_once_with("fakeid", '00000112',
+                                            active=True)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.detach_pcif')
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info',
+                create=True)
+    def test_zdirect_delete_network_configuration_rm_failed(
+            self, intf_info, execute_cmd, detach_pcif):
+        intf_info.return_value = 'enc112'
+        execute_cmd.side_effect = exception.SDKSMTRequestFailed(
+            {'overallRC': 1}, "fake")
+        self.networkops.zdirect_delete_network_configuration(
+            "fakeid", 'rhel9', '00000112', active=True)
+        detach_pcif.assert_called_once_with("fakeid", '00000112',
+                                            active=True)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.detach_pcif')
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info',
+                create=True)
+    def test_zdirect_delete_network_configuration_inactive(
+            self, intf_info, execute_cmd, detach_pcif):
+        # no interface in the guest to clean when it is not active
+        self.networkops.zdirect_delete_network_configuration(
+            "fakeid", 'rhel9', '00000112', active=False)
+        intf_info.assert_not_called()
+        execute_cmd.assert_not_called()
+        detach_pcif.assert_called_once_with("fakeid", '00000112',
+                                            active=False)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.detach_pcif')
+    @mock.patch('zvmsdk.smtclient.SMTClient.execute_cmd')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info',
+                create=True)
+    def test_zdirect_delete_network_configuration_unknown_os(
+            self, intf_info, execute_cmd, detach_pcif):
+        # an unsupported os_version can not stop the pcif detach either
+        self.networkops.zdirect_delete_network_configuration(
+            "fakeid", 'unknownos1', '00000112', active=True)
+        execute_cmd.assert_not_called()
+        detach_pcif.assert_called_once_with("fakeid", '00000112',
+                                            active=True)
