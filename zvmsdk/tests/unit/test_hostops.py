@@ -98,6 +98,10 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(host_info['disk_total'], 0)
         self.assertEqual(host_info['disk_used'], 0)
         self.assertEqual(host_info['disk_available'], 0)
+        self.assertIsNone(host_info['paging_total'])
+        self.assertIsNone(host_info['paging_volumes'])
+        self.assertIsNone(host_info['spool_total'])
+        self.assertIsNone(host_info['spool_volumes'])
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_info")
     def test_get_diskpool_info(self, get_diskpool_info):
@@ -186,6 +190,87 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             if "Not found the volume info in " in exc:
                 pass
         self.assertEqual(2, get_vol_infos.call_count)
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_paging_and_spool(self, get_host_info,
+                                            diskpool_get_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 7.3.0",
+            "hypervisor_name": "fakenode",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            "paging_total": "600840",
+            "paging_used": "29214",
+            "paging_available": "571626",
+            "paging_percent_used": "4",
+            "paging_volumes": '[{"volid": "PAG001", "total": 600840}]',
+            "spool_total": "90000",
+            "spool_used": "4500",
+            "spool_available": "85500",
+            "spool_percent_used": "5",
+            "spool_volumes": "[]",
+            }
+        diskpool_get_info.return_value = {
+            "disk_total": 1,
+            "disk_used": 0,
+            "disk_available": 1,
+            }
+        base.set_conf('zvm', 'disk_pool', None)
+        host_info = self._hostops.get_info()
+        self.assertEqual(600840, host_info['paging_total'])
+        self.assertEqual(29214, host_info['paging_used'])
+        self.assertEqual(571626, host_info['paging_available'])
+        self.assertEqual(4, host_info['paging_percent_used'])
+        self.assertEqual([{"volid": "PAG001", "total": 600840}],
+                         host_info['paging_volumes'])
+        self.assertEqual(90000, host_info['spool_total'])
+        self.assertEqual(4500, host_info['spool_used'])
+        self.assertEqual(85500, host_info['spool_available'])
+        self.assertEqual(5, host_info['spool_percent_used'])
+        self.assertEqual([], host_info['spool_volumes'])
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    def test_get_host_info_ignores_bad_alloc_fields(self, get_host_info,
+                                                   diskpool_get_info):
+        get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
+            "zvm_host": "FAKENODE",
+            "zhcp": "fakehcp.fake.com",
+            "cec_vendor": "FAKE",
+            "cec_model": "2097",
+            "hypervisor_os": "z/VM 7.3.0",
+            "hypervisor_name": "fakenode",
+            "architecture": "s390x",
+            "lpar_cpu_total": "10",
+            "lpar_cpu_used": "10",
+            "lpar_memory_total": "16G",
+            "lpar_memory_used": "16.0G",
+            "lpar_memory_offline": "0",
+            "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
+            "paging_total": "nope",
+            "paging_volumes": "not-json",
+            "spool_percent_used": "5%",
+            }
+        diskpool_get_info.return_value = {
+            "disk_total": 1, "disk_used": 0, "disk_available": 1}
+        base.set_conf('zvm', 'disk_pool', None)
+        host_info = self._hostops.get_info()
+        self.assertEqual(10, host_info['vcpus'])
+        self.assertIsNone(host_info['paging_total'])
+        self.assertIsNone(host_info['paging_volumes'])
+        self.assertIsNone(host_info['spool_percent_used'])
 
     @mock.patch('os.path.exists', mock.MagicMock(return_value=True))
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")

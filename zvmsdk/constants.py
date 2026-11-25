@@ -41,6 +41,16 @@ RINV_HOST_KEYWORDS = {
     "lpar_memory_used": "LPAR Memory Used:",
     "lpar_memory_offline": "LPAR Memory Offline:",
     "ipl_time": "IPL Time:",
+    "paging_total": "Paging Total:",
+    "paging_used": "Paging Used:",
+    "paging_available": "Paging Available:",
+    "paging_percent_used": "Paging Percent Used:",
+    "paging_volumes": "Paging Volumes:",
+    "spool_total": "Spool Total:",
+    "spool_used": "Spool Used:",
+    "spool_available": "Spool Available:",
+    "spool_percent_used": "Spool Percent Used:",
+    "spool_volumes": "Spool Volumes:",
     }
 
 DISKPOOL_KEYWORDS = {

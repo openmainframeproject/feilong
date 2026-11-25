@@ -15,6 +15,21 @@ New features to be released with Feilong 1.6.7 (not yet released):
 * Direct access to CP through ``vmcp`` instead of SMAPI for some operations
   (new ``use_smapi`` configuration option).
 
+* Host information includes z/VM paging and spool allocation when
+  ``use_smapi`` is False. Feilong runs ``QUERY ALLOC PAGE`` and
+  ``QUERY ALLOC SPOOL`` (CP privilege class D) as part of the existing
+  host-info request and returns ``paging_total``, ``paging_used``,
+  ``paging_available``, ``paging_percent_used``, ``paging_volumes``,
+  ``spool_total``, ``spool_used``, ``spool_available``,
+  ``spool_percent_used`` and ``spool_volumes``. Counts are pages,
+  except extent_start/extent_end which are cylinder numbers on CKD
+  (ECKD) volumes and page numbers on FBA/EDEV volumes. The
+  fields are null when vmcp is unavailable or the guest lacks class D;
+  that does not fail the host-info request. Each command is
+  ``vmcp --buffer=256K``. Results, including failures, are cached in
+  the process for ``alloc_cache_seconds`` (default 60). Callers should
+  not poll host info faster than that interval.
+
 * Pluggable database backend.
 
 * Multiple disk pools.

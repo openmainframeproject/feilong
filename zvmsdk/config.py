@@ -188,6 +188,8 @@ instead of SMAPI:
 - QUERY VSWITCH DETAILS       (vswitch network byte statistics)
 - QUERY SSI                   (SSI cluster query)
 - QUERY FRAMES                (LPAR memory in use)
+- QUERY ALLOC PAGE            (paging-space allocation, privilege class D)
+- QUERY ALLOC SPOOL           (spool-space allocation, privilege class D)
 - VMRELOCATE MOVE             (live guest relocation)
 - QUERY PROCESSORS EXPANDED   (host CPU counting)
 - QUERY OSA                   (OSA device query)
@@ -203,6 +205,30 @@ Possible values:
     True   - Use SMAPI (default).
     False  - Use vmcp.
     '''),
+    Opt('alloc_cache_seconds',
+        section='zvm',
+        default=60,
+        required=False,
+        opt_type='int',
+        help='''
+How long, in seconds, to reuse QUERY ALLOC PAGE and QUERY ALLOC SPOOL
+results on the vmcp host-info path.
+
+Those two class D commands run only when use_smapi is False, and only
+as part of a host-info request. Each command is issued once as
+``vmcp --buffer=256K``. vmcp's default 8 KB buffer truncates any
+response larger than the buffer (vmcp prints the first part, writes a
+truncation message to stderr, and exits with rc 2). --buffer=256K
+avoids that for large QUERY ALLOC reports (vmcp accepts 4K-1M). The
+parsed result, including a failure such as
+a missing class D privilege, is kept in the Feilong process for this
+many seconds. Repeated host-info calls within that interval do not
+issue another CP command. Callers that need a new sample should not
+poll host info faster than this interval.
+
+The default is 60 seconds. Set to 0 to query CP on every host-info call.
+There is no background refresh.
+'''),
     Opt('user_profile',
         section='zvm',
         required=True,

@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
 import time
 
@@ -29,6 +30,32 @@ from zvmsdk import utils as zvmutils
 _HOSTOPS = None
 CONF = config.CONF
 LOG = log.LOG
+
+
+def _optional_int(value):
+    """Host-info counts are decimal strings.  Unknown stays None."""
+    if value is None or value == '':
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        LOG.warning("Ignoring unparsable allocation count %r", value)
+        return None
+
+
+def _optional_volumes(value):
+    """Volume detail is a JSON list, or None when it was not collected."""
+    if value is None or value == '':
+        return None
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        LOG.warning("Ignoring unparsable allocation volume detail")
+        return None
+    if not isinstance(parsed, list):
+        LOG.warning("Ignoring allocation volume detail that is not a list")
+        return None
+    return parsed
 
 
 def get_hostops():
@@ -81,6 +108,26 @@ class HOSTOps(object):
             else:
                 host_info['zvm_host'] = inv_info['zvm_host']
                 host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
+            host_info['paging_total'] = _optional_int(
+                inv_info.get('paging_total'))
+            host_info['paging_used'] = _optional_int(
+                inv_info.get('paging_used'))
+            host_info['paging_available'] = _optional_int(
+                inv_info.get('paging_available'))
+            host_info['paging_percent_used'] = _optional_int(
+                inv_info.get('paging_percent_used'))
+            host_info['paging_volumes'] = _optional_volumes(
+                inv_info.get('paging_volumes'))
+            host_info['spool_total'] = _optional_int(
+                inv_info.get('spool_total'))
+            host_info['spool_used'] = _optional_int(
+                inv_info.get('spool_used'))
+            host_info['spool_available'] = _optional_int(
+                inv_info.get('spool_available'))
+            host_info['spool_percent_used'] = _optional_int(
+                inv_info.get('spool_percent_used'))
+            host_info['spool_volumes'] = _optional_volumes(
+                inv_info.get('spool_volumes'))
 
         disk_pool_list = CONF.zvm.disk_pool
         disk_pools_total = 0

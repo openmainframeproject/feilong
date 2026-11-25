@@ -1657,6 +1657,38 @@ Get host information.
 
   - output: host_info
 
+.. note::
+
+   When ``use_smapi`` is False, host info also includes paging and spool
+   allocation collected with ``QUERY ALLOC PAGE`` and ``QUERY ALLOC
+   SPOOL``. Those CP commands require privilege class D on the guest
+   that hosts Feilong. The new fields are:
+
+   * ``paging_total``, ``paging_used``, ``paging_available``,
+     ``paging_percent_used`` — paging-space pages from the CP SUMMARY
+     line. ``paging_available`` is total minus used.
+   * ``paging_volumes`` — one dict per PAGE extent (``volid``, ``rdev``,
+     ``extent_start``, ``extent_end``, ``total``, ``used``, ``high``,
+     ``percent_used``, ``draining``, ``active``, ``dump``, ``shared``,
+     ``not_found``).
+   * ``spool_total``, ``spool_used``, ``spool_available``,
+     ``spool_percent_used`` and ``spool_volumes`` — the same for SPOOL.
+
+   Each count is null, and each volume list is null, when vmcp is
+   unavailable, the guest lacks class D, or the output cannot be parsed.
+   Host info still succeeds in that case. With ``use_smapi`` left at its
+   default (True) the commands are not issued and the fields are null.
+
+   Each command is ``vmcp --buffer=256K``. vmcp's default 8 KB buffer
+   truncates any response larger than the buffer (vmcp prints the first
+   part, writes a truncation message to stderr, and exits with rc 2).
+   ``--buffer=256K`` avoids that for large QUERY ALLOC reports (vmcp
+   accepts 4K-1M). The result, including a failure,
+   is cached in the Feilong process for ``alloc_cache_seconds``
+   (default 60 seconds). Callers should not poll ``GET /host`` faster
+   than that interval if they need a new sample. There is no
+   background refresh.
+
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_info.tpl

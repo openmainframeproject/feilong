@@ -169,6 +169,12 @@ Preparation on BYOL
       * - ``QUERY FRAMES``
         - A, B, E
         - Retrieve system frame and memory performance information
+      * - ``QUERY ALLOC PAGE``
+        - D
+        - Paging-space total, used, available and percent used
+      * - ``QUERY ALLOC SPOOL``
+        - D
+        - Spool-space total, used, available and percent used
       * - ``VMRELOCATE MOVE <userid> TO <target>``
         - A, B, C, E
         - Relocate a guest to another SSI member
@@ -206,6 +212,19 @@ Preparation on BYOL
    Class G is included in every z/VM user by default. The other classes
    must be added explicitly to the BYOL's directory entry. Add only the
    classes needed for the operations you want to enable via vmcp.
+
+   ``QUERY ALLOC PAGE`` and ``QUERY ALLOC SPOOL`` run only as part of
+   host info, and only when ``use_smapi`` is False. Each command is
+   ``vmcp --buffer=256K``. vmcp's default 8 KB buffer truncates any
+   response larger than the buffer (vmcp prints the first part, writes
+   a truncation message to stderr, and exits with rc 2).
+   ``--buffer=256K`` avoids that for large QUERY ALLOC reports (vmcp
+   accepts 4K-1M). The result, including a failure such as a missing
+   class D
+   privilege, is cached in the Feilong process for
+   ``alloc_cache_seconds`` (default 60). Callers should not poll host
+   info faster than that interval if they need a new paging or spool
+   sample.
 
 .. note::
    Preparation step 2, step 3, step 6, and step 7 require to logoff then
