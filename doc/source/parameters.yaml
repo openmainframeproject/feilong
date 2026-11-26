@@ -720,6 +720,35 @@ pcif_type:
   in: body
   required: true
   type: string
+events_since:
+  description: |
+    The ``seq`` of the last event the caller has already seen. When it is
+    not specified, no events are returned and ``last_seq`` tells the caller
+    where to start.
+  in: query
+  required: false
+  type: integer
+events_timeout:
+  description: |
+    The maximum number of seconds to wait for a new event (long poll). The
+    default is 0, which returns immediately. Values above 30 are capped
+    to 30.
+  in: query
+  required: false
+  type: integer
+host_events:
+  description: |
+    The events result. ``last_seq`` is the sequence of the newest event and
+    is to be passed as ``since`` in the next request. ``active`` is false
+    when event collection is not running; the caller should then query the
+    power state instead. ``missed`` is true when events were lost (the
+    caller was too slow or the sdkserver restarted); the caller should then
+    resynchronize with a full query. ``events`` is the list of events, each
+    with ``seq``, ``type`` (``LOGON`` or ``LOGOFF``), ``userid`` and
+    ``time`` (seconds since the epoch).
+  in: body
+  required: true
+  type: dict
 image_info:
   description: |
     The image information for a specific image or all images.

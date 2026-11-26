@@ -2531,3 +2531,28 @@ class SDKAPI(object):
         action = "get host PCIF list"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._smtclient.get_pcif_list()
+
+    def host_get_events(self, since=None, timeout=0):
+        """Get the z/VM guest logon/logoff events of the host.
+        The events are collected by the sdkserver. Call it first with
+        ``since=None`` to get ``last_seq``, then call it again with the
+        ``last_seq`` of the previous result to receive only newer events.
+        With ``timeout`` > 0 the call waits (long poll) until an event
+        arrives or the timeout expires.
+        :param int since: sequence of the last event already seen, or None.
+        :param int timeout: max seconds to wait for a new event,
+            0 to return immediately. Capped at 30 seconds.
+        :returns: dict
+            {"last_seq": 1763884800123,
+             "active": True,
+             "missed": False,
+             "events": [{"seq": 1763884800123, "type": "LOGOFF",
+                         "userid": "LINUX001", "time": 1763884800}]}
+            ``active`` is False when event collection is not running, the
+            caller should then fall back to querying the power state.
+            ``missed`` is True when events were lost, the caller should then
+            resynchronize with a full query.
+        """
+        action = "get host events"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_events(since, timeout)

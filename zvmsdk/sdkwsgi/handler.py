@@ -155,6 +155,9 @@ ROUTE_LIST = (
     ('/host/ssi', {
         'GET': host.host_get_ssi_info,
     }),
+    ('/host/events', {
+        'GET': host.host_get_events,
+    }),
     ('/images', {
         'POST': image.image_create,
         'GET': image.image_query

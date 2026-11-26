@@ -20,9 +20,7 @@
 #include "wrapperutils.h"
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <limits.h>
 #include <signal.h>
@@ -30,24 +28,6 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
-/*
- * Path of the named pipe (FIFO) where every event line is written.
- *
- * The FIFO is a kernel object: the filesystem entry is only a name, and no
- * event data is stored on disk.  The kernel pipe buffer (64 KB by default on
- * Linux) is discarded once every process has closed the FIFO.  A stale
- * filesystem entry left by a crashed run is harmless: openEventPipe() re-uses
- * it after verifying it is still a FIFO owned by the current user, and the
- * buffer is always empty at that point because all prior fds have been closed.
- *
- * NOTE: This path is shared across all concurrent Event_Subscribe invocations
- * from the same user.  Because the underlying SysV message queue (MSGKEY=999)
- * is also system-wide, running two subscribers simultaneously will cause each
- * to receive only a partial event stream.  Only one subscriber at a time is
- * currently supported.
- */
-#define EVENT_PIPE_PATH "/tmp/zvm_events_host.fifo"
 
 int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "Event_Stream_Add";
@@ -192,52 +172,12 @@ static void eventSubscribe_sighandler(int sig) {
 }
 
 /*
- * Open (creating it if needed) the event FIFO.
- *
- * The FIFO is created with the default mode 0666 (subject to the umask).
- * After opening, it is verified to be a
- * FIFO owned by the effective user, so a pre-created file or symlink at the
- * well-known path is rejected.  It is opened O_RDWR so the write end is always
- * open (readers never see EOF) and O_NONBLOCK so a full pipe can never stall
- * the subscriber.
- *
- * Returns the fd, or -1 (with a message on stderr) on failure.
+ * Write one event line to stdout and flush it, so a reader on a pipe gets
+ * the event at once instead of when the stdio buffer fills.
  */
-static int openEventPipe(void) {
-    struct stat st;
-    int fd;
-
-    if (mkfifo(EVENT_PIPE_PATH, 0666) < 0 && errno != EEXIST) {
-        fprintf(stderr, "ERROR: Could not create named pipe %s (errno=%d)\n", EVENT_PIPE_PATH, errno);
-        return -1;
-    }
-
-    fd = open(EVENT_PIPE_PATH, O_RDWR | O_NONBLOCK | O_NOFOLLOW);
-    if (fd < 0) {
-        fprintf(stderr, "ERROR: Could not open named pipe %s (errno=%d)\n", EVENT_PIPE_PATH, errno);
-        return -1;
-    }
-
-    if (fstat(fd, &st) < 0 || !S_ISFIFO(st.st_mode) || st.st_uid != geteuid()) {
-        fprintf(stderr, "ERROR: %s is not a FIFO owned by the current user\n", EVENT_PIPE_PATH);
-        close(fd);
-        return -1;
-    }
-
-    return fd;
-}
-
-/*
- * Write one event line to stdout and to the FIFO.  The line is well below
- * PIPE_BUF, so the write is all-or-nothing.  If the FIFO is full (no reader
- * keeping up) the event is dropped on the FIFO and a warning is written to stderr.
- */
-static void publishEvent(int pipe_fd, const char *line) {
+static void publishEvent(const char *line) {
     printf("%s", line);
     fflush(stdout);
-    if (write(pipe_fd, line, strlen(line)) < 0) {
-        fprintf(stderr, "WARNING: Event not written to named pipe (errno=%d): %s", errno, line);
-    }
 }
 
 /*
@@ -245,10 +185,10 @@ static void publishEvent(int pipe_fd, const char *line) {
  * to discard stale messages left by an earlier run, and at teardown to flush
  * any final messages that arrived while the signal was being processed.
  *
- * If pipe_fd is negative the messages are discarded instead of published.
+ * If publish is 0 the messages are discarded instead of published.
  * Returns the number of messages consumed.
  */
-static int drainLogonLogoff(int pipe_fd) {
+static int drainLogonLogoff(int publish) {
     int total = 0;
     char linebuf[512];
     log_message_buf logBuf;
@@ -260,7 +200,7 @@ static int drainLogonLogoff(int pipe_fd) {
 
     while (msgrcv(msqid, &logBuf, sizeof(log_message_struct), 0, IPC_NOWAIT) > 0) {
         total++;
-        if (pipe_fd < 0) {
+        if (!publish) {
             continue;
         }
         logBuf.messageStruct.userid[sizeof(logBuf.messageStruct.userid) - 1] = '\0';
@@ -268,7 +208,7 @@ static int drainLogonLogoff(int pipe_fd) {
                  (logBuf.messageStruct.eventType == 0) ? "LOGON" : "LOGOFF",
                  logBuf.messageStruct.userid,
                  logBuf.messageStruct.eventType);
-        publishEvent(pipe_fd, linebuf);
+        publishEvent(linebuf);
     }
 
     return total;
@@ -279,7 +219,7 @@ static int drainLogonLogoff(int pipe_fd) {
  * publish it.  Returns 1 if a message was published, 0 if interrupted by
  * a signal (SIGINT, SIGTERM, or SIGALRM), -1 on a hard queue error.
  */
-static int waitAndPublish(int pipe_fd) {
+static int waitAndPublish(void) {
     char linebuf[512];
     log_message_buf logBuf;
     int msqid = msgget(MSGKEY, 0);
@@ -303,13 +243,12 @@ static int waitAndPublish(int pipe_fd) {
              (logBuf.messageStruct.eventType == 0) ? "LOGON" : "LOGOFF",
              logBuf.messageStruct.userid,
              logBuf.messageStruct.eventType);
-    publishEvent(pipe_fd, linebuf);
+    publishEvent(linebuf);
     return 1;
 }
 
 int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     int option;
-    int pipe_fd;
     long timeoutSeconds = 0;   /* 0 = run until signal */
     char *endP;
     struct sigaction sa;
@@ -335,10 +274,13 @@ int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "SYNOPSIS\n"
                     "  smcli Event_Subscribe [-t timeout_seconds]\n\n"
                     "DESCRIPTION\n"
+                    "  NOTE: This command is an internal interface of the Feilong sdkserver.\n"
+                    "  Its options and output format are not stable and may change without\n"
+                    "  notice. Applications must use the Feilong REST API (GET /host/events)\n"
+                    "  instead of calling this command.\n\n"
                     "  Subscribe to z/VM logon/logoff events.  The zthin event listener runs\n"
                     "  inside this process, so events are only collected while this command\n"
-                    "  is running.  Each event is printed to stdout as a single line and also\n"
-                    "  written to the named pipe " EVENT_PIPE_PATH ".\n"
+                    "  is running.  Each event is printed to stdout as a single line.\n"
                     "  Status and error messages are written to stderr.\n\n"
                     "  Event line format:\n"
                     "    EVENT LOGON    userid=<id> type=0\n"
@@ -368,11 +310,6 @@ int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGALRM, &sa, NULL);
 
-    pipe_fd = openEventPipe();
-    if (pipe_fd < 0) {
-        return 1;
-    }
-
     /*
      * Ensure the backend thread (vmbkendMain) is running.  It creates the IPC
      * queue and signals thread_initialized_cv before returning, so the queue
@@ -381,19 +318,17 @@ int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     vmbkendCheck(vmapiContextP);
 
     if (eventSubscribe_stop) {
-        close(pipe_fd);
         return 0;
     }
 
     if (msgget(MSGKEY, 0) < 0) {
         fprintf(stderr, "ERROR: Event queue not accessible (errno=%d). "
                 "Check SMAPI connectivity.\n", errno);
-        close(pipe_fd);
         return 1;
     }
 
     /* Discard stale events left in the queue by an earlier run. */
-    drainLogonLogoff(-1);
+    drainLogonLogoff(0);
 
     /*
      * Schedule an alarm if a timeout was requested.  SIGALRM is caught by
@@ -405,17 +340,15 @@ int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     }
 
     fprintf(stderr, "INFO: Listening for z/VM logon/logoff events. Press Ctrl-C to stop.\n");
-    fprintf(stderr, "INFO: Writing events to named pipe: %s\n", EVENT_PIPE_PATH);
 
     while (!eventSubscribe_stop) {
-        if (waitAndPublish(pipe_fd) < 0) {
+        if (waitAndPublish() < 0) {
             break;
         }
     }
 
     alarm(0);   /* cancel any pending alarm */
-    drainLogonLogoff(pipe_fd);
-    close(pipe_fd);
+    drainLogonLogoff(1);
 
     fprintf(stderr, "INFO: Event_Subscribe stopped.\n");
     return 0;

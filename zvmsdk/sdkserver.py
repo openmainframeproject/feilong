@@ -18,6 +18,7 @@
 
 import json
 import six
+import signal
 import socket
 import sys
 import threading
@@ -26,6 +27,7 @@ import traceback
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
+from zvmsdk import hostevents
 from zvmsdk import log
 from zvmsdk import returncode
 
@@ -263,7 +265,18 @@ class SDKServer(object):
                 thread.start()
 
 
+def _handle_stop_signal(signum, frame):
+    # Stop the smcli subprocess of the host event monitor here, otherwise it
+    # outlives the sdkserver. The default SIGTERM action skips the finally
+    # block in start_daemon.
+    LOG.info("SDK server got signal %s, stopping", signum)
+    hostevents.stop_monitor()
+    sys.exit(0)
+
+
 def start_daemon():
+    signal.signal(signal.SIGTERM, _handle_stop_signal)
+    signal.signal(signal.SIGINT, _handle_stop_signal)
     server = SDKServer()
     try:
         server.setup()
@@ -274,6 +287,7 @@ def start_daemon():
         # This finally won't catch exceptions from child thread, so
         # the close here is safe.
         LOG.error("SDK server now stop running unexpectedly")
+        hostevents.stop_monitor()
         if server.server_socket is not None:
             server.log_info("Closing the server socket.")
             server.server_socket.close()

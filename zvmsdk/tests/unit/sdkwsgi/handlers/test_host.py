@@ -56,6 +56,20 @@ class HandlersHostTest(unittest.TestCase):
         host.host_get_guest_list(self.req)
         mock_get_guest_list.assert_called_once_with()
 
+    @mock.patch.object(host.HostAction, 'get_events')
+    def test_host_get_events(self, mock_get_events):
+        mock_get_events.return_value = ''
+        self.req.GET = {'since': '5', 'timeout': '10'}
+        host.host_get_events(self.req)
+        mock_get_events.assert_called_once_with(self.req, '5', '10')
+
+    @mock.patch.object(host.HostAction, 'get_events')
+    def test_host_get_events_defaults(self, mock_get_events):
+        mock_get_events.return_value = ''
+        self.req.GET = {}
+        host.host_get_events(self.req)
+        mock_get_events.assert_called_once_with(self.req, None, 0)
+
     @mock.patch.object(host.HostAction, 'get_info')
     def test_host_get_info(self, mock_get_info):
 

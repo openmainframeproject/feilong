@@ -1821,6 +1821,52 @@ Get the list of PCI functions (PCIFs) on the host, queried with the
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_pcif_list.tpl
    :language: javascript
 
+Get host events
+---------------
+
+**GET /host/events**
+
+Get the z/VM guest logon and logoff events of the host. The events are
+collected by the sdkserver, so a consumer does not have to poll the power
+state of every guest. With ``timeout`` the request is a long poll: it
+returns as soon as an event is available.
+
+Call it first without ``since`` to get ``last_seq``, then call it again with
+the ``last_seq`` of the previous response.
+
+.. note::
+
+   * Only guest logon (power on) and logoff (power off) events are provided.
+   * Events are kept in memory only. After an sdkserver restart, or when the
+     caller falls behind the buffer, ``missed`` is true and the caller must
+     resynchronize, for example by querying the power state of its guests.
+   * If ``active`` is false, event collection is not running and the
+     caller must fall back to querying the power state.
+   * The way the sdkserver collects the events (the ``smcli Event_Subscribe``
+     command) is internal and not stable. It is not part of this API.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - since: events_since
+  - timeout: events_timeout
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: host_events
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_events.tpl
+   :language: javascript
+
 Image(s)
 ========
 

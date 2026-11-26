@@ -25,3 +25,15 @@ volume = {
     },
     'additionalProperties': False
 }
+
+
+events = {
+    'type': 'object',
+    'properties': {
+        'since': parameter_types.single_param(
+            parameter_types.non_negative_integer),
+        'timeout': parameter_types.single_param(
+            parameter_types.non_negative_integer)
+    },
+    'additionalProperties': False
+}
