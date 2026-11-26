@@ -21,6 +21,7 @@ import time
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
+from zvmsdk import hostevents
 from zvmsdk import log
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
@@ -195,3 +196,6 @@ class HOSTOps(object):
 
     def host_get_ssi_info(self):
         return self._smtclient.host_get_ssi_info()
+
+    def get_events(self, since=None, timeout=0):
+        return hostevents.get_monitor().get_events(since, timeout)

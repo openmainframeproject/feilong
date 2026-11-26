@@ -52,6 +52,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         host_get_ssi_info.assert_called_once()
         check_userid_on_others.assert_called()
 
+    @mock.patch("zvmsdk.hostevents.HostEventMonitor.get_events")
+    def test_get_events(self, get_events):
+        get_events.return_value = {'events': []}
+        result = self._hostops.get_events(5, 10)
+        get_events.assert_called_once_with(5, 10)
+        self.assertEqual({'events': []}, result)
+
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
     def test_get_host_info(self, get_host_info, diskpool_get_info):

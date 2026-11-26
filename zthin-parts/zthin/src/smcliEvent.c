@@ -18,6 +18,16 @@
  */
 #include "smcliEvent.h"
 #include "wrapperutils.h"
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <errno.h>
+#include <ctype.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "Event_Stream_Add";
@@ -153,11 +163,195 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     return rc;
 }
 
+/* Set by signal handler so the loops exit cleanly on SIGINT/SIGTERM/SIGALRM */
+static volatile sig_atomic_t eventSubscribe_stop = 0;
+
+static void eventSubscribe_sighandler(int sig) {
+    (void) sig;
+    eventSubscribe_stop = 1;
+}
+
+/*
+ * Write one event line to stdout and flush it, so a reader on a pipe gets
+ * the event at once instead of when the stdio buffer fills.
+ */
+static void publishEvent(const char *line) {
+    printf("%s", line);
+    fflush(stdout);
+}
+
+/*
+ * Non-blocking drain of the logon/logoff IPC queue.  Used only at startup
+ * to discard stale messages left by an earlier run, and at teardown to flush
+ * any final messages that arrived while the signal was being processed.
+ *
+ * If publish is 0 the messages are discarded instead of published.
+ * Returns the number of messages consumed.
+ */
+static int drainLogonLogoff(int publish) {
+    int total = 0;
+    char linebuf[512];
+    log_message_buf logBuf;
+    int msqid = msgget(MSGKEY, 0);
+
+    if (msqid < 0) {
+        return 0;
+    }
+
+    while (msgrcv(msqid, &logBuf, sizeof(log_message_struct), 0, IPC_NOWAIT) > 0) {
+        total++;
+        if (!publish) {
+            continue;
+        }
+        logBuf.messageStruct.userid[sizeof(logBuf.messageStruct.userid) - 1] = '\0';
+        snprintf(linebuf, sizeof(linebuf), "EVENT %-8s userid=%s type=%d\n",
+                 (logBuf.messageStruct.eventType == 0) ? "LOGON" : "LOGOFF",
+                 logBuf.messageStruct.userid,
+                 logBuf.messageStruct.eventType);
+        publishEvent(linebuf);
+    }
+
+    return total;
+}
+
+/*
+ * Block until one logon/logoff message arrives on the IPC queue, then
+ * publish it.  Returns 1 if a message was published, 0 if interrupted by
+ * a signal (SIGINT, SIGTERM, or SIGALRM), -1 on a hard queue error.
+ */
+static int waitAndPublish(void) {
+    char linebuf[512];
+    log_message_buf logBuf;
+    int msqid = msgget(MSGKEY, 0);
+    ssize_t n;
+
+    if (msqid < 0) {
+        return -1;
+    }
+
+    n = msgrcv(msqid, &logBuf, sizeof(log_message_struct), 0, 0 /* blocking */);
+    if (n < 0) {
+        if (errno == EINTR) {
+            return 0;   /* interrupted by signal — caller checks eventSubscribe_stop */
+        }
+        fprintf(stderr, "ERROR: msgrcv failed (errno=%d)\n", errno);
+        return -1;
+    }
+
+    logBuf.messageStruct.userid[sizeof(logBuf.messageStruct.userid) - 1] = '\0';
+    snprintf(linebuf, sizeof(linebuf), "EVENT %-8s userid=%s type=%d\n",
+             (logBuf.messageStruct.eventType == 0) ? "LOGON" : "LOGOFF",
+             logBuf.messageStruct.userid,
+             logBuf.messageStruct.eventType);
+    publishEvent(linebuf);
+    return 1;
+}
+
 int eventSubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
-    // Skip doing this since it requires a continuously open socket
-    int rc = 0;
-    printf("Not implemented.\n");
-    return rc;
+    int option;
+    long timeoutSeconds = 0;   /* 0 = run until signal */
+    char *endP;
+    struct sigaction sa;
+
+    opterr = 0;
+    while ((option = getopt(argC, argV, "t:h?")) != -1) {
+        switch (option) {
+            case 't':
+                errno = 0;
+                timeoutSeconds = strtol(optarg, &endP, 10);
+                if (errno != 0 || endP == optarg || *endP != '\0'
+                        || timeoutSeconds < 0 || timeoutSeconds > INT_MAX) {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    printf("Usage: smcli Event_Subscribe [-t timeout_seconds]\n");
+                    return 1;
+                }
+                break;
+
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  Event_Subscribe\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli Event_Subscribe [-t timeout_seconds]\n\n"
+                    "DESCRIPTION\n"
+                    "  NOTE: This command is an internal interface of the Feilong sdkserver.\n"
+                    "  Its options and output format are not stable and may change without\n"
+                    "  notice. Applications must use the Feilong REST API (GET /host/events)\n"
+                    "  instead of calling this command.\n\n"
+                    "  Subscribe to z/VM logon/logoff events.  The zthin event listener runs\n"
+                    "  inside this process, so events are only collected while this command\n"
+                    "  is running.  Each event is printed to stdout as a single line.\n"
+                    "  Status and error messages are written to stderr.\n\n"
+                    "  Event line format:\n"
+                    "    EVENT LOGON    userid=<id> type=0\n"
+                    "    EVENT LOGOFF   userid=<id> type=1\n\n"
+                    "  Options:\n"
+                    "    -t  How many seconds to listen before exiting (0 = run forever).\n"
+                    "        Default: 0 (run until SIGINT/SIGTERM).\n");
+                return 0;
+
+            case '?':
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                printf("Usage: smcli Event_Subscribe [-t timeout_seconds]\n");
+                return 1;
+        }
+    }
+
+    /*
+     * Install signal handlers.  SA_RESTART is intentionally NOT set so that
+     * SIGINT, SIGTERM, and SIGALRM all interrupt the blocking msgrcv() with
+     * EINTR, which is how we exit the event loop without polling.
+     */
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = eventSubscribe_sighandler;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT,  &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGALRM, &sa, NULL);
+
+    /*
+     * Ensure the backend thread (vmbkendMain) is running.  It creates the IPC
+     * queue and signals thread_initialized_cv before returning, so the queue
+     * is guaranteed to exist by the time vmbkendCheck() returns.
+     */
+    vmbkendCheck(vmapiContextP);
+
+    if (eventSubscribe_stop) {
+        return 0;
+    }
+
+    if (msgget(MSGKEY, 0) < 0) {
+        fprintf(stderr, "ERROR: Event queue not accessible (errno=%d). "
+                "Check SMAPI connectivity.\n", errno);
+        return 1;
+    }
+
+    /* Discard stale events left in the queue by an earlier run. */
+    drainLogonLogoff(0);
+
+    /*
+     * Schedule an alarm if a timeout was requested.  SIGALRM is caught by
+     * eventSubscribe_sighandler, which sets eventSubscribe_stop and causes
+     * the blocking msgrcv() in waitAndPublish() to return EINTR.
+     */
+    if (timeoutSeconds > 0) {
+        alarm((unsigned int) timeoutSeconds);
+    }
+
+    fprintf(stderr, "INFO: Listening for z/VM logon/logoff events. Press Ctrl-C to stop.\n");
+
+    while (!eventSubscribe_stop) {
+        if (waitAndPublish() < 0) {
+            break;
+        }
+    }
+
+    alarm(0);   /* cancel any pending alarm */
+    drainLogonLogoff(1);
+
+    fprintf(stderr, "INFO: Event_Subscribe stopped.\n");
+    return 0;
 }
 
 int eventUnsubscribe(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {

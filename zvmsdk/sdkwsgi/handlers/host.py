@@ -76,6 +76,14 @@ class HostAction(object):
         info = self.client.send_request('host_get_ssi_info')
         return info
 
+    @validation.query_schema(host.events)
+    def get_events(self, req, since, timeout):
+        # since/timeout are validated as non-negative integers by the schema
+        since = int(since) if since is not None else None
+        info = self.client.send_request('host_get_events',
+                                        since=since, timeout=int(timeout))
+        return info
+
 
 def get_action():
     global _HOSTACTION
@@ -206,6 +214,24 @@ def host_get_ssi_info(req):
         return action.get_ssi_info()
 
     info = _host_get_ssi_info()
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_events(req):
+
+    def _host_get_events(req, since, timeout):
+        action = get_action()
+        return action.get_events(req, since, timeout)
+
+    since = req.GET.get('since')
+    timeout = req.GET.get('timeout', 0)
+    info = _host_get_events(req, since, timeout)
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

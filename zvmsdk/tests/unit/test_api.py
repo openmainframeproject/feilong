@@ -1026,6 +1026,13 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.host_get_guest_list()
         guest_list.assert_called_once_with()
 
+    @mock.patch("zvmsdk.hostops.HOSTOps.get_events")
+    def test_host_get_events(self, get_events):
+        get_events.return_value = {'events': []}
+        result = self.api.host_get_events(since=1, timeout=2)
+        get_events.assert_called_once_with(1, 2)
+        self.assertEqual({'events': []}, result)
+
     @mock.patch("zvmsdk.smtclient.SMTClient.get_pcif_list")
     def test_host_get_pcif_list(self, get_pcif_list):
         pcif_list = [{"pcif": "0000015E", "status": "ATTACHED",

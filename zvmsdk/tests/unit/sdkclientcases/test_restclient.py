@@ -1134,6 +1134,22 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_events(self, get_token, request):
+        full_uri = self.base_url + '/host/events?since=5&timeout=10'
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("host_get_events", since=5, timeout=10)
+        request.assert_called_with('GET', full_uri, data=None,
+                                   headers=self.headers, verify=False)
+
+        full_uri = self.base_url + '/host/events?timeout=0'
+        self.client.call("host_get_events")
+        request.assert_called_with('GET', full_uri, data=None,
+                                   headers=self.headers, verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_image_import(self, get_token, request):
         method = 'POST'
         image_uri = 'file:///tmp/100.img'
