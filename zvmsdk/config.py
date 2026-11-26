@@ -678,6 +678,31 @@ If the SMAPI socket connection of a long-duration operation exceeds this timeout
 the SMAPI long-duration operation will fail.
 '''
         ),
+    Opt('vmcp_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=240,
+        opt_type='int',
+        help='''
+The timeout value for a general VMCP command is specified in seconds.
+
+The default value is 240 seconds.
+If the VMCP command execution exceeds this timeout, the VMCP operation will fail.
+'''
+        ),
+    Opt('vmcp_long_call_timeout_seconds',
+        section='zvm',
+        required=False,
+        default=900,
+        opt_type='int',
+        help='''
+The timeout value for a long-duration VMCP command is specified in seconds.
+
+The default value is 900 seconds.
+If the VMCP command of a long-duration operation (e.g. VMRELOCATE) exceeds this timeout,
+the VMCP long-duration operation will fail.
+'''
+        ),
     # tests options
     Opt('images',
         section='tests',

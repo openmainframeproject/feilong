@@ -22,6 +22,7 @@ import subprocess
 
 from smtLayer import msgs
 from smtLayer import vmUtils
+from zvmsdk import config
 from zvmsdk import exception
 
 modId = 'VCP'
@@ -34,6 +35,14 @@ ALREADY_LOGGED_ON_PATTERN = r'HCP\w*054E'
 # CP message meaning the device is not attached.  Detach tolerates it, so
 # detaching a device that does not exist succeeds silently.
 NOT_ATTACHED_PATTERN = r'HCP\w*040E'
+# Fallback timeouts (seconds) used when the matching option in zvmsdk.conf
+# is not set.
+DEFAULT_VMCP_LONG_CALL_TIMEOUT_SECONDS = 900
+DEFAULT_VMCP_TIMEOUT_SECONDS = 240
+# vmcp commands that can run for a long time and therefore use
+# vmcp_long_call_timeout_seconds instead of vmcp_timeout_seconds.
+# To give another command the long timeout, add its name here (upper case).
+VMCP_LONG_CALL_COMMANDS = ('VMRELOCATE',)
 
 
 class VMCPHandler:
@@ -47,7 +56,25 @@ class VMCPHandler:
         """
         self._rh = rh
 
-    def _run(self, vmcp_args, tolerated=None, output=False):
+    @staticmethod
+    def _get_timeout(command=None):
+        """
+        Return the vmcp timeout in seconds, read from zvmsdk.conf.
+
+        Input:
+           command - optional first vmcp token, e.g. "VMRELOCATE".  If it is
+                     in VMCP_LONG_CALL_COMMANDS the long-call timeout is
+                     returned, otherwise the general timeout.
+        """
+        if command and command.upper() in VMCP_LONG_CALL_COMMANDS:
+            return getattr(config.CONF.zvm,
+                           'vmcp_long_call_timeout_seconds',
+                           DEFAULT_VMCP_LONG_CALL_TIMEOUT_SECONDS)
+        return getattr(config.CONF.zvm,
+                       'vmcp_timeout_seconds',
+                       DEFAULT_VMCP_TIMEOUT_SECONDS)
+
+    def _run(self, vmcp_args, tolerated=None, output=False, timeout=None):
         """
         Execute one vmcp sub-command.
 
@@ -60,6 +87,9 @@ class VMCPHandler:
            tolerated - optional regex (str).  If the command fails and its
                        output matches, the failure is tolerated: nothing is
                        recorded in the request results and overallRC is 0.
+           output    - if True, include 'output' with error text in result
+           timeout   - optional timeout in seconds. If None, the timeout is
+                       determined from configuration.
 
         Output:
            dict with keys:
@@ -68,14 +98,29 @@ class VMCPHandler:
              overallRC  - 0 on success, non-zero on failure
         """
         rh = self._rh
+
+        if timeout is None:
+            timeout = self._get_timeout(vmcp_args[0] if vmcp_args else None)
+
         cmd = ["sudo", "/sbin/vmcp"] + vmcp_args
         strCmd = ' '.join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
             raw = subprocess.check_output(
-                cmd, close_fds=True, stderr=subprocess.STDOUT)
+                cmd, close_fds=True, stderr=subprocess.STDOUT, timeout=timeout)
             return {"response": bytes.decode(raw, errors='replace'),
                     "overallRC": 0}
+        except subprocess.TimeoutExpired as e:
+            err_text = (bytes.decode(e.output, errors='replace')
+                        if e.output else "Command timed out after %s seconds" % timeout)
+            msg = msgs.msg['0421'][1] % (
+                modId, strCmd, type(e).__name__, str(e))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0421'][0])
+            result = {"response": "", "overallRC": 1}
+            if output:
+                result["output"] = err_text
+            return result
         except subprocess.CalledProcessError as e:
             err_text = (bytes.decode(e.output, errors='replace')
                         if e.output else "")
@@ -97,7 +142,7 @@ class VMCPHandler:
             rh.updateResults(msgs.msg['0421'][0])
             return {"response": "", "overallRC": 1}
 
-    def _run_for(self, userid, cp_cmd):
+    def _run_for(self, userid, cp_cmd, timeout=None):
         """
         Execute a vmcp "FOR <userid> CMD <cp_cmd>" call.
 
@@ -107,6 +152,8 @@ class VMCPHandler:
         Input:
            userid  - target z/VM guest userid, e.g. "KUNA0006"
            cp_cmd  - CP command string, e.g. "DEFINE NIC 0600 TYPE QDIO"
+           timeout - optional timeout in seconds. If None, the timeout is
+                     determined from configuration.
 
         Output:
            dict with keys:
@@ -114,6 +161,10 @@ class VMCPHandler:
              overallRC  - 0 on success, non-zero on failure
         """
         rh = self._rh
+
+        if timeout is None:
+            timeout = self._get_timeout()
+
         vmcp_args = "FOR %s CMD %s" % (userid, cp_cmd)
         strCmd = 'sudo /sbin/vmcp "%s"' % vmcp_args
         rh.printSysLog("Invoking: " + strCmd)
@@ -121,12 +172,26 @@ class VMCPHandler:
             raw = subprocess.check_output(
                 ['sudo', '/sbin/vmcp', vmcp_args],
                 close_fds=True,
-                stderr=subprocess.STDOUT)
+                stderr=subprocess.STDOUT,
+                timeout=timeout)
             return {
                 'response': bytes.decode(raw, errors='replace'),
                 'overallRC': 0,
                 'rc': 0, 'rs': 0, 'errno': 0,
                 'strError': ''
+            }
+        except subprocess.TimeoutExpired as e:
+            err_out = (bytes.decode(e.output, errors='replace')
+                       if isinstance(e.output, bytes) else (e.output or "Command timed out after %s seconds" % timeout))
+            msg = msgs.msg['0421'][1] % (
+                modId, strCmd, type(e).__name__, str(e))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0421'][0])
+            return {
+                'response': '',
+                'overallRC': 1,
+                'rc': 1, 'rs': 0, 'errno': 0,
+                'strError': str(e)
             }
         except subprocess.CalledProcessError as e:
             err_out = (bytes.decode(e.output, errors='replace')

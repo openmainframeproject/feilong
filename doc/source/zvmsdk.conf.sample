@@ -492,7 +492,7 @@
 #smapi_socket_timeout_seconds=240
 
 
-#
+# 
 # If configure the dasd group, the user can configure `swap_default_with_mdisk`
 # to create swap device with MDISK or VDISK, the default value `True` means create
 # the swap device with MDISK, if `False`, create the swap device with VDISK.
@@ -647,5 +647,26 @@
 # 
 # This param is optional
 #user_root_vdev=0100
+
+
+# 
+# The timeout value for a long-duration VMCP command is specified in seconds.
+# 
+# The default value is 900 seconds.
+# If the VMCP command of a long-duration operation (e.g. VMRELOCATE) exceeds this timeout,
+# the VMCP long-duration operation will fail.
+# 
+# This param is optional
+#vmcp_long_call_timeout_seconds=900
+
+
+# 
+# The timeout value for a general VMCP command is specified in seconds.
+# 
+# The default value is 240 seconds.
+# If the VMCP command execution exceeds this timeout, the VMCP operation will fail.
+# 
+# This param is optional
+#vmcp_timeout_seconds=240
 
 
