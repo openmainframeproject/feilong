@@ -1200,3 +1200,170 @@ class SDKAPITestCase(base.SDKTestCase):
         results = self.api.host_diskpool_get_info(details=True)
         self.assertEqual(results, disk_pool_details)
         dp_info.assert_has_calls([mock.call('fakepool1', True), mock.call('fakepool2', True)])
+
+    # ------------------------------------------------------------------
+    # guest_create_network_interface
+    # ------------------------------------------------------------------
+    @mock.patch('zvmsdk.networkops.NetworkOPS.create_nic')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.network_configuration')
+    def test_guest_create_network_interface_old_call_no_ip_addr(self, mock_net_config, mock_create_nic):
+        mock_create_nic.return_value = '1000'
+        guest_networks = [{'nic_vdev': '1000'}]
+        result = self.api.guest_create_network_interface(self.userid, 'rhel7', guest_networks)
+        mock_create_nic.assert_called_once_with(self.userid, vdev='1000', nic_id=None, mac_addr=None, active=False)
+        mock_net_config.assert_called_once_with(self.userid, 'rhel7', [{'nic_vdev': '1000'}], active=False)
+        self.assertEqual(result, [{'nic_vdev': '1000'}])
+
+    @mock.patch('zvmsdk.networkops.NetworkOPS.create_nic')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.network_configuration')
+    def test_guest_create_network_interface_with_ip_addr(self, mock_net_config, mock_create_nic):
+        mock_create_nic.return_value = '1000'
+        guest_networks = [{'nic_vdev': '1000', 'ip_addr': '192.168.1.10', 'cidr': '192.168.1.0/24'}]
+        result = self.api.guest_create_network_interface(self.userid, 'rhel7', guest_networks)
+        mock_create_nic.assert_called_once_with(self.userid, vdev='1000', nic_id=None, mac_addr=None, active=False)
+        mock_net_config.assert_called_once_with(
+            self.userid, 'rhel7',
+            [{'nic_vdev': '1000', 'ip_addr': '192.168.1.10',
+              'cidr': '192.168.1.0/24'}],
+            active=False)
+        self.assertEqual(result, [{'nic_vdev': '1000', 'ip_addr': '192.168.1.10', 'cidr': '192.168.1.0/24'}])
+
+    def test_guest_create_network_interface_empty_list(self):
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_network_interface,
+                          self.userid, 'rhel7', [])
+
+    def test_guest_create_network_interface_invalid_dns(self):
+        guest_networks = [{'nic_vdev': '1000', 'dns_addr': 'not-a-list'}]
+        self.assertRaises(exception.SDKInvalidInputTypes,
+                          self.api.guest_create_network_interface,
+                          self.userid, 'rhel7', guest_networks)
+
+        guest_networks2 = [{'nic_vdev': '1000', 'dns_addr': [123]}]
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_network_interface,
+                          self.userid, 'rhel7', guest_networks2)
+
+    def test_guest_create_network_interface_invalid_mtu(self):
+        guest_networks = [{'nic_vdev': '1000', 'mtu': 'invalid'}]
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_network_interface,
+                          self.userid, 'rhel7', guest_networks)
+
+        guest_networks2 = [{'nic_vdev': '1000', 'mtu': 100}]
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_network_interface,
+                          self.userid, 'rhel7', guest_networks2)
+
+    # ------------------------------------------------------------------
+    # guest_configure_network_interface_ip
+    # ------------------------------------------------------------------
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.zdirect_network_configuration')
+    def test_guest_configure_network_interface_ip(self, mock_zdirect,
+                                                  mock_chk):
+        """Happy path: validates, delegates to networkops, returns the dict."""
+        mock_chk.return_value = True
+        guest_network = {'ip_addr': '192.168.1.10',
+                         'gateway_addr': '192.168.1.1',
+                         'cidr': '192.168.1.0/24'}
+        result = self.api.guest_configure_network_interface_ip(
+            self.userid, 'rhel7', guest_network, '00000110')
+        # active defaults to False so the guest is not rebooted
+        mock_zdirect.assert_called_once_with(self.userid, 'rhel7',
+                                             '00000110', guest_network,
+                                             active=False)
+        self.assertEqual(result, guest_network)
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.smtclient.SMTClient.get_neth_interface_info')
+    @mock.patch('zvmsdk.smtclient.SMTClient.is_rhcos')
+    def test_guest_configure_network_interface_ip_rhcos(self, mock_is_rhcos,
+                                                        mock_intf, mock_chk):
+        """rhcos is rejected by networkops before any guest operation."""
+        mock_chk.return_value = True
+        mock_is_rhcos.return_value = True
+        guest_network = {'ip_addr': '192.168.1.10',
+                         'cidr': '192.168.1.0/24'}
+        self.assertRaises(exception.SDKFunctionNotImplementError,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhcos4', guest_network,
+                          '00000110')
+        mock_intf.assert_not_called()
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.zdirect_network_configuration')
+    def test_guest_configure_network_interface_ip_invalid_pcif(self,
+                                                               mock_zdirect,
+                                                               mock_chk):
+        """Trailing newline and non-str pcif are rejected."""
+        mock_chk.return_value = True
+        guest_network = {'ip_addr': '192.168.1.10',
+                         'cidr': '192.168.1.0/24'}
+        for bad in ('110\n', 272, None, '', 'xyz', '123456789'):
+            self.assertRaises(exception.SDKInvalidInputFormat,
+                              self.api.guest_configure_network_interface_ip,
+                              self.userid, 'rhel7', guest_network, bad)
+        mock_zdirect.assert_not_called()
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    def test_guest_configure_network_interface_ip_invalid_ip(self, mock_chk):
+        """Invalid ip_addr raises SDKInvalidInputFormat."""
+        mock_chk.return_value = True
+        guest_network = {'ip_addr': 'not-an-ip',
+                         'cidr': '192.168.1.0/24'}
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhel7', guest_network, '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    def test_guest_configure_network_interface_ip_invalid_mac(self, mock_chk):
+        """Invalid mac_addr raises SDKInvalidInputFormat."""
+        mock_chk.return_value = True
+        guest_network = {'mac_addr': 'ZZ:ZZ:ZZ:ZZ:ZZ:ZZ',
+                         'cidr': '192.168.1.0/24'}
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhel7', guest_network, '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    def test_guest_configure_network_interface_ip_invalid_cidr(self, mock_chk):
+        """Invalid cidr raises SDKInvalidInputFormat."""
+        mock_chk.return_value = True
+        guest_network = {'ip_addr': '192.168.1.10',
+                         'cidr': 'not-a-cidr'}
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhel7', guest_network, '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    def test_guest_configure_network_interface_ip_missing_ip_addr(self, mock_chk):
+        """Static method with no ip_addr raises SDKInvalidInputFormat."""
+        mock_chk.return_value = True
+        # method defaults to static when absent; ip_addr must be provided
+        guest_network = {'cidr': '192.168.1.0/24'}
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhel7', guest_network, '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    def test_guest_configure_network_interface_ip_explicit_static_missing_ip(self,
+                                                                              mock_chk):
+        """Explicit method=static with no ip_addr raises SDKInvalidInputFormat."""
+        mock_chk.return_value = True
+        guest_network = {'method': 'static', 'cidr': '192.168.1.0/24'}
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_configure_network_interface_ip,
+                          self.userid, 'rhel7', guest_network, '00000110')
+
+    @mock.patch('zvmsdk.utils.check_userid_exist')
+    @mock.patch('zvmsdk.networkops.NetworkOPS.zdirect_network_configuration')
+    def test_guest_configure_network_interface_ip_dhcp(self, mock_zdirect,
+                                                       mock_chk):
+        """dhcp method: no ip/cidr required, passes validation."""
+        mock_chk.return_value = True
+        guest_network = {'method': 'dhcp'}
+        result = self.api.guest_configure_network_interface_ip(
+            self.userid, 'rhel7', guest_network, '00000110')
+        mock_zdirect.assert_called_once()
+        self.assertEqual(result, guest_network)

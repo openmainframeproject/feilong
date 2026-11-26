@@ -314,6 +314,32 @@ class SMTClient(object):
 
         return results['response']
 
+    def get_neth_interface_info(self, userid, pcif):
+        """Get the interface name configured on the Network Express
+        adapter (PCI function) of the guest.
+
+        :userid: (str) The userid of the guest
+        :pcif: (str) PCI function ID of the Network Express adapter
+        :returns: (str) the interface name, e.g. "ens1", "eno1", or "enp0s0"
+        """
+        action = "NETHINTERFACEINFO"
+        rd = ' '.join(['getvm', userid, action, pcif])
+        action = "query neth interface info of '%s'" % userid
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+
+        if not results['response']:
+            msg = ("SMT returned empty response when querying neth interface "
+                   "info for guest '%s' with pcif '%s'" % (userid, pcif))
+            raise exception.SDKInternalError(msg=msg, modID='smt')
+        intf_name = results['response'][0].strip()
+        if not intf_name:
+            msg = ("SMT returned blank interface name when querying neth "
+                   "interface info for guest '%s' with pcif '%s'"
+                   % (userid, pcif))
+            raise exception.SDKInternalError(msg=msg, modID='smt')
+        return intf_name
+
     def undedicate_device(self, userid, vaddr):
         """undedicate device
 
